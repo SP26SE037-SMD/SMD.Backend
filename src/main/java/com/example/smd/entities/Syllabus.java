@@ -3,7 +3,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 
 @Getter
@@ -17,6 +17,7 @@ import java.util.List;
 public class Syllabus {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "syllabus_id")
     String syllabusId;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -33,20 +34,28 @@ public class Syllabus {
     Double minAvgGrade; // Decimal(4,2)
 
     @Column(length = 20)
-    String status;
+    String status; // 'Draft', 'Review', 'Approved', 'Active', 'Archived'
 
     @Column(name = "created_at")
-    LocalDateTime createdAt;
+    Instant createdAt;
 
     @Column(name = "approved_date")
-    LocalDateTime approvedDate;
+    Instant approvedDate;
 
-//    @OneToMany(mappedBy = "syllabus", fetch = FetchType.LAZY)
-//    List<Session> sessions;
-//
-//    @OneToMany(mappedBy = "syllabus", fetch = FetchType.LAZY)
-//    List<Assessments_Syllabus> assessmentsSyllabus;
-//
-//    @OneToMany(mappedBy = "syllabus", fetch = FetchType.LAZY)
-//    List<Syllabus_Source> syllabusSources;
+    @OneToMany(mappedBy = "syllabus", fetch = FetchType.LAZY)
+    List<Session> sessions;
+
+    @OneToMany(mappedBy = "syllabus", fetch = FetchType.LAZY)
+    List<Assessment_Syllabus> assessmentsSyllabuses;
+
+    @OneToMany(mappedBy = "syllabus", fetch = FetchType.LAZY)
+    List<Syllabus_Source> syllabusSources;
+
+    @OneToMany(mappedBy = "syllabus", fetch = FetchType.LAZY)
+    List<Task> tasks;
+
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = Instant.now();
+    }
 }

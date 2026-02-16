@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import java.time.Instant;
-import java.util.List;
 
 @Getter
 @Setter
@@ -13,24 +12,23 @@ import java.util.List;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
-@Table(name = "role")
-public class Role {
+@Table(name = "elective_subject",
+       uniqueConstraints = @UniqueConstraint(columnNames = {"elective_id", "subject_id"}))
+public class Elective_Subject {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "role_id")
-    String roleId;
+    String id;
 
-    @Column(name = "role_name", unique = true, nullable = false, length = 50)
-    String roleName;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "elective_id", nullable = false)
+    Elective elective;
 
-    @Column(columnDefinition = "TEXT")
-    String description;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "subject_id", nullable = false)
+    Subject subject;
 
     @Column(name = "created_at")
     Instant createdAt;
-
-    @OneToMany(mappedBy = "role", fetch = FetchType.LAZY)
-    List<Account> accounts;
 
     @PrePersist
     protected void onCreate() {
