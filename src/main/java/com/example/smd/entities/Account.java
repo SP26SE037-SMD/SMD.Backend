@@ -1,11 +1,10 @@
 package com.example.smd.entities;
 
-
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import java.time.LocalDate;
+import java.time.Instant;
 
 @Getter
 @Setter
@@ -15,31 +14,42 @@ import java.time.LocalDate;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
 @Table(name = "account")
-public class   Account {
+public class Account {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    String userID;
+    @Column(name = "account_id")
+    String accountId;
 
-    @Column(unique = true, nullable = false)
+    @Column(unique = true, nullable = false, length = 50)
     String username;
 
+    @Column(unique = true, nullable = false, length = 100)
+    String email;
+
+    @Column(name = "password_hash", nullable = false, length = 255)
     String passwordHash;
 
-    LocalDate createDate;
-    LocalDate updateDate;
+    @Column(name = "full_name", length = 100)
+    String fullName;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "roleName")
+    @JoinColumn(name = "role_id")
     Role role;
+
+    @Column(name = "is_active")
+    Boolean isActive = true;
+
+    @Column(name = "created_at")
+    Instant createdAt;
+
+    @Column(name = "last_login")
+    Instant lastLogin;
 
     @PrePersist
     protected void onCreate() {
-        this.createDate = LocalDate.now();
-        this.updateDate = LocalDate.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        this.updateDate = LocalDate.now();
+        this.createdAt = Instant.now();
+        if (this.isActive == null) {
+            this.isActive = true;
+        }
     }
 }

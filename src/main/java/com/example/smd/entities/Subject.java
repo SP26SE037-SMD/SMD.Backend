@@ -3,6 +3,8 @@ package com.example.smd.entities;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import java.time.Instant;
+import java.util.List;
 
 @Getter
 @Setter
@@ -15,6 +17,7 @@ import lombok.experimental.FieldDefaults;
 public class Subject {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "subject_id")
     String subjectId;
 
     @Column(name = "subject_code", unique = true, nullable = false, length = 20)
@@ -32,19 +35,34 @@ public class Subject {
     @Column(columnDefinition = "TEXT")
     String description;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "department_id")
+    Department department;
+
     @Column(name = "student_limit")
     Integer studentLimit;
 
     @Column(name = "is_approved")
-    Boolean isApproved;
+    Boolean isApproved = false;
 
     @Column(name = "status")
-    Boolean status; // Active/Inactive
+    Boolean status = true; // Active/Inactive
+
+    @Column(name = "created_at")
+    Instant createdAt;
 
     // Relationships
-//    @OneToMany(mappedBy = "subject", fetch = FetchType.LAZY)
-//    List<Combo_subject> comboSubjects;
-//
-//    @OneToMany(mappedBy = "subject", fetch = FetchType.LAZY)
-//    List<Syllabus> syllabus;
+    @OneToMany(mappedBy = "subject", fetch = FetchType.LAZY)
+    List<CLOs> clos;
+
+    @OneToMany(mappedBy = "subject", fetch = FetchType.LAZY)
+    List<Syllabus> syllabuses;
+
+    @OneToMany(mappedBy = "subject", fetch = FetchType.LAZY)
+    List<Subject_Prerequisite> prerequisites;
+
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = Instant.now();
+    }
 }

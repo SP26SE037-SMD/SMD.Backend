@@ -1,4 +1,5 @@
 package com.example.smd.entities;
+
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -11,23 +12,23 @@ import java.time.Instant;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
-@Table(name = "sprint_member",
-       uniqueConstraints = @UniqueConstraint(columnNames = {"sprint_id", "lecturer_id"}))
-public class Sprint_Member {
+@Table(name = "subject_prerequisite",
+       uniqueConstraints = @UniqueConstraint(columnNames = {"subject_id", "prerequisite_subject_id"}))
+public class Subject_Prerequisite {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     String id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "sprint_id", nullable = false)
-    Sprint sprint;
+    @JoinColumn(name = "subject_id", nullable = false)
+    Subject subject;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "lecturer_id", nullable = false)
-    Lecturer_Profile lecturer;
+    @JoinColumn(name = "prerequisite_subject_id", nullable = false)
+    Subject prerequisiteSubject;
 
-    @Column(name = "role_in_sprint", length = 50)
-    String roleInSprint; // 'Lead', 'Member', 'Reviewer'
+    @Column(name = "is_mandatory")
+    Boolean isMandatory = true;
 
     @Column(name = "created_at")
     Instant createdAt;
@@ -35,5 +36,8 @@ public class Sprint_Member {
     @PrePersist
     protected void onCreate() {
         this.createdAt = Instant.now();
+        if (this.isMandatory == null) {
+            this.isMandatory = true;
+        }
     }
 }

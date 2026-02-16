@@ -3,6 +3,7 @@ package com.example.smd.entities;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import java.time.Instant;
 import java.util.List;
 
 @Getter
@@ -12,20 +13,30 @@ import java.util.List;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
+@Table(name = "elective")
 public class Elective {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "elective_id")
     String electiveId;
 
-    @Column(name = "elective_code", nullable = false, length = 20)
-    String electiveCode;
-
-    @Column(name = "elective_name", length = 100)
+    @Column(name = "elective_name", nullable = false, length = 100)
     String electiveName;
 
     @Column(columnDefinition = "TEXT")
     String description;
 
-//    @OneToMany(mappedBy = "elective", fetch = FetchType.LAZY)
-//    List<Elective_Subject> electiveSubjects;
+    @Column(name = "min_credits_required")
+    Integer minCreditsRequired;
+
+    @Column(name = "created_at")
+    Instant createdAt;
+
+    @OneToMany(mappedBy = "elective", fetch = FetchType.LAZY)
+    List<Elective_Subject> electiveSubjects;
+
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = Instant.now();
+    }
 }

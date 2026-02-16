@@ -1,4 +1,5 @@
 package com.example.smd.entities;
+
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -11,23 +12,23 @@ import java.time.Instant;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
-@Table(name = "sprint_member",
-       uniqueConstraints = @UniqueConstraint(columnNames = {"sprint_id", "lecturer_id"}))
-public class Sprint_Member {
+@Table(name = "clo_session",
+       uniqueConstraints = @UniqueConstraint(columnNames = {"clo_id", "session_id"}))
+public class CLO_Session {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     String id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "sprint_id", nullable = false)
-    Sprint sprint;
+    @JoinColumn(name = "clo_id", nullable = false)
+    CLOs clo;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "lecturer_id", nullable = false)
-    Lecturer_Profile lecturer;
+    @JoinColumn(name = "session_id", nullable = false)
+    Session session;
 
-    @Column(name = "role_in_sprint", length = 50)
-    String roleInSprint; // 'Lead', 'Member', 'Reviewer'
+    @Column(name = "coverage_level", length = 20)
+    String coverageLevel; // 'Introduced', 'Reinforced', 'Mastered'
 
     @Column(name = "created_at")
     Instant createdAt;
