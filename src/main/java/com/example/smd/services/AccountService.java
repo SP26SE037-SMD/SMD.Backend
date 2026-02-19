@@ -1,0 +1,138 @@
+package com.example.smd.services;
+
+import com.example.smd.dto.request.AccountRequest;
+import com.example.smd.dto.response.AccountResponse;
+import com.example.smd.entities.Account;
+import com.example.smd.entities.Role;
+import com.example.smd.exception.AppException;
+import com.example.smd.exception.ErrorCode;
+import com.example.smd.mapper.AccountMapper;
+import com.example.smd.repositories.AccountRepository;
+import com.example.smd.repositories.RoleRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class AccountService {
+
+    private final AccountRepository accountRepository;
+    private final RoleRepository roleRepository;
+    private final AccountMapper accountMapper;
+    private final PasswordEncoder passwordEncoder;
+
+    @Transactional(readOnly = true)
+    public Page<AccountResponse> getAllAccounts(String search, int page, int size, String[] sort) {
+        List<Sort.Order> orders = new ArrayList<>();
+        if (sort[0].contains(",")) {
+            for (String sortOrder : sort) {
+                String[] _sort = sortOrder.split(",");
+                orders.add(new Sort.Order(getSortDirection(_sort[1]), _sort[0]));
+            }
+        } else {
+            orders.add(new Sort.Order(getSortDirection(sort[1]), sort[0]));
+        }
+
+        Pageable pagingSort = PageRequest.of(page, size, Sort.by(orders));
+
+        if (search == null || search.trim().isEmpty()) {
+            return accountRepository.findAll(pagingSort)
+                    .map(accountMapper::toResponse);
+        }
+
+        // Simple search implementation
+        return accountRepository.findAll(pagingSort)
+                .map(accountMapper::toResponse);
+    }
+
+    @Transactional(readOnly = true)
+    public AccountResponse getAccountById(String accountId) {
+        var convert = UUID.fromString(accountId);
+        Account account = accountRepository.findById(convert)
+                .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND));
+        return accountMapper.toResponse(account);
+    }
+
+    @Transactional
+    public AccountResponse createAccount(AccountRequest request) {
+        if (accountRepository.existsByUsername(request.getUsername())) {
+            throw new AppException(ErrorCode.USERNAME_EXISTS);
+        }
+
+        if (accountRepository.existsByEmail(request.getEmail())) {
+            throw new AppException(ErrorCode.EMAIL_EXISTS);
+        }
+
+        Account account = accountMapper.toEntity(request);
+        account.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+
+        if (request.getRoleId() != null) {
+            Role role = roleRepository.findById(request.getRoleId())
+                    .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
+            account.setRole(role);
+        }
+
+        account = accountRepository.save(account);
+        return accountMapper.toResponse(account);
+    }
+
+    @Transactional
+    public AccountResponse updateAccount(String accountId, AccountRequest request) {
+        var convert = UUID.fromString(accountId);
+        Account account = accountRepository.findById(convert)
+                .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND));
+
+        if (request.getEmail() != null &&
+                !request.getEmail().equals(account.getEmail()) &&
+                accountRepository.existsByEmail(request.getEmail())) {
+            throw new AppException(ErrorCode.EMAIL_EXISTS);
+        }
+
+        accountMapper.updateEntity(account, request);
+
+        if (request.getPassword() != null && !request.getPassword().isEmpty()) {
+            account.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+        }
+
+        if (request.getRoleId() != null) {
+            Role role = roleRepository.findById(request.getRoleId())
+                    .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
+            account.setRole(role);
+        }
+
+        account = accountRepository.save(account);
+        return accountMapper.toResponse(account);
+    }
+
+    @Transactional
+    public boolean deleteAccount(String accountId) {
+        var convert = UUID.fromString(accountId);
+
+        if (!accountRepository.existsById(convert)) {
+            throw new AppException(ErrorCode.ACCOUNT_NOT_FOUND);
+        }
+        accountRepository.deleteById(convert);
+        return true;
+    }
+
+    private Sort.Direction getSortDirection(String direction) {
+        if (direction.equalsIgnoreCase("asc")) {
+            return Sort.Direction.ASC;
+        } else if (direction.equalsIgnoreCase("desc")) {
+            return Sort.Direction.DESC;
+        }
+        return Sort.Direction.ASC;
+    }
+}

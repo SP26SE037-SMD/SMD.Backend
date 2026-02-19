@@ -3,9 +3,9 @@ package com.example.smd.entities;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+
 import java.time.Instant;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -16,15 +16,15 @@ import java.util.UUID;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
-@Table(name = "role")
-public class Role {
+@Table(name = "permission")
+public class Permission {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "role_id")
-    UUID roleId;
+    @Column(name = "permission_id")
+    UUID permissionId;
 
-    @Column(name = "role_name", unique = true, nullable = false, length = 50)
-    String roleName;
+    @Column(name = "permission_name", unique = true, nullable = false, length = 50)
+    String permissionName;
 
     @Column(columnDefinition = "TEXT")
     String description;
@@ -32,17 +32,9 @@ public class Role {
     @Column(name = "created_at")
     Instant createdAt;
 
-    @OneToMany(mappedBy = "role", fetch = FetchType.LAZY)
-    List<Account> accounts;
-
-    @ManyToMany(fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-    @JoinTable(
-            name = "role_permission",
-            joinColumns = @JoinColumn(name = "role_id"),
-            inverseJoinColumns = @JoinColumn(name = "permission_id")
-    )
+    @ManyToMany(mappedBy = "permissions", fetch = FetchType.LAZY)
     @Builder.Default
-    Set<Permission> permissions = new HashSet<>();
+    Set<Role> roles = new HashSet<>();
 
     @PrePersist
     protected void onCreate() {

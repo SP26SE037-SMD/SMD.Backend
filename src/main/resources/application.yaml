@@ -51,6 +51,28 @@ spring:
     placeholder-replacement: false
 
 # ==========================================
+# JWT CONFIGURATION
+# ==========================================
+jwt:
+  signer-key: ThisIsASecretKeyForJWTTokenGenerationPleaseChangeInProduction123456789
+  valid-duration: 3600 # in seconds (1 hour)
+  refreshable-duration: 604800 # in seconds (7 days)
+
+# ==========================================
+# SPRINGDOC OPENAPI/SWAGGER CONFIGURATION
+# ==========================================
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    tags-sorter: alpha
+    operations-sorter: alpha
+    doc-expansion: none
+    display-request-duration: true
+
+# ==========================================
 # LOGGING CONFIGURATION
 # ==========================================
 logging:

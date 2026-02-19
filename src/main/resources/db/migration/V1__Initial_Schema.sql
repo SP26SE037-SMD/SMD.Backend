@@ -485,6 +485,137 @@ CREATE TABLE IF NOT EXISTS subject_wishlist (
 );
 
 -- =====================================================
+-- 1️⃣ subjects: thêm department_id
+-- =====================================================
+
+ALTER TABLE subjects
+ADD COLUMN department_id UUID;
+
+ALTER TABLE subjects
+ADD CONSTRAINT fk_subject_department
+FOREIGN KEY (department_id)
+REFERENCES department(department_id);
+
+CREATE INDEX idx_subjects_department_id
+ON subjects(department_id);
+
+
+-- =====================================================
+-- 2️⃣ account: thêm role_id
+-- =====================================================
+
+ALTER TABLE account
+ADD COLUMN role_id UUID;
+
+ALTER TABLE account
+ADD CONSTRAINT fk_account_role
+FOREIGN KEY (role_id)
+REFERENCES role(role_id);
+
+CREATE INDEX idx_account_role_id
+ON account(role_id);
+
+
+-- =====================================================
+-- 3️⃣ task: thêm syllabus_id
+-- =====================================================
+
+ALTER TABLE task
+ADD COLUMN syllabus_id UUID;
+
+ALTER TABLE task
+ADD CONSTRAINT fk_task_syllabus
+FOREIGN KEY (syllabus_id)
+REFERENCES syllabus(syllabus_id)
+ON DELETE SET NULL;
+
+CREATE INDEX idx_task_syllabus_id
+ON task(syllabus_id);
+
+
+-- =====================================================
+-- 4️⃣ New Table: elective_subject
+-- =====================================================
+
+CREATE TABLE elective_subject (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    elective_id UUID NOT NULL,
+    subject_id UUID NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (elective_id) REFERENCES elective(elective_id) ON DELETE CASCADE,
+    FOREIGN KEY (subject_id) REFERENCES subjects(subject_id) ON DELETE CASCADE,
+    UNIQUE (elective_id, subject_id)
+);
+
+CREATE INDEX idx_elective_subject_elective_id
+ON elective_subject(elective_id);
+
+CREATE INDEX idx_elective_subject_subject_id
+ON elective_subject(subject_id);
+
+
+-- =====================================================
+-- 5️⃣ New Table: subject_prerequisite
+-- =====================================================
+
+CREATE TABLE subject_prerequisite (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    subject_id UUID NOT NULL,
+    prerequisite_subject_id UUID NOT NULL,
+    is_mandatory BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (subject_id) REFERENCES subjects(subject_id) ON DELETE CASCADE,
+    FOREIGN KEY (prerequisite_subject_id) REFERENCES subjects(subject_id) ON DELETE CASCADE,
+    UNIQUE (subject_id, prerequisite_subject_id),
+    CHECK (subject_id <> prerequisite_subject_id)
+);
+
+CREATE INDEX idx_subject_prerequisite_subject_id
+ON subject_prerequisite(subject_id);
+
+CREATE INDEX idx_subject_prerequisite_prereq_id
+ON subject_prerequisite(prerequisite_subject_id);
+
+
+-- =====================================================
+-- 6️⃣ New Table: clo_session
+-- =====================================================
+
+CREATE TABLE clo_session (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    clo_id UUID NOT NULL,
+    session_id UUID NOT NULL,
+    coverage_level VARCHAR(20),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (clo_id) REFERENCES clos(clo_id) ON DELETE CASCADE,
+    FOREIGN KEY (session_id) REFERENCES session(session_id) ON DELETE CASCADE,
+    UNIQUE (clo_id, session_id)
+);
+
+CREATE INDEX idx_clo_session_clo_id
+ON clo_session(clo_id);
+
+CREATE INDEX idx_clo_session_session_id
+ON clo_session(session_id);
+
+
+-- =====================================================
+-- 7️⃣ vector_embeddings: thêm UNIQUE cho block_id
+-- =====================================================
+
+ALTER TABLE vector_embeddings
+ADD CONSTRAINT uq_vector_embeddings_block UNIQUE (block_id);
+
+
+-- =====================================================
+-- 8️⃣ Thêm index mới cho lecturer_profile
+-- =====================================================
+
+CREATE INDEX idx_lecturer_profile_department_id
+ON lecturer_profile(department_id);
+
+
+-- =====================================================
 -- INDEXES for Performance Optimization
 -- =====================================================
 
@@ -540,24 +671,169 @@ ON CONFLICT DO NOTHING;
 INSERT INTO role (role_id, role_name, description) VALUES
     (gen_random_uuid(), 'ADMIN', 'Quản trị viên hệ thống'),
     (gen_random_uuid(), 'LECTURER', 'Giảng viên'),
-    (gen_random_uuid(), 'REVIEWER', 'Người đánh giá đề cương'),
+    (gen_random_uuid(), 'COLLABORATOR', 'Cộng tác viên (người được thuê viết Syllabus) doanh nghiệp hoặc là giảng viên có chuyên môn'),
     (gen_random_uuid(), 'STUDENT', 'Sinh viên'),
-    (gen_random_uuid(), 'HEAD_OF_DEPARTMENT', 'Trưởng bộ môn')
+    (gen_random_uuid(), 'HoCFDC', '(Trưởng ban - ban phát triển khung chương trình) - Head of Curriculum Framework Development Committee'),
+    (gen_random_uuid(), 'HoPDC', '(Trưởng ban - ban phát triển chương trình) - Head of Program Development Committee'),
+    (gen_random_uuid(), 'PDCM', 'PDC member (Ban phát triển chương trình) - Program Development Committee')
+
+
+ON CONFLICT DO NOTHING;
+
+-- -- =====================================================
+-- -- COMMENTS for Documentation
+-- -- =====================================================
+
+-- COMMENT ON TABLE subjects IS 'Môn học - Định nghĩa chuẩn của môn, không phụ thuộc vào giảng viên';
+-- COMMENT ON TABLE clos IS 'Course Learning Outcomes - Chuẩn đầu ra MÔN HỌC (gắn với Subject)';
+-- COMMENT ON TABLE plos IS 'Program Learning Outcomes - Chuẩn đầu ra NGÀNH HỌC (gắn với Major)';
+-- COMMENT ON TABLE syllabus IS 'Đề cương chi tiết - Triển khai cụ thể của môn học (có thể nhiều version)';
+-- COMMENT ON TABLE clo_plo_mapping IS 'Mapping CLO-PLO: Môn học đóng góp gì cho chuẩn đầu ra ngành';
+-- COMMENT ON TABLE clo_assessment IS 'Mapping CLO-Assessment: Bài kiểm tra đo lường CLO nào';
+-- COMMENT ON TABLE sprint IS 'Sprint Agile - Đợt làm việc soạn thảo đề cương';
+-- COMMENT ON TABLE vector_embeddings IS 'Vector embeddings cho RAG/Semantic Search với AI';
+
+-- =====================================================
+-- Migration: Add Permission and Role-Permission Tables
+-- Version: V3
+-- Created: 2026-02-17
+-- =====================================================
+-- Description:
+-- This migration adds:
+-- 1. Permission table for fine-grained access control
+-- 2. role_permission junction table for many-to-many relationship
+-- 3. Add role_id foreign key to account table
+-- =====================================================
+
+-- =====================================================
+-- Create Permission Table
+-- =====================================================
+CREATE TABLE IF NOT EXISTS permission (
+    permission_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    permission_name VARCHAR(50) UNIQUE NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- =====================================================
+-- Create role_permission junction table
+-- =====================================================
+CREATE TABLE IF NOT EXISTS role_permission (
+    role_id UUID NOT NULL,
+    permission_id UUID NOT NULL,
+    PRIMARY KEY (role_id, permission_id),
+    FOREIGN KEY (role_id) REFERENCES role(role_id) ON DELETE CASCADE,
+    FOREIGN KEY (permission_id) REFERENCES permission(permission_id) ON DELETE CASCADE
+);
+
+
+-- Create indexes for better performance
+-- =====================================================
+-- Note: idx_account_role_id already created in ALTER section above, skip duplicate
+CREATE INDEX IF NOT EXISTS idx_role_permission_role ON role_permission(role_id);
+CREATE INDEX IF NOT EXISTS idx_role_permission_permission ON role_permission(permission_id);
+CREATE INDEX IF NOT EXISTS idx_permission_name ON permission(permission_name);
+
+-- =====================================================
+-- Insert default permissions
+-- =====================================================
+INSERT INTO permission (permission_id, permission_name, description) VALUES
+    -- Account management
+    (gen_random_uuid(), 'ACCOUNT_CREATE', 'Create new accounts'),
+    (gen_random_uuid(), 'ACCOUNT_READ', 'View account information'),
+    (gen_random_uuid(), 'ACCOUNT_UPDATE', 'Update account information'),
+    (gen_random_uuid(), 'ACCOUNT_DELETE', 'Delete accounts'),
+
+    -- Role management
+    (gen_random_uuid(), 'ROLE_CREATE', 'Create new roles'),
+    (gen_random_uuid(), 'ROLE_READ', 'View role information'),
+    (gen_random_uuid(), 'ROLE_UPDATE', 'Update role information'),
+    (gen_random_uuid(), 'ROLE_DELETE', 'Delete roles'),
+
+    -- Permission management
+    (gen_random_uuid(), 'PERMISSION_CREATE', 'Create new permissions'),
+    (gen_random_uuid(), 'PERMISSION_READ', 'View permission information'),
+    (gen_random_uuid(), 'PERMISSION_UPDATE', 'Update permission information'),
+    (gen_random_uuid(), 'PERMISSION_DELETE', 'Delete permissions'),
+
+    -- Syllabus management
+    (gen_random_uuid(), 'SYLLABUS_CREATE', 'Create new syllabi'),
+    (gen_random_uuid(), 'SYLLABUS_READ', 'View syllabus information'),
+    (gen_random_uuid(), 'SYLLABUS_UPDATE', 'Update syllabus information'),
+    (gen_random_uuid(), 'SYLLABUS_DELETE', 'Delete syllabi'),
+    (gen_random_uuid(), 'SYLLABUS_APPROVE', 'Approve syllabi'),
+    (gen_random_uuid(), 'SYLLABUS_REVIEW', 'Review syllabi')
+ON CONFLICT (permission_name) DO NOTHING;
+
+-- =====================================================
+-- Assign permissions to ADMIN role
+-- =====================================================
+INSERT INTO role_permission (role_id, permission_id)
+SELECT r.role_id, p.permission_id
+FROM role r
+CROSS JOIN permission p
+WHERE r.role_name = 'ADMIN'
 ON CONFLICT DO NOTHING;
 
 -- =====================================================
--- COMMENTS for Documentation
+-- Assign permissions to COLLABORATOR, PDCM  role
 -- =====================================================
+INSERT INTO role_permission (role_id, permission_id)
+SELECT r.role_id, p.permission_id
+FROM role r
+CROSS JOIN permission p
+WHERE r.role_name IN('COLLABORATOR', 'PDCM')
+AND p.permission_name IN (
+    'ACCOUNT_READ',
+    'SYLLABUS_CREATE',
+    'SYLLABUS_READ',
+    'SYLLABUS_UPDATE'
+)
+ON CONFLICT DO NOTHING;
 
-COMMENT ON TABLE subjects IS 'Môn học - Định nghĩa chuẩn của môn, không phụ thuộc vào giảng viên';
-COMMENT ON TABLE clos IS 'Course Learning Outcomes - Chuẩn đầu ra MÔN HỌC (gắn với Subject)';
-COMMENT ON TABLE plos IS 'Program Learning Outcomes - Chuẩn đầu ra NGÀNH HỌC (gắn với Major)';
-COMMENT ON TABLE syllabus IS 'Đề cương chi tiết - Triển khai cụ thể của môn học (có thể nhiều version)';
-COMMENT ON TABLE clo_plo_mapping IS 'Mapping CLO-PLO: Môn học đóng góp gì cho chuẩn đầu ra ngành';
-COMMENT ON TABLE clo_assessment IS 'Mapping CLO-Assessment: Bài kiểm tra đo lường CLO nào';
-COMMENT ON TABLE sprint IS 'Sprint Agile - Đợt làm việc soạn thảo đề cương';
-COMMENT ON TABLE vector_embeddings IS 'Vector embeddings cho RAG/Semantic Search với AI';
+-- =====================================================
+-- Assign permissions to HoPDC, HoCFDC role
+-- =====================================================
+INSERT INTO role_permission (role_id, permission_id)
+SELECT r.role_id, p.permission_id
+FROM role r
+CROSS JOIN permission p
+WHERE r.role_name  IN ('HoPDC', 'HoCFDC')
+AND p.permission_name IN (
+    'ACCOUNT_READ',
+    'SYLLABUS_READ',
+    'SYLLABUS_REVIEW',
+    'SYLLABUS_APPROVE'
+)
+ON CONFLICT DO NOTHING;
 
 -- =====================================================
--- END OF MIGRATION
+-- Assign permissions to STUDENT role
 -- =====================================================
+INSERT INTO role_permission (role_id, permission_id)
+SELECT r.role_id, p.permission_id
+FROM role r
+CROSS JOIN permission p
+WHERE r.role_name = 'STUDENT'
+AND p.permission_name IN (
+    'SYLLABUS_READ'
+)
+ON CONFLICT DO NOTHING;
+
+-- =====================================================
+-- Create default admin account
+-- =====================================================
+-- Note: Password is 'admin123' hashed with BCrypt
+-- In production, this should be changed immediately
+INSERT INTO account (account_id, username, email, password_hash, full_name, role_id, is_active)
+SELECT
+    gen_random_uuid(),
+    'admin',
+    'admin@smd.edu.vn',
+    '$2a$10$kCmOYiP8bHlBT3zhTqMFq.0fELNI9QN/47TzCwV1GOJuWaxaiqJzC',
+    'System Administrator',
+    r.role_id,
+    TRUE
+FROM role r
+WHERE r.role_name = 'ADMIN'
+ON CONFLICT (username) DO NOTHING;
