@@ -3,7 +3,11 @@ package com.example.smd.entities;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import java.util.List;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -16,7 +20,7 @@ import java.util.List;
 public class Major {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    String majorId;
+    UUID majorId;
 
     @Column(name = "major_code", unique = true, nullable = false, length = 20)
     String majorCode;

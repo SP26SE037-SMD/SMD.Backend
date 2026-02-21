@@ -31,7 +31,8 @@ public class SecurityConfig {
             "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**",
             "/api/auth/login", "/api/auth/introspect",
             "/api/auth/password-reset",
-            "/api/auth/me"
+            "/api/auth/me",
+            "/api/majors/**"
     };
 
     @Autowired
