@@ -26,6 +26,13 @@ public enum ErrorCode {
     PERMISSION_NOT_FOUND(4001, "Permission not found", HttpStatus.NOT_FOUND),
     PERMISSION_EXISTS(4002, "Permission already exists", HttpStatus.BAD_REQUEST),
 
+    // Major
+    MAJOR_NOT_FOUND(5001, "Major not found", HttpStatus.NOT_FOUND),
+    MAJOR_CODE_EXISTS(5002, "Major code already exists", HttpStatus.BAD_REQUEST),
+    MAJOR_CODE_REQUIRED(5003, "Major code is required", HttpStatus.BAD_REQUEST),
+    MAJOR_NAME_REQUIRED(5004, "Major name is required", HttpStatus.BAD_REQUEST),
+    MAJOR_CODE_TOO_LONG(5005, "Major code must not exceed 20 characters", HttpStatus.BAD_REQUEST),
+
     // General
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),
     INVALID_KEY(1000, "Invalid message key", HttpStatus.BAD_REQUEST),
