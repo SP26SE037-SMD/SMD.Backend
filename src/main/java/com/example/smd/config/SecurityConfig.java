@@ -27,6 +27,7 @@ import java.util.Arrays;
 @EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
+    // Danh sách các endpoint công khai không cần xác thực
     private final String[] PUBLIC_ENDPOINTS = {
             "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**",
             "/api/auth/login", "/api/auth/introspect",
@@ -43,6 +44,7 @@ public class SecurityConfig {
     @Value("${jwt.signer-key}")
     protected String SIGNER_KEY;
 
+    // Cấu hình  Security Filter Chain cho Spring Security
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests(request -> request
@@ -65,6 +67,7 @@ public class SecurityConfig {
         return http.build();
     }
 
+    // Cấu hình JWT Authentication Converter
     @Bean
     JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtGrantedAuthoritiesConverter jwtGrantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
@@ -75,11 +78,13 @@ public class SecurityConfig {
         return converter;
     }
 
+    // Cấu hình Password Encoder (BCrypt)
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder(10);
     }
 
+    // Cấu hình CORS Filter
     @Bean
     public CorsFilter corsFilter() {
         CorsConfiguration corsConfiguration = new CorsConfiguration();

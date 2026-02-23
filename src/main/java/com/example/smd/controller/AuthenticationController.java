@@ -23,6 +23,7 @@ public class AuthenticationController {
 
     private final AuthenticationService authenticationService;
 
+    // API đăng nhập để lấy access token
     @PostMapping("/login")
     @Operation(summary = "Login to get access token")
     public ResponseObject<AuthenticationResponse> authenticate(@Valid @RequestBody AuthenticationRequest request) {
@@ -33,6 +34,7 @@ public class AuthenticationController {
                 .build();
     }
 
+    // API kiểm tra token có hợp lệ không
     @PostMapping("/introspect")
     @Operation(summary = "Validate token")
     public ResponseObject<Boolean> introspect(@RequestParam String token) throws ParseException, JOSEException {
@@ -43,6 +45,7 @@ public class AuthenticationController {
                 .build();
     }
 
+    // API đặt lại mật khẩu với token
     @PostMapping("/password-reset")
     @Operation(summary = "Reset password with token")
     public ResponseObject<Boolean> resetPassword(@Valid @RequestBody ResetPasswordRequest request)
@@ -54,6 +57,7 @@ public class AuthenticationController {
                 .build();
     }
 
+    // API lấy thông tin tài khoản hiện tại bằng token
     @GetMapping("/me")
     @Operation(summary = "Get current account information by token")
     public ResponseObject<AccountResponse> getAccountByToken(@RequestParam String token)

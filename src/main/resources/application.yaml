@@ -6,9 +6,9 @@ spring:
   # DATABASE CONFIGURATION
   # ==========================================
   datasource:
-    url: jdbc:postgresql://localhost:5432/postgres
-    username: smd_data
-    password: 12345
+    url: ${DB_URL}
+#    username: ${DB_USERNAME}
+#    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10
@@ -54,7 +54,7 @@ spring:
 # JWT CONFIGURATION
 # ==========================================
 jwt:
-  signer-key: ThisIsASecretKeyForJWTTokenGenerationPleaseChangeInProduction123456789
+  signer-key: ${JWT_SIGNER_KEY}
   valid-duration: 3600 # in seconds (1 hour)
   refreshable-duration: 604800 # in seconds (7 days)
 
@@ -62,8 +62,6 @@ jwt:
 # SPRINGDOC OPENAPI/SWAGGER CONFIGURATION
 # ==========================================
 springdoc:
-  api-docs:
-    path: /v3/api-docs
   swagger-ui:
     path: /swagger-ui.html
     enabled: true

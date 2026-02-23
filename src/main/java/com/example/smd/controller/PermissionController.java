@@ -24,6 +24,7 @@ public class PermissionController {
 
     private final PermissionService permissionService;
 
+    // API lấy danh sách quyền có phân trang
     @GetMapping
     @Operation(summary = "Get all permissions with pagination")
     public ResponseObject<Page<PermissionResponse>> getAllPermissions(
@@ -39,8 +40,9 @@ public class PermissionController {
                 .build();
     }
 
+    // API lấy chi tiết quyền theo ID
     @GetMapping("/{id}")
-//    @PreAuthorize("hasAuthority('PERMISSION_READ')")
+    @PreAuthorize("hasAuthority('PERMISSION_READ')")
     @Operation(summary = "Get permission by ID")
     public ResponseObject<PermissionResponse> getPermissionById(@PathVariable UUID id) {
         return ResponseObject.<PermissionResponse>builder()
@@ -50,6 +52,7 @@ public class PermissionController {
                 .build();
     }
 
+    // API lấy chi tiết quyền theo tên
     @GetMapping("/name/{name}")
 //    @PreAuthorize("hasAuthority('PERMISSION_READ')")
     @Operation(summary = "Get permission by name")
@@ -61,6 +64,7 @@ public class PermissionController {
                 .build();
     }
 
+    // API tạo quyền mới
     @PostMapping
 //    @PreAuthorize("hasAuthority('PERMISSION_CREATE')")
     @Operation(summary = "Create new permission")
@@ -72,6 +76,7 @@ public class PermissionController {
                 .build();
     }
 
+    // API cập nhật quyền
     @PutMapping("/{id}")
 //    @PreAuthorize("hasAuthority('PERMISSION_UPDATE')")
     @Operation(summary = "Update permission")
@@ -85,6 +90,7 @@ public class PermissionController {
                 .build();
     }
 
+    // API xóa quyền
     @DeleteMapping("/{id}")
 //    @PreAuthorize("hasAuthority('PERMISSION_DELETE')")
     @Operation(summary = "Delete permission")

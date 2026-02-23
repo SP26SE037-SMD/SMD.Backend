@@ -29,7 +29,9 @@ public class RoleService {
     private final PermissionRepository permissionRepository;
     private final RoleMapper roleMapper;
 
+    // GetAll vai trò có phân trang
     public Page<RoleResponse> getAllRoles(String search, int page, int size, String[] sort) {
+        // 1. Xử lý sắp xếp (Sắp xếp theo field CamelCase của Java)
         List<Sort.Order> orders = new ArrayList<>();
         if (sort[0].contains(",")) {
             for (String sortOrder : sort) {
@@ -42,22 +44,26 @@ public class RoleService {
 
         Pageable pagingSort = PageRequest.of(page, size, Sort.by(orders));
 
+        // 2. Lấy tất cả role và map sang DTO
         return roleRepository.findAll(pagingSort)
                 .map(roleMapper::toResponse);
     }
 
+    // Lấy chi tiết vai trò theo ID
     public RoleResponse getRoleById(UUID roleId) {
         Role role = roleRepository.findById(roleId)
                 .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
         return roleMapper.toResponse(role);
     }
 
+    // Lấy chi tiết vai trò theo tên
     public RoleResponse getRoleByName(String roleName) {
         Role role = roleRepository.findByRoleName(roleName)
                 .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
         return roleMapper.toResponse(role);
     }
 
+    // Tạo vai trò mới
     @Transactional
     public RoleResponse createRole(RoleRequest request) {
         if (roleRepository.existsByRoleName(request.getRoleName())) {
@@ -66,6 +72,7 @@ public class RoleService {
 
         Role role = roleMapper.toEntity(request);
 
+        // Gán danh sách permission cho role nếu có
         if (request.getPermissionIds() != null && !request.getPermissionIds().isEmpty()) {
             Set<Permission> permissions = new HashSet<>();
             for (String permissionId : request.getPermissionIds()) {
@@ -81,6 +88,7 @@ public class RoleService {
         return roleMapper.toResponse(role);
     }
 
+    // Cập nhật vai trò
     @Transactional
     public RoleResponse updateRole(UUID roleId, RoleRequest request) {
         Role role = roleRepository.findById(roleId)
@@ -94,6 +102,7 @@ public class RoleService {
 
         roleMapper.updateEntity(role, request);
 
+        // Cập nhật lại danh sách permission nếu có
         if (request.getPermissionIds() != null) {
             Set<Permission> permissions = new HashSet<>();
             for (String permissionId : request.getPermissionIds()) {
@@ -110,6 +119,7 @@ public class RoleService {
         return roleMapper.toResponse(role);
     }
 
+    // Helper method để xử lý hướng sắp xếp
     private Sort.Direction getSortDirection(String direction) {
         if (direction.equalsIgnoreCase("asc")) {
             return Sort.Direction.ASC;

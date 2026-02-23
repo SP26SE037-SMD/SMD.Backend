@@ -33,8 +33,10 @@ public class AccountService {
     private final AccountMapper accountMapper;
     private final PasswordEncoder passwordEncoder;
 
+    // GetAll tài khoản có phân trang
     @Transactional(readOnly = true)
     public Page<AccountResponse> getAllAccounts(String search, int page, int size, String[] sort) {
+        // 1. Xử lý sắp xếp (Sắp xếp theo field CamelCase của Java)
         List<Sort.Order> orders = new ArrayList<>();
         if (sort[0].contains(",")) {
             for (String sortOrder : sort) {
@@ -47,16 +49,18 @@ public class AccountService {
 
         Pageable pagingSort = PageRequest.of(page, size, Sort.by(orders));
 
+        // 2. Logic tìm kiếm để lấy Page<Entity>
         if (search == null || search.trim().isEmpty()) {
             return accountRepository.findAll(pagingSort)
                     .map(accountMapper::toResponse);
         }
 
-        // Simple search implementation
+        // 3. Map nguyên List Entity sang DTO bằng method reference của MapStruct
         return accountRepository.findAll(pagingSort)
                 .map(accountMapper::toResponse);
     }
 
+    // Lấy chi tiết tài khoản theo ID
     @Transactional(readOnly = true)
     public AccountResponse getAccountById(String accountId) {
         var convert = UUID.fromString(accountId);
@@ -65,19 +69,24 @@ public class AccountService {
         return accountMapper.toResponse(account);
     }
 
+    // Tạo tài khoản mới
     @Transactional
     public AccountResponse createAccount(AccountRequest request) {
+        // 1. Kiểm tra username đã tồn tại chưa
         if (accountRepository.existsByUsername(request.getUsername())) {
             throw new AppException(ErrorCode.USERNAME_EXISTS);
         }
 
+        // 2. Kiểm tra email đã tồn tại chưa
         if (accountRepository.existsByEmail(request.getEmail())) {
             throw new AppException(ErrorCode.EMAIL_EXISTS);
         }
 
+        // 3. Tạo entity Account và mã hóa password
         Account account = accountMapper.toEntity(request);
         account.setPasswordHash(passwordEncoder.encode(request.getPassword()));
 
+        // 4. Gán role cho account nếu có
         if (request.getRoleId() != null) {
             Role role = roleRepository.findById(request.getRoleId())
                     .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
@@ -88,6 +97,7 @@ public class AccountService {
         return accountMapper.toResponse(account);
     }
 
+    // Cập nhật thông tin tài khoản
     @Transactional
     public AccountResponse updateAccount(String accountId, AccountRequest request) {
         var convert = UUID.fromString(accountId);
@@ -116,6 +126,7 @@ public class AccountService {
         return accountMapper.toResponse(account);
     }
 
+    // Xóa tài khoản
     @Transactional
     public boolean deleteAccount(String accountId) {
         var convert = UUID.fromString(accountId);
@@ -127,6 +138,7 @@ public class AccountService {
         return true;
     }
 
+    // Helper method để xử lý hướng sắp xếp
     private Sort.Direction getSortDirection(String direction) {
         if (direction.equalsIgnoreCase("asc")) {
             return Sort.Direction.ASC;

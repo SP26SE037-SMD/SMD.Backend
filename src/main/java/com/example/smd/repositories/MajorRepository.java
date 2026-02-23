@@ -11,6 +11,7 @@ import java.util.UUID;
 
 @Repository
 public interface MajorRepository extends JpaRepository<Major, UUID> {
+    // Kiểm tra tồn tại theo mã chuyên ngành
     boolean existsByMajorCode(String majorCode);
 
     // Tìm theo tên
@@ -19,9 +20,10 @@ public interface MajorRepository extends JpaRepository<Major, UUID> {
     // Tìm theo mã
     Page<Major> findByMajorCodeContainingIgnoreCase(String code, Pageable pageable);
 
-    // Tìm theo cả hai (như đã làm trước đó)
+    // Tìm theo cả tên và mã chuyên ngành
     Page<Major> findByMajorNameContainingIgnoreCaseOrMajorCodeContainingIgnoreCase(
             String name, String code, Pageable pageable);
 
+    // Tìm Major theo mã chuyên ngành chính xác
     Optional<Major> findByMajorCode(String majorCode);
 }

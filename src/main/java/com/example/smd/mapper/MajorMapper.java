@@ -7,6 +7,9 @@ import org.mapstruct.Mapper;
 
 @Mapper(componentModel = "spring")
 public interface MajorMapper {
+    // Chuyển đổi từ DTO MajorRequest sang Entity Major
     Major toMajor(MajorRequest majorRequest);
+
+    // Chuyển đổi từ Entity Major sang DTO MajorResponse
     MajorResponse toMajorResponse(Major major);
 }

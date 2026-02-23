@@ -23,6 +23,7 @@ public class AccountController {
 
     private final AccountService accountService;
 
+    // API lấy danh sách tài khoản có phân trang và tìm kiếm
     @GetMapping
     @Operation(summary = "Get all accounts with pagination and search")
     public ResponseObject<Page<AccountResponse>> getAllAccounts(
@@ -39,6 +40,7 @@ public class AccountController {
                 .build();
     }
 
+    // API lấy chi tiết tài khoản theo ID
     @GetMapping("/{id}")
     @Operation(summary = "Get account by ID")
     public ResponseObject<AccountResponse> getAccountById(@PathVariable String id) {
@@ -49,6 +51,7 @@ public class AccountController {
                 .build();
     }
 
+    // API tạo tài khoản mới
     @PostMapping
     @Operation(summary = "Create new account")
     public ResponseObject<AccountResponse> createAccount(@Valid @RequestBody AccountRequest request) {
@@ -59,6 +62,7 @@ public class AccountController {
                 .build();
     }
 
+    // API cập nhật tài khoản theo ID
     @PutMapping("/{id}")
     @Operation(summary = "Update account by ID")
     public ResponseObject<AccountResponse> updateAccount(
@@ -71,6 +75,7 @@ public class AccountController {
                 .build();
     }
 
+    // API xóa tài khoản theo ID
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete account by ID")
     public ResponseObject<Boolean> deleteAccount(@PathVariable String id) {

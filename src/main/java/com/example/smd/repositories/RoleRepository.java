@@ -9,6 +9,9 @@ import java.util.Optional;
 
 @Repository
 public interface RoleRepository extends JpaRepository<Role, java.util.UUID>, JpaSpecificationExecutor<Role> {
+    // Tìm Role theo tên
     Optional<Role> findByRoleName(String roleName);
+
+    // Kiểm tra tồn tại theo tên
     boolean existsByRoleName(String roleName);
 }

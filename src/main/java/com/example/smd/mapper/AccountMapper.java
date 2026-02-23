@@ -14,6 +14,7 @@ public class AccountMapper {
         this.roleMapper = roleMapper;
     }
 
+    // Chuyển đổi từ Entity Account sang DTO AccountResponse
     public AccountResponse toResponse(Account account) {
         if (account == null) {
             return null;
@@ -31,6 +32,7 @@ public class AccountMapper {
                 .build();
     }
 
+    // Chuyển đổi từ DTO AccountRequest sang Entity Account
     public Account toEntity(AccountRequest request) {
         if (request == null) {
             return null;
@@ -44,6 +46,7 @@ public class AccountMapper {
                 .build();
     }
 
+    // Cập nhật thông tin Entity Account từ DTO AccountRequest
     public void updateEntity(Account account, AccountRequest request) {
         if (request.getEmail() != null) {
             account.setEmail(request.getEmail());
