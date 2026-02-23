@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class OpenApiConfig {
 
+    // Cấu hình Swagger/OpenAPI cho API Documentation
     @Bean
     public OpenAPI customOpenAPI() {
         return new OpenAPI()

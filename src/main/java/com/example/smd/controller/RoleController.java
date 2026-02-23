@@ -24,6 +24,7 @@ public class RoleController {
 
     private final RoleService roleService;
 
+    // API lấy danh sách vai trò có phân trang và tìm kiếm
     @GetMapping
     @Operation(summary = "Get all roles with pagination and search")
     public ResponseObject<Page<RoleResponse>> getAllRoles(
@@ -40,6 +41,7 @@ public class RoleController {
                 .build();
     }
 
+    // API lấy chi tiết vai trò theo ID
     @GetMapping("/{id}")
     @Operation(summary = "Get role by ID")
     public ResponseObject<RoleResponse> getRoleById(@PathVariable String id) {
@@ -51,6 +53,7 @@ public class RoleController {
                 .build();
     }
 
+    // API lấy chi tiết vai trò theo tên
     @GetMapping("/name/{name}")
     @Operation(summary = "Get role by name")
     public ResponseObject<RoleResponse> getRoleByName(@PathVariable String name) {
@@ -61,6 +64,7 @@ public class RoleController {
                 .build();
     }
 
+    // API tạo vai trò mới
     @PostMapping
     @Operation(summary = "Create new role")
     public ResponseObject<RoleResponse> createRole(@Valid @RequestBody RoleRequest request) {
@@ -71,6 +75,7 @@ public class RoleController {
                 .build();
     }
 
+    // API cập nhật vai trò theo ID
     @PutMapping("/{id}")
     @Operation(summary = "Update role by ID")
     public ResponseObject<RoleResponse> updateRole(

@@ -56,21 +56,26 @@ public class AuthenticationService {
     @Value("${jwt.refreshable-duration}")
     protected long REFRESHABLE_DURATION;
 
+    // Xác thực đăng nhập và tạo token
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
+        // 1. Tìm tài khoản theo username
         Account account = accountRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND, "Account not found"));
 
+        // 2. Kiểm tra password có khớp với password hash không
         if (!passwordEncoder.matches(request.getPassword(), account.getPasswordHash())) {
             throw new AppException(ErrorCode.INVALID_CREDENTIALS, "Invalid password");
         }
 
+        // 3. Kiểm tra tài khoản có đang active không
         if (!account.getIsActive()) {
             throw new AppException(ErrorCode.ACCOUNT_NOT_FOUND, "Account is inactive");
         }
 
+        // 4. Tạo token JWT
         String token = generateToken(account);
 
-        // Update last login
+        // 5. Cập nhật thời gian đăng nhập cuối cùng
         account.setLastLogin(Instant.now());
         accountRepository.save(account);
 
@@ -81,27 +86,35 @@ public class AuthenticationService {
                 .build();
     }
 
+    // Xác thực token JWT
     public void verifyToken(String token, boolean isRefresh) throws ParseException, JOSEException {
+        // 1. Tạo verifier với SIGNER_KEY
         JWSVerifier verifier = new MACVerifier(SIGNER_KEY.getBytes());
 
+        // 2. Parse token thành SignedJWT
         SignedJWT signedJWT = SignedJWT.parse(token);
 
+        // 3. Kiểm tra thời gian hết hạn của token
         Date expiryTime = (isRefresh)
                 ? new Date(signedJWT.getJWTClaimsSet().getIssueTime()
                 .toInstant().plus(REFRESHABLE_DURATION, ChronoUnit.SECONDS).toEpochMilli())
                 : signedJWT.getJWTClaimsSet().getExpirationTime();
 
+        // 4. Xác minh chữ ký và kiểm tra token có hết hạn hay không
         var verified = signedJWT.verify(verifier);
         if (!(verified && expiryTime.after(new Date()))) {
             throw new AppException(ErrorCode.UNAUTHENTICATED);
         }
     }
 
+    // Tạo JWT token từ thông tin account
     private String generateToken(Account account) {
+        // 1. Lấy thông tin cơ bản
         String username = account.getUsername();
         UUID accountId = account.getAccountId();
         String scope = buildScope(account);
 
+        // 2. Tạo JWT claims set chứa thông tin user
         JWTClaimsSet claims = new JWTClaimsSet.Builder()
                 .subject(username)
                 .claim("accountId", accountId)
@@ -114,6 +127,7 @@ public class AuthenticationService {
                 ))
                 .build();
 
+        // 3. Ký token với HS512 và SIGNER_KEY
         try {
             SignedJWT signedJWT = new SignedJWT(
                     new JWSHeader(JWSAlgorithm.HS512),
@@ -127,6 +141,7 @@ public class AuthenticationService {
         }
     }
 
+    // Xây dựng scope (permissions) từ role của account
     private String buildScope(Account account) {
         StringJoiner stringJoiner = new StringJoiner(" ");
         if (account.getRole() != null) {
@@ -140,6 +155,7 @@ public class AuthenticationService {
         return stringJoiner.toString();
     }
 
+    // Kiểm tra token có hợp lệ không (introspect)
     public boolean introspect(String token) throws JOSEException, ParseException {
         boolean isValid = true;
         try {
@@ -150,36 +166,38 @@ public class AuthenticationService {
         return isValid;
     }
 
+    // Đặt lại mật khẩu
     @Transactional
     public boolean resetPassword(ResetPasswordRequest request) throws ParseException, JOSEException {
         String token = request.getAccessToken();
         String newPassword = request.getNewPassword();
         String confirmPassword = request.getConfirmPassword();
 
-        // Validate token
+        // 1. Xác thực token
         if (!introspect(token)) {
             throw new AppException(ErrorCode.INVALID_CREDENTIALS);
         }
 
-        // Validate password confirmation
+        // 2. Kiểm tra password có khớp với confirm password không
         if (!newPassword.equals(confirmPassword)) {
             throw new AppException(ErrorCode.PASSWORD_MISMATCH);
         }
 
-        // Parse token to get accountId
+        // 3. Lấy accountId từ token để tìm account
         SignedJWT signedJWT = SignedJWT.parse(token);
         String accountId =  signedJWT.getJWTClaimsSet().getStringClaim("accountId");
         var convert = UUID.fromString(accountId);
         Account account = accountRepository.findById(convert)
                 .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND));
 
-        // Update password
+        // 4. Cập nhật password mới
         account.setPasswordHash(passwordEncoder.encode(newPassword));
         accountRepository.save(account);
 
         return true;
     }
 
+    // Lấy thông tin account từ token
     public AccountResponse getAccountByToken(String token) throws ParseException, JOSEException {
         if (!introspect(token)) {
             throw new AppException(ErrorCode.UNAUTHENTICATED);

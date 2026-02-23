@@ -9,6 +9,9 @@ import java.util.Optional;
 
 @Repository
 public interface PermissionRepository extends JpaRepository<Permission, java.util.UUID>, JpaSpecificationExecutor<Permission> {
+    // Tìm Permission theo tên
     Optional<Permission> findByPermissionName(String permissionName);
+
+    // Kiểm tra tồn tại theo tên
     boolean existsByPermissionName(String permissionName);
 }

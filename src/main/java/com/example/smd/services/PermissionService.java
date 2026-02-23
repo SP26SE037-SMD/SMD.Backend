@@ -28,7 +28,9 @@ public class PermissionService {
     private final PermissionRepository permissionRepository;
     private final PermissionMapper permissionMapper;
 
+    // GetAll quyền có phân trang
     public Page<PermissionResponse> getAllPermissions(String search, int page, int size, String[] sort) {
+        // 1. Xử lý sắp xếp (Sắp xếp theo field CamelCase của Java)
         List<Sort.Order> orders = new ArrayList<>();
         if (sort[0].contains(",")) {
             for (String sortOrder : sort) {
@@ -41,22 +43,26 @@ public class PermissionService {
 
         Pageable pagingSort = PageRequest.of(page, size, Sort.by(orders));
 
+        // 2. Lấy tất cả permission và map sang DTO
         return permissionRepository.findAll(pagingSort)
                 .map(permissionMapper::toResponse);
     }
 
+    // Lấy chi tiết quyền theo ID
     public PermissionResponse getPermissionById(UUID permissionId) {
         Permission permission = permissionRepository.findById(permissionId)
                 .orElseThrow(() -> new AppException(ErrorCode.PERMISSION_NOT_FOUND));
         return permissionMapper.toResponse(permission);
     }
 
+    // Lấy chi tiết quyền theo tên
     public PermissionResponse getPermissionByName(String permissionName) {
         Permission permission = permissionRepository.findByPermissionName(permissionName)
                 .orElseThrow(() -> new AppException(ErrorCode.PERMISSION_NOT_FOUND));
         return permissionMapper.toResponse(permission);
     }
 
+    // Tạo quyền mới
     @Transactional
     public PermissionResponse createPermission(PermissionRequest request) {
         if (permissionRepository.existsByPermissionName(request.getPermissionName())) {
@@ -68,6 +74,7 @@ public class PermissionService {
         return permissionMapper.toResponse(permission);
     }
 
+    // Cập nhật quyền
     @Transactional
     public PermissionResponse updatePermission(UUID permissionId, PermissionRequest request) {
         Permission permission = permissionRepository.findById(permissionId)
@@ -84,6 +91,7 @@ public class PermissionService {
         return permissionMapper.toResponse(permission);
     }
 
+    // Xóa quyền
     @Transactional
     public boolean deletePermission(UUID permissionId) {
         Permission permission = permissionRepository.findById(permissionId)
@@ -95,6 +103,7 @@ public class PermissionService {
         return true;
     }
 
+    // Helper method để xử lý hướng sắp xếp
     private Sort.Direction getSortDirection(String direction) {
         if (direction.equalsIgnoreCase("asc")) {
             return Sort.Direction.ASC;

@@ -16,6 +16,7 @@ public class RoleMapper {
         this.permissionMapper = permissionMapper;
     }
 
+    // Chuyển đổi từ Entity Role sang DTO RoleResponse
     public RoleResponse toResponse(Role role) {
         if (role == null) {
             return null;
@@ -34,6 +35,7 @@ public class RoleMapper {
                 .build();
     }
 
+    // Chuyển đổi từ DTO RoleRequest sang Entity Role
     public Role toEntity(RoleRequest request) {
         if (request == null) {
             return null;
@@ -45,6 +47,7 @@ public class RoleMapper {
                 .build();
     }
 
+    // Cập nhật thông tin Entity Role từ DTO RoleRequest
     public void updateEntity(Role role, RoleRequest request) {
         if (request.getRoleName() != null) {
             role.setRoleName(request.getRoleName());

@@ -28,6 +28,7 @@ import java.util.UUID;
 public class MajorController {
     MajorService majorService;
 
+    // API lấy danh sách chuyên ngành có phân trang và bộ lọc
     @GetMapping
     @Operation(
             summary = "Get majors with pagination and filters",
@@ -49,6 +50,7 @@ public class MajorController {
                 .build();
     }
 
+    // API tạo chuyên ngành mới
     @PostMapping
     @Operation(
             summary = "Create a new major",
@@ -62,6 +64,7 @@ public class MajorController {
                 .build();
     }
 
+    // API cập nhật chuyên ngành
     @PutMapping("/{id}")
     @Operation(
             summary = "Update an existing major",
@@ -75,6 +78,7 @@ public class MajorController {
                 .build();
     }
 
+    // API xóa chuyên ngành (Xóa mềm)
     @DeleteMapping("/{id}")
     @Operation(
             summary = "Delete a major (Soft Delete)",
@@ -88,6 +92,7 @@ public class MajorController {
                 .build();
     }
 
+    // API lấy chi tiết chuyên ngành theo mã chuyên ngành
     @GetMapping("/{majorCode}")
     @Operation(
             summary = "Get major details by major code",

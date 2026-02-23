@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class PermissionMapper {
 
+    // Chuyển đổi từ Entity Permission sang DTO PermissionResponse
     public PermissionResponse toResponse(Permission permission) {
         if (permission == null) {
             return null;
@@ -21,6 +22,7 @@ public class PermissionMapper {
                 .build();
     }
 
+    // Chuyển đổi từ DTO PermissionRequest sang Entity Permission
     public Permission toEntity(PermissionRequest request) {
         if (request == null) {
             return null;
@@ -32,6 +34,7 @@ public class PermissionMapper {
                 .build();
     }
 
+    // Cập nhật thông tin Entity Permission từ DTO PermissionRequest
     public void updateEntity(Permission permission, PermissionRequest request) {
         if (request.getPermissionName() != null) {
             permission.setPermissionName(request.getPermissionName());
