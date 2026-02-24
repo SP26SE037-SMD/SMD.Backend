@@ -7,8 +7,8 @@ spring:
   # ==========================================
   datasource:
     url: ${DB_URL}
-    #    username: ${DB_USERNAME}
-    #    password: ${DB_PASSWORD}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10
@@ -35,6 +35,14 @@ spring:
         order_updates: true
     open-in-view: false
 
+  # ==========================================
+  # EMAIL CONFIGURATION
+  # ==========================================
+  gmail:
+    client-id: ${CLIEND_ID}
+    client-secret: ${CLIEND_SECRET}
+    refresh-token: ${REFRESH_TOKEN}
+    sender: ${SENDER_EMAIL}
   # ==========================================
   # FLYWAY CONFIGURATION
   # ==========================================
