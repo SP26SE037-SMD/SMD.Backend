@@ -33,6 +33,12 @@ public enum ErrorCode {
     MAJOR_NAME_REQUIRED(5004, "Major name is required", HttpStatus.BAD_REQUEST),
     MAJOR_CODE_TOO_LONG(5005, "Major code must not exceed 20 characters", HttpStatus.BAD_REQUEST),
 
+    //PLOs
+    PLO_NOT_FOUND(6001, "PLO not found", HttpStatus.NOT_FOUND),
+    PLO_CODE_EXISTS(6002, "PLO code already exists in this major", HttpStatus.BAD_REQUEST),
+    PLO_CODE_REQUIRED(6003, "PLO code is required", HttpStatus.BAD_REQUEST),
+    PLO_IN_USE(6004, "Cannot delete PLO because it is currently linked to courses", HttpStatus.CONFLICT),
+
     // General
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),
     INVALID_KEY(1000, "Invalid message key", HttpStatus.BAD_REQUEST),

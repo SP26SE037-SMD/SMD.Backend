@@ -33,7 +33,6 @@ public class SecurityConfig {
             "/api/auth/login", "/api/auth/introspect",
             "/api/auth/password-reset",
             "/api/auth/me",
-            "/api/majors/**"
     };
 
     @Autowired
