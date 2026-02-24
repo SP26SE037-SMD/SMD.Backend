@@ -1,12 +1,12 @@
 package com.example.smd.services;
 
+import com.example.smd.dto.request.ResetPasswordRequest;
 import com.nimbusds.jose.*;
 import com.nimbusds.jose.crypto.MACSigner;
 import com.nimbusds.jose.crypto.MACVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import com.example.smd.dto.request.AuthenticationRequest;
-import com.example.smd.dto.request.ResetPasswordRequest;
 import com.example.smd.dto.response.AuthenticationResponse;
 import com.example.smd.dto.response.AccountResponse;
 import com.example.smd.entities.Account;
