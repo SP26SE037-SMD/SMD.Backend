@@ -16,6 +16,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -52,6 +53,7 @@ public class MajorController {
 
     // API tạo chuyên ngành mới
     @PostMapping
+    @PreAuthorize("hasAuthority('MAJOR_CREATE')")
     @Operation(
             summary = "Create a new major",
             description = "Add a new major to the system. The major code must be unique."
@@ -66,6 +68,7 @@ public class MajorController {
 
     // API cập nhật chuyên ngành
     @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('MAJOR_UPDATE')")
     @Operation(
             summary = "Update an existing major",
             description = "Update the details of an existing major based on its unique ID (UUID)."
@@ -80,6 +83,7 @@ public class MajorController {
 
     // API xóa chuyên ngành (Xóa mềm)
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('MAJOR_DELETE')")
     @Operation(
             summary = "Delete a major (Soft Delete)",
             description = "Mark a major as deleted. The record remains in the database but will be excluded from general listings."

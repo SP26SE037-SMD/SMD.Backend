@@ -3,6 +3,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import java.util.List;
+import java.util.UUID;
+
 @Getter
 @Setter
 @Builder
@@ -14,13 +16,13 @@ import java.util.List;
 public class PLOs {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    String ploId;
+    UUID ploId;
 
     @Column(name = "plo_code", nullable = false, length = 20)
     String ploCode;
 
-    @Column(name = "plo_name", nullable = false, length = 20) // Theo hình là Varchar(20) hơi ngắn, có thể nên tăng lên
-    String ploName;
+    @Column(name = "plo_name", nullable = false) // Đảm bảo nullable là true
+    String ploName; // Theo hình là Varchar(20) hơi ngắn, có thể nên tăng lên
 
     @Column(columnDefinition = "TEXT")
     String description;
