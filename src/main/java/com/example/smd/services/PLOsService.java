@@ -32,7 +32,7 @@ public class PLOsService {
     MajorRepository majorRepository;
     PLOsMapper plOsMapper;
 
-    // Create PLO với check lỗi logic
+    @Transactional
     public PLOsResponse createPlo(PLOsRequest request) {
         // 1. Check Major tồn tại
         try {
@@ -54,7 +54,6 @@ public class PLOsService {
         }
     }
 
-    // Update PLO (Chỉ sửa description và code)
     @Transactional
     public PLOsResponse updatePlo(String id, PLOsRequest request) {
         try {
@@ -78,7 +77,6 @@ public class PLOsService {
         }
     }
 
-    // Lấy chi tiết PLO
     public PLOsResponse getPloDetail(String id) {
         try {
             UUID plOsId = UUID.fromString(id);
@@ -90,7 +88,6 @@ public class PLOsService {
         }
     }
 
-    // Tìm PLOs theo MajorId (Pagination)
     public Page<PLOsResponse> getPlosByMajor(String majorId, int page, int size) {
         try {
             // Check majorId trước khi tìm kiếm
