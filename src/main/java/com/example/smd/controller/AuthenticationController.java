@@ -2,6 +2,7 @@ package com.example.smd.controller;
 
 import com.nimbusds.jose.JOSEException;
 import com.example.smd.dto.request.AuthenticationRequest;
+import com.example.smd.dto.request.LoginGoogleRequest;
 import com.example.smd.dto.request.ResetPasswordRequest;
 import com.example.smd.dto.response.AuthenticationResponse;
 import com.example.smd.dto.response.AccountResponse;
@@ -31,6 +32,17 @@ public class AuthenticationController {
                 .status(1000)
                 .data(authenticationService.authenticate(request))
                 .message("Login successfully")
+                .build();
+    }
+
+    // API đăng nhập với Google
+    @PostMapping("/login-google")
+    @Operation(summary = "Login with Google account")
+    public ResponseObject<AuthenticationResponse> authenticateGoogle(@Valid @RequestBody LoginGoogleRequest request) {
+        return ResponseObject.<AuthenticationResponse>builder()
+                .status(1000)
+                .data(authenticationService.authenticateGoogle(request))
+                .message("Login with Google successfully")
                 .build();
     }
 

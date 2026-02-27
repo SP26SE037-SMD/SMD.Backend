@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -30,7 +29,7 @@ public class SecurityConfig {
     // Danh sách các endpoint công khai không cần xác thực
     private final String[] PUBLIC_ENDPOINTS = {
             "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**",
-            "/api/auth/login", "/api/auth/introspect",
+            "/api/auth/login", "/api/auth/login-google", "/api/auth/introspect",
             "/api/auth/password-reset",
             "/api/auth/me",
     };
