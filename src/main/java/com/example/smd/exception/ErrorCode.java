@@ -39,6 +39,19 @@ public enum ErrorCode {
     PLO_CODE_REQUIRED(6003, "PLO code is required", HttpStatus.BAD_REQUEST),
     PLO_IN_USE(6004, "Cannot delete PLO because it is currently linked to courses", HttpStatus.CONFLICT),
 
+    //CLOs
+    // CLO (Course Learning Outcomes)
+    CLO_NOT_FOUND(7001, "CLO not found", HttpStatus.NOT_FOUND),
+    CLO_CODE_EXISTS(7002, "CLO code already exists in this syllabus", HttpStatus.BAD_REQUEST),
+    CLO_CODE_REQUIRED(7003, "CLO code is required", HttpStatus.BAD_REQUEST),
+    CLO_NAME_REQUIRED(7004, "CLO name is required", HttpStatus.BAD_REQUEST),
+    SYLLABUS_ID_REQUIRED(7005, "Syllabus (Subject) ID is required", HttpStatus.BAD_REQUEST),
+    BLOOM_LEVEL_REQUIRED(7006, "Bloom level is required and must be between 1-6", HttpStatus.BAD_REQUEST),
+
+    // Subject
+    SUBJECT_NOT_FOUND(8001, "Subject not found", HttpStatus.NOT_FOUND),
+    SUBJECT_CODE_EXISTS(8002, "Subject code already exists", HttpStatus.BAD_REQUEST),
+
     // General
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),
     INVALID_KEY(1000, "Invalid message key", HttpStatus.BAD_REQUEST),

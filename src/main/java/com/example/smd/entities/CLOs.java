@@ -3,6 +3,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import java.util.List;
+import java.util.UUID;
+
 @Getter
 @Setter
 @Builder
@@ -14,7 +16,7 @@ import java.util.List;
 public class CLOs {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    String cloId;
+    UUID cloId;
 
     @Column(name = "clo_code", nullable = false, length = 20)
     String cloCode;
@@ -28,7 +30,7 @@ public class CLOs {
     @Column(name = "bloom_level", length = 50)
     String bloomLevel;
 
-    // QUAN TRỌNG: Sửa từ Syllabus thành Subject theo yêu cầu của bạn
+    // QUAN TRỌNG: Sửa từ Syllabus thành Subject
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "subject_id", nullable = false)
     Subject subject;

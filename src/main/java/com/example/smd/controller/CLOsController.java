@@ -1,0 +1,85 @@
+package com.example.smd.controller;
+
+import com.example.smd.dto.request.CLOsRequest;
+import com.example.smd.dto.response.CLOsResponse;
+import com.example.smd.dto.response.ResponseObject;
+import com.example.smd.services.CLOsService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import org.springframework.data.domain.Page;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/clos")
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+@Tag(name = "CLOs", description = "Course Learning Outcomes Management APIs")
+public class CLOsController {
+
+    CLOsService closService;
+
+    @PostMapping
+    @PreAuthorize("hasAuthority('CLOS_UPDATE')")
+    @Operation(summary = "Create a new CLO for a specific Subject")
+    public ResponseObject<CLOsResponse> create(@RequestBody @Valid CLOsRequest request) {
+        return ResponseObject.<CLOsResponse>builder()
+                .status(1000)
+                .data(closService.createClo(request))
+                .message("CLO created successfully")
+                .build();
+    }
+
+    @GetMapping("/{id}")
+    @Operation(summary = "Get detailed information of a CLO by ID")
+    public ResponseObject<CLOsResponse> getDetail(@PathVariable String id) {
+        return ResponseObject.<CLOsResponse>builder()
+                .status(1000)
+                .data(closService.getCloDetail(id))
+                .message("Get CLO detail successfully")
+                .build();
+    }
+
+    @GetMapping("/subject/{subjectId}")
+    @Operation(summary = "Get list of CLOs by Subject ID with pagination")
+    public ResponseObject<Page<CLOsResponse>> getBySubject(
+            @PathVariable String subjectId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseObject.<Page<CLOsResponse>>builder()
+                .status(1000)
+                .data(closService.getClosBySubject(subjectId, page, size))
+                .message("Get CLOs by subject successfully")
+                .build();
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('CLOS_UPDATE')")
+    @Operation(summary = "Update CLO information including Code, Name, Description, and Bloom Level")
+    public ResponseObject<CLOsResponse> update(
+            @PathVariable String id,
+            @RequestBody @Valid CLOsRequest request) {
+        return ResponseObject.<CLOsResponse>builder()
+                .status(1000)
+                .data(closService.updateClo(id, request))
+                .message("CLO updated successfully")
+                .build();
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('CLOS_DELETE')")
+    @Operation(summary = "Delete a CLO")
+    public ResponseObject<Void> delete(@PathVariable String id) {
+        closService.deleteClo(id);
+        return ResponseObject.<Void>builder()
+                .status(1000)
+                .message("CLO deleted successfully")
+                .build();
+    }
+}
