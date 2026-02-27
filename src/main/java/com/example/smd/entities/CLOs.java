@@ -30,7 +30,7 @@ public class CLOs {
     @Column(name = "bloom_level", length = 50)
     String bloomLevel;
 
-    // QUAN TRỌNG: Sửa từ Syllabus thành Subject theo yêu cầu của bạn
+    // QUAN TRỌNG: Sửa từ Syllabus thành Subject
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "subject_id", nullable = false)
     Subject subject;

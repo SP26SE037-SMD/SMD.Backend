@@ -1,6 +1,11 @@
 package com.example.smd.services;
 
+import com.example.smd.dto.request.LoginGoogleRequest;
 import com.example.smd.dto.request.ResetPasswordRequest;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.gson.GsonFactory;
 import com.nimbusds.jose.*;
 import com.nimbusds.jose.crypto.MACSigner;
 import com.nimbusds.jose.crypto.MACVerifier;
@@ -24,10 +29,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
 import java.text.ParseException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Collections;
 import java.util.Date;
 import java.util.StringJoiner;
 import java.util.UUID;
@@ -40,6 +48,7 @@ import org.springframework.util.CollectionUtils;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class AuthenticationService {
 
+    private final GoogleIdTokenVerifier googleIdTokenVerifier;
     AccountRepository accountRepository;
     AccountMapper accountMapper;
     PasswordEncoder passwordEncoder;
@@ -55,6 +64,7 @@ public class AuthenticationService {
     @NonFinal
     @Value("${jwt.refreshable-duration}")
     protected long REFRESHABLE_DURATION;
+
 
     // Xác thực đăng nhập và tạo token
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
@@ -85,6 +95,55 @@ public class AuthenticationService {
                 .account(accountMapper.toResponse(account))
                 .build();
     }
+
+    // Xác thực đăng nhập Google và tạo token
+    public AuthenticationResponse authenticateGoogle(LoginGoogleRequest request) {
+
+        // 1. Verify token
+        GoogleIdToken.Payload payload = null;
+        try {
+            payload = verifyGoogleToken(request.getIdToken());
+        } catch (GeneralSecurityException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        String email = payload.getEmail();
+        String name = (String) payload.get("name");
+
+        // 2. Tìm account theo email
+        Account account = accountRepository.findByEmail(email)
+                .orElseThrow(()-> new AppException(ErrorCode.ACCOUNT_NOT_FOUND, "Account not found with email: " + email));
+
+        if (!account.getIsActive()) {
+            throw new AppException(ErrorCode.ACCOUNT_NOT_FOUND, "Account inactive");
+        }
+
+        // 3. Tạo JWT của bạn
+        String token = generateToken(account);
+
+        account.setLastLogin(Instant.now());
+        accountRepository.save(account);
+
+        return AuthenticationResponse.builder()
+                .authenticated(true)
+                .token(token)
+                .account(accountMapper.toResponse(account))
+                .build();
+    }
+
+    public GoogleIdToken.Payload verifyGoogleToken(String idTokenString) throws GeneralSecurityException, IOException {
+
+        GoogleIdToken idToken = googleIdTokenVerifier.verify(idTokenString);
+
+        if (idToken == null) {
+            throw new AppException(ErrorCode.UNAUTHENTICATED, "Invalid Google token");
+        }
+
+        return idToken.getPayload();
+    }
+
 
     // Xác thực token JWT
     public void verifyToken(String token, boolean isRefresh) throws ParseException, JOSEException {
