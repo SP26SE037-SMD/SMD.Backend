@@ -87,7 +87,16 @@ logging:
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
     org.flywaydb: INFO
     com.example.smd: DEBUG
-
+# =========================================
+# GEMINI GOOGLE
+# =========================================
+# Cấu hình Custom cho dự án
+gemini:
+  api-key: ${GEMINI_API_KEY}
+  generate:
+    url: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
+  check:
+    url: https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent
 ---
 # ==========================================
 # DEVELOPMENT PROFILE
