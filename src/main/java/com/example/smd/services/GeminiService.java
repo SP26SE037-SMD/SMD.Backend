@@ -1,0 +1,95 @@
+package com.example.smd.services;
+
+import com.example.smd.config.GeminiConfig;
+import com.example.smd.dto.request.CloCheckRequest;
+import com.example.smd.dto.request.CloGenerationRequest;
+import com.example.smd.dto.response.CLOsGenerationResponse;
+import com.example.smd.dto.response.CloCheckResponse;
+import com.example.smd.exception.AppException;
+import com.example.smd.exception.ErrorCode;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+@Slf4j
+@Service
+public class GeminiService {
+
+    @Autowired
+    private GeminiConfig gemini;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @Value("${gemini.generate.url}")
+    private String apiGenerateUrl;
+
+    @Value("${gemini.check.url}")
+    private String apiCheckUrl;
+
+    public CLOsGenerationResponse generateClo(CloGenerationRequest req) {
+        // 1. Ghép dữ liệu vào Prompt bằng hàm format đã chuẩn bị
+        String finalPrompt = String.format(PromptTemplateService.CLO_GENERATOR,
+                req.getSubjectName(),
+                req.getTopicName(),
+                req.getBloomLevel(),
+                req.getDescriptionPlo()
+        );
+
+        // 2. Gọi API Gemini
+        String response = gemini.generateClo(finalPrompt, apiGenerateUrl);
+
+        // 3. Xử lý Parse JSON
+        try {
+            // Làm sạch chuỗi JSON (xóa các dấu ```json nếu có)
+            String cleanJson = response.replaceAll("(?s)```json(.*?)```|```", "$1").trim();
+
+            // Parse trực tiếp sang Object DTO
+            return objectMapper.readValue(cleanJson, CLOsGenerationResponse.class);
+
+        } catch (JsonProcessingException e) {
+            log.error("Failed to parse Gemini response: {}", response);
+            // Ném lỗi hệ thống nếu AI trả về sai định dạng
+            throw new AppException(ErrorCode.AI_GENERATION_FAILED);
+        }
+    }
+
+    public CloCheckResponse checkClo(CloCheckRequest req) {
+        // 1. Tạo Prompt từ Template
+        String prompt = String.format(PromptTemplateService.VALIDATOR_PROMPT,
+                req.getCloContent(),
+                req.getTargetLevel());
+
+        // 2. Gọi API thông qua Gemini Client
+        String jsonResult = gemini.generateClo(prompt, apiCheckUrl);
+
+        // 3. Parse chuỗi JSON thành Object Java
+        try {
+            // Làm sạch chuỗi JSON (xử lý khối code markdown nếu có)
+            String cleanJson = jsonResult.replaceAll("(?s)```json(.*?)```|```", "$1").trim();
+
+            // Sử dụng objectMapper chung của class để parse
+            return objectMapper.readValue(cleanJson, CloCheckResponse.class);
+
+        } catch (JsonProcessingException e) {
+            log.error("AI Validation Response Error: {}", jsonResult);
+            // Ném lỗi 9002 (Invalid Format) mà chúng ta đã thêm trước đó
+            throw new AppException(ErrorCode.AI_RESPONSE_INVALID_FORMAT);
+        } catch (Exception e) {
+            log.error("Unexpected error during CLO validation: {}", e.getMessage());
+            throw new AppException(ErrorCode.AI_GENERATION_FAILED);
+        }
+    }
+
+    private String cleanText(String text) {
+        if (text == null) return "";
+        // Xóa dấu ngoặc kép, xóa chữ Output thừa, xóa khoảng trắng đầu cuối
+        return text.replace("\"", "")
+                .replace("Output:", "")
+                .replace("*", "") // Gemini hay trả về dấu * đầu dòng
+                .trim();
+    }
+}

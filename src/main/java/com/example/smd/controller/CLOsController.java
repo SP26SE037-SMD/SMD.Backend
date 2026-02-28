@@ -1,9 +1,14 @@
 package com.example.smd.controller;
 
 import com.example.smd.dto.request.CLOsRequest;
+import com.example.smd.dto.request.CloCheckRequest;
+import com.example.smd.dto.request.CloGenerationRequest;
+import com.example.smd.dto.response.CLOsGenerationResponse;
 import com.example.smd.dto.response.CLOsResponse;
+import com.example.smd.dto.response.CloCheckResponse;
 import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.services.CLOsService;
+import com.example.smd.services.GeminiService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -11,6 +16,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.data.domain.Page;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,6 +30,7 @@ import java.util.List;
 public class CLOsController {
 
     CLOsService closService;
+    GeminiService geminiService;
 
     @PostMapping
     @PreAuthorize("hasAuthority('CLOS_UPDATE')")
@@ -81,5 +88,21 @@ public class CLOsController {
                 .status(1000)
                 .message("CLO deleted successfully")
                 .build();
+    }
+
+    @PostMapping("/generate")
+    @PreAuthorize("hasAuthority('CLOS_GENERATE')")
+    @Operation(summary = "Generate a new CLO using AI")
+    public ResponseEntity<CLOsGenerationResponse> generateClo(@RequestBody @Valid CloGenerationRequest request) {
+        CLOsGenerationResponse result = geminiService.generateClo(request);
+        return ResponseEntity.ok(result);
+    }
+
+    @PostMapping("/check")
+    @PreAuthorize("hasAuthority('CLOS_CHECK')")
+    @Operation(summary = "Validate CLO against Bloom's Taxonomy")
+    public ResponseEntity<CloCheckResponse> checkClo(@RequestBody @Valid CloCheckRequest request) {
+        CloCheckResponse result = geminiService.checkClo(request);
+        return ResponseEntity.ok(result);
     }
 }

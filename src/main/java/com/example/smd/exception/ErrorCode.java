@@ -52,6 +52,12 @@ public enum ErrorCode {
     SUBJECT_NOT_FOUND(8001, "Subject not found", HttpStatus.NOT_FOUND),
     SUBJECT_CODE_EXISTS(8002, "Subject code already exists", HttpStatus.BAD_REQUEST),
 
+    // Gemini
+    // AI & External Services (9xxx)
+    AI_GENERATION_FAILED(9001, "AI failed to generate valid content, please try again", HttpStatus.INTERNAL_SERVER_ERROR),
+    AI_RESPONSE_INVALID_FORMAT(9002, "AI response is not in a valid JSON format", HttpStatus.UNPROCESSABLE_ENTITY),
+    GEMINI_API_ERROR(9003, "Error occurred while calling Gemini API", HttpStatus.BAD_GATEWAY),
+
     // General
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),
     INVALID_KEY(1000, "Invalid message key", HttpStatus.BAD_REQUEST),
