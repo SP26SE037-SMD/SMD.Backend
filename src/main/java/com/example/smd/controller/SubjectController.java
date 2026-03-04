@@ -1,5 +1,6 @@
 package com.example.smd.controller;
 
+import com.example.smd.dto.request.SubjectPublishRequest;
 import com.example.smd.dto.request.SubjectRequest;
 import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.dto.response.SubjectResponse;
@@ -16,6 +17,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -31,6 +33,7 @@ public class SubjectController {
 
     @PostMapping
     @Operation(summary = "Create a new subject", description = "Registers a new subject in the system with unique subject code")
+    @PreAuthorize("hasAuthority('SUBJECT_CREATE')")
     public ResponseObject<SubjectResponse> create(@RequestBody @Valid SubjectRequest request) {
         return ResponseObject.<SubjectResponse>builder()
                 .data(subjectService.create(request))
@@ -77,6 +80,7 @@ public class SubjectController {
 
     @PutMapping("/{id}")
     @Operation(summary = "Update subject information")
+    @PreAuthorize("hasAuthority('SUBJECT_UPDATE')")
     public ResponseObject<SubjectResponse> update(
             @PathVariable UUID id,
             @RequestBody @Valid SubjectRequest request) {
@@ -87,11 +91,27 @@ public class SubjectController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('SUBJECT_DELETE')")
     @Operation(summary = "Soft delete subject", description = "Sets subject status to inactive instead of hard deleting from database")
     public ResponseObject<Void> delete(@PathVariable UUID id) {
         subjectService.delete(id);
         return ResponseObject.<Void>builder()
                 .message("Subject deleted successfully")
+                .build();
+    }
+
+    @PatchMapping("/{id}/publish")
+    @PreAuthorize("hasAuthority('SUBJECT_PUBLISH')")
+    @Operation(
+            summary = "Publish a subject syllabus",
+            description = "Change subject status from Draft to Published. Requires 'SUBJECT_PUBLISH' authority and a valid decision number."
+    )
+    public ResponseObject<SubjectResponse> publish(
+            @PathVariable UUID id,
+            @RequestBody @Valid SubjectPublishRequest request) {
+        return ResponseObject.<SubjectResponse>builder()
+                .data(subjectService.publishSubject(id, request.getDecisionNo()))
+                .message("Subject published successfully with decision: " + request.getDecisionNo())
                 .build();
     }
 }

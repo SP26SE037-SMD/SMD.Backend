@@ -18,3 +18,6 @@ ALTER TABLE subjects
 
 -- 3. Cập nhật kiểu dữ liệu cho description
 ALTER TABLE subjects ALTER COLUMN description TYPE TEXT;
+
+ALTER TABLE elective
+    ADD COLUMN IF NOT EXISTS elective_code VARCHAR(20) NOT NULL UNIQUE;

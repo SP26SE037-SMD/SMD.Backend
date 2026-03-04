@@ -21,6 +21,9 @@ public class Elective {
     @Column(name = "elective_id")
     UUID electiveId;
 
+    @Column(name = "elective_code", unique = true, nullable = false, length = 20)
+    String electiveCode;
+
     @Column(name = "elective_name", nullable = false, length = 100)
     String electiveName;
 

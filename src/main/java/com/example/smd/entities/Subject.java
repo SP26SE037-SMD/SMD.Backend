@@ -64,6 +64,9 @@ public class Subject {
     @Column(name = "status")
     Boolean status = true; // Active/Inactive
 
+    @Column(name = "approved_date")
+    Instant approvedDate;
+
     @Column(name = "created_at")
     Instant createdAt;
 
