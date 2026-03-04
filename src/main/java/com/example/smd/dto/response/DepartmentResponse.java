@@ -12,10 +12,10 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class ElectiveResponse {
-    UUID electiveId;
-    String electiveCode;
-    String electiveName;
+public class DepartmentResponse {
+    UUID departmentId;
+    String departmentCode;
+    String departmentName;
     String description;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+7")

@@ -1,5 +1,6 @@
 package com.example.smd.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -26,6 +27,8 @@ public class SubjectResponse {
     String decisionNo;
 
     Boolean isApproved;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+7")
     Instant approvedDate; // Dùng Instant để đồng bộ với Entity
 
     // Map từ field 'status' trong Entity của bạn
@@ -35,5 +38,7 @@ public class SubjectResponse {
     UUID departmentId;
 
     UUID electiveId;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+7")
     Instant createdAt;
 }
