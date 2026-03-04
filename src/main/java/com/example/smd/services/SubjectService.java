@@ -8,6 +8,7 @@ import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.SubjectMapper;
 import com.example.smd.repositories.SubjectRepository;
 import jakarta.persistence.criteria.Predicate;
+import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -17,6 +18,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -91,5 +93,21 @@ public class SubjectService {
                 .orElseThrow(() -> new AppException(ErrorCode.SUBJECT_NOT_FOUND));
 
         return subjectMapper.toSubjectResponse(subject);
+    }
+
+    @Transactional
+    public SubjectResponse publishSubject(UUID subjectId, String decisionNo) {
+        // 1. Tìm môn học, nếu không thấy thì ném lỗi
+        Subject subject = subjectRepository.findById(subjectId)
+                .orElseThrow(() -> new AppException(ErrorCode.SUBJECT_NOT_FOUND));
+
+        // 2. Cập nhật các trường liên quan đến việc ban hành
+        subject.setDecisionNo(decisionNo);       // Gán số quyết định ban hành
+        subject.setIsApproved(true);             // Đánh dấu đã phê duyệt
+        subject.setStatus(true);                 // Chuyển từ Draft (null) sang Active (true)
+        subject.setApprovedDate(Instant.now());  // Lưu ngày phê duyệt (nếu có field này)
+
+        // 3. Lưu và trả về response
+        return subjectMapper.toSubjectResponse(subjectRepository.save(subject));
     }
 }

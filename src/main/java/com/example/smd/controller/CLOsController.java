@@ -33,7 +33,7 @@ public class CLOsController {
     GeminiService geminiService;
 
     @PostMapping
-    @PreAuthorize("hasAuthority('CLOS_UPDATE')")
+    @PreAuthorize("hasAuthority('CLOS_CREATE')")
     @Operation(summary = "Create a new CLO for a specific Subject")
     public ResponseObject<CLOsResponse> create(@RequestBody @Valid CLOsRequest request) {
         return ResponseObject.<CLOsResponse>builder()
