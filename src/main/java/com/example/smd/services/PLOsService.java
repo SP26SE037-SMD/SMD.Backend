@@ -50,7 +50,7 @@ public class PLOsService {
 
             return plOsMapper.toPloResponse(plOsRepository.save(plo));
         } catch (IllegalArgumentException e) {
-            throw new AppException(ErrorCode.INVALID_KEY); // Hoặc một mã lỗi định dạng ID không hợp lệ
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION); // Hoặc một mã lỗi định dạng ID không hợp lệ
         }
     }
 
@@ -73,7 +73,7 @@ public class PLOsService {
 
             return plOsMapper.toPloResponse(plOsRepository.save(plo));
         } catch (IllegalArgumentException e) {
-            throw new AppException(ErrorCode.INVALID_KEY); // Hoặc một mã lỗi định dạng ID không hợp lệ
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION); // Hoặc một mã lỗi định dạng ID không hợp lệ
         }
     }
 
@@ -84,7 +84,7 @@ public class PLOsService {
                     .map(plOsMapper::toPloResponse)
                     .orElseThrow(() -> new AppException(ErrorCode.PLO_NOT_FOUND));
         } catch (IllegalArgumentException e) {
-            throw new AppException(ErrorCode.INVALID_KEY); // Hoặc một mã lỗi định dạng ID không hợp lệ
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION); // Hoặc một mã lỗi định dạng ID không hợp lệ
         }
     }
 
@@ -100,7 +100,7 @@ public class PLOsService {
             return plOsRepository.findByMajor_MajorId(id, pageable)
                     .map(plOsMapper::toPloResponse);
         } catch (IllegalArgumentException e) {
-            throw new AppException(ErrorCode.INVALID_KEY); // Hoặc một mã lỗi định dạng ID không hợp lệ
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION); // Hoặc một mã lỗi định dạng ID không hợp lệ
         }
     }
 
@@ -124,7 +124,7 @@ public class PLOsService {
             plOsRepository.delete(plo);
 
         } catch (IllegalArgumentException e) {
-            throw new AppException(ErrorCode.INVALID_KEY);
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
         }
     }
 }

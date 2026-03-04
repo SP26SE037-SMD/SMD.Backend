@@ -72,7 +72,7 @@ public class CLOsService {
 
         } catch (IllegalArgumentException e) {
             // Ném lỗi nếu định dạng ID không hợp lệ
-            throw new AppException(ErrorCode.INVALID_KEY);
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
         }
     }
 
@@ -103,7 +103,7 @@ public class CLOsService {
             closRepository.delete(clo);
 
         } catch (IllegalArgumentException e) {
-            throw new AppException(ErrorCode.INVALID_KEY);
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
         }
     }
 
@@ -117,7 +117,7 @@ public class CLOsService {
                     .orElseThrow(() -> new AppException(ErrorCode.CLO_NOT_FOUND));
 
         } catch (IllegalArgumentException e) {
-            throw new AppException(ErrorCode.INVALID_KEY);
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
         }
     }
 }

@@ -4,6 +4,7 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -17,7 +18,7 @@ public class Department {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "department_id")
-    String departmentId;
+    UUID departmentId;
 
     @Column(name = "department_code", unique = true, nullable = false, length = 20)
     String departmentCode;
