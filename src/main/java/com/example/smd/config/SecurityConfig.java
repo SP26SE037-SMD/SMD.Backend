@@ -31,9 +31,7 @@ public class SecurityConfig {
             "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**",
             "/api/auth/login", "/api/auth/login-google", "/api/auth/introspect",
             "/api/auth/password-reset",
-            "/api/auth/me",
-            "/api/subjects/**",
-            "/api/electives/**"
+            "/api/auth/me"
     };
 
     @Autowired
