@@ -1,6 +1,7 @@
 package com.example.smd.enums;
 
 public enum NotificationType {
+
     SYSTEM,         // Thông báo hệ thống
     TASK_ASSIGNED,  // Được giao task
     REVIEW_REQUEST, // Yêu cầu review

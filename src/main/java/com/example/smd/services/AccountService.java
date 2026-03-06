@@ -1,6 +1,7 @@
 package com.example.smd.services;
 
-import com.example.smd.dto.request.AccountRequest;
+import com.example.smd.dto.request.account.AccountRequest;
+import com.example.smd.dto.request.account.AccountUpdateRequest;
 import com.example.smd.dto.response.AccountResponse;
 import com.example.smd.entities.Account;
 import com.example.smd.entities.Role;
@@ -21,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 @Slf4j
@@ -72,23 +74,21 @@ public class AccountService {
     // Tạo tài khoản mới
     @Transactional
     public AccountResponse createAccount(AccountRequest request) {
-        // 1. Kiểm tra username đã tồn tại chưa
-        if (accountRepository.existsByUsername(request.getUsername())) {
-            throw new AppException(ErrorCode.USERNAME_EXISTS);
-        }
-
-        // 2. Kiểm tra email đã tồn tại chưa
+        // 1. Kiểm tra email đã tồn tại chưa
         if (accountRepository.existsByEmail(request.getEmail())) {
             throw new AppException(ErrorCode.EMAIL_EXISTS);
+        } else if (!roleRepository.existsByRoleName(request.getRoleName().toUpperCase(Locale.ROOT))) {
+            throw new AppException(ErrorCode.ROLE_NOT_FOUND);
         }
 
-        // 3. Tạo entity Account và mã hóa password
+        // 2. Tạo entity Account và mã hóa password
         Account account = accountMapper.toEntity(request);
         account.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+        // username tự động được set = email trong mapper
 
-        // 4. Gán role cho account nếu có
-        if (request.getRoleId() != null) {
-            Role role = roleRepository.findById(request.getRoleId())
+        // 3. Gán role cho account nếu có
+        if (request.getRoleName() != null) {
+            Role role = roleRepository.findByRoleName(request.getRoleName().toUpperCase())
                     .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
             account.setRole(role);
         }
@@ -99,27 +99,17 @@ public class AccountService {
 
     // Cập nhật thông tin tài khoản
     @Transactional
-    public AccountResponse updateAccount(String accountId, AccountRequest request) {
+    public AccountResponse updateAccount(String accountId, AccountUpdateRequest request) {
         var convert = UUID.fromString(accountId);
         Account account = accountRepository.findById(convert)
                 .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND));
 
-        if (request.getEmail() != null &&
-                !request.getEmail().equals(account.getEmail()) &&
-                accountRepository.existsByEmail(request.getEmail())) {
-            throw new AppException(ErrorCode.EMAIL_EXISTS);
-        }
 
         accountMapper.updateEntity(account, request);
 
+
         if (request.getPassword() != null && !request.getPassword().isEmpty()) {
             account.setPasswordHash(passwordEncoder.encode(request.getPassword()));
-        }
-
-        if (request.getRoleId() != null) {
-            Role role = roleRepository.findById(request.getRoleId())
-                    .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
-            account.setRole(role);
         }
 
         account = accountRepository.save(account);

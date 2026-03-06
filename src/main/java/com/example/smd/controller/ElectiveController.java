@@ -2,9 +2,11 @@ package com.example.smd.controller;
 
 import com.example.smd.dto.request.ElectiveRequest;
 import com.example.smd.dto.response.ElectiveResponse;
+import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.services.ElectiveService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
@@ -21,6 +23,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Tag(name = "Elective", description = "Endpoints for managing elective groups in the SMD system")
+@SecurityRequirement(name = "bearerAuth")
+
 public class ElectiveController {
     ElectiveService electiveService;
 
@@ -39,13 +43,13 @@ public class ElectiveController {
     @GetMapping
     @Operation(summary = "Get list of elective groups",
             description = "Support searching by code/name and pagination (page, size)")
-    public ResponseObject<Page<ElectiveResponse>> getAll(
+    public ResponseObject<PagedResponse<ElectiveResponse>> getAll(
             @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        return ResponseObject.<Page<ElectiveResponse>>builder()
+        return ResponseObject.<PagedResponse<ElectiveResponse>>builder()
                 .status(1000)
-                .data(electiveService.getAll(search, page, size))
+                .data(PagedResponse.of(electiveService.getAll(search, page, size)))
                 .message("Get all electives successfully")
                 .build();
     }

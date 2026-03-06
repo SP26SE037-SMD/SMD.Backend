@@ -2,11 +2,13 @@ package com.example.smd.controller;
 
 import com.example.smd.dto.request.SubjectPublishRequest;
 import com.example.smd.dto.request.SubjectRequest;
+import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.dto.response.SubjectResponse;
 import com.example.smd.services.SubjectService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
@@ -26,6 +28,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Tag(name = "Subject", description = "Endpoints for managing academic subjects and their metadata")
+@SecurityRequirement(name = "bearerAuth")
+
 public class SubjectController {
 
     SubjectService subjectService;
@@ -45,7 +49,7 @@ public class SubjectController {
             summary = "Advanced search subjects with pagination",
             description = "Search by 'code' or 'name' directly at the database level. Filters by status is also supported."
     )
-    public ResponseObject<Page<SubjectResponse>> getAll(
+    public ResponseObject<PagedResponse<SubjectResponse>> getAll(
             @RequestParam(required = false) String search,
             @RequestParam(required = false, defaultValue = "code") String searchBy,
             @Parameter(description = "Filter by status: null (Draft), true (Published), false (Hidden)")
@@ -58,8 +62,8 @@ public class SubjectController {
         Sort sort = direction.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
         Pageable pageable = PageRequest.of(page, size, sort);
 
-        return ResponseObject.<Page<SubjectResponse>>builder()
-                .data(subjectService.getAll(search, searchBy,status, pageable))
+        return ResponseObject.<PagedResponse<SubjectResponse>>builder()
+                .data(PagedResponse.of(subjectService.getAll(search, searchBy,status, pageable)))
                 .message("Subjects retrieved successfully")
                 .build();
     }

@@ -102,20 +102,40 @@ public class RoleService {
 
         roleMapper.updateEntity(role, request);
 
-        // Cập nhật lại danh sách permission nếu có
-        if (request.getPermissionIds() != null) {
-            Set<Permission> permissions = new HashSet<>();
+        // Cập nhật lại danh sách permission nếu có (chỉ thêm mới, không xóa cũ)
+        if (request.getPermissionIds() != null && !request.getPermissionIds().isEmpty()) {
             for (String permissionId : request.getPermissionIds()) {
                 var convert = UUID.fromString(permissionId);
                 Permission permission = permissionRepository.findById(convert)
                         .orElseThrow(() -> new AppException(ErrorCode.PERMISSION_NOT_FOUND));
-                permissions.add(permission);
+                role.getPermissions().add(permission); // Chỉ thêm, Set sẽ tự động loại bỏ trùng lặp
             }
-            role.getPermissions().clear();
-            role.getPermissions().addAll(permissions);
         }
 
         role = roleRepository.save(role);
+        return roleMapper.toResponse(role);
+    }
+
+    // Xóa danh sách permission khỏi role
+    @Transactional
+    public RoleResponse removePermissionsFromRole(UUID roleId, List<String> permissionIds) {
+        Role role = roleRepository.findById(roleId)
+                .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
+
+        if (permissionIds == null || permissionIds.isEmpty()) {
+            throw new AppException(ErrorCode.PERMISSION_LIST_REQUIRED);
+        }
+
+        // Xóa từng permission khỏi role
+        for (String permissionId : permissionIds) {
+            var convert = UUID.fromString(permissionId);
+            Permission permission = permissionRepository.findById(convert)
+                    .orElseThrow(() -> new AppException(ErrorCode.PERMISSION_NOT_FOUND));
+            role.getPermissions().remove(permission);
+        }
+
+        role = roleRepository.save(role);
+        log.info("Removed {} permissions from role: {}", permissionIds.size(), role.getRoleName());
         return roleMapper.toResponse(role);
     }
 

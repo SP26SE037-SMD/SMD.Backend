@@ -2,6 +2,7 @@ package com.example.smd.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -15,10 +16,10 @@ import java.time.Instant;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class AccountResponse {
     java.util.UUID accountId;
-    String username;
     String email;
     String fullName;
-    RoleResponse role;
+    @Schema(example = "ADMIN / LECTURER / STUDENT / COLLABORATOR / HoCFDC /  HoPDC / PDCM /  ")
+    String role;
     Boolean isActive;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+7")

@@ -25,6 +25,7 @@ public enum ErrorCode {
     // Permission
     PERMISSION_NOT_FOUND(4001, "Permission not found", HttpStatus.NOT_FOUND),
     PERMISSION_EXISTS(4002, "Permission already exists", HttpStatus.BAD_REQUEST),
+    PERMISSION_LIST_REQUIRED(4003, "Permission list is required", HttpStatus.BAD_REQUEST),
 
     // Major
     MAJOR_NOT_FOUND(5001, "Major not found", HttpStatus.NOT_FOUND),
@@ -79,6 +80,17 @@ public enum ErrorCode {
     DEPARTMENT_HAS_CONSTRAINTS(12005, "Cannot delete department with linked subjects or lecturers", HttpStatus.CONFLICT),
     DEPARTMENT_CODE_CANNOT_BE_CHANGED(12006, "Department code cannot be modified after creation", HttpStatus.BAD_REQUEST),
 
+    //Notification
+    NOTIFICATION_NOT_FOUND(15001, "Notification not found", HttpStatus.NOT_FOUND),
+    TITLE_REQUIRED(15002, "Notification title cannot be blank", HttpStatus.BAD_REQUEST),
+    MESSAGE_REQUIRED(15003, "Notification message cannot be blank", HttpStatus.BAD_REQUEST),
+    TYPE_REQUIRED(15004, "Notification type is required", HttpStatus.BAD_REQUEST),
+    ACCOUNT_ID_REQUIRED(15005, "Account ID is required for notification", HttpStatus.BAD_REQUEST),
+
+    //System Log
+    LOG_NOT_FOUND(14001, "System log not found", HttpStatus.NOT_FOUND),
+    ACTION_REQUIRED(14002, "Action is required", HttpStatus.BAD_REQUEST),
+    ACTION_TOO_LONG(14003, "Action must not exceed 100 characters", HttpStatus.BAD_REQUEST),
     //PREREQUISITE
     PREREQUISITE_NOT_FOUND(13001, "Prerequisite relationship not found", HttpStatus.NOT_FOUND),
     PREREQUISITE_ALREADY_EXISTS(13002, "This prerequisite relationship already exists", HttpStatus.BAD_REQUEST),
