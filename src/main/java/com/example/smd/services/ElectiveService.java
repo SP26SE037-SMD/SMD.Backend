@@ -3,10 +3,16 @@ package com.example.smd.services;
 import com.example.smd.dto.request.ElectiveRequest;
 import com.example.smd.dto.response.ElectiveResponse;
 import com.example.smd.entities.Elective;
+import com.example.smd.entities.Elective_Subject;
+import com.example.smd.entities.Subject;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.ElectiveMapper;
+import com.example.smd.mapper.SubjectMapper;
 import com.example.smd.repositories.ElectiveRepository;
+import com.example.smd.repositories.ElectiveSubjectRepository;
+import com.example.smd.repositories.SubjectRepository;
+import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -25,6 +31,9 @@ import java.util.UUID;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class ElectiveService {
     ElectiveRepository electiveRepository;
+    ElectiveSubjectRepository electiveSubjectRepository;
+    SubjectRepository subjectRepository;
+
     ElectiveMapper electiveMapper;
 
     // Create - Kiểm tra mã trùng
@@ -61,7 +70,7 @@ public class ElectiveService {
         }
 
         // Gợi ý: Kiểm tra thêm nếu nhóm đang chứa Subjects thì không cho xóa
-        // if (subjectRepository.existsByElectiveId(id)) throw new AppException(ErrorCode.ELECTIVE_HAS_SUBJECTS);
+         if (electiveSubjectRepository.existsByElective_ElectiveId(id)) throw new AppException(ErrorCode.ELECTIVE_HAS_SUBJECTS);
 
         electiveRepository.deleteById(id);
     }
@@ -87,5 +96,36 @@ public class ElectiveService {
         return electiveRepository.findAllByElectiveNameContainingIgnoreCaseOrElectiveCodeContainingIgnoreCase(
                         search, search, pageable)
                 .map(electiveMapper::toElectiveResponse);
+    }
+
+    @Transactional
+    public void addSubjectToElective(UUID electiveId, UUID subjectId) {
+        // 1. Kiểm tra tồn tại
+        Elective elective = electiveRepository.findById(electiveId)
+                .orElseThrow(() -> new AppException(ErrorCode.ELECTIVE_NOT_FOUND));
+        Subject subject = subjectRepository.findById(subjectId)
+                .orElseThrow(() -> new AppException(ErrorCode.SUBJECT_NOT_FOUND));
+
+        // 2. Kiểm tra xem đã tồn tại liên kết chưa để tránh lỗi Duplicate Key
+        boolean exists = electiveSubjectRepository.existsByElective_ElectiveIdAndSubject_SubjectId(electiveId, subjectId);
+        if (exists) {
+            throw new AppException(ErrorCode.ELECTIVE_SUBJECT_ALREADY_EXISTS);
+        }
+
+        // 3. Lưu liên kết
+        Elective_Subject link = Elective_Subject.builder()
+                .elective(elective)
+                .subject(subject)
+                .build();
+        electiveSubjectRepository.save(link);
+    }
+
+    @Transactional
+    public void removeSubjectFromElective(UUID electiveId, UUID subjectId) {
+        // Tìm bản ghi cụ thể để xóa
+        Elective_Subject link = electiveSubjectRepository.findByElective_ElectiveIdAndSubject_SubjectId(electiveId, subjectId)
+                .orElseThrow(() -> new AppException(ErrorCode.ELECTIVE_SUBJECT_NOT_FOUND));
+
+        electiveSubjectRepository.delete(link);
     }
 }

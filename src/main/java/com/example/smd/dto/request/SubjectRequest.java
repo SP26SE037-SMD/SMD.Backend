@@ -21,7 +21,6 @@ public class SubjectRequest {
     Integer credits;
     String degreeLevel;
     String timeAllocation;
-    UUID preRequisite;
     String description;
     String studentTasks;
     Integer scoringScale;

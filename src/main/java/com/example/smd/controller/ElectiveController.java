@@ -85,5 +85,31 @@ public class ElectiveController {
                 .message("Delete elective successfully")
                 .build();
     }
+
+    @PostMapping("/{electiveId}/subjects/{subjectId}")
+    @Operation(summary = "Add a subject to an elective group")
+    @PreAuthorize("hasAuthority('ELECTIVE_MANAGE_SUBJECTS')")
+    public ResponseObject<Void> addSubject(
+            @PathVariable UUID electiveId,
+            @PathVariable UUID subjectId) {
+        electiveService.addSubjectToElective(electiveId, subjectId);
+        return ResponseObject.<Void>builder()
+                .status(1000)
+                .message("Subject added to elective group successfully")
+                .build();
+    }
+
+    @DeleteMapping("/{electiveId}/subjects/{subjectId}")
+    @Operation(summary = "Remove a subject from an elective group")
+    @PreAuthorize("hasAuthority('ELECTIVE_MANAGE_SUBJECTS')")
+    public ResponseObject<Void> removeSubject(
+            @PathVariable UUID electiveId,
+            @PathVariable UUID subjectId) {
+        electiveService.removeSubjectFromElective(electiveId, subjectId);
+        return ResponseObject.<Void>builder()
+                .status(1000)
+                .message("Subject removed from elective group successfully")
+                .build();
+    }
 }
 
