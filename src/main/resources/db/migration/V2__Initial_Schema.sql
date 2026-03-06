@@ -1,0 +1,23 @@
+-- =====================================================
+-- Migration: Update Subjects Structure to match ERD
+-- Version: V2
+-- =====================================================
+
+-- 1. Xóa cột semester
+ALTER TABLE subjects DROP COLUMN IF EXISTS semester;
+
+-- 2. Bổ sung các cột thiếu (Lưu ý: bỏ dấu phẩy ở dòng cuối và thêm dấu chấm phẩy)
+ALTER TABLE subjects
+    ADD COLUMN IF NOT EXISTS degree_level VARCHAR(20),
+    ADD COLUMN IF NOT EXISTS time_allocation VARCHAR(50),
+    ADD COLUMN IF NOT EXISTS student_tasks VARCHAR(100),
+    ADD COLUMN IF NOT EXISTS scoring_scale INTEGER,
+    ADD COLUMN IF NOT EXISTS decision_no VARCHAR(50),
+    ADD COLUMN IF NOT EXISTS approved_date TIMESTAMP,
+    ADD COLUMN IF NOT EXISTS min_to_pass INTEGER; -- Đã bỏ dấu phẩy, thêm dấu chấm phẩy
+
+-- 3. Cập nhật kiểu dữ liệu cho description
+ALTER TABLE subjects ALTER COLUMN description TYPE TEXT;
+
+ALTER TABLE elective
+    ADD COLUMN IF NOT EXISTS elective_code VARCHAR(20) NOT NULL UNIQUE;

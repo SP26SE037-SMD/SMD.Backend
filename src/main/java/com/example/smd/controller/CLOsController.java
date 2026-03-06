@@ -10,6 +10,7 @@ import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.services.CLOsService;
 import com.example.smd.services.GeminiService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
@@ -27,13 +28,15 @@ import java.util.List;
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Tag(name = "CLOs", description = "Course Learning Outcomes Management APIs")
+@SecurityRequirement(name = "bearerAuth")
+
 public class CLOsController {
 
     CLOsService closService;
     GeminiService geminiService;
 
     @PostMapping
-    @PreAuthorize("hasAuthority('CLOS_UPDATE')")
+    @PreAuthorize("hasAuthority('CLOS_CREATE')")
     @Operation(summary = "Create a new CLO for a specific Subject")
     public ResponseObject<CLOsResponse> create(@RequestBody @Valid CLOsRequest request) {
         return ResponseObject.<CLOsResponse>builder()

@@ -5,6 +5,7 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -18,7 +19,10 @@ public class Elective {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "elective_id")
-    String electiveId;
+    UUID electiveId;
+
+    @Column(name = "elective_code", unique = true, nullable = false, length = 20)
+    String electiveCode;
 
     @Column(name = "elective_name", nullable = false, length = 100)
     String electiveName;

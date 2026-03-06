@@ -17,7 +17,7 @@ public class AccountResponse {
     String username;
     String email;
     String fullName;
-    RoleResponse role;
+    RoleResponse role; //String role
     Boolean isActive;
     Instant createdAt;
     Instant lastLogin;

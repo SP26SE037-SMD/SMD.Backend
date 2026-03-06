@@ -51,12 +51,38 @@ public enum ErrorCode {
     // Subject
     SUBJECT_NOT_FOUND(8001, "Subject not found", HttpStatus.NOT_FOUND),
     SUBJECT_CODE_EXISTS(8002, "Subject code already exists", HttpStatus.BAD_REQUEST),
+    DECISION_NO_REQUIRED(8003, "Decision number cannot be blank", HttpStatus.BAD_REQUEST),
+    SUBJECT_CODE_REQUIRED(8004, "Subject code cannot be blank", HttpStatus.BAD_REQUEST),
+    SUBJECT_NAME_REQUIRED(8005, "Subject name cannot be blank", HttpStatus.BAD_REQUEST),
 
     // Gemini
     // AI & External Services (9xxx)
     AI_GENERATION_FAILED(9001, "AI failed to generate valid content, please try again", HttpStatus.INTERNAL_SERVER_ERROR),
     AI_RESPONSE_INVALID_FORMAT(9002, "AI response is not in a valid JSON format", HttpStatus.UNPROCESSABLE_ENTITY),
     GEMINI_API_ERROR(9003, "Error occurred while calling Gemini API", HttpStatus.BAD_GATEWAY),
+
+    // Elective
+    ELECTIVE_CODE_REQUIRED(11001, "Elective code cannot be blank", HttpStatus.BAD_REQUEST),
+    ELECTIVE_NAME_REQUIRED(11002, "Elective name cannot be blank", HttpStatus.BAD_REQUEST),
+    ELECTIVE_NOT_FOUND(11003, "Elective group not found", HttpStatus.NOT_FOUND),
+    ELECTIVE_CODE_EXISTED(11004, "Elective code already exists", HttpStatus.BAD_REQUEST),
+    ELECTIVE_HAS_SUBJECTS(11005, "Cannot delete elective group that contains subjects", HttpStatus.CONFLICT),
+    MIN_CREDITS_INVALID(11006, "Minimum credits required must be a positive number", HttpStatus.BAD_REQUEST),
+
+    //Department
+    DEPARTMENT_CODE_REQUIRED(12001, "Department code cannot be blank", HttpStatus.BAD_REQUEST),
+    DEPARTMENT_NAME_REQUIRED(12002, "Department name cannot be blank", HttpStatus.BAD_REQUEST),
+    DEPARTMENT_NOT_FOUND(12003, "Department not found", HttpStatus.NOT_FOUND),
+    DEPARTMENT_CODE_EXISTED(12004, "Department code already exists", HttpStatus.BAD_REQUEST),
+    DEPARTMENT_HAS_CONSTRAINTS(12005, "Cannot delete department with linked subjects or lecturers", HttpStatus.CONFLICT),
+    DEPARTMENT_CODE_CANNOT_BE_CHANGED(12006, "Department code cannot be modified after creation", HttpStatus.BAD_REQUEST),
+
+    //Notification
+    NOTIFICATION_NOT_FOUND(13001, "Notification not found", HttpStatus.NOT_FOUND),
+    TITLE_REQUIRED(13002, "Notification title cannot be blank", HttpStatus.BAD_REQUEST),
+    MESSAGE_REQUIRED(13003, "Notification message cannot be blank", HttpStatus.BAD_REQUEST),
+    TYPE_REQUIRED(13004, "Notification type is required", HttpStatus.BAD_REQUEST),
+    ACCOUNT_ID_REQUIRED(13005, "Account ID is required for notification", HttpStatus.BAD_REQUEST),
 
     // General
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),

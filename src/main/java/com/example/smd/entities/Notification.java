@@ -1,33 +1,52 @@
 package com.example.smd.entities;
 
 import com.example.smd.enums.NotificationType;
-import jakarta.persistence.Entity;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.FieldDefaults;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
+import java.util.UUID;
 
 @Getter
 @Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
+@Table(name = "notification")
 public class Notification {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "notificationID")
-    private int notificationID;
-    @Column(name = "message")
-    private String message;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "notification_id")
+    UUID notificationId;
 
-    @Column(name = "createAt")
-    private LocalDateTime createAt;
+    @Column(nullable = false)
+    String title;
+
+    @Column(name = "message", columnDefinition = "TEXT")
+    String message;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "type", length = 10)
-    private NotificationType type; //start, end, special
+    @Column(name = "notification_type", length = 20)
+    NotificationType type;
 
     @Column(name = "is_read")
     Boolean isRead;
 
-    @Column(nullable = false)
-    String title;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "recipient_id", nullable = false)
+    Account account;
+
+    @Column(name = "created_at")
+    Instant createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = Instant.now();
+        if (isRead == null) {
+            isRead = false;
+        }
+    }
 }

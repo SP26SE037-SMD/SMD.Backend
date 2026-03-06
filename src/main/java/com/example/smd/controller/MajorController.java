@@ -6,6 +6,7 @@ import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.entities.Major;
 import com.example.smd.services.MajorService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
@@ -26,6 +27,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Tag(name = "Major", description = "Major Management APIs")
+@SecurityRequirement(name = "bearerAuth")
 public class MajorController {
     MajorService majorService;
 

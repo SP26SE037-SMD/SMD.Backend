@@ -30,8 +30,11 @@ public class Subject {
     @Column(nullable = false)
     Integer credits;
 
-    @Column(length = 20)
-    String semester;
+    @Column(name = "degree_level", length = 20)
+    String degreeLevel;
+
+    @Column(name = "time_allocation", length = 50)
+    String timeAllocation;
 
     @Column(columnDefinition = "TEXT")
     String description;
@@ -43,11 +46,26 @@ public class Subject {
     @Column(name = "student_limit")
     Integer studentLimit;
 
+    @Column(name = "student_tasks", length = 100)
+    String studentTasks;
+
+    @Column(name = "scoring_scale")
+    Integer scoringScale;
+
+    @Column(name = "decision_no", length = 50)
+    String decisionNo;
+
+    @Column(name = "min_to_pass")
+    Integer minToPass;
+
     @Column(name = "is_approved")
     Boolean isApproved = false;
 
     @Column(name = "status")
     Boolean status = true; // Active/Inactive
+
+    @Column(name = "approved_date")
+    Instant approvedDate;
 
     @Column(name = "created_at")
     Instant createdAt;

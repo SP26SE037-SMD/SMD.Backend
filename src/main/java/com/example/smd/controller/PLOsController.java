@@ -5,6 +5,7 @@ import com.example.smd.dto.response.PLOsResponse;
 import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.services.PLOsService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
@@ -19,6 +20,8 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Tag(name = "PLOs", description = "Program Learning Outcomes Management APIs")
+@SecurityRequirement(name = "bearerAuth")
+
 public class PLOsController {
     PLOsService ploService;
 
