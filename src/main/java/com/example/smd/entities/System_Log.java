@@ -2,7 +2,9 @@ package com.example.smd.entities;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import java.util.List;
+
+import java.time.Instant;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -11,21 +13,31 @@ import java.util.List;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
+@Table(name = "system_log")
 public class System_Log {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    String logId;
+    @Column(name = "log_id")
+    UUID logId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "account_id")
+    @JoinColumn(name = "user_id")
     Account account;
 
     @Column(name = "action", nullable = false, length = 100)
     String action;
 
-    @Column(name = "object_name", length = 100)
-    String objectName; // Tên đối tượng bị tác động (ví dụ: Syllabus ABC)
+    @Column(name = "target_id")
+    UUID targetId;
+
+    @Column(name = "log_message", length = 50)
+    String message;
 
     @Column(name = "created_at")
-    java.time.Instant createdAt;
+    Instant createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = Instant.now();
+    }
 }

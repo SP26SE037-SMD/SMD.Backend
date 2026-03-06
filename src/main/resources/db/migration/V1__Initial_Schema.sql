@@ -12,7 +12,6 @@
 -- =====================================================
 -- KHỐI 1: KHUNG CHƯƠNG TRÌNH (ACADEMIC STRUCTURE)
 -- =====================================================
-SET search_path TO public;
 -- Bảng: Department (Khoa/Bộ môn)
 CREATE TABLE IF NOT EXISTS department (
     department_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

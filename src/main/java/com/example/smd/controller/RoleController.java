@@ -14,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @Tag(name = "Role", description = "Role Management APIs")
@@ -90,5 +91,18 @@ public class RoleController {
                 .build();
     }
 
+    // API xóa danh sách permission khỏi role
+    @DeleteMapping("/{id}/permissions")
+    @Operation(summary = "Remove permissions from role")
+    public ResponseObject<RoleResponse> removePermissionsFromRole(
+            @PathVariable String id,
+            @RequestBody List<String> permissionIds) {
+        var convert = UUID.fromString(id);
+        return ResponseObject.<RoleResponse>builder()
+                .status(1000)
+                .data(roleService.removePermissionsFromRole(convert, permissionIds))
+                .message("Remove permissions from role successfully")
+                .build();
+    }
 
 }

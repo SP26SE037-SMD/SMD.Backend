@@ -25,6 +25,7 @@ public enum ErrorCode {
     // Permission
     PERMISSION_NOT_FOUND(4001, "Permission not found", HttpStatus.NOT_FOUND),
     PERMISSION_EXISTS(4002, "Permission already exists", HttpStatus.BAD_REQUEST),
+    PERMISSION_LIST_REQUIRED(4003, "Permission list is required", HttpStatus.BAD_REQUEST),
 
     // Major
     MAJOR_NOT_FOUND(5001, "Major not found", HttpStatus.NOT_FOUND),
@@ -83,6 +84,11 @@ public enum ErrorCode {
     MESSAGE_REQUIRED(13003, "Notification message cannot be blank", HttpStatus.BAD_REQUEST),
     TYPE_REQUIRED(13004, "Notification type is required", HttpStatus.BAD_REQUEST),
     ACCOUNT_ID_REQUIRED(13005, "Account ID is required for notification", HttpStatus.BAD_REQUEST),
+
+    //System Log
+    LOG_NOT_FOUND(14001, "System log not found", HttpStatus.NOT_FOUND),
+    ACTION_REQUIRED(14002, "Action is required", HttpStatus.BAD_REQUEST),
+    ACTION_TOO_LONG(14003, "Action must not exceed 100 characters", HttpStatus.BAD_REQUEST),
 
     // General
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),
