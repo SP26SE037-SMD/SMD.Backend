@@ -6,6 +6,7 @@ import lombok.experimental.FieldDefaults;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -20,7 +21,6 @@ public class SubjectResponse {
     Integer credits;
     String degreeLevel;
     String timeAllocation;
-    String preRequisite;
     String description;
     String studentTasks;
     Integer scoringScale;
@@ -35,9 +35,9 @@ public class SubjectResponse {
     Boolean status;
 
     // Trả về UUID của khoa để tiện cho việc truy vấn phía Frontend
-    UUID departmentId;
-
-    UUID electiveId;
+    DepartmentResponse department;
+    List<PrerequisiteResponse> preRequisite;
+    List<ElectiveResponse> electives;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+7")
     Instant createdAt;

@@ -68,6 +68,8 @@ public enum ErrorCode {
     ELECTIVE_CODE_EXISTED(11004, "Elective code already exists", HttpStatus.BAD_REQUEST),
     ELECTIVE_HAS_SUBJECTS(11005, "Cannot delete elective group that contains subjects", HttpStatus.CONFLICT),
     MIN_CREDITS_INVALID(11006, "Minimum credits required must be a positive number", HttpStatus.BAD_REQUEST),
+    ELECTIVE_SUBJECT_ALREADY_EXISTS(11007, "This subject is already assigned to the elective group", HttpStatus.BAD_REQUEST),
+    ELECTIVE_SUBJECT_NOT_FOUND(111008, "The connection between this subject and elective group does not exist", HttpStatus.NOT_FOUND),
 
     //Department
     DEPARTMENT_CODE_REQUIRED(12001, "Department code cannot be blank", HttpStatus.BAD_REQUEST),
@@ -76,6 +78,14 @@ public enum ErrorCode {
     DEPARTMENT_CODE_EXISTED(12004, "Department code already exists", HttpStatus.BAD_REQUEST),
     DEPARTMENT_HAS_CONSTRAINTS(12005, "Cannot delete department with linked subjects or lecturers", HttpStatus.CONFLICT),
     DEPARTMENT_CODE_CANNOT_BE_CHANGED(12006, "Department code cannot be modified after creation", HttpStatus.BAD_REQUEST),
+
+    //PREREQUISITE
+    PREREQUISITE_NOT_FOUND(13001, "Prerequisite relationship not found", HttpStatus.NOT_FOUND),
+    PREREQUISITE_ALREADY_EXISTS(13002, "This prerequisite relationship already exists", HttpStatus.BAD_REQUEST),
+    PREREQUISITE_SELF_REFERENCE(13003, "A subject cannot be its own prerequisite", HttpStatus.BAD_REQUEST),
+    SUBJECT_ID_REQUIRED(13004, "Subject ID is required", HttpStatus.BAD_REQUEST),
+    PREREQUISITE_ID_REQUIRED(13005, "Prerequisite subject ID is required", HttpStatus.BAD_REQUEST),
+    PREREQUISITE_CYCLE_DETECTED(13006, "Circular dependency detected: These subjects cannot be prerequisites of each other", HttpStatus.BAD_REQUEST),
 
     // General
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),

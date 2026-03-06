@@ -1,5 +1,6 @@
 package com.example.smd.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -16,5 +17,7 @@ public class PermissionResponse {
     java.util.UUID permissionId;
     String permissionName;
     String description;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+7")
     Instant createdAt;
 }
