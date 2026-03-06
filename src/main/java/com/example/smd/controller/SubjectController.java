@@ -18,7 +18,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -55,7 +54,6 @@ public class SubjectController {
             @RequestParam(required = false, defaultValue = "code") String searchBy,
             @Parameter(description = "Filter by status: null (Draft), true (Published), false (Hidden)")
             @RequestParam(required = false) Boolean status,
-//            @RequestParam(required = false) UUID deptId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "subjectCode") String sortBy,

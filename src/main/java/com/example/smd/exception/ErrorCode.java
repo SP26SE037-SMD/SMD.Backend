@@ -69,6 +69,8 @@ public enum ErrorCode {
     ELECTIVE_CODE_EXISTED(11004, "Elective code already exists", HttpStatus.BAD_REQUEST),
     ELECTIVE_HAS_SUBJECTS(11005, "Cannot delete elective group that contains subjects", HttpStatus.CONFLICT),
     MIN_CREDITS_INVALID(11006, "Minimum credits required must be a positive number", HttpStatus.BAD_REQUEST),
+    ELECTIVE_SUBJECT_ALREADY_EXISTS(11007, "This subject is already assigned to the elective group", HttpStatus.BAD_REQUEST),
+    ELECTIVE_SUBJECT_NOT_FOUND(111008, "The connection between this subject and elective group does not exist", HttpStatus.NOT_FOUND),
 
     //Department
     DEPARTMENT_CODE_REQUIRED(12001, "Department code cannot be blank", HttpStatus.BAD_REQUEST),
@@ -79,16 +81,23 @@ public enum ErrorCode {
     DEPARTMENT_CODE_CANNOT_BE_CHANGED(12006, "Department code cannot be modified after creation", HttpStatus.BAD_REQUEST),
 
     //Notification
-    NOTIFICATION_NOT_FOUND(13001, "Notification not found", HttpStatus.NOT_FOUND),
-    TITLE_REQUIRED(13002, "Notification title cannot be blank", HttpStatus.BAD_REQUEST),
-    MESSAGE_REQUIRED(13003, "Notification message cannot be blank", HttpStatus.BAD_REQUEST),
-    TYPE_REQUIRED(13004, "Notification type is required", HttpStatus.BAD_REQUEST),
-    ACCOUNT_ID_REQUIRED(13005, "Account ID is required for notification", HttpStatus.BAD_REQUEST),
+    NOTIFICATION_NOT_FOUND(15001, "Notification not found", HttpStatus.NOT_FOUND),
+    TITLE_REQUIRED(15002, "Notification title cannot be blank", HttpStatus.BAD_REQUEST),
+    MESSAGE_REQUIRED(15003, "Notification message cannot be blank", HttpStatus.BAD_REQUEST),
+    TYPE_REQUIRED(15004, "Notification type is required", HttpStatus.BAD_REQUEST),
+    ACCOUNT_ID_REQUIRED(15005, "Account ID is required for notification", HttpStatus.BAD_REQUEST),
 
     //System Log
     LOG_NOT_FOUND(14001, "System log not found", HttpStatus.NOT_FOUND),
     ACTION_REQUIRED(14002, "Action is required", HttpStatus.BAD_REQUEST),
     ACTION_TOO_LONG(14003, "Action must not exceed 100 characters", HttpStatus.BAD_REQUEST),
+    //PREREQUISITE
+    PREREQUISITE_NOT_FOUND(13001, "Prerequisite relationship not found", HttpStatus.NOT_FOUND),
+    PREREQUISITE_ALREADY_EXISTS(13002, "This prerequisite relationship already exists", HttpStatus.BAD_REQUEST),
+    PREREQUISITE_SELF_REFERENCE(13003, "A subject cannot be its own prerequisite", HttpStatus.BAD_REQUEST),
+    SUBJECT_ID_REQUIRED(13004, "Subject ID is required", HttpStatus.BAD_REQUEST),
+    PREREQUISITE_ID_REQUIRED(13005, "Prerequisite subject ID is required", HttpStatus.BAD_REQUEST),
+    PREREQUISITE_CYCLE_DETECTED(13006, "Circular dependency detected: These subjects cannot be prerequisites of each other", HttpStatus.BAD_REQUEST),
 
     // General
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),

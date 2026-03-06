@@ -13,9 +13,12 @@ public interface SubjectMapper {
     @Mapping(target = "isApproved", ignore = true)
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "department", ignore = true)
     Subject toSubject(SubjectRequest request);
 
     // Chuyển từ Entity sang Response DTO để trả về cho Client
+    @Mapping(target = "department", source = "department")
+    @Mapping(target = "electives", ignore = true)
     SubjectResponse toSubjectResponse(Subject subject);
 
     // Cập nhật Entity từ Request DTO
@@ -23,5 +26,6 @@ public interface SubjectMapper {
     @Mapping(target = "isApproved", ignore = true)
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "createdAt", ignore = true) // Không cho phép update ngày tạo
+    @Mapping(target = "department", ignore = true)
     void updateSubject(@MappingTarget Subject subject, SubjectRequest request);
 }
