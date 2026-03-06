@@ -1,17 +1,15 @@
 package com.example.smd.services;
 
-import com.example.smd.dto.request.LoginGoogleRequest;
-import com.example.smd.dto.request.ResetPasswordRequest;
+import com.example.smd.dto.request.auth.LoginGoogleRequest;
+import com.example.smd.dto.request.auth.ResetPasswordRequest;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
-import com.google.api.client.http.javanet.NetHttpTransport;
-import com.google.api.client.json.gson.GsonFactory;
 import com.nimbusds.jose.*;
 import com.nimbusds.jose.crypto.MACSigner;
 import com.nimbusds.jose.crypto.MACVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
-import com.example.smd.dto.request.AuthenticationRequest;
+import com.example.smd.dto.request.auth.AuthenticationRequest;
 import com.example.smd.dto.response.AuthenticationResponse;
 import com.example.smd.dto.response.AccountResponse;
 import com.example.smd.entities.Account;
@@ -35,7 +33,6 @@ import java.security.GeneralSecurityException;
 import java.text.ParseException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Collections;
 import java.util.Date;
 import java.util.StringJoiner;
 import java.util.UUID;
@@ -69,7 +66,7 @@ public class AuthenticationService {
     // Xác thực đăng nhập và tạo token
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
         // 1. Tìm tài khoản theo username
-        Account account = accountRepository.findByUsername(request.getUsername())
+        Account account = accountRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND, "Account not found"));
 
         // 2. Kiểm tra password có khớp với password hash không
@@ -169,13 +166,13 @@ public class AuthenticationService {
     // Tạo JWT token từ thông tin account
     private String generateToken(Account account) {
         // 1. Lấy thông tin cơ bản
-        String username = account.getUsername();
+        String email = account.getEmail();
         UUID accountId = account.getAccountId();
         String scope = buildScope(account);
 
         // 2. Tạo JWT claims set chứa thông tin user
         JWTClaimsSet claims = new JWTClaimsSet.Builder()
-                .subject(username)
+                .subject(email)
                 .claim("accountId", accountId)
                 .claim("scope", scope)
                 .jwtID(UUID.randomUUID().toString())

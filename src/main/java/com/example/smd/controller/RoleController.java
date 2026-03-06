@@ -1,6 +1,7 @@
 package com.example.smd.controller;
 
 import com.example.smd.dto.request.RoleRequest;
+import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.dto.response.RoleResponse;
 import com.example.smd.services.RoleService;
@@ -27,16 +28,16 @@ public class RoleController {
     // API lấy danh sách vai trò có phân trang và tìm kiếm
     @GetMapping
     @Operation(summary = "Get all roles with pagination and search")
-    public ResponseObject<Page<RoleResponse>> getAllRoles(
+    public ResponseObject<PagedResponse<RoleResponse>> getAllRoles(
             @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "roleName,asc") String[] sort
     ) {
         Page<RoleResponse> roles = roleService.getAllRoles(search, page, size, sort);
-        return ResponseObject.<Page<RoleResponse>>builder()
+        return ResponseObject.<PagedResponse<RoleResponse>>builder()
                 .status(1000)
-                .data(roles)
+                .data(PagedResponse.of(roles))
                 .message("Get all roles successfully")
                 .build();
     }

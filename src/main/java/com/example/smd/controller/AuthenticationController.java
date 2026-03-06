@@ -1,9 +1,9 @@
 package com.example.smd.controller;
 
 import com.nimbusds.jose.JOSEException;
-import com.example.smd.dto.request.AuthenticationRequest;
-import com.example.smd.dto.request.LoginGoogleRequest;
-import com.example.smd.dto.request.ResetPasswordRequest;
+import com.example.smd.dto.request.auth.AuthenticationRequest;
+import com.example.smd.dto.request.auth.LoginGoogleRequest;
+import com.example.smd.dto.request.auth.ResetPasswordRequest;
 import com.example.smd.dto.response.AuthenticationResponse;
 import com.example.smd.dto.response.AccountResponse;
 import com.example.smd.dto.response.ResponseObject;

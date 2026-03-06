@@ -1,7 +1,9 @@
 package com.example.smd.controller;
 
-import com.example.smd.dto.request.AccountRequest;
+import com.example.smd.dto.request.account.AccountRequest;
+import com.example.smd.dto.request.account.AccountUpdateRequest;
 import com.example.smd.dto.response.AccountResponse;
+import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.services.AccountService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -9,8 +11,6 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Account", description = "Account Management APIs")
@@ -26,16 +26,15 @@ public class AccountController {
     // API lấy danh sách tài khoản có phân trang và tìm kiếm
     @GetMapping
     @Operation(summary = "Get all accounts with pagination and search")
-    public ResponseObject<Page<AccountResponse>> getAllAccounts(
+    public ResponseObject<PagedResponse<AccountResponse>> getAllAccounts(
             @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt,desc") String[] sort
     ) {
-        Page<AccountResponse> accounts = accountService.getAllAccounts(search, page, size, sort);
-        return ResponseObject.<Page<AccountResponse>>builder()
+        return ResponseObject.<PagedResponse<AccountResponse>>builder()
                 .status(1000)
-                .data(accounts)
+                .data(PagedResponse.of(accountService.getAllAccounts(search, page, size, sort)))
                 .message("Get all accounts successfully")
                 .build();
     }
@@ -65,15 +64,16 @@ public class AccountController {
     // API cập nhật tài khoản theo ID
     @PutMapping("/{id}")
     @Operation(summary = "Update account by ID")
-    public ResponseObject<AccountResponse> updateAccount(
+    public ResponseObject<AccountResponse> updateInformationAccount(
             @PathVariable String id,
-            @Valid @RequestBody AccountRequest request) {
+            @Valid @RequestBody AccountUpdateRequest request) {
         return ResponseObject.<AccountResponse>builder()
                 .status(1000)
                 .data(accountService.updateAccount(id, request))
                 .message("Update account successfully")
                 .build();
     }
+
 
     // API xóa tài khoản theo ID
     @DeleteMapping("/{id}")

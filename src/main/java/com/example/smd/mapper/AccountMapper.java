@@ -1,6 +1,7 @@
 package com.example.smd.mapper;
 
-import com.example.smd.dto.request.AccountRequest;
+import com.example.smd.dto.request.account.AccountRequest;
+import com.example.smd.dto.request.account.AccountUpdateRequest;
 import com.example.smd.dto.response.AccountResponse;
 import com.example.smd.entities.Account;
 import org.springframework.stereotype.Component;
@@ -22,10 +23,9 @@ public class AccountMapper {
 
         return AccountResponse.builder()
                 .accountId(account.getAccountId())
-                .username(account.getUsername())
                 .email(account.getEmail())
                 .fullName(account.getFullName())
-                .role(account.getRole() != null ? roleMapper.toResponse(account.getRole()) : null)
+                .role(account.getRole().getRoleName())
                 .isActive(account.getIsActive())
                 .createdAt(account.getCreatedAt())
                 .lastLogin(account.getLastLogin())
@@ -39,23 +39,17 @@ public class AccountMapper {
         }
 
         return Account.builder()
-                .username(request.getUsername())
+                .username(request.getEmail()) // Set username = email
                 .email(request.getEmail())
                 .fullName(request.getFullName())
                 .isActive(request.getIsActive())
                 .build();
     }
 
-    // Cập nhật thông tin Entity Account từ DTO AccountRequest
-    public void updateEntity(Account account, AccountRequest request) {
-        if (request.getEmail() != null) {
-            account.setEmail(request.getEmail());
-        }
+    // Cập nhật thông tin Entity Account từ DTO AccountUpdateRequest
+    public void updateEntity(Account account, AccountUpdateRequest request) {
         if (request.getFullName() != null) {
             account.setFullName(request.getFullName());
-        }
-        if (request.getIsActive() != null) {
-            account.setIsActive(request.getIsActive());
         }
     }
 }

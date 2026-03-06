@@ -3,10 +3,7 @@ package com.example.smd.controller;
 import com.example.smd.dto.request.CLOsRequest;
 import com.example.smd.dto.request.CloCheckRequest;
 import com.example.smd.dto.request.CloGenerationRequest;
-import com.example.smd.dto.response.CLOsGenerationResponse;
-import com.example.smd.dto.response.CLOsResponse;
-import com.example.smd.dto.response.CloCheckResponse;
-import com.example.smd.dto.response.ResponseObject;
+import com.example.smd.dto.response.*;
 import com.example.smd.services.CLOsService;
 import com.example.smd.services.GeminiService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -58,13 +55,13 @@ public class CLOsController {
 
     @GetMapping("/subject/{subjectId}")
     @Operation(summary = "Get list of CLOs by Subject ID with pagination")
-    public ResponseObject<Page<CLOsResponse>> getBySubject(
+    public ResponseObject<PagedResponse<CLOsResponse>> getBySubject(
             @PathVariable String subjectId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        return ResponseObject.<Page<CLOsResponse>>builder()
+        return ResponseObject.<PagedResponse<CLOsResponse>>builder()
                 .status(1000)
-                .data(closService.getClosBySubject(subjectId, page, size))
+                .data(PagedResponse.of(closService.getClosBySubject(subjectId, page, size)))
                 .message("Get CLOs by subject successfully")
                 .build();
     }

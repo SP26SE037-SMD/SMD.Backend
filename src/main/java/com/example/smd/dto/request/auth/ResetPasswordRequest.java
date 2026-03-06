@@ -1,4 +1,4 @@
-package com.example.smd.dto.request;
+package com.example.smd.dto.request.auth;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
@@ -9,10 +9,13 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class AuthenticationRequest {
-    @NotBlank(message = "USERNAME_REQUIRED")
-    String username;
+public class ResetPasswordRequest {
+    @NotBlank(message = "TOKEN_REQUIRED")
+    String accessToken;
 
     @NotBlank(message = "PASSWORD_REQUIRED")
-    String password;
+    String newPassword;
+
+    @NotBlank(message = "PASSWORD_REQUIRED")
+    String confirmPassword;
 }
