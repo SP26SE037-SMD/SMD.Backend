@@ -11,7 +11,7 @@ public interface NotificationMapper {
 
     // Ánh xạ từ Entity sang Response
     @Mapping(source = "account.accountId", target = "accountId")
-    @Mapping(source = "account.username", target = "accountUsername")
+    @Mapping(source = "account.email", target = "accountEmail")
     NotificationResponse toNotificationResponse(Notification notification);
 
     // Ánh xạ từ Request sang Entity (không map account, sẽ set trong service)

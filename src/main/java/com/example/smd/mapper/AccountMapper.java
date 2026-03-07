@@ -39,7 +39,6 @@ public class AccountMapper {
         }
 
         return Account.builder()
-                .username(request.getEmail()) // Set username = email
                 .email(request.getEmail())
                 .fullName(request.getFullName())
                 .isActive(request.getIsActive())

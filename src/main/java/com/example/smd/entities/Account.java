@@ -21,9 +21,6 @@ public class Account {
     @Column(name = "account_id")
     UUID accountId;
 
-    @Column(unique = true, nullable = false, length = 50)
-    String username;
-
     @Column(unique = true, nullable = false, length = 100)
     String email;
 

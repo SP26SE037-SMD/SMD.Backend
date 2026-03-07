@@ -84,7 +84,6 @@ public class AccountService {
         // 2. Tạo entity Account và mã hóa password
         Account account = accountMapper.toEntity(request);
         account.setPasswordHash(passwordEncoder.encode(request.getPassword()));
-        // username tự động được set = email trong mapper
 
         // 3. Gán role cho account nếu có
         if (request.getRoleName() != null) {

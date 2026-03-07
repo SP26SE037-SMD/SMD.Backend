@@ -53,7 +53,7 @@ public class DepartmentService {
                 .orElseThrow(() -> new AppException(ErrorCode.DEPARTMENT_NOT_FOUND));
 
         // Bây giờ bạn có thể gọi .isEmpty() mà không bị lỗi
-        if (!department.getSubjects().isEmpty() || !department.getLecturers().isEmpty()) {
+        if (!department.getSubjects().isEmpty()) {
             throw new AppException(ErrorCode.DEPARTMENT_HAS_CONSTRAINTS);
         }
 

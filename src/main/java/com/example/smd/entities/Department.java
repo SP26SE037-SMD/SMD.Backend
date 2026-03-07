@@ -35,9 +35,6 @@ public class Department {
     @OneToMany(mappedBy = "department", fetch = FetchType.LAZY)
     List<Subject> subjects;
 
-    @OneToMany(mappedBy = "department", fetch = FetchType.LAZY)
-    List<Lecturer_Profile> lecturers;
-
     @PrePersist
     protected void onCreate() {
         this.createdAt = Instant.now();
