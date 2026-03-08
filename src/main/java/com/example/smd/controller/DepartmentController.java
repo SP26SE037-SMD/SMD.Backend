@@ -23,7 +23,6 @@ import java.util.UUID;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Tag(name = "Department", description = "Endpoints for managing academic departments")
 @SecurityRequirement(name = "bearerAuth")
-
 public class DepartmentController {
     DepartmentService departmentService;
 

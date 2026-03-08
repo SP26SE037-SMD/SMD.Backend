@@ -5,22 +5,19 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.time.Instant;
-import java.util.UUID;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class CLOsResponse {
-    UUID cloId;
-    String cloCode;
+public class CloPloMappingResponse {
+    String id;
+    String cloId;
     String cloName;
-    String description;
-    String bloomLevel;
-    String subjectId;
-    String subjectName;
-    String status;
+    String ploId;
+    String ploName;
+    String contributionLevel;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+7")
     Instant createdAt;
 }

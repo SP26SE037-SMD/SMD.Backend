@@ -4,6 +4,7 @@ import com.example.smd.dto.request.CLOsRequest;
 import com.example.smd.dto.request.CloCheckRequest;
 import com.example.smd.dto.request.CloGenerationRequest;
 import com.example.smd.dto.response.*;
+import com.example.smd.enums.SyllabusStatus;
 import com.example.smd.services.CLOsService;
 import com.example.smd.services.GeminiService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -24,7 +25,6 @@ import org.springframework.web.bind.annotation.*;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Tag(name = "CLOs", description = "Course Learning Outcomes Management APIs")
 @SecurityRequirement(name = "bearerAuth")
-
 public class CLOsController {
 
     CLOsService closService;
@@ -102,5 +102,31 @@ public class CLOsController {
     public ResponseEntity<CloCheckResponse> checkClo(@RequestBody @Valid CloCheckRequest request) {
         CloCheckResponse result = geminiService.checkClo(request);
         return ResponseEntity.ok(result);
+    }
+
+    @PatchMapping("/{id}/status")
+    @PreAuthorize("hasAuthority('CLOS_UPDATE_STATUS')")
+    @Operation(
+            summary = "Change CLO Status",
+            description = "### Quy trình cập nhật trạng thái của CLO:\n" +
+                    "Chọn một trong các giá trị sau từ danh sách thả xuống:\n\n" +
+                    "| Status | Mô tả chi tiết (Nghiệp vụ) |\n" +
+                    "| :--- | :--- |\n" +
+                    "| **PENDING_REVIEW** | Chờ duyệt: Đã gửi yêu cầu và đợi Bridge Engineer phê duyệt. |\n" +
+                    "| **IN_REVIEW** | Đang đánh giá: Chuyên gia đang xem xét nội dung. |\n" +
+                    "| **REVISION_REQUESTED** | Yêu cầu chỉnh sửa: Cần sửa lại theo feedback của người duyệt. |\n" +
+                    "| **APPROVED** | Đã duyệt: Nội dung đạt yêu cầu, sẵn sàng để xuất bản. |\n" +
+                    "| **REJECTED** | Bị từ chối: Nội dung không đạt yêu cầu hệ thống. |\n" +
+                    "| **PUBLISHED** | Đã xuất bản: CLO chính thức có hiệu lực cho môn học. |\n"
+    )
+    public ResponseObject<CLOsResponse> changeStatus(
+            @PathVariable String id,
+            @RequestParam SyllabusStatus newStatus // Swagger sẽ hiện Dropdown ở đây
+    ) {
+        return ResponseObject.<CLOsResponse>builder()
+                .status(1000)
+                .data(closService.updateStatus(id, newStatus))
+                .message("Cập nhật trạng thái CLO thành công")
+                .build();
     }
 }

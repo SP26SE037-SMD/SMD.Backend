@@ -1,0 +1,105 @@
+package com.example.smd.services;
+
+import com.example.smd.dto.request.CloPloMappingRequest;
+import com.example.smd.dto.response.CloPloMappingResponse;
+import com.example.smd.entities.CLO_PLO_Mapping;
+import com.example.smd.exception.AppException;
+import com.example.smd.exception.ErrorCode;
+import com.example.smd.mapper.CloPloMappingMapper;
+import com.example.smd.repositories.CLOsRepository;
+import com.example.smd.repositories.CloPloMappingRepository;
+import com.example.smd.repositories.PLOsRepository;
+import com.example.smd.repositories.SubjectRepository;
+import jakarta.transaction.Transactional;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.UUID;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+public class CloPloMappingService {
+
+    CloPloMappingRepository repository;
+    CloPloMappingMapper mapper;
+    CLOsRepository cloRepository;
+    PLOsRepository ploRepository;
+    SubjectRepository subjectRepository;
+
+    @Transactional
+    public CloPloMappingResponse createMapping(CloPloMappingRequest request) {
+        if (repository.existsByClo_CloIdAndPlo_PloId(UUID.fromString(request.getCloId()), UUID.fromString(request.getPloId()))) {
+            throw new AppException(ErrorCode.MAPPING_ALREADY_EXISTS);
+        }
+
+        CLO_PLO_Mapping mapping = new CLO_PLO_Mapping();
+        mapping.setClo(cloRepository.findById(UUID.fromString(request.getCloId()))
+                .orElseThrow(() -> new AppException(ErrorCode.CLO_NOT_FOUND)));
+        mapping.setPlo(ploRepository.findById(UUID.fromString(request.getPloId()))
+                .orElseThrow(() -> new AppException(ErrorCode.PLO_NOT_FOUND)));
+        mapping.setContributionLevel(request.getContributionLevel());
+
+        return mapper.toResponse(repository.save(mapping));
+    }
+
+    @Transactional
+    public List<CloPloMappingResponse> getBySubject(String subjectId) {
+        // 1. Kiểm tra Subject có tồn tại không
+        if (!subjectRepository.existsById(UUID.fromString(subjectId))) {
+            throw new AppException(ErrorCode.SUBJECT_NOT_FOUND);
+        }
+
+        // 2. Truy vấn và map sang Response
+        return repository.findByClo_Subject_SubjectId(UUID.fromString(subjectId))
+                .stream()
+                .map(mapper::toResponse)
+                .toList();
+    }
+
+    @Transactional
+    public List<CloPloMappingResponse> getByClo(String cloId) {
+        // 1. Kiểm tra CLO có tồn tại không
+        if (!cloRepository.existsById(UUID.fromString(cloId))) {
+            throw new AppException(ErrorCode.CLO_NOT_FOUND);
+        }
+
+        // 2. Truy vấn mapping (Session mở nhờ @Transactional nên không bị Lazy error)
+        return repository.findByClo_CloId(UUID.fromString(cloId))
+                .stream()
+                .map(mapper::toResponse)
+                .toList();
+    }
+
+    @Transactional
+    public List<CloPloMappingResponse> getByPlo(String ploId) {
+        // 1. Kiểm tra PLO có tồn tại không
+        if (!ploRepository.existsById(UUID.fromString(ploId))) {
+            throw new AppException(ErrorCode.PLO_NOT_FOUND);
+        }
+
+        // 2. Truy vấn và map sang Response
+        return repository.findByPlo_PloId(UUID.fromString(ploId))
+                .stream()
+                .map(mapper::toResponse)
+                .toList();
+    }
+
+    @Transactional
+    public CloPloMappingResponse updateLevel(String id, String newLevel) {
+        CLO_PLO_Mapping mapping = repository.findById(UUID.fromString(id))
+                .orElseThrow(() -> new AppException(ErrorCode.CLO_PLO_MAPPING_NOT_FOUND));
+        mapping.setContributionLevel(newLevel);
+        return mapper.toResponse(repository.save(mapping));
+    }
+
+    @Transactional
+    public void deleteMapping(String id) {
+        repository.deleteById(UUID.fromString(id));
+    }
+}

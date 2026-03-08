@@ -4,6 +4,7 @@ import com.example.smd.dto.request.CLOsRequest;
 import com.example.smd.dto.response.CLOsResponse;
 import com.example.smd.entities.CLOs;
 import com.example.smd.entities.Subject;
+import com.example.smd.enums.SyllabusStatus;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.CLOsMapper;
@@ -50,7 +51,7 @@ public class CLOsService {
 
         CLOs clo = closMapper.toClo(request);
         clo.setSubject(subject); // Liên kết CLO với Môn học
-
+        clo.setStatus("DRAFT");
         return closMapper.toCloResponse(closRepository.save(clo));
     }
 
@@ -99,9 +100,8 @@ public class CLOsService {
             CLOs clo = closRepository.findById(cloId)
                     .orElseThrow(() -> new AppException(ErrorCode.CLO_NOT_FOUND));
 
-            // Thực hiện xóa trực tiếp
-            closRepository.delete(clo);
-
+            clo.setStatus("ARCHIVED");
+            closRepository.save(clo);
         } catch (IllegalArgumentException e) {
             throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
         }
@@ -119,5 +119,18 @@ public class CLOsService {
         } catch (IllegalArgumentException e) {
             throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
         }
+    }
+
+    @Transactional
+    public CLOsResponse updateStatus(String id, SyllabusStatus newStatus) {
+        // 1. Tìm CLO theo ID, quăng lỗi nếu không thấy
+        CLOs clo = closRepository.findById(UUID.fromString(id))
+                .orElseThrow(() -> new AppException(ErrorCode.CLO_NOT_FOUND));
+
+        // 2. Cập nhật trạng thái mới
+        clo.setStatus(newStatus + "");
+
+        // 3. Lưu và trả về DTO (MapStruct sẽ tự xử lý việc chuyển đổi)
+        return closMapper.toCloResponse(closRepository.save(clo));
     }
 }
