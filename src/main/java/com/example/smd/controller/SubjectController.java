@@ -2,7 +2,6 @@ package com.example.smd.controller;
 
 import com.example.smd.dto.request.SubjectPublishRequest;
 import com.example.smd.dto.request.SubjectRequest;
-import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.dto.response.SubjectResponse;
 import com.example.smd.services.SubjectService;
@@ -49,7 +48,7 @@ public class SubjectController {
             summary = "Advanced search subjects with pagination",
             description = "Search by 'code' or 'name' directly at the database level. Filters by status is also supported."
     )
-    public ResponseObject<PagedResponse<SubjectResponse>> getAll(
+    public ResponseObject<Page<SubjectResponse>> getAll(
             @RequestParam(required = false) String search,
             @RequestParam(required = false, defaultValue = "code") String searchBy,
             @Parameter(description = "Filter by status: null (Draft), true (Published), false (Hidden)")
@@ -62,8 +61,8 @@ public class SubjectController {
         Sort sort = direction.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
         Pageable pageable = PageRequest.of(page, size, sort);
 
-        return ResponseObject.<PagedResponse<SubjectResponse>>builder()
-                .data(PagedResponse.of(subjectService.getAll(search, searchBy,status, pageable)))
+        return ResponseObject.<Page<SubjectResponse>>builder()
+                .data(subjectService.getAll(search, searchBy,status, pageable))
                 .message("Subjects retrieved successfully")
                 .build();
     }
