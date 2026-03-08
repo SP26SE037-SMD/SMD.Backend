@@ -35,6 +35,6 @@ public class Curriculum {
     @JoinColumn(name = "major_id", nullable = false)
     Major major;
 
-//    @OneToMany(mappedBy = "curriculum", fetch = FetchType.LAZY)
-//    List<Curriculum_combo> curriculumCombos;
+    @OneToMany(mappedBy = "curriculum", fetch = FetchType.LAZY)
+    private List<Curriculum_Combo_Subject> curriculumComboSubjects;
 }

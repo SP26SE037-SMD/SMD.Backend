@@ -1,9 +1,7 @@
 package com.example.smd.mapper;
 
-import com.example.smd.dto.request.CLOsRequest;
-import com.example.smd.dto.request.PLOsRequest;
+import com.example.smd.dto.request.clo.CLOsRequest;
 import com.example.smd.dto.response.CLOsResponse;
-import com.example.smd.dto.response.PLOsResponse;
 import com.example.smd.entities.CLOs;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;

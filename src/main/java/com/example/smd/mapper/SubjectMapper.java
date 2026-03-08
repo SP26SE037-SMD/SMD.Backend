@@ -1,6 +1,6 @@
 package com.example.smd.mapper;
 
-import com.example.smd.dto.request.SubjectRequest;
+import com.example.smd.dto.request.subject.SubjectRequest;
 import com.example.smd.dto.response.SubjectResponse;
 import com.example.smd.entities.Subject;
 import org.mapstruct.*;

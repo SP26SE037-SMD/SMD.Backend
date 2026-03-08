@@ -1,8 +1,8 @@
 package com.example.smd.controller;
 
-import com.example.smd.dto.request.CLOsRequest;
-import com.example.smd.dto.request.CloCheckRequest;
-import com.example.smd.dto.request.CloGenerationRequest;
+import com.example.smd.dto.request.clo.CLOsRequest;
+import com.example.smd.dto.request.clo.CloCheckRequest;
+import com.example.smd.dto.request.clo.CloGenerationRequest;
 import com.example.smd.dto.response.*;
 import com.example.smd.services.CLOsService;
 import com.example.smd.services.GeminiService;
@@ -13,12 +13,9 @@ import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/clos")

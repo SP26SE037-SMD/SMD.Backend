@@ -1,7 +1,7 @@
 package com.example.smd.controller;
 
-import com.example.smd.dto.request.SubjectPublishRequest;
-import com.example.smd.dto.request.SubjectRequest;
+import com.example.smd.dto.request.subject.SubjectPublishRequest;
+import com.example.smd.dto.request.subject.SubjectRequest;
 import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.dto.response.SubjectResponse;
@@ -14,7 +14,6 @@ import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;

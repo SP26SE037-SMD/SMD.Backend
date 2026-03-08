@@ -99,6 +99,17 @@ public enum ErrorCode {
     PREREQUISITE_ID_REQUIRED(13005, "Prerequisite subject ID is required", HttpStatus.BAD_REQUEST),
     PREREQUISITE_CYCLE_DETECTED(13006, "Circular dependency detected: These subjects cannot be prerequisites of each other", HttpStatus.BAD_REQUEST),
 
+    //CURRICULUM
+    CURRICULUM_NOT_FOUND(10001, "Curriculum not found", HttpStatus.NOT_FOUND),
+    CURRICULUM_CODE_EXISTS(10002, "Curriculum code already exists", HttpStatus.BAD_REQUEST),
+    CURRICULUM_CODE_REQUIRED(10003, "Curriculum code is required", HttpStatus.BAD_REQUEST),
+    CURRICULUM_NAME_REQUIRED(10004, "Curriculum name is required", HttpStatus.BAD_REQUEST),
+    CURRICULUM_CODE_TOO_LONG(10005, "Curriculum code must not exceed 20 characters", HttpStatus.BAD_REQUEST),
+    CURRICULUM_NAME_TOO_LONG(10006, "Curriculum name must not exceed 100 characters", HttpStatus.BAD_REQUEST),
+    MAJOR_ID_REQUIRED(10007, "Major ID is required", HttpStatus.BAD_REQUEST),
+    INVALID_YEAR_RANGE(10008, "End year must be greater than start year", HttpStatus.BAD_REQUEST),
+    CURRICULUM_HAS_SUBJECTS(10009, "Cannot delete curriculum that contains subjects", HttpStatus.CONFLICT),
+
     // General
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),
     INVALID_KEY(1000, "Invalid message key", HttpStatus.BAD_REQUEST),
