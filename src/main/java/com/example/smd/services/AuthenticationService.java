@@ -89,7 +89,7 @@ public class AuthenticationService {
         return AuthenticationResponse.builder()
                 .authenticated(true)
                 .token(token)
-                .account(accountMapper.toResponse(account))
+                .account(accountMapper.toLoginResponse(account))
                 .build();
     }
 
@@ -126,7 +126,7 @@ public class AuthenticationService {
         return AuthenticationResponse.builder()
                 .authenticated(true)
                 .token(token)
-                .account(accountMapper.toResponse(account))
+                .account(accountMapper.toLoginResponse(account))
                 .build();
     }
 

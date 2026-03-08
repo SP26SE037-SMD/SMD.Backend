@@ -2,6 +2,8 @@ package com.example.smd.entities;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -37,6 +39,18 @@ public class CLOs {
 
     @OneToMany(mappedBy = "clo", fetch = FetchType.LAZY)
     List<CLO_PLO_Mapping> cloPloMappings;
+
+
+    @Column(name = "status")
+    String status;
+
+    @Column(name = "created_at")
+    Instant createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = Instant.now();
+    }
 
 //    @OneToMany(mappedBy = "clo", fetch = FetchType.LAZY)
 //    List<CLO_Assessment> cloAssessments;

@@ -2,6 +2,7 @@ package com.example.smd.mapper;
 
 import com.example.smd.dto.request.account.AccountRequest;
 import com.example.smd.dto.request.account.AccountUpdateRequest;
+import com.example.smd.dto.response.AccountLoginResponse;
 import com.example.smd.dto.response.AccountResponse;
 import com.example.smd.entities.Account;
 import org.springframework.stereotype.Component;
@@ -22,6 +23,22 @@ public class AccountMapper {
         }
 
         return AccountResponse.builder()
+                .accountId(account.getAccountId())
+                .email(account.getEmail())
+                .fullName(account.getFullName())
+                .role(account.getRole() != null ? roleMapper.toResponse(account.getRole()) : null)
+                .isActive(account.getIsActive())
+                .createdAt(account.getCreatedAt())
+                .lastLogin(account.getLastLogin())
+                .build();
+    }
+
+    public AccountLoginResponse toLoginResponse(Account account) {
+        if (account == null) {
+            return null;
+        }
+
+        return AccountLoginResponse.builder()
                 .accountId(account.getAccountId())
                 .email(account.getEmail())
                 .fullName(account.getFullName())

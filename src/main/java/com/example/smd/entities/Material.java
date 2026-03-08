@@ -2,6 +2,8 @@ package com.example.smd.entities;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+
+import java.time.Instant;
 import java.util.List;
 
 @Getter
@@ -37,6 +39,9 @@ public class Material {
 
     @Column(name = "uploaded_at")
     java.time.Instant uploadedAt;
+
+    @Column(name = "status")
+    String status;
 
     @OneToMany(mappedBy = "material", fetch = FetchType.LAZY)
     List<Block> blocks;
