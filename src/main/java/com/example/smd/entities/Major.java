@@ -39,8 +39,5 @@ public class Major {
     Instant createdAt;
 
     @OneToMany(mappedBy = "major", fetch = FetchType.LAZY)
-    List<Curriculum> curriculums;
-
-    @OneToMany(mappedBy = "major", fetch = FetchType.LAZY)
     List<PLOs> plos;
 }

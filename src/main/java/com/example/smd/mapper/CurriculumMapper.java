@@ -14,31 +14,14 @@ public interface CurriculumMapper {
     
     // Chuyển đổi từ Request sang Entity (không map major, sẽ set trong service)
     @Mapping(target = "curriculumId", ignore = true)
-    @Mapping(target = "major", ignore = true)
     @Mapping(target = "curriculumComboSubjects", ignore = true)
     Curriculum toCurriculum(CurriculumRequest request);
 
     @Mapping(target = "curriculumId", ignore = true)
-    @Mapping(target = "major", ignore = true)
     @Mapping(target = "curriculumComboSubjects", ignore = true)
     Curriculum toCreateCurriculum( CurriculumCreateRequest request);
     
     // Chuyển đổi từ Entity sang Response
-    @Mapping(source = "major", target = "major", qualifiedByName = "mapMajorInfo")
     CurriculumResponse toCurriculumResponse(Curriculum curriculum);
 
-
-    
-    // Custom mapping cho Major -> MajorInfo
-    @Named("mapMajorInfo")
-    default CurriculumResponse.MajorInfo mapMajorInfo(Major major) {
-        if (major == null) {
-            return null;
-        }
-        return CurriculumResponse.MajorInfo.builder()
-                .majorId(major.getMajorId().toString())
-                .majorCode(major.getMajorCode())
-                .majorName(major.getMajorName())
-                .build();
-    }
 }

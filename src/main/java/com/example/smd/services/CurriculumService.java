@@ -36,7 +36,6 @@ public class CurriculumService {
      * Lấy danh sách curriculum với phân trang và bộ lọc
      * @param search - Từ khóa tìm kiếm (có thể null)
      * @param searchBy - Tìm theo trường nào: code, name, hoặc all
-     * @param majorId - Filter theo Major ID (có thể null)
      * @param status - Filter theo status (có thể null)
      * @param page - Số trang (0-based)
      * @param size - Số lượng item mỗi trang
@@ -47,7 +46,6 @@ public class CurriculumService {
     public Page<CurriculumResponse> getAllCurriculums(
             String search, 
             String searchBy, 
-            String majorId,
             String status,
             int page, 
             int size, 
@@ -61,11 +59,10 @@ public class CurriculumService {
         Page<Curriculum> curriculumPage;
         
         // 2. Query dựa trên filter
-        if (majorId != null || status != null || (search != null && !search.trim().isEmpty())) {
+        if ( status != null || (search != null && !search.trim().isEmpty())) {
             // Sử dụng query tổng hợp với filters
             curriculumPage = curriculumRepository.findWithFilters(
                     search != null && !search.trim().isEmpty() ? search : null,
-                    majorId,
                     status,
                     pageable
             );
@@ -89,14 +86,9 @@ public class CurriculumService {
         if (curriculumRepository.existsByCurriculumCode(request.getCurriculumCode())) {
             throw new AppException(ErrorCode.CURRICULUM_CODE_EXISTS);
         }
-        
-        // 3. Kiểm tra Major tồn tại
-        Major major = majorRepository.findById(UUID.fromString(request.getMajorId()))
-                .orElseThrow(() -> new AppException(ErrorCode.MAJOR_NOT_FOUND));
 
         // 4. Map request sang entity
         Curriculum curriculum = curriculumMapper.toCreateCurriculum(request);
-        curriculum.setMajor(major);
         curriculum.setEndYear(null); // Khi tạo mới, endYear có thể để null, sẽ được cập nhật sau khi có thông tin
 
         // 5. Set default status nếu chưa có
@@ -117,8 +109,8 @@ public class CurriculumService {
     @Transactional(readOnly = true)
     public CurriculumResponse getCurriculumDetail(String id) {
         log.info("Fetching curriculum detail for ID: {}", id);
-        
-        Curriculum curriculum = curriculumRepository.findByIdWithMajor(id)
+
+        Curriculum curriculum = curriculumRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));
         
         return curriculumMapper.toCurriculumResponse(curriculum);
@@ -153,13 +145,6 @@ public class CurriculumService {
             if (curriculumRepository.existsByCurriculumCode(request.getCurriculumCode())) {
                 throw new AppException(ErrorCode.CURRICULUM_CODE_EXISTS);
             }
-        }
-        
-        // 4. Kiểm tra Major mới nếu có thay đổi
-        if (!curriculum.getMajor().getMajorId().toString().equals(request.getMajorId())) {
-            Major newMajor = majorRepository.findById(UUID.fromString(request.getMajorId()))
-                    .orElseThrow(() -> new AppException(ErrorCode.MAJOR_NOT_FOUND));
-            curriculum.setMajor(newMajor);
         }
         
         // 5. Cập nhật các trường

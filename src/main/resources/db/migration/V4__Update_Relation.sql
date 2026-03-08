@@ -3,14 +3,14 @@
 -- Version: V4
 -- Created: 2026-03-08
 -- =====================================================
--- Description:
--- Update Combo and Curriculum_Combo_Subject tables
--- to match with entity definitions
--- =====================================================
 
 
 ALTER TABLE major
-    ADD COLUMN IF NOT EXISTS status BOOLEAN DEFAULT NULL,
+    ADD COLUMN IF NOT EXISTS status  VARCHAR(20)  NULL,
+    ADD COLUMN IF NOT EXISTS created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+
+ALTER Table plos
+    ADD COLUMN IF NOT EXISTS status  VARCHAR(20)  NULL,
     ADD COLUMN IF NOT EXISTS created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
 
 --=====================================================

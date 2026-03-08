@@ -2,6 +2,8 @@ package com.example.smd.entities;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -26,6 +28,17 @@ public class PLOs {
 
     @Column(columnDefinition = "TEXT")
     String description;
+
+    @Column(name = "status")
+    String status;
+
+    @Column(name = "created_at")
+    Instant createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = Instant.now();
+    }
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "major_id")

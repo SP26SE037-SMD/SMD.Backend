@@ -58,7 +58,7 @@ public class CurriculumController {
             @RequestParam(defaultValue = "curriculumCode,asc") String[] sort
     ) {
         Page<CurriculumResponse> curriculums = curriculumService.getAllCurriculums(
-                search, searchBy, majorId, status, page, size, sort
+                search, searchBy, status, page, size, sort
         );
         
         return ResponseObject.<PagedResponse<CurriculumResponse>>builder()
