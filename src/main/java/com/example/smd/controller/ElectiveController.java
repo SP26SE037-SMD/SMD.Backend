@@ -23,7 +23,6 @@ import java.util.UUID;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Tag(name = "Elective", description = "Endpoints for managing elective groups in the SMD system")
 @SecurityRequirement(name = "bearerAuth")
-
 public class ElectiveController {
     ElectiveService electiveService;
 

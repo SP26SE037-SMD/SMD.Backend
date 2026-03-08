@@ -21,7 +21,6 @@ import org.springframework.web.bind.annotation.*;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Tag(name = "PLOs", description = "Program Learning Outcomes Management APIs")
 @SecurityRequirement(name = "bearerAuth")
-
 public class PLOsController {
     PLOsService ploService;
 
