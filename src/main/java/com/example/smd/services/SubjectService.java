@@ -1,6 +1,6 @@
 package com.example.smd.services;
 
-import com.example.smd.dto.request.SubjectRequest;
+import com.example.smd.dto.request.subject.SubjectRequest;
 import com.example.smd.dto.response.ElectiveResponse;
 import com.example.smd.dto.response.PrerequisiteResponse;
 import com.example.smd.dto.response.SubjectResponse;

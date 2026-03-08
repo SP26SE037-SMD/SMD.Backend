@@ -1,8 +1,8 @@
 package com.example.smd.services;
 
 import com.example.smd.config.GeminiConfig;
-import com.example.smd.dto.request.CloCheckRequest;
-import com.example.smd.dto.request.CloGenerationRequest;
+import com.example.smd.dto.request.clo.CloCheckRequest;
+import com.example.smd.dto.request.clo.CloGenerationRequest;
 import com.example.smd.dto.response.CLOsGenerationResponse;
 import com.example.smd.dto.response.CloCheckResponse;
 import com.example.smd.exception.AppException;

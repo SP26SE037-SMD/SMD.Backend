@@ -1,6 +1,7 @@
 package com.example.smd.controller;
 
 import com.example.smd.dto.request.PermissionRequest;
+import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.PermissionResponse;
 import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.services.PermissionService;
@@ -27,15 +28,15 @@ public class PermissionController {
     // API lấy danh sách quyền có phân trang
     @GetMapping
     @Operation(summary = "Get all permissions with pagination")
-    public ResponseObject<Page<PermissionResponse>> getAllPermissions(
+    public ResponseObject<PagedResponse<PermissionResponse>> getAllPermissions(
             @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "permissionName,asc") String[] sort
     ) {
-        return ResponseObject.<Page<PermissionResponse>>builder()
+        return ResponseObject.<PagedResponse<PermissionResponse>>builder()
                 .status(1000)
-                .data(permissionService.getAllPermissions(search, page, size, sort))
+                .data(PagedResponse.of(permissionService.getAllPermissions(search, page, size, sort)))
                 .message("Get all permissions successfully")
                 .build();
     }

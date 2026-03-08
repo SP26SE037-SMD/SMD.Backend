@@ -1,4 +1,4 @@
-package com.example.smd.dto.request;
+package com.example.smd.dto.request.subject;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;

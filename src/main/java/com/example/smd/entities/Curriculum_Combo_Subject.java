@@ -14,6 +14,9 @@ public class Curriculum_Combo_Subject {
     @GeneratedValue(strategy = GenerationType.UUID)
     String id;
 
+    @Column(name = "semester")
+    private Integer semester;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "curriculum_id", nullable = false)
     Curriculum curriculum;

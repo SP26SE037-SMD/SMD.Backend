@@ -27,8 +27,5 @@ public class Combo {
     String type; // Elective / Mandatory
 
     @OneToMany(mappedBy = "combo", fetch = FetchType.LAZY)
-    List<Curriculum_Combo> curriculumCombos;
-
-    @OneToMany(mappedBy = "combo", fetch = FetchType.LAZY)
-    List<Combo_Subject> comboSubjects;
+    private List<Curriculum_Combo_Subject> curriculumComboSubjects;
 }

@@ -1,6 +1,6 @@
 package com.example.smd.services;
 
-import com.example.smd.dto.request.CLOsRequest;
+import com.example.smd.dto.request.clo.CLOsRequest;
 import com.example.smd.dto.response.CLOsResponse;
 import com.example.smd.entities.CLOs;
 import com.example.smd.entities.Subject;
@@ -21,9 +21,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service

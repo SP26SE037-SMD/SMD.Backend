@@ -84,4 +84,7 @@ public class Subject {
     protected void onCreate() {
         this.createdAt = Instant.now();
     }
+
+    @OneToMany(mappedBy = "subject", fetch = FetchType.LAZY)
+    private List<Curriculum_Combo_Subject> curriculumComboSubjects;
 }

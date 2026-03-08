@@ -1,7 +1,8 @@
 package com.example.smd.controller;
 
-import com.example.smd.dto.request.SubjectPublishRequest;
-import com.example.smd.dto.request.SubjectRequest;
+import com.example.smd.dto.request.subject.SubjectPublishRequest;
+import com.example.smd.dto.request.subject.SubjectRequest;
+import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.dto.response.SubjectResponse;
 import com.example.smd.services.SubjectService;
@@ -13,7 +14,6 @@ import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -47,7 +47,7 @@ public class SubjectController {
             summary = "Advanced search subjects with pagination",
             description = "Search by 'code' or 'name' directly at the database level. Filters by status is also supported."
     )
-    public ResponseObject<Page<SubjectResponse>> getAll(
+    public ResponseObject<PagedResponse<SubjectResponse>> getAll(
             @RequestParam(required = false) String search,
             @RequestParam(required = false, defaultValue = "code") String searchBy,
             @Parameter(description = "Filter by status: null (Draft), true (Published), false (Hidden)")
@@ -60,8 +60,8 @@ public class SubjectController {
         Sort sort = direction.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
         Pageable pageable = PageRequest.of(page, size, sort);
 
-        return ResponseObject.<Page<SubjectResponse>>builder()
-                .data(subjectService.getAll(search, searchBy,status, pageable))
+        return ResponseObject.<PagedResponse<SubjectResponse>>builder()
+                .data(PagedResponse.of(subjectService.getAll(search, searchBy,status, pageable)))
                 .message("Subjects retrieved successfully")
                 .build();
     }
