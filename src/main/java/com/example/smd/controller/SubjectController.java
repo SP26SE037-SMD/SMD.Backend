@@ -28,7 +28,6 @@ import java.util.UUID;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Tag(name = "Subject", description = "Endpoints for managing academic subjects and their metadata")
 @SecurityRequirement(name = "bearerAuth")
-
 public class SubjectController {
 
     SubjectService subjectService;

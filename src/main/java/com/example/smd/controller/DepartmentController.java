@@ -2,7 +2,6 @@ package com.example.smd.controller;
 
 import com.example.smd.dto.request.DepartmentRequest;
 import com.example.smd.dto.response.DepartmentResponse;
-import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.services.DepartmentService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -24,7 +23,6 @@ import java.util.UUID;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Tag(name = "Department", description = "Endpoints for managing academic departments")
 @SecurityRequirement(name = "bearerAuth")
-
 public class DepartmentController {
     DepartmentService departmentService;
 
@@ -41,13 +39,13 @@ public class DepartmentController {
 
     @GetMapping
     @Operation(summary = "Get all departments with pagination and search")
-    public ResponseObject<PagedResponse<DepartmentResponse>> getAll(
+    public ResponseObject<Page<DepartmentResponse>> getAll(
             @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        return ResponseObject.<PagedResponse<DepartmentResponse>>builder()
+        return ResponseObject.<Page<DepartmentResponse>>builder()
                 .status(1000)
-                .data(PagedResponse.of(departmentService.getAll(search, page, size)))
+                .data(departmentService.getAll(search, page, size))
                 .message("Get all departments successfully")
                 .build();
     }

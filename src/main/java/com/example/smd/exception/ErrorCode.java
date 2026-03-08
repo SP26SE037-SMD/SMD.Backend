@@ -80,17 +80,6 @@ public enum ErrorCode {
     DEPARTMENT_HAS_CONSTRAINTS(12005, "Cannot delete department with linked subjects or lecturers", HttpStatus.CONFLICT),
     DEPARTMENT_CODE_CANNOT_BE_CHANGED(12006, "Department code cannot be modified after creation", HttpStatus.BAD_REQUEST),
 
-    //Notification
-    NOTIFICATION_NOT_FOUND(15001, "Notification not found", HttpStatus.NOT_FOUND),
-    TITLE_REQUIRED(15002, "Notification title cannot be blank", HttpStatus.BAD_REQUEST),
-    MESSAGE_REQUIRED(15003, "Notification message cannot be blank", HttpStatus.BAD_REQUEST),
-    TYPE_REQUIRED(15004, "Notification type is required", HttpStatus.BAD_REQUEST),
-    ACCOUNT_ID_REQUIRED(15005, "Account ID is required for notification", HttpStatus.BAD_REQUEST),
-
-    //System Log
-    LOG_NOT_FOUND(14001, "System log not found", HttpStatus.NOT_FOUND),
-    ACTION_REQUIRED(14002, "Action is required", HttpStatus.BAD_REQUEST),
-    ACTION_TOO_LONG(14003, "Action must not exceed 100 characters", HttpStatus.BAD_REQUEST),
     //PREREQUISITE
     PREREQUISITE_NOT_FOUND(13001, "Prerequisite relationship not found", HttpStatus.NOT_FOUND),
     PREREQUISITE_ALREADY_EXISTS(13002, "This prerequisite relationship already exists", HttpStatus.BAD_REQUEST),
@@ -109,6 +98,22 @@ public enum ErrorCode {
     MAJOR_ID_REQUIRED(10007, "Major ID is required", HttpStatus.BAD_REQUEST),
     INVALID_YEAR_RANGE(10008, "End year must be greater than start year", HttpStatus.BAD_REQUEST),
     CURRICULUM_HAS_SUBJECTS(10009, "Cannot delete curriculum that contains subjects", HttpStatus.CONFLICT),
+    //System Log
+    LOG_NOT_FOUND(14001, "System log not found", HttpStatus.NOT_FOUND),
+    ACTION_REQUIRED(14002, "Action is required", HttpStatus.BAD_REQUEST),
+    ACTION_TOO_LONG(14003, "Action must not exceed 100 characters", HttpStatus.BAD_REQUEST),
+
+    //Notification
+    NOTIFICATION_NOT_FOUND(15001, "Notification not found", HttpStatus.NOT_FOUND),
+    TITLE_REQUIRED(15002, "Notification title cannot be blank", HttpStatus.BAD_REQUEST),
+    MESSAGE_REQUIRED(15003, "Notification message cannot be blank", HttpStatus.BAD_REQUEST),
+    TYPE_REQUIRED(15004, "Notification type is required", HttpStatus.BAD_REQUEST),
+    ACCOUNT_ID_REQUIRED(15005, "Account ID is required for notification", HttpStatus.BAD_REQUEST),
+
+    //CLO_PLO_MAPPING
+    CLO_PLO_MAPPING_NOT_FOUND(16001, "CLO-PLO Mapping not found", HttpStatus.NOT_FOUND),
+    MAPPING_ALREADY_EXISTS(16002, "This CLO is already mapped to this PLO", HttpStatus.BAD_REQUEST),
+    INVALID_CONTRIBUTION_LEVEL(16003, "Contribution level must be Low, Medium, or High", HttpStatus.BAD_REQUEST),
 
     // General
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),

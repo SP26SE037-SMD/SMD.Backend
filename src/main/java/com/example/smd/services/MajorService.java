@@ -66,6 +66,7 @@ public class MajorService {
         }
 
         Major major = majorMapper.toMajor(request);
+        major.setStatus(true);
         var response =  majorRepository.save(major);
         return majorMapper.toMajorResponse(response);
     }
@@ -84,10 +85,10 @@ public class MajorService {
 
     // Delete Major (Xóa mềm)
     public void deleteMajor(UUID id) {
-        if (!majorRepository.existsById(id)) {
-            throw new AppException(ErrorCode.MAJOR_NOT_FOUND);
-        }
-        majorRepository.deleteById(id);
+        Major major = majorRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.MAJOR_NOT_FOUND));
+        major.setStatus(false);
+        majorRepository.save(major);
     }
 
     public MajorResponse getMajorDetail(String majorCode) {

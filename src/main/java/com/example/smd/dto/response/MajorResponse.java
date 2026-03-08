@@ -15,4 +15,5 @@ public class MajorResponse {
     private String majorCode;
     private String majorName;
     private String description;
+    private Boolean status;
 }

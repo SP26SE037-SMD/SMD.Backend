@@ -2,7 +2,6 @@ package com.example.smd.controller;
 
 import com.example.smd.dto.request.PLOsRequest;
 import com.example.smd.dto.response.PLOsResponse;
-import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.services.PLOsService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -22,7 +21,6 @@ import org.springframework.web.bind.annotation.*;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Tag(name = "PLOs", description = "Program Learning Outcomes Management APIs")
 @SecurityRequirement(name = "bearerAuth")
-
 public class PLOsController {
     PLOsService ploService;
 
@@ -60,13 +58,13 @@ public class PLOsController {
 
     @GetMapping("/major/{majorId}")
     @Operation(summary = "Get PLOs by Major ID")
-    public ResponseObject<PagedResponse<PLOsResponse>> getByMajor(
+    public ResponseObject<Page<PLOsResponse>> getByMajor(
             @PathVariable String majorId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        return ResponseObject.<PagedResponse<PLOsResponse>>builder()
+        return ResponseObject.<Page<PLOsResponse>>builder()
                 .status(1000)
-                .data(PagedResponse.of(ploService.getPlosByMajor(majorId, page, size)))
+                .data(ploService.getPlosByMajor(majorId, page, size))
                 .message("Get PLOs by major successfully")
                 .build();
     }
