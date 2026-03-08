@@ -2,7 +2,6 @@ package com.example.smd.controller;
 
 import com.example.smd.dto.request.MajorRequest;
 import com.example.smd.dto.response.MajorResponse;
-import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.entities.Major;
 import com.example.smd.services.MajorService;
@@ -38,7 +37,7 @@ public class MajorController {
             summary = "Get majors with pagination and filters",
             description = "Retrieve a paginated list of majors. You can filter by 'major_code', 'major_name', or search across both fields."
     )
-    public ResponseObject<PagedResponse<MajorResponse>> getAllMajors(
+    public ResponseObject<Page<MajorResponse>> getAllMajors(
             @RequestParam(required = false) String search,
             @RequestParam(required = false, defaultValue = "code") String searchBy,
             @RequestParam(defaultValue = "0") int page,
@@ -47,9 +46,9 @@ public class MajorController {
     ) {
         Page<MajorResponse> majors = majorService.getAllMajors(search, searchBy, page, size, sort);
 
-        return ResponseObject.<PagedResponse<MajorResponse>>builder()
+        return ResponseObject.<Page<MajorResponse>>builder()
                 .status(1000)
-                .data(PagedResponse.of(majors))
+                .data(majors)
                 .message("Get all majors successfully")
                 .build();
     }

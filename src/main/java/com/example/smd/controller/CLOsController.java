@@ -18,8 +18,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/api/clos")
 @RequiredArgsConstructor
@@ -55,13 +53,13 @@ public class CLOsController {
 
     @GetMapping("/subject/{subjectId}")
     @Operation(summary = "Get list of CLOs by Subject ID with pagination")
-    public ResponseObject<PagedResponse<CLOsResponse>> getBySubject(
+    public ResponseObject<Page<CLOsResponse>> getBySubject(
             @PathVariable String subjectId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        return ResponseObject.<PagedResponse<CLOsResponse>>builder()
+        return ResponseObject.<Page<CLOsResponse>>builder()
                 .status(1000)
-                .data(PagedResponse.of(closService.getClosBySubject(subjectId, page, size)))
+                .data(closService.getClosBySubject(subjectId, page, size))
                 .message("Get CLOs by subject successfully")
                 .build();
     }

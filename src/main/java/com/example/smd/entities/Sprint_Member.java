@@ -24,7 +24,7 @@ public class Sprint_Member {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "profile_id", nullable = false)
-    Account_Profile accountProfile;
+    Account accountProfile;
 
     @Column(name = "role_in_sprint", length = 50)
     String roleInSprint; // 'Lead', 'Member', 'Reviewer'

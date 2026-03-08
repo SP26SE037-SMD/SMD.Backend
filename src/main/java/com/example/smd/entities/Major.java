@@ -6,6 +6,7 @@ import lombok.experimental.FieldDefaults;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -30,6 +31,12 @@ public class Major {
 
     @Column(columnDefinition = "TEXT")
     String description;
+
+    @Column(name = "status")
+    Boolean status = true;
+
+    @Column(name = "created_at")
+    Instant createdAt;
 
     @OneToMany(mappedBy = "major", fetch = FetchType.LAZY)
     List<Curriculum> curriculums;
