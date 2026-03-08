@@ -15,22 +15,22 @@ import java.util.UUID;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class NotificationResponse {
-    
+
     UUID notificationId;
-    
+
     String title;
-    
+
     String message;
 
     @Schema(example = "SYSTEM /  TASK_ASSIGNED / REVIEW_REQUEST / COMMENT / APPROVAL / REJECTION / REMINDER / DEADLINE / SPRINT_UPDATE")
     NotificationType type;
-    
+
     Boolean isRead;
-    
+
     UUID accountId;
-    
-    String accountUsername;
-    
+
+    String accountEmail;
+
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+7")
     Instant createdAt;
 }

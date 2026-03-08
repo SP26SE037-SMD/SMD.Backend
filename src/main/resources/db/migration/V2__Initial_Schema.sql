@@ -1,5 +1,5 @@
 -- =====================================================
--- Migration: Update Subjects Structure to match ERD
+-- Migration: Update Subjects Structure and System Log
 -- Version: V2
 -- =====================================================
 
@@ -21,3 +21,21 @@ ALTER TABLE subjects ALTER COLUMN description TYPE TEXT;
 
 ALTER TABLE elective
     ADD COLUMN IF NOT EXISTS elective_code VARCHAR(20) NOT NULL UNIQUE;
+
+-- 4. Cập nhật bảng system_log
+ALTER TABLE system_log
+DROP COLUMN IF EXISTS log_source,
+DROP COLUMN IF EXISTS log_level,
+ADD COLUMN IF NOT EXISTS action VARCHAR(100) NOT NULL DEFAULT 'UNKNOWN',
+ADD COLUMN IF NOT EXISTS target_id UUID;
+
+-- 5. Đổi tên bảng lecturer_profile thành account_profile
+ALTER TABLE IF EXISTS lecturer_profile RENAME TO account_profile;
+
+-- 6. Đổi tên cột lecturer_id thành profile_id và chuyển thành UUID
+ALTER TABLE IF EXISTS account_profile
+    DROP COLUMN IF EXISTS department_id,
+    ALTER COLUMN lecturer_id TYPE UUID USING lecturer_id::UUID;
+
+ALTER TABLE IF EXISTS account_profile
+    RENAME COLUMN lecturer_id TO profile_id;

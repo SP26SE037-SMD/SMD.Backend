@@ -14,12 +14,12 @@ import java.time.Instant;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class AccountResponse {
+public class AccountLoginResponse {
     java.util.UUID accountId;
     String email;
     String fullName;
     @Schema(example = "ADMIN / LECTURER / STUDENT / COLLABORATOR / HoCFDC /  HoPDC / PDCM /  ")
-    RoleResponse role;
+    String role;
     Boolean isActive;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+7")

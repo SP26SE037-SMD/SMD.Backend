@@ -65,7 +65,7 @@ public class AuthenticationService {
 
     // Xác thực đăng nhập và tạo token
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
-        // 1. Tìm tài khoản theo username
+        // 1. Tìm tài khoản theo email
         Account account = accountRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND, "Account not found"));
 
@@ -89,7 +89,7 @@ public class AuthenticationService {
         return AuthenticationResponse.builder()
                 .authenticated(true)
                 .token(token)
-                .account(accountMapper.toResponse(account))
+                .account(accountMapper.toLoginResponse(account))
                 .build();
     }
 
@@ -126,7 +126,7 @@ public class AuthenticationService {
         return AuthenticationResponse.builder()
                 .authenticated(true)
                 .token(token)
-                .account(accountMapper.toResponse(account))
+                .account(accountMapper.toLoginResponse(account))
                 .build();
     }
 

@@ -22,6 +22,5 @@ public interface DepartmentMapper {
     @Mapping(target = "departmentCode", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "subjects", ignore = true)
-    @Mapping(target = "lecturers", ignore = true)
     void updateDepartment(@MappingTarget Department department, DepartmentRequest request);
 }

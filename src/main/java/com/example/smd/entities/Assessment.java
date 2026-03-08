@@ -2,6 +2,8 @@ package com.example.smd.entities;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+
+import java.time.Instant;
 import java.util.List;
 
 @Getter
@@ -48,4 +50,17 @@ public class Assessment {
 
     @Column(columnDefinition = "TEXT")
     String note;
+
+    //bổ sung cột
+    @Column(name = "status")
+    String status;
+
+    @Column(name = "created_at")
+    Instant createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = Instant.now();
+    }
+
 }

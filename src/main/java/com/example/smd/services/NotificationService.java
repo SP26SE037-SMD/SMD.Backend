@@ -48,7 +48,7 @@ public class NotificationService {
 
         // Lưu notification
         Notification savedNotification = notificationRepository.save(notification);
-        log.info("Created notification {} for user {}", savedNotification.getNotificationId(), account.getUsername());
+        log.info("Created notification {} for user {}", savedNotification.getNotificationId(), account.getEmail());
 
         return notificationMapper.toNotificationResponse(savedNotification);
     }
@@ -158,8 +158,8 @@ public class NotificationService {
      * Lấy user ID từ SecurityContext
      */
     private UUID getCurrentUserId() {
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        Account account = accountRepository.findByUsername(username)
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        Account account = accountRepository.findByEmail(email)
                 .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND));
         return account.getAccountId();
     }
