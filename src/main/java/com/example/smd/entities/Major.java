@@ -40,4 +40,9 @@ public class Major {
 
     @OneToMany(mappedBy = "major", fetch = FetchType.LAZY)
     List<PLOs> plos;
+
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = Instant.now();
+    }
 }

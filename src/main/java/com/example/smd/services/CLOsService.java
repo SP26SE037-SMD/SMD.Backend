@@ -120,15 +120,24 @@ public class CLOsService {
     }
 
     @Transactional
-    public CLOsResponse updateStatus(String id, SyllabusStatus newStatus) {
-        // 1. Tìm CLO theo ID, quăng lỗi nếu không thấy
+    public CLOsResponse updateStatus(String id, String newStatus) {
+        // 1. Kiểm tra trạng thái có hợp lệ không
+        SyllabusStatus status;
+        try {
+            // valueOf so sánh chuỗi với tên của các hằng số trong Enum (VD: "DRAFT")
+            status = SyllabusStatus.valueOf(newStatus.toUpperCase());
+        } catch (IllegalArgumentException | NullPointerException e) {
+            // Ném ra lỗi của hệ thống nếu trạng thái không tồn tại
+            throw new AppException(ErrorCode.INVALID_STATUS_INPUT);
+        }
+
+        // 2. Tìm CLO theo ID
         CLOs clo = closRepository.findById(UUID.fromString(id))
                 .orElseThrow(() -> new AppException(ErrorCode.CLO_NOT_FOUND));
 
-        // 2. Cập nhật trạng thái mới
-        clo.setStatus(newStatus + "");
+        // 3. Cập nhật trạng thái
+        clo.setStatus(status + "");
 
-        // 3. Lưu và trả về DTO (MapStruct sẽ tự xử lý việc chuyển đổi)
         return closMapper.toCloResponse(closRepository.save(clo));
     }
 }
