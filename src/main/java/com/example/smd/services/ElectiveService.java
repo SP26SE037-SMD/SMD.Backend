@@ -23,6 +23,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -35,6 +36,7 @@ public class ElectiveService {
     SubjectRepository subjectRepository;
 
     ElectiveMapper electiveMapper;
+    SubjectMapper subjectMapper;
 
     // Create - Kiểm tra mã trùng
     public ElectiveResponse create(ElectiveRequest request) {
@@ -76,10 +78,25 @@ public class ElectiveService {
     }
 
     // Get Details - Đã có bắt NOT_FOUND
+    @Transactional
     public ElectiveResponse getDetails(UUID id) {
-        return electiveRepository.findById(id)
-                .map(electiveMapper::toElectiveResponse)
+        Elective elective = electiveRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.ELECTIVE_NOT_FOUND));
+
+        // Lấy danh sách Subject từ bảng trung gian
+        List<Subject> subjects = elective.getElectiveSubjects().stream()
+                .map(Elective_Subject::getSubject)
+                .toList();
+
+        // Map Elective sang Response
+        ElectiveResponse response = electiveMapper.toElectiveResponse(elective);
+
+        // Set danh sách môn học đã được convert sang DTO
+        response.setSubjects(subjects.stream()
+                .map(subjectMapper::toSubjectResponse)
+                .toList());
+
+        return response;
     }
 
     public Page<ElectiveResponse> getAll(String search, int page, int size) {

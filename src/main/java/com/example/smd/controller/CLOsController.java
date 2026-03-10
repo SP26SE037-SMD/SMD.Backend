@@ -112,7 +112,7 @@ public class CLOsController {
                     "Chọn một trong các giá trị sau từ danh sách thả xuống:\n\n" +
                     "| Status | Mô tả chi tiết (Nghiệp vụ) |\n" +
                     "| :--- | :--- |\n" +
-                    "| **PENDING_REVIEW** | Chờ duyệt: Đã gửi yêu cầu và đợi Bridge Engineer phê duyệt. |\n" +
+                    "| **PENDING_REVIEW** | Chờ duyệt: Đã gửi yêu cầu và đợi HoD phê duyệt. |\n" +
                     "| **IN_REVIEW** | Đang đánh giá: Chuyên gia đang xem xét nội dung. |\n" +
                     "| **REVISION_REQUESTED** | Yêu cầu chỉnh sửa: Cần sửa lại theo feedback của người duyệt. |\n" +
                     "| **APPROVED** | Đã duyệt: Nội dung đạt yêu cầu, sẵn sàng để xuất bản. |\n" +
@@ -121,7 +121,7 @@ public class CLOsController {
     )
     public ResponseObject<CLOsResponse> changeStatus(
             @PathVariable String id,
-            @RequestParam SyllabusStatus newStatus // Swagger sẽ hiện Dropdown ở đây
+            @RequestParam String newStatus // Swagger sẽ hiện Dropdown ở đây
     ) {
         return ResponseObject.<CLOsResponse>builder()
                 .status(1000)
