@@ -15,9 +15,6 @@ import java.util.UUID;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class AccountUpdateRequest {
 
-    @Size(min = 6, message = "PASSWORD_INVALID")
-    String password;
-
     @Size(max = 100, message = "FULL_NAME_INVALID")
     String fullName;
 }
