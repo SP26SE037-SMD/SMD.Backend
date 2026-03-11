@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -24,6 +25,9 @@ public interface PLOsRepository extends JpaRepository<PLOs, UUID> {
     // Kiểm tra trùng code trong cùng một Major
     boolean existsByPloCodeAndMajor_MajorId(String ploCode, UUID majorId);
 
-    // Kiểm tra xem PLO có đang được sử dụng trong hệ thống không (ví dụ: bảng PLO_Mapping_Course)
-//    boolean existsByPloIdAndCoursesIsNotEmpty(UUID ploId);
+    // Tìm kết hợp cả Curriculum và Major (Dành cho lọc nâng cao)
+    List<PLOs> findByCurriculum_CurriculumIdAndMajor_MajorId(UUID curriculumId, UUID majorId);
+
+    // Kiểm tra trùng mã PLO trong cùng một Khung chương trình
+    boolean existsByPloCodeAndCurriculum_CurriculumId(String ploCode, UUID curriculumId);
 }

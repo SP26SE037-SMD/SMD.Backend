@@ -3,6 +3,7 @@ package com.example.smd.services;
 import com.example.smd.dto.request.MajorRequest;
 import com.example.smd.dto.response.MajorResponse;
 import com.example.smd.entities.Major;
+import com.example.smd.enums.PloStatus;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.MajorMapper;
@@ -66,7 +67,7 @@ public class MajorService {
         }
 
         Major major = majorMapper.toMajor(request);
-        major.setStatus(true);
+        major.setStatus(PloStatus.PUBLISH.toString());
         var response =  majorRepository.save(major);
         return majorMapper.toMajorResponse(response);
     }
@@ -87,7 +88,7 @@ public class MajorService {
     public void deleteMajor(UUID id) {
         Major major = majorRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.MAJOR_NOT_FOUND));
-        major.setStatus(false);
+        major.setStatus(PloStatus.ARCHIVE.toString());
         majorRepository.save(major);
     }
 

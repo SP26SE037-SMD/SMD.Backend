@@ -29,7 +29,7 @@ public class DepartmentController {
 
     @PostMapping
     @Operation(summary = "Create a new department")
-    @PreAuthorize("hasAuthority('DEPARTMENT_CREATE')")
+//    @PreAuthorize("hasAuthority('DEPARTMENT_CREATE')")
     public ResponseObject<DepartmentResponse> create(@RequestBody @Valid DepartmentRequest request) {
         return ResponseObject.<DepartmentResponse>builder()
                 .status(1000)
