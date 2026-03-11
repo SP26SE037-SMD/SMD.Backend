@@ -76,6 +76,31 @@ public class NotificationService {
     }
 
     /**
+     * Lấy tất cả thông báo của user
+     */
+    @Transactional(readOnly = true)
+    public Page<NotificationResponse> getNotificationsByAccountId(String id, int page,
+                                                        int size, Boolean isRead) {
+        UUID currentUserId = accountRepository.findById(UUID.fromString(id))
+                .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND))
+                .getAccountId();
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+
+        Page<Notification> notifications;
+        if (isRead != null) {
+            // Lọc theo trạng thái đã đọc/chưa đọc
+            notifications = notificationRepository.findByAccountAccountIdAndIsReadOrderByCreatedAtDesc(
+                    currentUserId, isRead, pageable);
+        } else {
+            // Lấy tất cả
+            notifications = notificationRepository.findByAccountAccountIdOrderByCreatedAtDesc(
+                    currentUserId, pageable);
+        }
+
+        return notifications.map(notificationMapper::toNotificationResponse);
+    }
+
+    /**
      * Lấy chi tiết một thông báo
      */
     @Transactional(readOnly = true)

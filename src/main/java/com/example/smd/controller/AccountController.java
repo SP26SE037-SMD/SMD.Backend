@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Account", description = "Account Management APIs")
@@ -25,6 +26,7 @@ public class AccountController {
 
     // API lấy danh sách tài khoản có phân trang và tìm kiếm
     @GetMapping
+    @PreAuthorize("hasAuthority('ACCOUNT_VIEW_ALL')")
     @Operation(
         summary = "Get all accounts with pagination and search " +
                 "(role and full name)",
@@ -58,6 +60,7 @@ public class AccountController {
 
     // API tìm kiếm account theo khoảng thời gian createdAt
     @GetMapping("/by-date-range")
+    @PreAuthorize("hasAuthority('ACCOUNT_VIEW_ALL')")
     @Operation(
         summary = "Search accounts by creation date range",
         description = "Search accounts created between fromDate and toDate. " +
@@ -123,6 +126,7 @@ public class AccountController {
 
     // API tạo tài khoản mới
     @PostMapping
+    @PreAuthorize("hasAuthority('ACCOUNT_CREATE')")
     @Operation(summary = "Create new account")
     public ResponseObject<AccountResponse> createAccount(@Valid @RequestBody AccountRequest request) {
         return ResponseObject.<AccountResponse>builder()
@@ -134,6 +138,7 @@ public class AccountController {
 
     // API cập nhật tài khoản theo ID
     @PutMapping
+    @PreAuthorize("hasAuthority('ACCOUNT_UPDATE')")
     @Operation(summary = "Update account by ID")
     public ResponseObject<AccountResponse> updateInformationAccount(
             @RequestParam String id,
@@ -148,6 +153,7 @@ public class AccountController {
 
     // API xóa tài khoản theo ID
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('ACCOUNT_DELETE')")
     @Operation(summary = "Delete account by ID")
     public ResponseObject<Boolean> deleteAccount(@PathVariable String id) {
         return ResponseObject.<Boolean>builder()

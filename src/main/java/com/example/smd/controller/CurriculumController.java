@@ -26,9 +26,9 @@ import java.util.UUID;
 @Tag(name = "Curriculum", description = "Curriculum Management APIs - Quản lý khung chương trình đào tạo")
 @SecurityRequirement(name = "bearerAuth")
 public class CurriculumController {
-    
+
     CurriculumService curriculumService;
-    
+
     /**
      * API lấy danh sách curriculum với phân trang và bộ lọc
      */
@@ -40,36 +40,33 @@ public class CurriculumController {
     public ResponseObject<PagedResponse<CurriculumResponse>> getAllCurriculums(
             @Parameter(description = "Search keyword for curriculum code or name")
             @RequestParam(required = false) String search,
-            
+
             @Parameter(description = "Search by: 'code', 'name', or 'all'")
-            @RequestParam(required = false, defaultValue = "all") String searchBy,
-            
-            @Parameter(description = "Filter by Major ID (UUID)")
-            @RequestParam(required = false) String majorId,
-            
+            @RequestParam(required = false) String searchBy,
+
             @Parameter(description = "Filter by status: ACTIVE, INACTIVE, DRAFT, ARCHIVED")
             @RequestParam(required = false) String status,
-            
+
             @Parameter(description = "Page number (0-based)")
             @RequestParam(defaultValue = "0") int page,
-            
+
             @Parameter(description = "Page size")
             @RequestParam(defaultValue = "10") int size,
-            
+
             @Parameter(description = "Sort field and direction: [field, asc|desc]")
             @RequestParam(defaultValue = "curriculumCode,asc") String[] sort
     ) {
         Page<CurriculumResponse> curriculums = curriculumService.getAllCurriculums(
                 search, searchBy, status, page, size, sort
         );
-        
+
         return ResponseObject.<PagedResponse<CurriculumResponse>>builder()
                 .status(1000)
                 .data(PagedResponse.of(curriculums))
                 .message("Get all curriculums successfully")
                 .build();
     }
-    
+
     /**
      * API tạo curriculum mới
      */
@@ -88,7 +85,7 @@ public class CurriculumController {
                 .message("Curriculum created successfully")
                 .build();
     }
-    
+
     /**
      * API lấy chi tiết curriculum theo ID
      */
@@ -99,7 +96,7 @@ public class CurriculumController {
     )
     public ResponseObject<CurriculumResponse> getCurriculumDetail(
             @Parameter(description = "Curriculum ID (UUID)")
-            @PathVariable UUID id
+            @PathVariable String id
     ) {
         return ResponseObject.<CurriculumResponse>builder()
                 .status(1000)
@@ -107,7 +104,7 @@ public class CurriculumController {
                 .message("Get curriculum detail successfully")
                 .build();
     }
-    
+
     /**
      * API lấy curriculum theo code
      */
@@ -126,7 +123,7 @@ public class CurriculumController {
                 .message("Get curriculum by code successfully")
                 .build();
     }
-    
+
     /**
      * API cập nhật curriculum
      */
@@ -138,7 +135,7 @@ public class CurriculumController {
     )
     public ResponseObject<CurriculumResponse> updateCurriculum(
             @Parameter(description = "Curriculum ID (UUID)")
-            @PathVariable UUID id,
+            @PathVariable String id,
             @RequestBody @Valid CurriculumCreateRequest request
     ) {
         return ResponseObject.<CurriculumResponse>builder()
@@ -147,9 +144,9 @@ public class CurriculumController {
                 .message("Curriculum updated successfully")
                 .build();
     }
-    
 
-    
+
+
     /**
      * API cập nhật status của curriculum
      */
@@ -161,8 +158,8 @@ public class CurriculumController {
     )
     public ResponseObject<CurriculumResponse> updateCurriculumStatus(
             @Parameter(description = "Curriculum ID (UUID)")
-            @PathVariable UUID id,
-            
+            @PathVariable String id,
+
             @Parameter(description = "New status: ACTIVE, INACTIVE, DRAFT, ARCHIVED")
             @RequestParam String status
     ) {
@@ -174,13 +171,13 @@ public class CurriculumController {
     }
 
     /**
-     * API cập nhật status của curriculum
+     * API cập nhật endYear của curriculum
      */
     @PatchMapping("/{id}/end-year")
     @PreAuthorize("hasAuthority('CURRICULUM_UPDATE')")
     public ResponseObject<CurriculumResponse> updateCurriculumEndYear(
             @Parameter(description = "Curriculum ID (UUID)")
-            @PathVariable UUID id,
+            @PathVariable String id,
 
             @Parameter(description = "New end-year must be greater than or equal to start-year")
             @RequestParam int endYear

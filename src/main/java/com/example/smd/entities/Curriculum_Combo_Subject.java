@@ -2,7 +2,10 @@ package com.example.smd.entities;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import java.util.List;@Getter
+import java.util.List;
+import java.util.UUID;
+
+@Getter
 @Setter
 @Builder
 @NoArgsConstructor
@@ -12,7 +15,7 @@ import java.util.List;@Getter
 public class Curriculum_Combo_Subject {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    String id;
+    UUID id;
 
     @Column(name = "semester")
     private Integer semester;

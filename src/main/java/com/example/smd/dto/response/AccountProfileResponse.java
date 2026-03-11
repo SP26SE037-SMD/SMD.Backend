@@ -11,14 +11,14 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 //@JsonInclude(JsonInclude.Include.USE_DEFAULTS)
 public class AccountProfileResponse {
-    
+
     String profileId;
-    
+
     String accountId;
-    
+
     String avatarUrl;
-    
+
     String phoneNumber;
-    
+
     String createdAt;
 }

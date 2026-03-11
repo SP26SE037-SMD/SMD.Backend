@@ -12,6 +12,7 @@ import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -27,6 +28,7 @@ public class NotificationController {
     NotificationService notificationService;
 
     @PostMapping
+    @PreAuthorize("hasAuthority('NOTIFICATION_CREATE')")
     @Operation(summary = "Create and send a notification to a user")
     public ResponseObject<NotificationResponse> createNotification(
             @RequestBody @Valid NotificationRequest request) {
@@ -50,6 +52,20 @@ public class NotificationController {
                 .build();
     }
 
+    @GetMapping("/account-notifications")
+    @Operation(summary = "Get all notifications of  user with optional filter")
+    public ResponseObject<PagedResponse<NotificationResponse>> getNotificationsByAccountId(
+            @RequestParam String accountId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) Boolean isRead) {
+        return ResponseObject.<PagedResponse<NotificationResponse>>builder()
+                .status(1000)
+                .data(PagedResponse.of(notificationService.getMyNotifications(page, size, isRead)))
+                .message("Get notifications successfully")
+                .build();
+    }
+
     @GetMapping("/{id}")
     @Operation(summary = "Get notification detail by ID")
     public ResponseObject<NotificationResponse> getNotificationDetail(
@@ -62,6 +78,7 @@ public class NotificationController {
     }
 
     @PutMapping("/{id}/mark-as-read")
+    @PreAuthorize("hasAuthority('NOTIFICATION_UPDATE')")
     @Operation(summary = "Mark a notification as read")
     public ResponseObject<NotificationResponse> markAsRead(
             @PathVariable("id") UUID notificationId) {
@@ -73,6 +90,7 @@ public class NotificationController {
     }
 
     @PostMapping("/mark-all-as-read")
+    @PreAuthorize("hasAuthority('NOTIFICATION_UPDATE')")
     @Operation(summary = "Mark all notifications as read")
     public ResponseObject<Void> markAllAsRead() {
         notificationService.markAllAsRead();

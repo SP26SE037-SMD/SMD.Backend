@@ -30,6 +30,7 @@ public class SystemLogController {
     SystemLogService systemLogService;
 
     @PostMapping
+    @PreAuthorize("hasAuthority('SYSTEM_LOG_CREATE')")
     @Operation(summary = "Create a system log entry")
     public ResponseObject<SystemLogResponse> createLog(
             @RequestBody @Valid SystemLogRequest request) {
