@@ -41,6 +41,10 @@ public class PLOs {
     }
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "curriculum_id")
+    Curriculum curriculum;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "major_id")
     Major major;
 

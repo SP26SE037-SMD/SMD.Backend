@@ -8,6 +8,7 @@ import com.example.smd.entities.Department;
 import com.example.smd.entities.Elective;
 import com.example.smd.entities.Elective_Subject;
 import com.example.smd.entities.Subject;
+import com.example.smd.enums.SubjectStatus;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.ElectiveMapper;
@@ -58,6 +59,7 @@ public class SubjectService {
                 .orElseThrow(() -> new AppException(ErrorCode.DEPARTMENT_NOT_FOUND));
         subject.setDepartment(department);
 
+        subject.setStatus(SubjectStatus.DRAFT.toString());
         subject = subjectRepository.save(subject);
 
         //Tạo môn mang theo giá trị elective
@@ -83,7 +85,7 @@ public class SubjectService {
         return response;
     }
 
-    public Page<SubjectResponse> getAll(String search, String searchBy, Boolean status, Pageable pageable) {
+    public Page<SubjectResponse> getAll(String search, String searchBy, String status, Pageable pageable) {
         Specification<Subject> spec = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
@@ -101,10 +103,7 @@ public class SubjectService {
             // 2. Các filter cố định (Static Filters)
             if (status != null) {
                 // Nếu truyền true hoặc false -> Lọc theo giá trị đó
-                predicates.add(cb.equal(root.get("status"), status));
-            } else {
-                // Nếu KHÔNG truyền status (status == null) -> Chỉ quét các môn đang biên soạn
-                predicates.add(cb.isNull(root.get("status")));
+                predicates.add(cb.equal(root.get("status"), status.toUpperCase()));
             }
 
             return cb.and(predicates.toArray(new Predicate[0]));
@@ -148,7 +147,7 @@ public class SubjectService {
     public void delete(UUID id) {
         Subject subject = subjectRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.SUBJECT_NOT_FOUND));
-        subject.setStatus(false); // Soft delete
+        subject.setStatus(SubjectStatus.ARCHIVED.toString()); // Soft delete
         subjectRepository.save(subject);
     }
 
@@ -185,7 +184,7 @@ public class SubjectService {
         // 2. Cập nhật các trường liên quan đến việc ban hành
         subject.setDecisionNo(decisionNo);       // Gán số quyết định ban hành
         subject.setIsApproved(true);             // Đánh dấu đã phê duyệt
-        subject.setStatus(true);                 // Chuyển từ Draft (null) sang Active (true)
+        subject.setStatus(SubjectStatus.PUBLISHED.toString());                 // Chuyển từ Draft (null) sang Active (true)
         subject.setApprovedDate(Instant.now());  // Lưu ngày phê duyệt (nếu có field này)
 
         // 3. Lưu và trả về response

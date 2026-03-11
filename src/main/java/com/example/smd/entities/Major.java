@@ -33,7 +33,7 @@ public class Major {
     String description;
 
     @Column(name = "status")
-    Boolean status = true;
+    String status;
 
     @Column(name = "created_at")
     Instant createdAt;

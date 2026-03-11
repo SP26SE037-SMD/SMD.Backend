@@ -9,21 +9,22 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 @Repository
 public interface PLOsRepository extends JpaRepository<PLOs, UUID> {
     // Tìm danh sách PLOs theo Major ID (Hỗ trợ phân trang)
-    @Query("SELECT p FROM PLOs p JOIN FETCH p.major WHERE p.major.majorId = :majorId")
-    Page<PLOs> findByMajor_MajorId(UUID majorId, Pageable pageable);
+    @Query("SELECT p FROM PLOs p JOIN FETCH p.curriculum WHERE p.curriculum.curriculumId = :curriculumId")
+    Page<PLOs> findByCurriculum_CurriculumId(UUID curriculumId, Pageable pageable);
 
-    @Query("SELECT p FROM PLOs p JOIN FETCH p.major WHERE p.ploId = :id") // Hibernate sẽ tự động LEFT JOIN bảng Major
+    @Query("SELECT p FROM PLOs p WHERE p.ploId = :id") // Hibernate sẽ tự động LEFT JOIN bảng Major
     Optional<PLOs> findById(UUID id);
 
     // Kiểm tra trùng code trong cùng một Major
     boolean existsByPloCodeAndMajor_MajorId(String ploCode, UUID majorId);
 
-    // Kiểm tra xem PLO có đang được sử dụng trong hệ thống không (ví dụ: bảng PLO_Mapping_Course)
-//    boolean existsByPloIdAndCoursesIsNotEmpty(UUID ploId);
+    // Kiểm tra trùng mã PLO trong cùng một Khung chương trình
+    boolean existsByPloCodeAndCurriculum_CurriculumId(String ploCode, UUID curriculumId);
 }

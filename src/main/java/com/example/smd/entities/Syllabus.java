@@ -5,6 +5,7 @@ import lombok.experimental.FieldDefaults;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -18,7 +19,7 @@ public class Syllabus {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "syllabus_id")
-    String syllabusId;
+    UUID syllabusId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "subject_id", nullable = false)

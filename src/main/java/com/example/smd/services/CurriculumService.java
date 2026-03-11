@@ -134,7 +134,8 @@ public class CurriculumService {
      * Cập nhật curriculum
      */
     @Transactional
-    public CurriculumResponse updateCurriculum(String id, CurriculumCreateRequest request) {
+    public CurriculumResponse updateCurriculum(String id,
+                                               CurriculumCreateRequest request) {
         log.info("Updating curriculum with ID: {}", id);
         
         // 1. Tìm curriculum hiện tại
@@ -165,7 +166,8 @@ public class CurriculumService {
      * Cập nhật status của curriculum
      */
     @Transactional
-    public CurriculumResponse updateCurriculumStatus(String id, String status) {
+    public CurriculumResponse updateCurriculumStatus(String id,
+                                                     String status) {
         log.info("Updating curriculum status for ID: {} to {}", id, status);
         
         Curriculum curriculum = curriculumRepository.findById(UUID.fromString(id))
@@ -181,7 +183,8 @@ public class CurriculumService {
      * Cập nhật status của curriculum
      */
     @Transactional
-    public CurriculumResponse updateCurriculumEndYear(String id, int endYear) {
+    public CurriculumResponse updateCurriculumEndYear(String id,
+                                                      int endYear) {
         log.info("Updating curriculum status for ID: {} to {}", id, endYear);
 
         Curriculum curriculum = curriculumRepository.findById(UUID.fromString(id))
