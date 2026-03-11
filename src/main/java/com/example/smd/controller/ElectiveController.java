@@ -30,7 +30,7 @@ public class ElectiveController {
     @PostMapping
     @Operation(summary = "Create a new elective group",
             description = "Requires electiveCode, electiveName and minCreditsRequired")
-    @PreAuthorize("hasAuthority('ELECTIVE_CREATE')")
+//    @PreAuthorize("hasAuthority('ELECTIVE_CREATE')")
     public ResponseObject<ElectiveResponse> create(@RequestBody @Valid ElectiveRequest request) {
         return ResponseObject.<ElectiveResponse>builder()
                 .status(1000)

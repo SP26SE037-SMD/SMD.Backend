@@ -2,11 +2,14 @@ package com.example.smd.services;
 
 import com.example.smd.dto.request.PLOsRequest;
 import com.example.smd.dto.response.PLOsResponse;
+import com.example.smd.entities.Curriculum;
 import com.example.smd.entities.Major;
 import com.example.smd.entities.PLOs;
+import com.example.smd.enums.PloStatus;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.PLOsMapper;
+import com.example.smd.repositories.CurriculumRepository;
 import com.example.smd.repositories.MajorRepository;
 import com.example.smd.repositories.PLOsRepository;
 import jakarta.transaction.Transactional;
@@ -20,6 +23,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -30,23 +34,25 @@ public class PLOsService {
 
     PLOsRepository plOsRepository;
     MajorRepository majorRepository;
+    CurriculumRepository curriculumRepository;
     PLOsMapper plOsMapper;
 
     @Transactional
     public PLOsResponse createPlo(PLOsRequest request) {
-        // 1. Check Major tồn tại
         try {
-            UUID majorId = UUID.fromString(request.getMajorId());
-            Major major = majorRepository.findById(majorId)
-                    .orElseThrow(() -> new AppException(ErrorCode.MAJOR_NOT_FOUND));
-
-            // 2. Check trùng mã PLO trong cùng 1 Major (Mã PLO có thể trùng ở ngành khác nhưng không được trùng trong cùng ngành)
-            if (plOsRepository.existsByPloCodeAndMajor_MajorId(request.getPloCode(), majorId)) {
+            // 1. Check trùng mã PLO trong cùng 1 Major (Mã PLO có thể trùng ở ngành khác nhưng không được trùng trong cùng ngành)
+            UUID curriculumId = UUID.fromString(request.getCurriculumId());
+            if (plOsRepository.existsByPloCodeAndCurriculum_CurriculumId(request.getPloCode(), curriculumId)) {
                 throw new AppException(ErrorCode.PLO_CODE_EXISTS);
             }
 
+            // 2. Các bước tìm Curriculum và Major như cũ...
+            Curriculum curriculum = curriculumRepository.findById(curriculumId)
+                    .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));
+
             PLOs plo = plOsMapper.toPlo(request);
-            plo.setMajor(major);
+            plo.setCurriculum(curriculum);
+            plo.setStatus(PloStatus.PUBLISH.toString());
 
             return plOsMapper.toPloResponse(plOsRepository.save(plo));
         } catch (IllegalArgumentException e) {
@@ -115,13 +121,14 @@ public class PLOsService {
 
             // 2. Kiểm tra ràng buộc dữ liệu (Logic nghiệp vụ cho đồ án Capstone)
             // Nếu PLO đã được ánh xạ vào Course (môn học) thì không được xóa
-//            if (plOsRepository.existsByPloIdAndCoursesIsNotEmpty(ploId)) {
+//            if (plo.getCurriculum() != null) {
 //                throw new AppException(ErrorCode.PLO_IN_USE);
 //                // Bạn cần định nghĩa thêm ErrorCode này: "PLO đang được sử dụng, không thể xóa"
 //            }
 
             // 3. Thực hiện xóa
-            plOsRepository.delete(plo);
+            plo.setStatus(PloStatus.ARCHIVE.toString());
+            plOsRepository.save(plo);
 
         } catch (IllegalArgumentException e) {
             throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);

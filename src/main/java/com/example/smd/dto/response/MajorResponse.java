@@ -14,11 +14,11 @@ import java.time.Instant;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class MajorResponse {
-    private String majorId;
-    private String majorCode;
-    private String majorName;
-    private String description;
-    private Boolean status;
+    String majorId;
+    String majorCode;
+    String majorName;
+    String description;
+    String status;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+7")
     Instant createdAt;
 }

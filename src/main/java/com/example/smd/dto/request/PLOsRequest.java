@@ -18,6 +18,6 @@ public class PLOsRequest {
     String ploName;
     String description;
 
-    @NotBlank(message = "MAJOR_ID_REQUIRED")
-    String majorId; // Khóa ngoại dùng để liên kết với Major
+    @NotBlank(message = "CURRICULUM_ID_REQUIRED")
+    String curriculumId; // Khóa ngoại dùng để liên kết với Curriculum
 }

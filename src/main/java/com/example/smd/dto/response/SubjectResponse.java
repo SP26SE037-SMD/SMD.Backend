@@ -32,7 +32,7 @@ public class SubjectResponse {
     Instant approvedDate; // Dùng Instant để đồng bộ với Entity
 
     // Map từ field 'status' trong Entity của bạn
-    Boolean status;
+    String status;
 
     // Trả về UUID của khoa để tiện cho việc truy vấn phía Frontend
     DepartmentResponse department;

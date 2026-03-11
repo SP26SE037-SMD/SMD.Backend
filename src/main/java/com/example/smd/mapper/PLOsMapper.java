@@ -14,7 +14,5 @@ public interface PLOsMapper {
     @Mapping(target = "major", ignore = true) // Chúng ta sẽ set Major thủ công trong Service bằng ID
     PLOs toPlo(PLOsRequest plOsRequest);
 
-    @Mapping(source = "major.majorId", target = "majorId")
-    @Mapping(source = "major.majorName", target = "majorName")
     PLOsResponse toPloResponse(PLOs plo);
 }

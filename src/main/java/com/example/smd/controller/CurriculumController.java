@@ -17,6 +17,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 @RestController
 @RequestMapping("/api/curriculums")
 @RequiredArgsConstructor
@@ -97,7 +99,7 @@ public class CurriculumController {
     )
     public ResponseObject<CurriculumResponse> getCurriculumDetail(
             @Parameter(description = "Curriculum ID (UUID)")
-            @PathVariable String id
+            @PathVariable UUID id
     ) {
         return ResponseObject.<CurriculumResponse>builder()
                 .status(1000)
@@ -136,7 +138,7 @@ public class CurriculumController {
     )
     public ResponseObject<CurriculumResponse> updateCurriculum(
             @Parameter(description = "Curriculum ID (UUID)")
-            @PathVariable String id,
+            @PathVariable UUID id,
             @RequestBody @Valid CurriculumCreateRequest request
     ) {
         return ResponseObject.<CurriculumResponse>builder()
@@ -159,7 +161,7 @@ public class CurriculumController {
     )
     public ResponseObject<CurriculumResponse> updateCurriculumStatus(
             @Parameter(description = "Curriculum ID (UUID)")
-            @PathVariable String id,
+            @PathVariable UUID id,
             
             @Parameter(description = "New status: ACTIVE, INACTIVE, DRAFT, ARCHIVED")
             @RequestParam String status
@@ -178,7 +180,7 @@ public class CurriculumController {
     @PreAuthorize("hasAuthority('CURRICULUM_UPDATE')")
     public ResponseObject<CurriculumResponse> updateCurriculumEndYear(
             @Parameter(description = "Curriculum ID (UUID)")
-            @PathVariable String id,
+            @PathVariable UUID id,
 
             @Parameter(description = "New end-year must be greater than or equal to start-year")
             @RequestParam int endYear
