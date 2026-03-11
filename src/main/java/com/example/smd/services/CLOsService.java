@@ -136,7 +136,7 @@ public class CLOsService {
                 .orElseThrow(() -> new AppException(ErrorCode.CLO_NOT_FOUND));
 
         // 3. Cập nhật trạng thái
-        clo.setStatus(status + "");
+        clo.setStatus(status.toString());
 
         return closMapper.toCloResponse(closRepository.save(clo));
     }

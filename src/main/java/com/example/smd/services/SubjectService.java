@@ -85,7 +85,7 @@ public class SubjectService {
         return response;
     }
 
-    public Page<SubjectResponse> getAll(String search, String searchBy, Boolean status, Pageable pageable) {
+    public Page<SubjectResponse> getAll(String search, String searchBy, String status, Pageable pageable) {
         Specification<Subject> spec = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
@@ -103,10 +103,7 @@ public class SubjectService {
             // 2. Các filter cố định (Static Filters)
             if (status != null) {
                 // Nếu truyền true hoặc false -> Lọc theo giá trị đó
-                predicates.add(cb.equal(root.get("status"), status));
-            } else {
-                // Nếu KHÔNG truyền status (status == null) -> Chỉ quét các môn đang biên soạn
-                predicates.add(cb.isNull(root.get("status")));
+                predicates.add(cb.equal(root.get("status"), status.toUpperCase()));
             }
 
             return cb.and(predicates.toArray(new Predicate[0]));

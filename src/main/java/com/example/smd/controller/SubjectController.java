@@ -51,7 +51,7 @@ public class SubjectController {
             @RequestParam(required = false) String search,
             @RequestParam(required = false, defaultValue = "code") String searchBy,
             @Parameter(description = "Filter by status: null (Draft), true (Published), false (Hidden)")
-            @RequestParam(required = false) Boolean status,
+            @RequestParam(required = false) String status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "subjectCode") String sortBy,
