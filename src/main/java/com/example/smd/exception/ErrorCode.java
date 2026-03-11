@@ -120,6 +120,10 @@ public enum ErrorCode {
     ACCOUNT_PROFILE_NOT_FOUND(17001, "Account profile not found", HttpStatus.NOT_FOUND),
     PHONE_NUMBER_INVALID(17002, "Phone number must be 10-11 digits", HttpStatus.BAD_REQUEST),
 
+    //SYLLABUS
+    SYLLABUS_NOT_FOUND(18001, "The syllabus does not exist on the system.", HttpStatus.NOT_FOUND),
+    INVALID_SYLLABUS_STATUS(18002, "The syllabus status is invalid.", HttpStatus.BAD_REQUEST),
+
     // General
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),
     INVALID_KEY(1000, "Invalid message key", HttpStatus.BAD_REQUEST),
