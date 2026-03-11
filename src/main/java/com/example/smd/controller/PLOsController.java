@@ -60,15 +60,15 @@ public class PLOsController {
                 .build();
     }
 
-    @GetMapping("/major/{majorId}")
+    @GetMapping("/curriculum/{curriculumId}")
     @Operation(summary = "Get PLOs by Major ID")
-    public ResponseObject<PagedResponse<PLOsResponse>> getByMajor(
-            @PathVariable String majorId,
+    public ResponseObject<PagedResponse<PLOsResponse>> getByCurriculum(
+            @PathVariable String curriculumId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         return ResponseObject.<PagedResponse<PLOsResponse>>builder()
                 .status(1000)
-                .data(PagedResponse.of(ploService.getPlosByMajor(majorId, page, size)))
+                .data(PagedResponse.of(ploService.getPlosByCurriculum(curriculumId, page, size)))
                 .message("Get PLOs by major successfully")
                 .build();
     }

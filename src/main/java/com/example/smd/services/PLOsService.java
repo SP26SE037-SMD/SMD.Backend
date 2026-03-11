@@ -69,7 +69,7 @@ public class PLOsService {
 
             // Nếu thay đổi code, cần check xem code mới có trùng trong Major hiện tại không
             if (!plo.getPloCode().equals(request.getPloCode()) &&
-                    plOsRepository.existsByPloCodeAndMajor_MajorId(request.getPloCode(), plo.getMajor().getMajorId())) {
+                    plOsRepository.existsByPloCodeAndCurriculum_CurriculumId(request.getPloCode(), plo.getCurriculum().getCurriculumId())) {
                 throw new AppException(ErrorCode.PLO_CODE_EXISTS);
             }
 
@@ -94,16 +94,16 @@ public class PLOsService {
         }
     }
 
-    public Page<PLOsResponse> getPlosByMajor(String majorId, int page, int size) {
+    public Page<PLOsResponse> getPlosByCurriculum(String curriculumId, int page, int size) {
         try {
             // Check majorId trước khi tìm kiếm
-            UUID id = UUID.fromString(majorId);
-            if (!majorRepository.existsById(id)) {
-                throw new AppException(ErrorCode.MAJOR_NOT_FOUND);
+            UUID id = UUID.fromString(curriculumId);
+            if (!curriculumRepository.existsById(id)) {
+                throw new AppException(ErrorCode.CURRICULUM_NOT_FOUND);
             }
 
             Pageable pageable = PageRequest.of(page, size, Sort.by("ploCode").ascending());
-            return plOsRepository.findByMajor_MajorId(id, pageable)
+            return plOsRepository.findByCurriculum_CurriculumId(id, pageable)
                     .map(plOsMapper::toPloResponse);
         } catch (IllegalArgumentException e) {
             throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION); // Hoặc một mã lỗi định dạng ID không hợp lệ
