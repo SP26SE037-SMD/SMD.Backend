@@ -3,6 +3,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import java.util.List;
+import java.util.UUID;
+
 @Getter
 @Setter
 @Builder
@@ -14,7 +16,7 @@ import java.util.List;
 public class Curriculum {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    String curriculumId;
+    UUID curriculumId;
 
     @Column(name = "curriculum_code", unique = true, nullable = false, length = 20)
     String curriculumCode;

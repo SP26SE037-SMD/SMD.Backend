@@ -68,6 +68,7 @@ public class RoleController {
 
     // API tạo vai trò mới
     @PostMapping
+    @PreAuthorize("hasAuthority('ROLE_CREATE')")
     @Operation(summary = "Create new role")
     public ResponseObject<RoleResponse> createRole(@Valid @RequestBody RoleRequest request) {
         return ResponseObject.<RoleResponse>builder()
@@ -79,6 +80,7 @@ public class RoleController {
 
     // API cập nhật vai trò theo ID
     @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('ROLE_UPDATE')")
     @Operation(summary = "Update role by ID")
     public ResponseObject<RoleResponse> updateRole(
             @PathVariable String id,
@@ -93,6 +95,7 @@ public class RoleController {
 
     // API xóa danh sách permission khỏi role
     @DeleteMapping("/{id}/permissions")
+    @PreAuthorize("hasAuthority('ROLE_UPDATE')")
     @Operation(summary = "Remove permissions from role")
     public ResponseObject<RoleResponse> removePermissionsFromRole(
             @PathVariable String id,

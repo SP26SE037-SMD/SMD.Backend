@@ -7,7 +7,7 @@ import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface AccountProfileMapper {
-    
+
     @Mapping(source = "profileId", target = "profileId")
     @Mapping(source = "account.accountId", target = "accountId")
     @Mapping(source = "avatarUrl", target = "avatarUrl")

@@ -110,7 +110,8 @@ public class CurriculumService {
     public CurriculumResponse getCurriculumDetail(String id) {
         log.info("Fetching curriculum detail for ID: {}", id);
 
-        Curriculum curriculum = curriculumRepository.findById(id)
+        Curriculum curriculum =
+                curriculumRepository.findById(UUID.fromString(id))
                 .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));
         
         return curriculumMapper.toCurriculumResponse(curriculum);
@@ -137,7 +138,8 @@ public class CurriculumService {
         log.info("Updating curriculum with ID: {}", id);
         
         // 1. Tìm curriculum hiện tại
-        Curriculum curriculum = curriculumRepository.findById(id)
+        Curriculum curriculum =
+                curriculumRepository.findById(UUID.fromString(id))
                 .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));
         
         // 2. Kiểm tra nếu đổi code thì không được trùng với code khác
@@ -166,7 +168,7 @@ public class CurriculumService {
     public CurriculumResponse updateCurriculumStatus(String id, String status) {
         log.info("Updating curriculum status for ID: {} to {}", id, status);
         
-        Curriculum curriculum = curriculumRepository.findById(id)
+        Curriculum curriculum = curriculumRepository.findById(UUID.fromString(id))
                 .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));
         
         curriculum.setStatus(status);
@@ -182,7 +184,7 @@ public class CurriculumService {
     public CurriculumResponse updateCurriculumEndYear(String id, int endYear) {
         log.info("Updating curriculum status for ID: {} to {}", id, endYear);
 
-        Curriculum curriculum = curriculumRepository.findById(id)
+        Curriculum curriculum = curriculumRepository.findById(UUID.fromString(id))
                 .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));
 
         curriculum.setEndYear(endYear);
