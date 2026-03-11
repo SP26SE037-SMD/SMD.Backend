@@ -34,6 +34,7 @@ public class AccountService {
     private final RoleRepository roleRepository;
     private final AccountMapper accountMapper;
     private final PasswordEncoder passwordEncoder;
+    private final AccountProfileService accountProfileService;
 
     // GetAll tài khoản có phân trang và tìm kiếm theo role name hoặc full name
     @Transactional(readOnly = true)
@@ -78,16 +79,16 @@ public class AccountService {
         // 3. Map nguyên Page<Entity> sang Page<DTO>
         return accountPage.map(accountMapper::toResponse);
     }
-    
+
     // API tìm kiếm account theo khoảng thời gian createdAt
     @Transactional(readOnly = true)
     public Page<AccountResponse> getAccountsByDateRange(
-            java.time.Instant fromDate, 
-            java.time.Instant toDate, 
-            int page, 
-            int size, 
+            java.time.Instant fromDate,
+            java.time.Instant toDate,
+            int page,
+            int size,
             String[] sort) {
-        
+
         // 1. Xử lý sắp xếp
         List<Sort.Order> orders = new ArrayList<>();
         if (sort[0].contains(",")) {
@@ -98,9 +99,9 @@ public class AccountService {
         } else {
             orders.add(new Sort.Order(getSortDirection(sort[1]), sort[0]));
         }
-        
+
         Pageable pagingSort = PageRequest.of(page, size, Sort.by(orders));
-        
+
         // 2. Logic tìm kiếm theo khoảng thời gian
         Page<Account> accountPage;
         if (fromDate != null && toDate != null) {
@@ -116,7 +117,7 @@ public class AccountService {
             // Không có gì: lấy tất cả
             accountPage = accountRepository.findAll(pagingSort);
         }
-        
+
         // 3. Map sang DTO
         return accountPage.map(accountMapper::toResponse);
     }
@@ -151,7 +152,12 @@ public class AccountService {
             account.setRole(role);
         }
 
+        // 4. Lưu account
         account = accountRepository.save(account);
+        log.info("Created new account with ID: {}", account.getAccountId());
+        // 5. Tự động tạo account profile
+        accountProfileService.createProfile(account);
+
         return accountMapper.toResponse(account);
     }
 

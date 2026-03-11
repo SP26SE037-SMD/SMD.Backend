@@ -116,6 +116,10 @@ public enum ErrorCode {
     MAPPING_ALREADY_EXISTS(16002, "This CLO is already mapped to this PLO", HttpStatus.BAD_REQUEST),
     INVALID_CONTRIBUTION_LEVEL(16003, "Contribution level must be Low, Medium, or High", HttpStatus.BAD_REQUEST),
 
+    //ACCOUNT_PROFILE
+    ACCOUNT_PROFILE_NOT_FOUND(17001, "Account profile not found", HttpStatus.NOT_FOUND),
+    PHONE_NUMBER_INVALID(17002, "Phone number must be 10-11 digits", HttpStatus.BAD_REQUEST),
+
     // General
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),
     INVALID_KEY(1000, "Invalid message key", HttpStatus.BAD_REQUEST),

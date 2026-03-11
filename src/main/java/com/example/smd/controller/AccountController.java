@@ -38,13 +38,13 @@ public class AccountController {
             @io.swagger.v3.oas.annotations.Parameter(
                 description = "Search keyword for role name or full name"
             ) String search,
-            
+
             @RequestParam(required = false, defaultValue = "role",
                     name = "searchBy")
             @io.swagger.v3.oas.annotations.Parameter(
                 description = "Search type: 'role' (search by role name), 'name' (search by full name)"
             ) String searchBy,
-            
+
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt,desc") String[] sort
@@ -70,12 +70,12 @@ public class AccountController {
             @io.swagger.v3.oas.annotations.Parameter(
                 description = "Start date (Format: yyyy-MM-dd)"
             ) String fromDateStr,
-            
+
             @RequestParam(required = false, name = "toDate")
             @io.swagger.v3.oas.annotations.Parameter(
                 description = "End date (Format: yyyy-MM-dd)"
             ) String toDateStr,
-            
+
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt,desc") String[] sort
@@ -83,7 +83,7 @@ public class AccountController {
         // Parse date strings to Instant
         java.time.Instant fromDate = null;
         java.time.Instant toDate = null;
-        
+
         try {
             if (fromDateStr != null && !fromDateStr.trim().isEmpty()) {
                 // Parse date và set time về đầu ngày (00:00:00)
@@ -102,14 +102,14 @@ public class AccountController {
                     .message("Invalid date format. Please use yyyy-MM-dd format (e.g., 2024-01-01)")
                     .build();
         }
-        
+
         return ResponseObject.<PagedResponse<AccountResponse>>builder()
                 .status(1000)
                 .data(PagedResponse.of(accountService.getAccountsByDateRange(fromDate, toDate, page, size, sort)))
                 .message("Get accounts by date range successfully")
                 .build();
     }
-    
+
     // API lấy chi tiết tài khoản theo ID
     @GetMapping("/{id}")
     @Operation(summary = "Get account by ID")

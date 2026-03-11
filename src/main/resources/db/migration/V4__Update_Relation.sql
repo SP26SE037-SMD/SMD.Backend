@@ -50,7 +50,10 @@ ALTER TABLE account_profile
     RENAME COLUMN bio TO avatar_url;
 
 ALTER TABLE account_profile
-    ADD COLUMN IF NOT EXISTS phone_number VARCHAR(20);
+    ADD COLUMN IF NOT EXISTS phone_number VARCHAR(20),
+    DROP COLUMN IF EXISTS specialization,
+    DROP COLUMN IF EXISTS title;
+
 -- =====================================================
 -- 3. THÊM INDEXES ĐỂ TỐI ƯU HIỆU NĂNG
 -- =====================================================

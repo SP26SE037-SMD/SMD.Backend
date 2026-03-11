@@ -26,8 +26,8 @@ public class Account_Profile {
     @Column(name = "avatar_url", columnDefinition = "TEXT")
     String avatarUrl;
 
-    @Column(columnDefinition = "TEXT")
-    String bio;
+    @Column(name = "phone_number")
+    String phoneNumber;
 
     @Column(name = "created_at")
     Instant createdAt;
