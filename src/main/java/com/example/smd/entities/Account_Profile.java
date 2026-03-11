@@ -23,7 +23,7 @@ public class Account_Profile {
     @JoinColumn(name = "account_id", nullable = false, unique = true)
     Account account;
 
-    @Column(name = "avatar_url", length = 255)
+    @Column(name = "avatar_url", columnDefinition = "TEXT")
     String avatarUrl;
 
     @Column(columnDefinition = "TEXT")

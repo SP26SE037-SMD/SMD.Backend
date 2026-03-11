@@ -34,7 +34,7 @@ ALTER TABLE combo
 
 
 -- =====================================================
--- 2. CẬP NHẬT BẢNG CURRICULUM_COMBO_SUBJECT
+-- 2. CẬP NHẬT BẢNG
 -- =====================================================
 
 -- Đổi tên cột semester_recommended thành semester để khớp với entity
@@ -45,6 +45,12 @@ ALTER TABLE curriculum_combo_subject
 ALTER TABLE curriculum_combo_subject
     DROP COLUMN IF EXISTS created_at;
 
+
+ALTER TABLE account_profile
+    RENAME COLUMN bio TO avatar_url;
+
+ALTER TABLE account_profile
+    ADD COLUMN IF NOT EXISTS phone_number VARCHAR(20);
 -- =====================================================
 -- 3. THÊM INDEXES ĐỂ TỐI ƯU HIỆU NĂNG
 -- =====================================================
@@ -240,3 +246,6 @@ AND p.permission_name IN (
     'NOTIFICATION_READ'
 )
 ON CONFLICT DO NOTHING;
+
+
+

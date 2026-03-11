@@ -35,9 +35,9 @@ public class AccountService {
     private final AccountMapper accountMapper;
     private final PasswordEncoder passwordEncoder;
 
-    // GetAll tài khoản có phân trang
+    // GetAll tài khoản có phân trang và tìm kiếm theo role name hoặc full name
     @Transactional(readOnly = true)
-    public Page<AccountResponse> getAllAccounts(String search, int page, int size, String[] sort) {
+    public Page<AccountResponse> getAllAccounts(String search, String searchBy, int page, int size, String[] sort) {
         // 1. Xử lý sắp xếp (Sắp xếp theo field CamelCase của Java)
         List<Sort.Order> orders = new ArrayList<>();
         if (sort[0].contains(",")) {
@@ -51,15 +51,74 @@ public class AccountService {
 
         Pageable pagingSort = PageRequest.of(page, size, Sort.by(orders));
 
-        // 2. Logic tìm kiếm để lấy Page<Entity>
+        // 2. Logic tìm kiếm dựa trên searchBy parameter
+        Page<Account> accountPage;
         if (search == null || search.trim().isEmpty()) {
-            return accountRepository.findAll(pagingSort)
-                    .map(accountMapper::toResponse);
+            // Không có search, lấy tất cả accounts
+            accountPage = accountRepository.findAll(pagingSort);
+        } else {
+            String searchTerm = search.trim();
+            // Xác định loại tìm kiếm dựa trên searchBy
+            switch (searchBy != null ? searchBy.toLowerCase() : "all") {
+                case "role":
+                    // Tìm theo role name
+                    accountPage = accountRepository.findByRoleNameContaining(searchTerm, pagingSort);
+                    break;
+                case "name":
+                    // Tìm theo full name
+                    accountPage = accountRepository.findByFullNameContaining(searchTerm, pagingSort);
+                    break;
+                case "all":
+                default:
+                    accountPage = accountRepository.findAll(pagingSort);
+                    break;
+            }
         }
 
-        // 3. Map nguyên List Entity sang DTO bằng method reference của MapStruct
-        return accountRepository.findAll(pagingSort)
-                .map(accountMapper::toResponse);
+        // 3. Map nguyên Page<Entity> sang Page<DTO>
+        return accountPage.map(accountMapper::toResponse);
+    }
+    
+    // API tìm kiếm account theo khoảng thời gian createdAt
+    @Transactional(readOnly = true)
+    public Page<AccountResponse> getAccountsByDateRange(
+            java.time.Instant fromDate, 
+            java.time.Instant toDate, 
+            int page, 
+            int size, 
+            String[] sort) {
+        
+        // 1. Xử lý sắp xếp
+        List<Sort.Order> orders = new ArrayList<>();
+        if (sort[0].contains(",")) {
+            for (String sortOrder : sort) {
+                String[] _sort = sortOrder.split(",");
+                orders.add(new Sort.Order(getSortDirection(_sort[1]), _sort[0]));
+            }
+        } else {
+            orders.add(new Sort.Order(getSortDirection(sort[1]), sort[0]));
+        }
+        
+        Pageable pagingSort = PageRequest.of(page, size, Sort.by(orders));
+        
+        // 2. Logic tìm kiếm theo khoảng thời gian
+        Page<Account> accountPage;
+        if (fromDate != null && toDate != null) {
+            // Cả hai đều có: tìm trong khoảng
+            accountPage = accountRepository.findByCreatedAtBetween(fromDate, toDate, pagingSort);
+        } else if (fromDate != null) {
+            // Chỉ có fromDate: tìm từ ngày này trở đi
+            accountPage = accountRepository.findByCreatedAtAfter(fromDate, pagingSort);
+        } else if (toDate != null) {
+            // Chỉ có toDate: tìm đến ngày này
+            accountPage = accountRepository.findByCreatedAtBefore(toDate, pagingSort);
+        } else {
+            // Không có gì: lấy tất cả
+            accountPage = accountRepository.findAll(pagingSort);
+        }
+        
+        // 3. Map sang DTO
+        return accountPage.map(accountMapper::toResponse);
     }
 
     // Lấy chi tiết tài khoản theo ID
@@ -98,19 +157,11 @@ public class AccountService {
 
     // Cập nhật thông tin tài khoản
     @Transactional
-    public AccountResponse updateAccount(String accountId, AccountUpdateRequest request) {
+    public AccountResponse updateAccount(String accountId, String request) {
         var convert = UUID.fromString(accountId);
         Account account = accountRepository.findById(convert)
                 .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND));
-
-
-        accountMapper.updateEntity(account, request);
-
-
-        if (request.getPassword() != null && !request.getPassword().isEmpty()) {
-            account.setPasswordHash(passwordEncoder.encode(request.getPassword()));
-        }
-
+        account.setFullName(request);
         account = accountRepository.save(account);
         return accountMapper.toResponse(account);
     }
@@ -119,11 +170,12 @@ public class AccountService {
     @Transactional
     public boolean deleteAccount(String accountId) {
         var convert = UUID.fromString(accountId);
+        Account account = accountRepository.findById(convert)
+                .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND));
 
-        if (!accountRepository.existsById(convert)) {
-            throw new AppException(ErrorCode.ACCOUNT_NOT_FOUND);
-        }
-        accountRepository.deleteById(convert);
+        account.setIsActive(false);
+        accountRepository.save(account);
+
         return true;
     }
 
