@@ -1,6 +1,9 @@
 ALTER TABLE public.curriculum DROP CONSTRAINT curriculum_major_id_fkey;
 ALTER TABLE public.curriculum DROP COLUMN major_id;
 
+ALTER TABLE public.curriculum_combo_subject ALTER COLUMN combo_id DROP NOT NULL;
+
+
 -- 1. Thay đổi kiểu dữ liệu cột status của bảng subjects
 -- Sử dụng USING để convert dữ liệu cũ: true -> 'ACTIVE', false -> 'INACTIVE'
 ALTER TABLE subjects

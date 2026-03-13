@@ -33,6 +33,24 @@ public class AccountMapper {
                 .build();
     }
 
+    public AccountResponse toResponse(Account account, String phoneNumber, String avatarUrl) {
+        if (account == null) {
+            return null;
+        }
+
+        return AccountResponse.builder()
+                .accountId(account.getAccountId())
+                .email(account.getEmail())
+                .fullName(account.getFullName())
+                .phoneNumber(phoneNumber)
+                .avatarUrl(avatarUrl)
+                .role(account.getRole() != null ? roleMapper.toResponse(account.getRole()) : null)
+                .isActive(account.getIsActive())
+                .createdAt(account.getCreatedAt())
+                .lastLogin(account.getLastLogin())
+                .build();
+    }
+
     public AccountLoginResponse toLoginResponse(Account account) {
         if (account == null) {
             return null;

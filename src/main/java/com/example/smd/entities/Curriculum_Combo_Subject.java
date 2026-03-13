@@ -25,7 +25,7 @@ public class Curriculum_Combo_Subject {
     Curriculum curriculum;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "combo_id", nullable = false)
+    @JoinColumn(name = "combo_id")
     Combo combo;
 
     @ManyToOne(fetch = FetchType.LAZY)

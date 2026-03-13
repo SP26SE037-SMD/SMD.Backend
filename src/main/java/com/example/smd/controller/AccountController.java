@@ -142,24 +142,27 @@ public class AccountController {
     @Operation(summary = "Update account by ID")
     public ResponseObject<AccountResponse> updateInformationAccount(
             @RequestParam String id,
-            @RequestParam String fullName) {
+            @RequestParam String fullName,
+            @RequestParam Boolean status
+    ) {
         return ResponseObject.<AccountResponse>builder()
                 .status(1000)
-                .data(accountService.updateAccount(id, fullName))
+                .data(accountService.updateAccount(id, status,
+                        fullName))
                 .message("Update account successfully")
                 .build();
     }
 
 
     // API xóa tài khoản theo ID
-    @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('ACCOUNT_DELETE')")
-    @Operation(summary = "Delete account by ID")
-    public ResponseObject<Boolean> deleteAccount(@PathVariable String id) {
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('ACCOUNT_UPDATE')")
+    @Operation(summary = "Update status account by ID")
+    public ResponseObject<Boolean> deleteAccount(@PathVariable String id, @RequestParam Boolean status) {
         return ResponseObject.<Boolean>builder()
                 .status(1000)
-                .data(accountService.deleteAccount(id))
-                .message("Delete account successfully")
+                .data(accountService.isActiveAccount(id, status))
+                .message("Update account successfully")
                 .build();
     }
 }
