@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import java.util.List;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -15,7 +16,7 @@ import java.util.List;
 public class Syllabus_Action_Logs {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    String actionLogId;
+    UUID logId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "syllabus_id", nullable = false)
@@ -25,12 +26,12 @@ public class Syllabus_Action_Logs {
     @JoinColumn(name = "action_by", nullable = false)
     Account actionBy;
 
-    @Column(name = "action", nullable = false, length = 50)
-    String action; // CREATE, UPDATE, APPROVE, REJECT
+    @Column(name = "action_type", nullable = false, length = 50)
+    String action;
 
-    @Column(name = "created_at")
-    java.time.Instant createdAt;
-
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "action_description", nullable = false, length = 50)
     String note;
+
+    @Column(name = "action_timestamp")
+    java.time.Instant createdAt;
 }

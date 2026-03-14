@@ -1,8 +1,11 @@
 package com.example.smd.controller;
 
+import com.example.smd.dto.request.SyllabusActionLogRequest;
 import com.example.smd.dto.request.SyllabusRequest;
 import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.dto.response.SyllabusResponse;
+import com.example.smd.enums.SyllabusActionType;
+import com.example.smd.services.SyllabusActionLogService;
 import com.example.smd.services.SyllabusService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -26,11 +29,23 @@ import java.util.UUID;
 public class SyllabusController {
 
     SyllabusService syllabusService;
+    SyllabusActionLogService syllabusActionLogService;
 
-    @PostMapping
+    @PostMapping("/account/{email}")
     @Operation(summary = "Create a new syllabus", description = "Initializes a syllabus for a specific subject with status 'DRAFT'")
-    @PreAuthorize("hasAuthority('SYLLABUS_CREATE')")
-    public ResponseObject<SyllabusResponse> create(@RequestBody @Valid SyllabusRequest request) {
+//    @PreAuthorize("hasAuthority('SYLLABUS_CREATE')")
+    public ResponseObject<SyllabusResponse> create(@RequestBody @Valid SyllabusRequest request, @PathVariable String email) {
+        SyllabusResponse response = syllabusService.create(request);
+
+        SyllabusActionLogRequest logRequest = new SyllabusActionLogRequest();
+        logRequest.setSyllabusId(UUID.fromString(response.getSyllabusId()));
+        logRequest.setActionByEmail(email); // Truyền email vào đây
+        logRequest.setActionType(SyllabusActionType.CREATE.toString());
+        logRequest.setNote("Hệ thống: Khởi tạo đề cương mới cho môn học.");
+
+        // 4. Lưu Log
+        syllabusActionLogService.createLog(logRequest);
+
         return ResponseObject.<SyllabusResponse>builder()
                 .data(syllabusService.create(request))
                 .message("Syllabus created successfully")
@@ -67,8 +82,8 @@ public class SyllabusController {
                 .build();
     }
 
-    @PatchMapping("/{id}/status")
-    @PreAuthorize("hasAuthority('SYLLABUS_UPDATE_STATUS')")
+    @PatchMapping("/{id}/account/{email}/status")
+//    @PreAuthorize("hasAuthority('SYLLABUS_UPDATE_STATUS')")
     @Operation(
             summary = "Change Syllabus Status",
             description = "### Quy trình cập nhật trạng thái của CLO:\n" +
@@ -84,18 +99,44 @@ public class SyllabusController {
     )
     public ResponseObject<SyllabusResponse> updateStatus(
             @PathVariable UUID id,
+            @PathVariable String email,
             @RequestParam String status) {
+
+        SyllabusResponse response = syllabusService.getDetail(id);
+
+        SyllabusActionLogRequest logRequest = new SyllabusActionLogRequest();
+        logRequest.setSyllabusId(UUID.fromString(response.getSyllabusId()));
+        logRequest.setActionByEmail(email); // Truyền email vào đây
+
+        SyllabusActionType actionType = syllabusActionLogService.mapStatusToAction(status);
+
+        logRequest.setActionType(actionType.toString());
+        logRequest.setNote("Hệ thống: Ẩn đề cương cho môn học.");
+
+        // 4. Lưu Log
+        syllabusActionLogService.createLog(logRequest);
         return ResponseObject.<SyllabusResponse>builder()
                 .data(syllabusService.updateStatus(id, status))
                 .message("Syllabus status updated to: " + status)
                 .build();
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{id}/account/{email}")
     @Operation(summary = "Delete syllabus", description = "Sets status to 'ARCHIVED' instead of physical deletion")
-    @PreAuthorize("hasAuthority('SYLLABUS_DELETE')")
-    public ResponseObject<Void> delete(@PathVariable UUID id) {
+//    @PreAuthorize("hasAuthority('SYLLABUS_DELETE')")
+    public ResponseObject<Void> delete(@PathVariable UUID id, @PathVariable String email) {
         syllabusService.delete(id);
+
+        SyllabusResponse response = syllabusService.getDetail(id);
+
+        SyllabusActionLogRequest logRequest = new SyllabusActionLogRequest();
+        logRequest.setSyllabusId(UUID.fromString(response.getSyllabusId()));
+        logRequest.setActionByEmail(email); // Truyền email vào đây
+        logRequest.setActionType(SyllabusActionType.ARCHIVE.toString());
+        logRequest.setNote("Hệ thống: Ẩn đề cương cho môn học.");
+
+        // 4. Lưu Log
+        syllabusActionLogService.createLog(logRequest);
         return ResponseObject.<Void>builder()
                 .message("Syllabus archived successfully")
                 .build();
