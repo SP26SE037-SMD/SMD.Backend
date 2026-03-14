@@ -186,7 +186,7 @@ public class CurriculumService {
             curriculumStatus = PloStatus.valueOf(status.toUpperCase());
         } catch (IllegalArgumentException | NullPointerException e) {
             // Ném ra lỗi của hệ thống nếu trạng thái không tồn tại
-            throw new AppException(ErrorCode.INVALID_STATUS_INPUT);
+            throw new AppException(ErrorCode.INVALID_CURRICULUM_STATUS);
         }
         curriculum.setStatus(curriculumStatus.toString());
         Curriculum updatedCurriculum = curriculumRepository.save(curriculum);

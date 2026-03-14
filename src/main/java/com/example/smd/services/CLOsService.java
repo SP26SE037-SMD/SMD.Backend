@@ -146,7 +146,7 @@ public class CLOsService {
         try {
             status = SyllabusStatus.valueOf(newStatus.toUpperCase());
         } catch (IllegalArgumentException | NullPointerException e) {
-            throw new AppException(ErrorCode.INVALID_STATUS_INPUT);
+            throw new AppException(ErrorCode.INVALID_CLO_STATUS);
         }
 
         UUID uuidSubjectId = UUID.fromString(subjectId);
