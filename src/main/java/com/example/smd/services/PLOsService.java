@@ -35,7 +35,6 @@ import java.util.*;
 public class PLOsService {
 
     PLOsRepository plOsRepository;
-    MajorRepository majorRepository;
     CurriculumRepository curriculumRepository;
     PLOsMapper plOsMapper;
 
