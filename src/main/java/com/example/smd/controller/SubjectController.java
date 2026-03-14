@@ -50,7 +50,15 @@ public class SubjectController {
     public ResponseObject<PagedResponse<SubjectResponse>> getAll(
             @RequestParam(required = false) String search,
             @RequestParam(required = false, defaultValue = "code") String searchBy,
-            @Parameter(description = "Filter by status: null (Draft), true (Published), false (Hidden)")
+            @Parameter(
+                    description = "Filter subjects by their current lifecycle status. Valid values are:\n" +
+                            "| Status | Description |\n" +
+                            "| :--- | :--- |\n" +
+                            "| **DRAFT** | The subject is under initial creation (Biên soạn). |\n" +
+                            "| **INTERNAL_REVIEW** | The subject is open for internal auditing and faculty feedback (Xuất bản nội bộ). |\n" +
+                            "| **PUBLISHED** | The subject is officially active and applicable to curricula (Xuất bản). |\n" +
+                            "| **ARCHIVED** | The subject is no longer in use but kept for historical records (Lưu trữ). |"
+            )
             @RequestParam(required = false) String status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -112,6 +120,20 @@ public class SubjectController {
         return ResponseObject.<SubjectResponse>builder()
                 .data(subjectService.publishSubject(id, request.getDecisionNo()))
                 .message("Subject published successfully with decision: " + request.getDecisionNo())
+                .build();
+    }
+
+    @PatchMapping("/{id}/internal-review")
+    @PreAuthorize("hasAuthority('SUBJECT_UPDATE')")
+    @Operation(
+            summary = "Move subject to internal review",
+            description = "Transitions the subject status from DRAFT to INTERNAL_REVIEW. " +
+                    "This allows faculty members and experts to access the subject for internal auditing and feedback."
+    )
+    public ResponseObject<SubjectResponse> publishInternal(@PathVariable UUID id) {
+        return ResponseObject.<SubjectResponse>builder()
+                .data(subjectService.publishSubjectInternal(id))
+                .message("Subject has been successfully moved to internal review status.")
                 .build();
     }
 }

@@ -4,6 +4,7 @@ import com.example.smd.dto.request.PLOsRequest;
 import com.example.smd.dto.response.PLOsResponse;
 import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.ResponseObject;
+import com.example.smd.dto.response.clo.CLOsResponse;
 import com.example.smd.services.PLOsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -31,10 +32,10 @@ public class PLOsController {
     @PostMapping
     @PreAuthorize("hasAuthority('PLOS_CREATE')")
     @Operation(summary = "Create a new PLO", description = "Create a PLO linked to a specific Major.")
-    public ResponseObject<PLOsResponse> create(@RequestBody @Valid PLOsRequest request) {
-        return ResponseObject.<PLOsResponse>builder()
+    public ResponseObject<List<PLOsResponse>> create(@RequestBody @Valid List<PLOsRequest> request) {
+        return ResponseObject.<List<PLOsResponse>>builder()
                 .status(1000)
-                .data(ploService.createPlo(request))
+                .data(ploService.createBulkPlos(request))
                 .message("PLO created successfully")
                 .build();
     }
@@ -81,6 +82,30 @@ public class PLOsController {
         return ResponseObject.<Void>builder()
                 .status(1000)
                 .message("PLO deleted successfully")
+                .build();
+    }
+
+    @PatchMapping("/curriculum/{curriculum_id}/status")
+    @PreAuthorize("hasAuthority('PLOS_UPDATE_STATUS')")
+    @Operation(
+            summary = "Update PLOs status",
+            description = "### Quy trình cập nhật trạng thái của Chuẩn đầu ra ngành (PLO):\n" +
+                    "Chọn một trong các giá trị sau để điều phối việc ánh xạ (mapping) PLO vào các môn học:\n\n" +
+                    "| Status | Mô tả chi tiết (Nghiệp vụ) |\n" +
+                    "| :--- | :--- |\n" +
+                    "| **DRAFT** | **Bản thảo:** PLO đang trong giai đoạn soạn thảo hoặc chỉnh sửa ngôn ngữ, chưa hiển thị để mapping với Syllabus. |\n" +
+                    "| **INTERNAL_REVIEW** | **Công khai nội bộ:** Đã hoàn thiện nội dung và mở quyền cho Hội đồng khoa học/Giảng viên vào rà soát tính phù hợp. |\n" +
+                    "| **PUBLISHED** | **Đã ban hành:** PLO chính thức có hiệu lực, được dùng làm căn cứ để thiết kế Syllabus và đánh giá khung chương trình. |\n" +
+                    "| **ARCHIVED** | **Lưu trữ:** PLO không còn phù hợp với bộ tiêu chuẩn mới, giữ lại để đối chiếu các khóa cũ (Read-only). |"
+    )
+    public ResponseObject<PLOsResponse> changeStatus(
+            @PathVariable String curriculum_id,
+            @RequestParam String newStatus
+    ) {
+        ploService.updateStatusByCurriculum(curriculum_id, newStatus);
+        return ResponseObject.<PLOsResponse>builder()
+                .status(1000)
+                .message("Cập nhật trạng thái PLO thành công")
                 .build();
     }
 }

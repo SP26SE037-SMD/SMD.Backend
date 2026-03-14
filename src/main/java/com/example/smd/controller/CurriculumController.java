@@ -154,7 +154,15 @@ public class CurriculumController {
     @PreAuthorize("hasAuthority('CURRICULUM_UPDATE')")
     @Operation(
             summary = "Update curriculum status",
-            description = "Update the status of a curriculum (ACTIVE, INACTIVE, DRAFT, ARCHIVED). Requires CURRICULUM_UPDATE permission."
+            description = "### Quy trình cập nhật trạng thái của Khung chương trình (Curriculum):\n" +
+                    "Chọn một trong các giá trị sau từ danh sách thả xuống để điều phối luồng nghiệp vụ:\n\n" +
+                    "| Status | Mô tả chi tiết (Nghiệp vụ) |\n" +
+                    "| :--- | :--- |\n" +
+                    "| **DRAFT** | **Bản thảo:** Đang trong quá trình biên soạn, chỉ người tạo mới có quyền xem và chỉnh sửa. |\n" +
+                    "| **INTERNAL_REVIEW** | **Công khai nội bộ:** Đã hoàn thiện sơ bộ và mở quyền cho Giảng viên/Chuyên gia vào rà soát và gửi Feedback. |\n" +
+                    "| **ACTIVE** | **Đang áp dụng:** Khung chương trình chính thức có hiệu lực, Sinh viên có thể xem và đăng ký học tập theo lộ trình này. |\n" +
+                    "| **REVISING** | **Đang cập nhật:** Trạng thái khi cần đại tu hoặc chỉnh sửa nội dung nhưng vẫn giữ phiên bản cũ để đối chiếu. |\n" +
+                    "| **ARCHIVED** | **Lưu trữ:** Khung chương trình đã hết hiệu lực hoặc bị thay thế, chỉ dùng để tra cứu lịch sử (Read-only). |"
     )
     public ResponseObject<CurriculumResponse> updateCurriculumStatus(
             @Parameter(description = "Curriculum ID (UUID)")

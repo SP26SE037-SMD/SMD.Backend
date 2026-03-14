@@ -4,6 +4,8 @@ import com.example.smd.dto.request.curriculum.CurriculumCreateRequest;
 import com.example.smd.dto.response.CurriculumResponse;
 import com.example.smd.entities.Curriculum;
 import com.example.smd.entities.Major;
+import com.example.smd.enums.PloStatus;
+import com.example.smd.enums.SyllabusStatus;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.CurriculumMapper;
@@ -31,6 +33,7 @@ public class CurriculumService {
     CurriculumRepository curriculumRepository;
     MajorRepository majorRepository;
     CurriculumMapper curriculumMapper;
+
     
     /**
      * Lấy danh sách curriculum với phân trang và bộ lọc
@@ -177,8 +180,15 @@ public class CurriculumService {
         
         Curriculum curriculum = curriculumRepository.findById(UUID.fromString(id))
                 .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));
-        
-        curriculum.setStatus(status);
+        PloStatus curriculumStatus;
+        try {
+            // valueOf so sánh chuỗi với tên của các hằng số trong Enum (VD: "DRAFT")
+            curriculumStatus = PloStatus.valueOf(status.toUpperCase());
+        } catch (IllegalArgumentException | NullPointerException e) {
+            // Ném ra lỗi của hệ thống nếu trạng thái không tồn tại
+            throw new AppException(ErrorCode.INVALID_STATUS_INPUT);
+        }
+        curriculum.setStatus(curriculumStatus.toString());
         Curriculum updatedCurriculum = curriculumRepository.save(curriculum);
         
         return curriculumMapper.toCurriculumResponse(updatedCurriculum);
