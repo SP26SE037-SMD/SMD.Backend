@@ -4,7 +4,9 @@ import com.example.smd.entities.CLOs;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -23,4 +25,10 @@ public interface CLOsRepository extends JpaRepository<CLOs, UUID> {
 
     // Kiểm tra trùng mã CLO trong cùng một môn học
     boolean existsByCloCodeAndSubject_SubjectId(String cloCode, UUID subjectId);
+
+    boolean existsByCloCodeInAndSubject_SubjectId(List<String> cloCodes, UUID subjectId);
+
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE CLOs c SET c.status = :status WHERE c.subject.subjectId = :subjectId")
+    int updateStatusBySubjectId(@Param("status") String status, @Param("subjectId") UUID subjectId);
 }

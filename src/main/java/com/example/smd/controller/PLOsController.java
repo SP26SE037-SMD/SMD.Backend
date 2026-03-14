@@ -32,10 +32,10 @@ public class PLOsController {
     @PostMapping
     @PreAuthorize("hasAuthority('PLOS_CREATE')")
     @Operation(summary = "Create a new PLO", description = "Create a PLO linked to a specific Major.")
-    public ResponseObject<PLOsResponse> create(@RequestBody @Valid PLOsRequest request) {
-        return ResponseObject.<PLOsResponse>builder()
+    public ResponseObject<List<PLOsResponse>> create(@RequestBody @Valid List<PLOsRequest> request) {
+        return ResponseObject.<List<PLOsResponse>>builder()
                 .status(1000)
-                .data(ploService.createPlo(request))
+                .data(ploService.createBulkPlos(request))
                 .message("PLO created successfully")
                 .build();
     }
@@ -85,7 +85,7 @@ public class PLOsController {
                 .build();
     }
 
-    @PatchMapping("/{id}/status")
+    @PatchMapping("/curriculum/{curriculum_id}/status")
     @PreAuthorize("hasAuthority('PLOS_UPDATE_STATUS')")
     @Operation(
             summary = "Update PLOs status",
@@ -99,12 +99,12 @@ public class PLOsController {
                     "| **ARCHIVED** | **Lưu trữ:** PLO không còn phù hợp với bộ tiêu chuẩn mới, giữ lại để đối chiếu các khóa cũ (Read-only). |"
     )
     public ResponseObject<PLOsResponse> changeStatus(
-            @PathVariable String id,
+            @PathVariable String curriculum_id,
             @RequestParam String newStatus
     ) {
+        ploService.updateStatusByCurriculum(curriculum_id, newStatus);
         return ResponseObject.<PLOsResponse>builder()
                 .status(1000)
-                .data(ploService.updateStatus(id, newStatus))
                 .message("Cập nhật trạng thái PLO thành công")
                 .build();
     }

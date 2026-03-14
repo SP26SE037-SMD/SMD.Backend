@@ -6,7 +6,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -24,4 +26,11 @@ public interface PLOsRepository extends JpaRepository<PLOs, UUID> {
 
     // Kiểm tra trùng mã PLO trong cùng một Khung chương trình
     boolean existsByPloCodeAndCurriculum_CurriculumId(String ploCode, UUID curriculumId);
+
+    boolean existsByPloCodeInAndCurriculum_CurriculumId(List<String> ploCodes, UUID curriculumId);
+
+    // Cập nhật trạng thái hàng loạt - Tốc độ nhanh nhất
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE PLOs p SET p.status = :status WHERE p.curriculum.curriculumId = :curriculumId")
+    int updateStatusByCurriculumId(@Param("status") String status, @Param("curriculumId") UUID curriculumId);
 }

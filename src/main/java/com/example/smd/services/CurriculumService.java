@@ -33,6 +33,7 @@ public class CurriculumService {
     CurriculumRepository curriculumRepository;
     MajorRepository majorRepository;
     CurriculumMapper curriculumMapper;
+
     
     /**
      * Lấy danh sách curriculum với phân trang và bộ lọc

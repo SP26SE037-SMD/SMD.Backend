@@ -25,6 +25,6 @@ public enum SyllabusStatus {
     @Schema(description = "Đã chính thức ban hành và áp dụng cho sinh viên")
     PUBLISHED,
 
-//    @Schema(description = "Hết hiệu lực và đưa vào kho lưu trữ lịch sử")
-//    ARCHIVED
+    @Schema(description = "Hết hiệu lực và đưa vào kho lưu trữ lịch sử")
+    ARCHIVED
 }

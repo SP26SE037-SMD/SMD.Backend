@@ -26,8 +26,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -41,26 +40,39 @@ public class PLOsService {
     PLOsMapper plOsMapper;
 
     @Transactional
-    public PLOsResponse createPlo(PLOsRequest request) {
-        try {
-            // 1. Check trùng mã PLO trong cùng 1 Major (Mã PLO có thể trùng ở ngành khác nhưng không được trùng trong cùng ngành)
-            UUID curriculumId = UUID.fromString(request.getCurriculumId());
-            if (plOsRepository.existsByPloCodeAndCurriculum_CurriculumId(request.getPloCode(), curriculumId)) {
-                throw new AppException(ErrorCode.PLO_CODE_EXISTS);
+    public List<PLOsResponse> createBulkPlos(List<PLOsRequest> requests) {
+        if (requests == null || requests.isEmpty()) return Collections.emptyList();
+
+        // 1. Lấy CurriculumId (giả định cùng 1 list là cùng 1 Curriculum/Major)
+        UUID curriculumId = UUID.fromString(requests.get(0).getCurriculumId());
+        Curriculum curriculum = curriculumRepository.findById(curriculumId)
+                .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));
+
+        // 2. Check trùng mã ngay trong danh sách gửi lên (Local Check)
+        Set<String> uniqueCodes = new HashSet<>();
+        for (PLOsRequest req : requests) {
+            if (!uniqueCodes.add(req.getPloCode())) {
+                throw new AppException(ErrorCode.PLO_CODE_EXISTS); // Có mã trùng trong mảng JSON
             }
+        }
 
-            // 2. Các bước tìm Curriculum và Major như cũ...
-            Curriculum curriculum = curriculumRepository.findById(curriculumId)
-                    .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));
+        // 3. Check trùng với Database (Global Check - 1 lần duy nhất)
+        List<String> ploCodes = requests.stream().map(PLOsRequest::getPloCode).toList();
+        if (plOsRepository.existsByPloCodeInAndCurriculum_CurriculumId(ploCodes, curriculumId)) {
+            throw new AppException(ErrorCode.PLO_CODE_EXISTS);
+        }
 
+        // 4. Map và Save hàng loạt
+        List<PLOs> plosToSave = requests.stream().map(request -> {
             PLOs plo = plOsMapper.toPlo(request);
             plo.setCurriculum(curriculum);
             plo.setStatus(PloStatus.DRAFT.toString());
+            return plo;
+        }).toList();
 
-            return plOsMapper.toPloResponse(plOsRepository.save(plo));
-        } catch (IllegalArgumentException e) {
-            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION); // Hoặc một mã lỗi định dạng ID không hợp lệ
-        }
+        return plOsRepository.saveAll(plosToSave).stream()
+                .map(plOsMapper::toPloResponse)
+                .toList();
     }
 
     @Transactional
@@ -139,24 +151,27 @@ public class PLOsService {
     }
 
     @Transactional
-    public PLOsResponse updateStatus(String id, String newStatus) {
-        // 1. Kiểm tra trạng thái có hợp lệ không
+    public void updateStatusByCurriculum(String curriculumId, String newStatus) {
+        // 1. Validate trạng thái Enum
         PloStatus status;
         try {
-            // valueOf so sánh chuỗi với tên của các hằng số trong Enum (VD: "DRAFT")
             status = PloStatus.valueOf(newStatus.toUpperCase());
         } catch (IllegalArgumentException | NullPointerException e) {
-            // Ném ra lỗi của hệ thống nếu trạng thái không tồn tại
             throw new AppException(ErrorCode.INVALID_STATUS_INPUT);
         }
 
-        // 2. Tìm CLO theo ID
-        PLOs plo = plOsRepository.findById(UUID.fromString(id))
-                .orElseThrow(() -> new AppException(ErrorCode.PLO_NOT_FOUND));
+        UUID uuidCurriculumId = UUID.fromString(curriculumId);
 
-        // 3. Cập nhật trạng thái
-        plo.setStatus(status.toString());
+        // 2. Kiểm tra sự tồn tại của Curriculum (Tái sử dụng logic kiểm tra của bạn)
+        if (!curriculumRepository.existsById(uuidCurriculumId)) {
+            throw new AppException(ErrorCode.CURRICULUM_NOT_FOUND);
+        }
 
-        return plOsMapper.toPloResponse(plOsRepository.save(plo));
+        // 3. Thực thi UPDATE hàng loạt (Chỉ tốn 1 câu lệnh SQL duy nhất)
+        int affectedRows = plOsRepository.updateStatusByCurriculumId(status.toString(), uuidCurriculumId);
+
+        if (affectedRows == 0) {
+            throw new AppException(ErrorCode.PLO_NOT_FOUND);
+        }
     }
 }
