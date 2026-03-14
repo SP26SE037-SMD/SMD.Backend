@@ -12,6 +12,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.text.ParseException;
@@ -57,6 +59,17 @@ public class AuthenticationController {
                 .build();
     }
 
+    // API logout: vô hiệu hóa token hiện tại
+    @PostMapping("/logout")
+    @Operation(summary = "Logout and invalidate current token")
+    public ResponseObject<Boolean> logout(@RequestParam String jwt) throws ParseException, JOSEException {
+        return ResponseObject.<Boolean>builder()
+                .status(1000)
+                .data(authenticationService.logout(jwt))
+                .message("Logout successfully")
+                .build();
+    }
+
     // API đặt lại mật khẩu với token
     @PostMapping("/password-reset")
     @Operation(summary = "Reset password with token")
@@ -71,12 +84,11 @@ public class AuthenticationController {
 
     // API lấy thông tin tài khoản hiện tại bằng token
     @GetMapping("/me")
-    @Operation(summary = "Get current account information by token")
-    public ResponseObject<AccountResponse> getAccountByToken(@RequestParam String token)
-            throws ParseException, JOSEException {
+    @Operation(summary = "Get current account information")
+    public ResponseObject<AccountResponse> getAccountByToken(@RequestParam String jwt)   throws ParseException, JOSEException{
         return ResponseObject.<AccountResponse>builder()
                 .status(1000)
-                .data(authenticationService.getAccountByToken(token))
+                .data(authenticationService.getAccountByToken(jwt))
                 .message("Get account information successfully")
                 .build();
     }

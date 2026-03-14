@@ -13,10 +13,12 @@ import com.example.smd.dto.request.auth.AuthenticationRequest;
 import com.example.smd.dto.response.AuthenticationResponse;
 import com.example.smd.dto.response.account.AccountResponse;
 import com.example.smd.entities.Account;
+import com.example.smd.entities.InvalidatedToken;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.AccountMapper;
 import com.example.smd.repositories.AccountRepository;
+import com.example.smd.repositories.InvalidatedTokenRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -47,6 +49,7 @@ public class AuthenticationService {
 
     private final GoogleIdTokenVerifier googleIdTokenVerifier;
     AccountRepository accountRepository;
+    InvalidatedTokenRepository invalidatedTokenRepository;
     AccountMapper accountMapper;
     PasswordEncoder passwordEncoder;
 
@@ -150,6 +153,12 @@ public class AuthenticationService {
         // 2. Parse token thành SignedJWT
         SignedJWT signedJWT = SignedJWT.parse(token);
 
+        // 2.1. Kiểm tra token đã bị logout/chặn chưa
+        String jwtId = signedJWT.getJWTClaimsSet().getJWTID();
+        if (jwtId != null && invalidatedTokenRepository.existsById(jwtId)) {
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+        }
+
         // 3. Kiểm tra thời gian hết hạn của token
         Date expiryTime = (isRefresh)
                 ? new Date(signedJWT.getJWTClaimsSet().getIssueTime()
@@ -220,6 +229,31 @@ public class AuthenticationService {
             isValid = false;
         }
         return isValid;
+    }
+
+    // Logout: lưu JWT ID vào bảng invalidated_token để chặn dùng lại khi token chưa hết hạn
+    @Transactional
+    public boolean logout(String token) throws ParseException, JOSEException {
+        verifyToken(token, false);
+
+        SignedJWT signedJWT = SignedJWT.parse(token);
+        String jwtId = signedJWT.getJWTClaimsSet().getJWTID();
+        Date expiryDate = signedJWT.getJWTClaimsSet().getExpirationTime();
+
+        if (jwtId == null || expiryDate == null) {
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+        }
+
+        if (!invalidatedTokenRepository.existsById(jwtId)) {
+            invalidatedTokenRepository.save(
+                    InvalidatedToken.builder()
+                            .id(jwtId)
+                            .expiryDate(expiryDate)
+                            .build()
+            );
+        }
+
+        return true;
     }
 
     // Đặt lại mật khẩu

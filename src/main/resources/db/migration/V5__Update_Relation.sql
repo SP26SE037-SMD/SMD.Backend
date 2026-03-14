@@ -3,6 +3,15 @@ ALTER TABLE public.curriculum DROP COLUMN major_id;
 
 ALTER TABLE public.curriculum_combo_subject ALTER COLUMN combo_id DROP NOT NULL;
 
+-- Bảng lưu JWT đã bị logout để chặn dùng lại trước khi hết hạn
+CREATE TABLE IF NOT EXISTS invalidated_token (
+    id VARCHAR(255) PRIMARY KEY,
+    expiry_date TIMESTAMP NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_invalidated_token_expiry_date
+    ON invalidated_token(expiry_date);
+
 
 -- Tạo bảng po nếu chưa tồn tại
 CREATE TABLE IF NOT EXISTS po (
