@@ -2,12 +2,15 @@ package com.example.smd.services;
 
 import com.example.smd.dto.request.MajorRequest;
 import com.example.smd.dto.response.MajorResponse;
+import com.example.smd.dto.response.PLOsResponse;
 import com.example.smd.entities.Major;
+import com.example.smd.entities.PLOs;
 import com.example.smd.enums.PloStatus;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.MajorMapper;
 import com.example.smd.repositories.MajorRepository;
+import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -67,7 +70,7 @@ public class MajorService {
         }
 
         Major major = majorMapper.toMajor(request);
-        major.setStatus(PloStatus.PUBLISH.toString());
+        major.setStatus(PloStatus.DRAFT.toString());
         var response =  majorRepository.save(major);
         return majorMapper.toMajorResponse(response);
     }
@@ -88,7 +91,7 @@ public class MajorService {
     public void deleteMajor(UUID id) {
         Major major = majorRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.MAJOR_NOT_FOUND));
-        major.setStatus(PloStatus.ARCHIVE.toString());
+        major.setStatus(PloStatus.ARCHIVED.toString());
         majorRepository.save(major);
     }
 
@@ -97,5 +100,27 @@ public class MajorService {
                 .orElseThrow(() -> new AppException(ErrorCode.MAJOR_NOT_FOUND));
 
         return majorMapper.toMajorResponse(major);
+    }
+
+    @Transactional
+    public MajorResponse updateStatus(String id, String newStatus) {
+        // 1. Kiểm tra trạng thái có hợp lệ không
+        PloStatus status;
+        try {
+            // valueOf so sánh chuỗi với tên của các hằng số trong Enum (VD: "DRAFT")
+            status = PloStatus.valueOf(newStatus.toUpperCase());
+        } catch (IllegalArgumentException | NullPointerException e) {
+            // Ném ra lỗi của hệ thống nếu trạng thái không tồn tại
+            throw new AppException(ErrorCode.INVALID_STATUS_INPUT);
+        }
+
+        // 2. Tìm CLO theo ID
+        Major major = majorRepository.findById(UUID.fromString(id))
+                .orElseThrow(() -> new AppException(ErrorCode.MAJOR_NOT_FOUND));
+
+        // 3. Cập nhật trạng thái
+        major.setStatus(status.toString());
+
+        return majorMapper.toMajorResponse(majorRepository.save(major));
     }
 }

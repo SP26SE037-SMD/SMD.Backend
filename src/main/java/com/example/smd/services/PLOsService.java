@@ -2,10 +2,13 @@ package com.example.smd.services;
 
 import com.example.smd.dto.request.PLOsRequest;
 import com.example.smd.dto.response.PLOsResponse;
+import com.example.smd.dto.response.clo.CLOsResponse;
+import com.example.smd.entities.CLOs;
 import com.example.smd.entities.Curriculum;
 import com.example.smd.entities.Major;
 import com.example.smd.entities.PLOs;
 import com.example.smd.enums.PloStatus;
+import com.example.smd.enums.SyllabusStatus;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.PLOsMapper;
@@ -52,7 +55,7 @@ public class PLOsService {
 
             PLOs plo = plOsMapper.toPlo(request);
             plo.setCurriculum(curriculum);
-            plo.setStatus(PloStatus.PUBLISH.toString());
+            plo.setStatus(PloStatus.DRAFT.toString());
 
             return plOsMapper.toPloResponse(plOsRepository.save(plo));
         } catch (IllegalArgumentException e) {
@@ -127,11 +130,33 @@ public class PLOsService {
 //            }
 
             // 3. Thực hiện xóa
-            plo.setStatus(PloStatus.ARCHIVE.toString());
+            plo.setStatus(PloStatus.ARCHIVED.toString());
             plOsRepository.save(plo);
 
         } catch (IllegalArgumentException e) {
             throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
         }
+    }
+
+    @Transactional
+    public PLOsResponse updateStatus(String id, String newStatus) {
+        // 1. Kiểm tra trạng thái có hợp lệ không
+        PloStatus status;
+        try {
+            // valueOf so sánh chuỗi với tên của các hằng số trong Enum (VD: "DRAFT")
+            status = PloStatus.valueOf(newStatus.toUpperCase());
+        } catch (IllegalArgumentException | NullPointerException e) {
+            // Ném ra lỗi của hệ thống nếu trạng thái không tồn tại
+            throw new AppException(ErrorCode.INVALID_STATUS_INPUT);
+        }
+
+        // 2. Tìm CLO theo ID
+        PLOs plo = plOsRepository.findById(UUID.fromString(id))
+                .orElseThrow(() -> new AppException(ErrorCode.PLO_NOT_FOUND));
+
+        // 3. Cập nhật trạng thái
+        plo.setStatus(status.toString());
+
+        return plOsMapper.toPloResponse(plOsRepository.save(plo));
     }
 }
