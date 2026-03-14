@@ -36,7 +36,7 @@ public enum ErrorCode {
 
     //PLOs
     PLO_NOT_FOUND(6001, "PLO not found", HttpStatus.NOT_FOUND),
-    PLO_CODE_EXISTS(6002, "PLO code already exists in this major", HttpStatus.BAD_REQUEST),
+    PLO_CODE_EXISTS(6002, "PLO code already exists in this curriculum", HttpStatus.BAD_REQUEST),
     PLO_CODE_REQUIRED(6003, "PLO code is required", HttpStatus.BAD_REQUEST),
     PLO_IN_USE(6004, "Cannot delete PLO because it is currently linked to courses", HttpStatus.CONFLICT),
 
@@ -134,6 +134,13 @@ public enum ErrorCode {
     //CURRICULUM_COMBO_SUBJECT
     CURRICULUM_COMBO_SUBJECT_ALREADY_EXISTS(20001, "This subject is already added to this curriculum with the same combo", HttpStatus.BAD_REQUEST),
     CURRICULUM_COMBO_SUBJECT_NOT_FOUND(20002, "Curriculum-Combo-Subject mapping not found", HttpStatus.NOT_FOUND),
+
+    //POs
+    PO_NOT_FOUND(21001, "Program Outcome (PO) not found", HttpStatus.NOT_FOUND),
+    PO_CODE_EXISTS(21002, "PO Code already exists in this Major", HttpStatus.BAD_REQUEST),
+    PO_LIST_EMPTY(21003, "The provided PO list is empty", HttpStatus.BAD_REQUEST),
+    PO_IN_USE(21004, "PO is currently mapped to PLOs and cannot be deleted", HttpStatus.CONFLICT),
+    INVALID_PO_STATUS(21005, "Invalid PO status transition", HttpStatus.BAD_REQUEST),
 
     // General
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),
