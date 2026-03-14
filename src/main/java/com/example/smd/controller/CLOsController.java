@@ -20,6 +20,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/clos")
 @RequiredArgsConstructor
@@ -34,10 +36,10 @@ public class CLOsController {
     @PostMapping
     @PreAuthorize("hasAuthority('CLOS_CREATE')")
     @Operation(summary = "Create a new CLO for a specific Subject")
-    public ResponseObject<CLOsResponse> create(@RequestBody @Valid CLOsRequest request) {
-        return ResponseObject.<CLOsResponse>builder()
+    public ResponseObject<List<CLOsResponse>> create(@RequestBody @Valid List<CLOsRequest> request) {
+        return ResponseObject.<List<CLOsResponse>>builder()
                 .status(1000)
-                .data(closService.createClo(request))
+                .data(closService.createBulkClos(request))
                 .message("CLO created successfully")
                 .build();
     }
@@ -105,7 +107,7 @@ public class CLOsController {
         return ResponseEntity.ok(result);
     }
 
-    @PatchMapping("/{id}/status")
+    @PatchMapping("/subject/{subjectId}/status")
     @PreAuthorize("hasAuthority('CLOS_UPDATE_STATUS')")
     @Operation(
             summary = "Change CLO Status",
@@ -118,15 +120,16 @@ public class CLOsController {
                     "| **REVISION_REQUESTED** | Yêu cầu chỉnh sửa: Cần sửa lại theo feedback của người duyệt. |\n" +
                     "| **APPROVED** | Đã duyệt: Nội dung đạt yêu cầu, sẵn sàng để xuất bản. |\n" +
                     "| **REJECTED** | Bị từ chối: Nội dung không đạt yêu cầu hệ thống. |\n" +
-                    "| **PUBLISHED** | Đã xuất bản: CLO chính thức có hiệu lực cho môn học. |\n"
+                    "| **PUBLISHED** | Đã xuất bản: CLO chính thức có hiệu lực cho môn học. |\n" +
+                    "| **ARCHIVED** | **Lưu trữ:** CLO đã hết hiệu lực hoặc bị thay thế bởi phiên bản mới, chỉ dùng để tra cứu dữ liệu lịch sử. |"
     )
     public ResponseObject<CLOsResponse> changeStatus(
-            @PathVariable String id,
+            @PathVariable String subjectId,
             @RequestParam String newStatus // Swagger sẽ hiện Dropdown ở đây
     ) {
+        closService.updateStatusBySubject(subjectId, newStatus);
         return ResponseObject.<CLOsResponse>builder()
                 .status(1000)
-                .data(closService.updateStatus(id, newStatus))
                 .message("Cập nhật trạng thái CLO thành công")
                 .build();
     }

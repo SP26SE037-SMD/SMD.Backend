@@ -21,7 +21,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import java.util.UUID;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -35,22 +35,42 @@ public class CLOsService {
     CLOsMapper closMapper;
 
     @Transactional
-    public CLOsResponse createClo(CLOsRequest request) {
-        UUID subjectId = UUID.fromString(request.getSubjectId()); // Bạn gửi lên là syllabusId nhưng hiểu là subjectId
+    public List<CLOsResponse> createBulkClos(List<CLOsRequest> requests) {
+        if (requests == null || requests.isEmpty()) {
+            return Collections.emptyList();
+        }
 
-        // 1. Kiểm tra môn học (Syllabus) có tồn tại không
+        // 1. Lấy subjectId từ request đầu tiên (Giả định 1 danh sách gửi lên thuộc cùng 1 môn học)
+        UUID subjectId = UUID.fromString(requests.get(0).getSubjectId());
         Subject subject = subjectRepository.findById(subjectId)
                 .orElseThrow(() -> new AppException(ErrorCode.SUBJECT_NOT_FOUND));
 
-        // 2. Check trùng Code trong cùng 1 môn
-        if (closRepository.existsByCloCodeAndSubject_SubjectId(request.getCloCode(), subjectId)) {
+        // 2. Check trùng mã CLO ngay trong danh sách gửi lên (Local Validation)
+        Set<String> duplicateCodes = new HashSet<>();
+        for (CLOsRequest req : requests) {
+            if (!duplicateCodes.add(req.getCloCode())) {
+                throw new AppException(ErrorCode.CLO_CODE_EXISTS); // Trùng mã ngay trong mảng JSON
+            }
+        }
+
+        // 3. Check trùng mã CLO với Database (Global Validation - 1 lần duy nhất)
+        List<String> incomingCodes = requests.stream().map(CLOsRequest::getCloCode).toList();
+        if (closRepository.existsByCloCodeInAndSubject_SubjectId(incomingCodes, subjectId)) {
             throw new AppException(ErrorCode.CLO_CODE_EXISTS);
         }
 
-        CLOs clo = closMapper.toClo(request);
-        clo.setSubject(subject); // Liên kết CLO với Môn học
-        clo.setStatus("DRAFT");
-        return closMapper.toCloResponse(closRepository.save(clo));
+        // 4. Map và Set các giá trị mặc định
+        List<CLOs> closToSave = requests.stream().map(request -> {
+            CLOs clo = closMapper.toClo(request);
+            clo.setSubject(subject);
+            clo.setStatus("DRAFT"); // Sử dụng Enum để đồng bộ
+            return clo;
+        }).toList();
+
+        // 5. Lưu hàng loạt và trả về Response
+        return closRepository.saveAll(closToSave).stream()
+                .map(closMapper::toCloResponse)
+                .toList();
     }
 
 
@@ -120,24 +140,23 @@ public class CLOsService {
     }
 
     @Transactional
-    public CLOsResponse updateStatus(String id, String newStatus) {
-        // 1. Kiểm tra trạng thái có hợp lệ không
+    public void updateStatusBySubject(String subjectId, String newStatus) {
+        // 1. Kiểm tra trạng thái hợp lệ (Sử dụng SubjectStatus cho đồng bộ)
         SyllabusStatus status;
         try {
-            // valueOf so sánh chuỗi với tên của các hằng số trong Enum (VD: "DRAFT")
             status = SyllabusStatus.valueOf(newStatus.toUpperCase());
         } catch (IllegalArgumentException | NullPointerException e) {
-            // Ném ra lỗi của hệ thống nếu trạng thái không tồn tại
             throw new AppException(ErrorCode.INVALID_STATUS_INPUT);
         }
 
-        // 2. Tìm CLO theo ID
-        CLOs clo = closRepository.findById(UUID.fromString(id))
-                .orElseThrow(() -> new AppException(ErrorCode.CLO_NOT_FOUND));
+        UUID uuidSubjectId = UUID.fromString(subjectId);
 
-        // 3. Cập nhật trạng thái
-        clo.setStatus(status.toString());
+        // 2. Kiểm tra môn học có tồn tại không
+        if (!subjectRepository.existsById(uuidSubjectId)) {
+            throw new AppException(ErrorCode.SUBJECT_NOT_FOUND);
+        }
 
-        return closMapper.toCloResponse(closRepository.save(clo));
+        // 3. Cập nhật hàng loạt trạng thái các CLOs thuộc môn học này
+        int affectedRows = closRepository.updateStatusBySubjectId(status.toString(), uuidSubjectId);
     }
 }
