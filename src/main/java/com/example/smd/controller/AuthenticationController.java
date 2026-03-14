@@ -5,7 +5,7 @@ import com.example.smd.dto.request.auth.AuthenticationRequest;
 import com.example.smd.dto.request.auth.LoginGoogleRequest;
 import com.example.smd.dto.request.auth.ResetPasswordRequest;
 import com.example.smd.dto.response.AuthenticationResponse;
-import com.example.smd.dto.response.AccountResponse;
+import com.example.smd.dto.response.account.AccountResponse;
 import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.services.AuthenticationService;
 import io.swagger.v3.oas.annotations.Operation;

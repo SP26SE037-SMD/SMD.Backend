@@ -11,7 +11,7 @@ import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import com.example.smd.dto.request.auth.AuthenticationRequest;
 import com.example.smd.dto.response.AuthenticationResponse;
-import com.example.smd.dto.response.AccountResponse;
+import com.example.smd.dto.response.account.AccountResponse;
 import com.example.smd.entities.Account;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;

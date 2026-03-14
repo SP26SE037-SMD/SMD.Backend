@@ -48,21 +48,17 @@ public class CurriculumComboSubjectController {
     }
 
     /**
-     * API lấy danh sách subjects theo curriculum hoặc combo với search và phân trang
+     * API lấy danh sách subjects theo curriculum hoặc combo với phân trang
      */
     @GetMapping("/subjects")
     @Operation(
-        summary = "Get subjects by curriculum or combo with search and pagination",
-        description = "Search subjects in a curriculum or combo by subject code or name. " +
+        summary = "Get subjects by curriculum or combo with pagination",
+        description = "Get subjects in a curriculum or combo by ID. " +
                       "SearchType must be either 'curriculum' or 'combo'. " +
-                      "Search parameter can be empty to get all subjects. " +
                       "Sort format: field (semester, credits), direction (asc/desc). " +
                       "Response includes semester information from curriculum mapping."
     )
     public ResponseObject<PagedResponse<SubjectSimpleResponse>> getSubjects(
-            @Parameter(description = "Search keyword for subject code or name (can be empty)")
-            @RequestParam(required = false, name = "search") String search,
-
             @Parameter(description = "Search type: 'curriculum' or 'combo' (required)", required = true)
             @RequestParam(name = "searchType") String searchType,
 
@@ -79,7 +75,7 @@ public class CurriculumComboSubjectController {
             @RequestParam(defaultValue = "semester,asc") String[] sort
     ) {
         Page<SubjectSimpleResponse> subjects = curriculumComboSubjectService.searchSubjects(
-            search, searchType, searchId, page, size, sort
+            searchType, searchId, page, size, sort
         );
 
         return ResponseObject.<PagedResponse<SubjectSimpleResponse>>builder()

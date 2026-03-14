@@ -1,7 +1,7 @@
 package com.example.smd.controller;
 
 import com.example.smd.dto.request.CloPloMappingRequest;
-import com.example.smd.dto.response.CloPloMappingResponse;
+import com.example.smd.dto.response.clo.CloPloMappingResponse;
 import com.example.smd.dto.response.ResponseObject;
 
 import com.example.smd.services.CloPloMappingService;

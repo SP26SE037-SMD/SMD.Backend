@@ -26,4 +26,20 @@ public class CurriculumResponse {
 
     String status;
 
+    // Thông tin Major (nested object)
+    MajorInfo major;
+
+    // Inner class cho thông tin Major
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @FieldDefaults(level = AccessLevel.PRIVATE)
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class MajorInfo {
+        String majorId;
+        String majorCode;
+        String majorName;
+    }
+
 }

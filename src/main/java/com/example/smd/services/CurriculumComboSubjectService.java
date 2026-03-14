@@ -87,14 +87,13 @@ public class CurriculumComboSubjectService {
      */
     @Transactional(readOnly = true)
     public Page<SubjectSimpleResponse> searchSubjects(
-            String search,
             String searchType,
             String searchId,
             int page,
             int size,
             String[] sort
     ) {
-        log.info("Searching subjects by {}: {} with search term: {}", searchType, searchId, search);
+        log.info("Searching subjects by {}: {}", searchType, searchId);
 
         // 1. Xử lý sắp xếp
         List<Sort.Order> orders = new ArrayList<>();
@@ -119,7 +118,6 @@ public class CurriculumComboSubjectService {
 
         // 3. Tìm kiếm theo searchType
         Page<Curriculum_Combo_Subject> ccsPage;
-        String searchTerm = (search == null || search.trim().isEmpty()) ? null : search.trim();
 
         switch (searchType.toLowerCase()) {
             case "curriculum":
@@ -127,9 +125,7 @@ public class CurriculumComboSubjectService {
                 if (!curriculumRepository.existsById(searchUUID)) {
                     throw new AppException(ErrorCode.CURRICULUM_NOT_FOUND);
                 }
-                ccsPage = curriculumComboSubjectRepository.findByCurriculumWithSearch(
-                    searchUUID, searchTerm, pagingSort
-                );
+                ccsPage = curriculumComboSubjectRepository.findByCurriculumId(searchUUID, pagingSort);
                 break;
 
             case "combo":
@@ -137,9 +133,7 @@ public class CurriculumComboSubjectService {
                 if (!comboRepository.existsById(searchUUID)) {
                     throw new AppException(ErrorCode.COMBO_NOT_FOUND);
                 }
-                ccsPage = curriculumComboSubjectRepository.findByComboWithSearch(
-                    searchUUID, searchTerm, pagingSort
-                );
+                ccsPage = curriculumComboSubjectRepository.findByComboId(searchUUID, pagingSort);
                 break;
 
             default:

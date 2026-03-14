@@ -1,7 +1,7 @@
 package com.example.smd.services;
 
 import com.example.smd.dto.request.clo.CLOsRequest;
-import com.example.smd.dto.response.CLOsResponse;
+import com.example.smd.dto.response.clo.CLOsResponse;
 import com.example.smd.entities.CLOs;
 import com.example.smd.entities.Subject;
 import com.example.smd.enums.SyllabusStatus;

@@ -12,22 +12,20 @@ import java.util.UUID;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
-@Table(name = "account_profile")
-public class Account_Profile {
+@Table(name = "po_plo_mapping",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"po_id", "plo_id"}))
+public class PO_PLO_Mapping {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "profile_id")
-    UUID profileId;
+    UUID id;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "account_id", nullable = false, unique = true)
-    Account account;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "po_id", nullable = false)
+    PO po;
 
-    @Column(name = "avatar_url", columnDefinition = "TEXT")
-    String avatarUrl;
-
-    @Column(name = "phone_number")
-    String phoneNumber;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "plo_id", nullable = false)
+    PLOs plo;
 
     @Column(name = "created_at")
     Instant createdAt;

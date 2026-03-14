@@ -11,7 +11,6 @@ import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface PLOsMapper {
-    @Mapping(target = "major", ignore = true) // Chúng ta sẽ set Major thủ công trong Service bằng ID
     PLOs toPlo(PLOsRequest plOsRequest);
 
     PLOsResponse toPloResponse(PLOs plo);

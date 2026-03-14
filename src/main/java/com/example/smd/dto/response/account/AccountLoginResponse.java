@@ -1,4 +1,4 @@
-package com.example.smd.dto.response;
+package com.example.smd.dto.response.account;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;

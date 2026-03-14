@@ -1,18 +1,20 @@
 package com.example.smd.controller;
 
 import com.example.smd.dto.request.account.AccountRequest;
-import com.example.smd.dto.request.account.AccountUpdateRequest;
-import com.example.smd.dto.response.AccountResponse;
+import com.example.smd.dto.response.account.AccountResponse;
 import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.ResponseObject;
+import com.example.smd.dto.response.account.ImportResult;
 import com.example.smd.services.AccountService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @Tag(name = "Account", description = "Account Management APIs")
 @RestController
@@ -162,6 +164,20 @@ public class AccountController {
         return ResponseObject.<Boolean>builder()
                 .status(1000)
                 .data(accountService.isActiveAccount(id, status))
+                .message("Update account successfully")
+                .build();
+    }
+
+    @PostMapping(value = "/import", consumes =
+            MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseObject<?> importAccounts(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam String role
+    ) {
+
+        return ResponseObject.<ImportResult>builder()
+                .status(1000)
+                .data(accountService.importAccounts(file, role))
                 .message("Update account successfully")
                 .build();
     }

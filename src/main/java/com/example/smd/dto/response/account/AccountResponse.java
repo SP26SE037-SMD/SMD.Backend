@@ -1,5 +1,6 @@
-package com.example.smd.dto.response;
+package com.example.smd.dto.response.account;
 
+import com.example.smd.dto.response.RoleResponse;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;

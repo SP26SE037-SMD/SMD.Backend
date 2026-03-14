@@ -4,7 +4,6 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.time.Instant;
-import java.util.List;
 import java.util.UUID;
 
 @Getter
@@ -14,17 +13,17 @@ import java.util.UUID;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
-@Table(name = "plos")
-public class PLOs {
+@Table(name = "po")
+public class PO {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    UUID ploId;
+    UUID poId;
 
-    @Column(name = "plo_code", nullable = false, length = 20)
-    String ploCode;
+    @Column(name = "po_code", nullable = false, length = 20)
+    String poCode;
 
-    @Column(name = "plo_name", nullable = false) // Đảm bảo nullable là true
-    String ploName; // Theo hình là Varchar(20) hơi ngắn, có thể nên tăng lên
+    @Column(name = "po_name", nullable = false) // Đảm bảo nullable là true
+    String poName; // Theo hình là Varchar(20) hơi ngắn, có thể nên tăng lên
 
     @Column(columnDefinition = "TEXT")
     String description;
@@ -41,9 +40,7 @@ public class PLOs {
     }
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "curriculum_id")
-    Curriculum curriculum;
+    @JoinColumn(name = "major_id")
+    Major major;
 
-//    @OneToMany(mappedBy = "plo", fetch = FetchType.LAZY)
-//    List<CLO_PLO_Mapping> cloPloMappings;
 }

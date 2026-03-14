@@ -39,7 +39,7 @@ public class Major {
     Instant createdAt;
 
     @OneToMany(mappedBy = "major", fetch = FetchType.LAZY)
-    List<PLOs> plos;
+    List<Curriculum> curriculums;
 
     @PrePersist
     protected void onCreate() {

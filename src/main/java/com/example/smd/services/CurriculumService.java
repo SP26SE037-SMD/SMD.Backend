@@ -87,9 +87,14 @@ public class CurriculumService {
             throw new AppException(ErrorCode.CURRICULUM_CODE_EXISTS);
         }
 
+        // 3. Kiểm tra Major tồn tại
+        Major major = majorRepository.findById(UUID.fromString(request.getMajorId()))
+                .orElseThrow(() -> new AppException(ErrorCode.MAJOR_NOT_FOUND));
+
         // 4. Map request sang entity
         Curriculum curriculum = curriculumMapper.toCreateCurriculum(request);
         curriculum.setEndYear(null); // Khi tạo mới, endYear có thể để null, sẽ được cập nhật sau khi có thông tin
+        curriculum.setMajor(major);
 
         // 5. Set default status nếu chưa có
         if (curriculum.getStatus() == null || curriculum.getStatus().isEmpty()) {
