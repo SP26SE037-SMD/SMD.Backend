@@ -1,7 +1,6 @@
 package com.example.smd.repositories;
 
 import com.example.smd.entities.Curriculum_Combo_Subject;
-import com.example.smd.entities.Subject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -41,29 +40,21 @@ public interface CurriculumComboSubjectRepository extends JpaRepository<Curricul
         @Param("comboId") UUID comboId
     );
 
-    // Tìm Curriculum_Combo_Subject theo curriculum với search
+        // Tìm Curriculum_Combo_Subject theo curriculum
     @Query("SELECT ccs FROM Curriculum_Combo_Subject ccs " +
            "JOIN FETCH ccs.subject s " +
-           "WHERE ccs.curriculum.curriculumId = :curriculumId " +
-           "AND (:search IS NULL OR :search = '' OR " +
-           "LOWER(s.subjectCode) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-           "LOWER(s.subjectName) LIKE LOWER(CONCAT('%', :search, '%')))")
-    Page<Curriculum_Combo_Subject> findByCurriculumWithSearch(
+            "WHERE ccs.curriculum.curriculumId = :curriculumId")
+        Page<Curriculum_Combo_Subject> findByCurriculumId(
         @Param("curriculumId") UUID curriculumId,
-        @Param("search") String search,
         Pageable pageable
     );
 
-    // Tìm Curriculum_Combo_Subject theo combo với search
+        // Tìm Curriculum_Combo_Subject theo combo
     @Query("SELECT ccs FROM Curriculum_Combo_Subject ccs " +
            "JOIN FETCH ccs.subject s " +
-           "WHERE ccs.combo.comboId = :comboId " +
-           "AND (:search IS NULL OR :search = '' OR " +
-           "LOWER(s.subjectCode) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-           "LOWER(s.subjectName) LIKE LOWER(CONCAT('%', :search, '%')))")
-    Page<Curriculum_Combo_Subject> findByComboWithSearch(
+            "WHERE ccs.combo.comboId = :comboId")
+        Page<Curriculum_Combo_Subject> findByComboId(
         @Param("comboId") UUID comboId,
-        @Param("search") String search,
         Pageable pageable
     );
 }

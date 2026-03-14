@@ -1,24 +1,21 @@
-package com.example.smd.dto.response;
+package com.example.smd.dto.response.account;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+
+import java.util.UUID;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-//@JsonInclude(JsonInclude.Include.USE_DEFAULTS)
 public class AccountProfileResponse {
 
-    String profileId;
-
-    String accountId;
+    UUID accountId;
 
     String avatarUrl;
 
     String phoneNumber;
-
-    String createdAt;
 }
+

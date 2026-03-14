@@ -10,7 +10,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Repository
 public interface AccountRepository extends JpaRepository<Account, java.util.UUID>, JpaSpecificationExecutor<Account> {
@@ -49,4 +51,7 @@ public interface AccountRepository extends JpaRepository<Account, java.util.UUID
     // Tìm kiếm Account đến một ngày cụ thể
     @Query("SELECT a FROM Account a LEFT JOIN FETCH a.role WHERE a.createdAt <= :toDate")
     Page<Account> findByCreatedAtBefore(@Param("toDate") java.time.Instant toDate, Pageable pageable);
+
+    List<Account> findByEmailIn(Set<String> emails);
+
 }

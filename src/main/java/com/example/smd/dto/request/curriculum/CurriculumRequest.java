@@ -26,4 +26,7 @@ public class CurriculumRequest {
     Integer endYear;
     
     String status; // ACTIVE, INACTIVE, DRAFT, ARCHIVED
+
+    @NotNull(message = "MAJOR_ID_REQUIRED")
+    String majorId;
 }

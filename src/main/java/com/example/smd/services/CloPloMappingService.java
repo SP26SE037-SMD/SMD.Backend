@@ -1,7 +1,7 @@
 package com.example.smd.services;
 
 import com.example.smd.dto.request.CloPloMappingRequest;
-import com.example.smd.dto.response.CloPloMappingResponse;
+import com.example.smd.dto.response.clo.CloPloMappingResponse;
 import com.example.smd.entities.CLO_PLO_Mapping;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;

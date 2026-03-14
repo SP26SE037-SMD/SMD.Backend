@@ -12,7 +12,7 @@ import java.time.Instant;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
 @Table(name = "sprint_member",
-       uniqueConstraints = @UniqueConstraint(columnNames = {"sprint_id", "profile_id"}))
+       uniqueConstraints = @UniqueConstraint(columnNames = {"sprint_id", "account_id"}))
 public class Sprint_Member {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -23,8 +23,8 @@ public class Sprint_Member {
     Sprint sprint;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "profile_id", nullable = false)
-    Account accountProfile;
+    @JoinColumn(name = "account_id", nullable = false)
+    Account account;
 
     @Column(name = "role_in_sprint", length = 50)
     String roleInSprint; // 'Lead', 'Member', 'Reviewer'

@@ -1,19 +1,21 @@
 package com.example.smd.services;
 
 import com.example.smd.dto.request.account.AccountRequest;
-import com.example.smd.dto.request.account.AccountUpdateRequest;
-import com.example.smd.dto.response.AccountResponse;
+import com.example.smd.dto.response.account.AccountResponse;
+import com.example.smd.dto.response.account.ImportAccountResult;
+import com.example.smd.dto.response.account.ImportResult;
 import com.example.smd.entities.Account;
-import com.example.smd.entities.Account_Profile;
 import com.example.smd.entities.Role;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.AccountMapper;
-import com.example.smd.repositories.AccountProfileRepository;
 import com.example.smd.repositories.AccountRepository;
 import com.example.smd.repositories.RoleRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -21,12 +23,10 @@ import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.UUID;
+import java.io.IOException;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -35,11 +35,9 @@ import java.util.stream.Collectors;
 public class AccountService {
 
     private final AccountRepository accountRepository;
-    private final AccountProfileRepository accountProfileRepository;
     private final RoleRepository roleRepository;
     private final AccountMapper accountMapper;
     private final PasswordEncoder passwordEncoder;
-    private final AccountProfileService accountProfileService;
 
     // GetAll tài khoản có phân trang và tìm kiếm theo role name hoặc full name
     @Transactional(readOnly = true)
@@ -82,7 +80,7 @@ public class AccountService {
         }
 
         // 3. Map nguyên Page<Entity> sang Page<DTO>
-        return mapAccountPageWithPhoneNumbers(accountPage);
+        return accountPage.map(accountMapper::toResponse);
     }
 
     // API tìm kiếm account theo khoảng thời gian createdAt
@@ -124,7 +122,7 @@ public class AccountService {
         }
 
         // 3. Map sang DTO
-        return mapAccountPageWithPhoneNumbers(accountPage);
+        return accountPage.map(accountMapper::toResponse);
     }
 
     // Lấy chi tiết tài khoản theo ID
@@ -133,10 +131,7 @@ public class AccountService {
         var convert = UUID.fromString(accountId);
         Account account = accountRepository.findById(convert)
                 .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND));
-        Account_Profile profile = accountProfileRepository.findByAccountId(convert).orElse(null);
-        String phoneNumber = profile != null ? profile.getPhoneNumber() : null;
-        String avatarUrl = profile != null ? profile.getAvatarUrl() : null;
-        return accountMapper.toResponse(account, phoneNumber, avatarUrl);
+        return accountMapper.toResponse(account);
     }
 
     // Tạo tài khoản mới
@@ -163,8 +158,6 @@ public class AccountService {
         // 4. Lưu account
         account = accountRepository.save(account);
         log.info("Created new account with ID: {}", account.getAccountId());
-        // 5. Tự động tạo account profile
-        accountProfileService.createProfile(account);
 
         return accountMapper.toResponse(account);
     }
@@ -196,6 +189,118 @@ public class AccountService {
         return true;
     }
 
+
+    public ImportResult importAccounts(MultipartFile file, String roleName) {
+
+        Role role = roleRepository.findByRoleName(roleName.toUpperCase())
+                .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
+
+        Set<String> emailSet = new HashSet<>();
+        List<Account> accounts = new ArrayList<>();
+        List<ImportAccountResult> results = new ArrayList<>();
+        String randomPassword = generateRandomPassword();
+
+        try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
+
+            Sheet sheet = workbook.getSheetAt(0);
+
+            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+
+                Row row = sheet.getRow(i);
+                int rowNumber = i + 1;
+
+                if (row == null) continue;
+
+                try {
+
+                    String email = row.getCell(0).getStringCellValue().trim();
+                    String fullName = row.getCell(1).getStringCellValue().trim();
+
+                    // duplicate trong file
+                    if (!emailSet.add(email)) {
+                        results.add(new ImportAccountResult(
+                                email,
+                                "FAILED",
+                                "Duplicate email in Excel"
+                        ));
+                        continue;
+                    }
+
+                    Account account = new Account();
+                    account.setEmail(email);
+                    account.setFullName(fullName);
+                    account.setRole(role);   // 👈 gán role từ API
+                    account.setIsActive(true);
+                    account.setPasswordHash(passwordEncoder.encode(randomPassword));
+
+                    accounts.add(account);
+
+                } catch (Exception e) {
+
+                    results.add(new ImportAccountResult(
+                            null,
+                            "FAILED",
+                            "Invalid data format"
+                    ));
+                }
+            }
+
+            // check duplicate trong DB
+            Set<String> emails = accounts.stream()
+                    .map(Account::getEmail)
+                    .collect(Collectors.toSet());
+
+            List<Account> existingAccounts = accountRepository.findByEmailIn(emails);
+
+            Set<String> existingEmails = existingAccounts.stream()
+                    .map(Account::getEmail)
+                    .collect(Collectors.toSet());
+
+            List<Account> accountsToSave = new ArrayList<>();
+
+            for (Account account : accounts) {
+
+                if (existingEmails.contains(account.getEmail())) {
+
+                    results.add(new ImportAccountResult(
+                            account.getEmail(),
+                            "FAILED",
+                            "Email already exists"
+                    ));
+
+                } else {
+
+                    accountsToSave.add(account);
+
+                    results.add(new ImportAccountResult(
+                            account.getEmail(),
+                            "SUCCESS",
+                            "Created successfully"
+                    ));
+                }
+            }
+
+            accountRepository.saveAll(accountsToSave);
+
+        } catch (IOException e) {
+            throw new RuntimeException("Import failed", e);
+        }
+
+        long success = results.stream().filter(r -> r.getStatus().equals("SUCCESS")).count();
+        long failed = results.stream().filter(r -> r.getStatus().equals("FAILED")).count();
+
+        return new ImportResult(
+                results.size(),
+                (int) success,
+                (int) failed,
+                results
+        );
+    }
+
+    private String generateRandomPassword() {
+        return UUID.randomUUID().toString().substring(0, 8);
+    }
+
     // Helper method để xử lý hướng sắp xếp
     private Sort.Direction getSortDirection(String direction) {
         if (direction.equalsIgnoreCase("asc")) {
@@ -204,31 +309,5 @@ public class AccountService {
             return Sort.Direction.DESC;
         }
         return Sort.Direction.ASC;
-    }
-
-    private Page<AccountResponse> mapAccountPageWithPhoneNumbers(Page<Account> accountPage) {
-        List<UUID> accountIds = accountPage.getContent().stream()
-                .map(Account::getAccountId)
-                .toList();
-
-        if (accountIds.isEmpty()) {
-            return accountPage.map(account -> accountMapper.toResponse(account, null, null));
-        }
-
-        Map<UUID, Account_Profile> profileByAccountId = accountProfileRepository.findByAccountIds(accountIds)
-                .stream()
-                .collect(Collectors.toMap(
-                        ap -> ap.getAccount().getAccountId(),
-                        ap -> ap
-                ));
-
-        return accountPage.map(account -> {
-            Account_Profile ap = profileByAccountId.get(account.getAccountId());
-            return accountMapper.toResponse(
-                    account,
-                    ap != null ? ap.getPhoneNumber() : null,
-                    ap != null ? ap.getAvatarUrl() : null
-            );
-        });
     }
 }

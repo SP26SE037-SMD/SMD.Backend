@@ -37,6 +37,12 @@ public class Account {
     @Column(name = "is_active")
     Boolean isActive = true;
 
+     @Column(name = "avatar_url", columnDefinition = "TEXT")
+    String avatarUrl;
+
+    @Column(name = "phone_number")
+    String phoneNumber;
+
     @Column(name = "created_at")
     Instant createdAt;
 

@@ -2,8 +2,8 @@ package com.example.smd.mapper;
 
 import com.example.smd.dto.request.account.AccountRequest;
 import com.example.smd.dto.request.account.AccountUpdateRequest;
-import com.example.smd.dto.response.AccountLoginResponse;
-import com.example.smd.dto.response.AccountResponse;
+import com.example.smd.dto.response.account.AccountLoginResponse;
+import com.example.smd.dto.response.account.AccountResponse;
 import com.example.smd.entities.Account;
 import org.springframework.stereotype.Component;
 
@@ -26,24 +26,8 @@ public class AccountMapper {
                 .accountId(account.getAccountId())
                 .email(account.getEmail())
                 .fullName(account.getFullName())
-                .role(account.getRole() != null ? roleMapper.toResponse(account.getRole()) : null)
-                .isActive(account.getIsActive())
-                .createdAt(account.getCreatedAt())
-                .lastLogin(account.getLastLogin())
-                .build();
-    }
-
-    public AccountResponse toResponse(Account account, String phoneNumber, String avatarUrl) {
-        if (account == null) {
-            return null;
-        }
-
-        return AccountResponse.builder()
-                .accountId(account.getAccountId())
-                .email(account.getEmail())
-                .fullName(account.getFullName())
-                .phoneNumber(phoneNumber)
-                .avatarUrl(avatarUrl)
+                .phoneNumber(account.getPhoneNumber())
+                .avatarUrl(account.getAvatarUrl())
                 .role(account.getRole() != null ? roleMapper.toResponse(account.getRole()) : null)
                 .isActive(account.getIsActive())
                 .createdAt(account.getCreatedAt())
