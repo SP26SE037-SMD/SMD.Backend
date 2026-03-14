@@ -5,16 +5,24 @@ import com.example.smd.dto.response.account.AccountResponse;
 import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.dto.response.account.ImportResult;
+import com.example.smd.entities.Account;
 import com.example.smd.services.AccountService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.util.List;
 
 @Tag(name = "Account", description = "Account Management APIs")
 @RestController
@@ -170,7 +178,7 @@ public class AccountController {
 
     @PostMapping(value = "/import", consumes =
             MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseObject<?> importAccounts(
+    public ResponseObject<ImportResult> importAccounts(
             @RequestParam("file") MultipartFile file,
             @RequestParam String role
     ) {
@@ -180,5 +188,18 @@ public class AccountController {
                 .data(accountService.importAccounts(file, role))
                 .message("Update account successfully")
                 .build();
+    }
+
+    @GetMapping("/export")
+    public ResponseEntity<InputStreamResource> exportAccounts() throws IOException {
+        ByteArrayInputStream excel = accountService.exportAccounts();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Disposition", "attachment; filename=accounts.xlsx");
+
+        return ResponseEntity.ok()
+                .headers(headers)
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .body(new InputStreamResource(excel));
     }
 }

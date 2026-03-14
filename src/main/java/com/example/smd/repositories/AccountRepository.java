@@ -54,4 +54,7 @@ public interface AccountRepository extends JpaRepository<Account, java.util.UUID
 
     List<Account> findByEmailIn(Set<String> emails);
 
+    @Query("SELECT a FROM Account a JOIN FETCH a.role")
+    List<Account> findAllWithRole();
+
 }
