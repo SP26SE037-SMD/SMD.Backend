@@ -156,7 +156,7 @@ public class PLOsService {
         try {
             status = PloStatus.valueOf(newStatus.toUpperCase());
         } catch (IllegalArgumentException | NullPointerException e) {
-            throw new AppException(ErrorCode.INVALID_STATUS_INPUT);
+            throw new AppException(ErrorCode.INVALID_PLO_STATUS);
         }
 
         UUID uuidCurriculumId = UUID.fromString(curriculumId);

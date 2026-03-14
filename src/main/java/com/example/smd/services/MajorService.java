@@ -111,7 +111,7 @@ public class MajorService {
             status = PloStatus.valueOf(newStatus.toUpperCase());
         } catch (IllegalArgumentException | NullPointerException e) {
             // Ném ra lỗi của hệ thống nếu trạng thái không tồn tại
-            throw new AppException(ErrorCode.INVALID_STATUS_INPUT);
+            throw new AppException(ErrorCode.INVALID_MAJOR_STATUS);
         }
 
         // 2. Tìm CLO theo ID

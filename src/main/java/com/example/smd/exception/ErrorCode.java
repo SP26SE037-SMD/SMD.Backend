@@ -33,12 +33,14 @@ public enum ErrorCode {
     MAJOR_CODE_REQUIRED(5003, "Major code is required", HttpStatus.BAD_REQUEST),
     MAJOR_NAME_REQUIRED(5004, "Major name is required", HttpStatus.BAD_REQUEST),
     MAJOR_CODE_TOO_LONG(5005, "Major code must not exceed 20 characters", HttpStatus.BAD_REQUEST),
+    INVALID_MAJOR_STATUS(5006, "Invalid Major status transition", HttpStatus.BAD_REQUEST),
 
     //PLOs
     PLO_NOT_FOUND(6001, "PLO not found", HttpStatus.NOT_FOUND),
     PLO_CODE_EXISTS(6002, "PLO code already exists in this curriculum", HttpStatus.BAD_REQUEST),
     PLO_CODE_REQUIRED(6003, "PLO code is required", HttpStatus.BAD_REQUEST),
     PLO_IN_USE(6004, "Cannot delete PLO because it is currently linked to courses", HttpStatus.CONFLICT),
+    INVALID_PLO_STATUS(6005, "Invalid PLO status transition", HttpStatus.BAD_REQUEST),
 
     //CLOs
     // CLO (Course Learning Outcomes)
@@ -49,6 +51,7 @@ public enum ErrorCode {
     SYLLABUS_ID_REQUIRED(7005, "Syllabus (Subject) ID is required", HttpStatus.BAD_REQUEST),
     BLOOM_LEVEL_REQUIRED(7006, "Bloom level is required and must be between 1-6", HttpStatus.BAD_REQUEST),
     INVALID_STATUS_INPUT(7007, "Invalid status provided. Please check the allowed list.", HttpStatus.BAD_REQUEST),
+    INVALID_CLO_STATUS(6005, "Invalid CLO status transition", HttpStatus.BAD_REQUEST),
 
     // Subject
     SUBJECT_NOT_FOUND(8001, "Subject not found", HttpStatus.NOT_FOUND),
@@ -99,6 +102,8 @@ public enum ErrorCode {
     MAJOR_ID_REQUIRED(10007, "Major ID is required", HttpStatus.BAD_REQUEST),
     INVALID_YEAR_RANGE(10008, "End year must be greater than start year", HttpStatus.BAD_REQUEST),
     CURRICULUM_HAS_SUBJECTS(10009, "Cannot delete curriculum that contains subjects", HttpStatus.CONFLICT),
+    INVALID_CURRICULUM_STATUS(10010, "Invalid curriculum status transition", HttpStatus.BAD_REQUEST),
+
     //System Log
     LOG_NOT_FOUND(14001, "System log not found", HttpStatus.NOT_FOUND),
     ACTION_REQUIRED(14002, "Action is required", HttpStatus.BAD_REQUEST),
@@ -127,6 +132,7 @@ public enum ErrorCode {
     COMBO_CODE_EXISTS(19002, "Combo code already exists", HttpStatus.BAD_REQUEST),
     COMBO_CODE_REQUIRED(19003, "Combo code is required", HttpStatus.BAD_REQUEST),
     COMBO_NAME_REQUIRED(19004, "Combo name is required", HttpStatus.BAD_REQUEST),
+
     //SYLLABUS
     SYLLABUS_NOT_FOUND(18001, "The syllabus does not exist on the system.", HttpStatus.NOT_FOUND),
     INVALID_SYLLABUS_STATUS(18002, "The syllabus status is invalid.", HttpStatus.BAD_REQUEST),
@@ -141,6 +147,10 @@ public enum ErrorCode {
     PO_LIST_EMPTY(21003, "The provided PO list is empty", HttpStatus.BAD_REQUEST),
     PO_IN_USE(21004, "PO is currently mapped to PLOs and cannot be deleted", HttpStatus.CONFLICT),
     INVALID_PO_STATUS(21005, "Invalid PO status transition", HttpStatus.BAD_REQUEST),
+
+    //PO_PLO_MAPPING
+    PO_PLO_MAPPING_NOT_FOUND(22001, "PO-PLO mapping not found", HttpStatus.NOT_FOUND),
+    PO_PLO_MAPPING_EXISTS(22002, "This PLO is already mapped to this PO", HttpStatus.BAD_REQUEST),
 
     // General
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),

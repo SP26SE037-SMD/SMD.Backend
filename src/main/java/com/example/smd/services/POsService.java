@@ -118,7 +118,7 @@ public class POsService {
         try {
             status = PloStatus.valueOf(newStatus.toUpperCase());
         } catch (Exception e) {
-            throw new AppException(ErrorCode.INVALID_STATUS_INPUT);
+            throw new AppException(ErrorCode.INVALID_PO_STATUS);
         }
 
         UUID uuidMajorId = UUID.fromString(majorId);

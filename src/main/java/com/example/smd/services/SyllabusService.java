@@ -66,7 +66,7 @@ public class SyllabusService {
             status = SyllabusStatus.valueOf(newStatus.toUpperCase());
         } catch (IllegalArgumentException | NullPointerException e) {
             // Ném ra lỗi của hệ thống nếu trạng thái không tồn tại
-            throw new AppException(ErrorCode.INVALID_STATUS_INPUT);
+            throw new AppException(ErrorCode.INVALID_SYLLABUS_STATUS);
         }
 
         syllabus.setStatus(status.toString());
