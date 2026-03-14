@@ -118,7 +118,9 @@ public enum ErrorCode {
 
     //ACCOUNT_PROFILE
     ACCOUNT_PROFILE_NOT_FOUND(17001, "Account profile not found", HttpStatus.NOT_FOUND),
-    PHONE_NUMBER_INVALID(17002, "Phone number must be 10-11 digits", HttpStatus.BAD_REQUEST),
+    PHONE_NUMBER_INVALID(17002, "Phone number must be 10-11 digits"
+            , HttpStatus.BAD_REQUEST),
+    ACCOUNT_NOT_OWNER(17003, "You can only access or modify your own profile", HttpStatus.FORBIDDEN),
 
     //COMBO
     COMBO_NOT_FOUND(19001, "Combo not found", HttpStatus.NOT_FOUND),
@@ -128,6 +130,10 @@ public enum ErrorCode {
     //SYLLABUS
     SYLLABUS_NOT_FOUND(18001, "The syllabus does not exist on the system.", HttpStatus.NOT_FOUND),
     INVALID_SYLLABUS_STATUS(18002, "The syllabus status is invalid.", HttpStatus.BAD_REQUEST),
+
+    //CURRICULUM_COMBO_SUBJECT
+    CURRICULUM_COMBO_SUBJECT_ALREADY_EXISTS(20001, "This subject is already added to this curriculum with the same combo", HttpStatus.BAD_REQUEST),
+    CURRICULUM_COMBO_SUBJECT_NOT_FOUND(20002, "Curriculum-Combo-Subject mapping not found", HttpStatus.NOT_FOUND),
 
     // General
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),

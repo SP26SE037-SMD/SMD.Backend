@@ -13,9 +13,11 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
 import java.util.UUID;
 
 @Slf4j
@@ -40,6 +42,7 @@ public class AccountProfileService {
         // Kiểm tra account tồn tại
         if (!accountRepository.existsById(accountUuid)) {
             throw new AppException(ErrorCode.ACCOUNT_NOT_FOUND);
+        } else {
         }
 
         // Tìm profile
@@ -56,22 +59,30 @@ public class AccountProfileService {
     public AccountProfileResponse updateProfile(String accountId, AccountProfileUpdateRequest request) {
 
         UUID accountUuid = UUID.fromString(accountId);
-
-        // Kiểm tra account tồn tại
-        if (!accountRepository.existsById(accountUuid)) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        var account = accountRepository.findById(accountUuid);
+        if (account.isEmpty()) {
             throw new AppException(ErrorCode.ACCOUNT_NOT_FOUND);
         }
+        Account_Profile profile =
+                accountProfileRepository.findByAccountId(accountUuid).orElse(createProfile(account.get()));
 
-        // Tìm profile
-        Account_Profile profile = accountProfileRepository.findByAccountId(accountUuid)
-                .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_PROFILE_NOT_FOUND));
 
+        var checkAccount = accountRepository.findByEmail(email);
+
+        log.info("Account {} is trying to update profile of account {}", email, accountId);
+        if("ADMIN".equalsIgnoreCase(checkAccount.get().getRole().getRoleName())) {
+        } else if (!profile.getAccount().getAccountId().equals(checkAccount.get().getAccountId())) {
+            throw new AppException(ErrorCode.ACCOUNT_NOT_OWNER);
+        }
         // Cập nhật các trường
         if (request.getAvatarUrl() != null) {
             profile.setAvatarUrl(request.getAvatarUrl());
         }
         if (request.getPhoneNumber() != null) {
             profile.setPhoneNumber(request.getPhoneNumber());
+        } else {
+            profile.setPhoneNumber("Unknown");
         }
 
         // Lưu lại
@@ -89,6 +100,8 @@ public class AccountProfileService {
 
         Account_Profile profile = Account_Profile.builder()
                 .account(account)
+                .phoneNumber("Unknown") // Mặc định nếu không có số điện thoại
+                .avatarUrl("Unknown") // Mặc định nếu không có avatar
                 .build();
 
         return accountProfileRepository.save(profile);

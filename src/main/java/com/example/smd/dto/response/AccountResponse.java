@@ -18,6 +18,10 @@ public class AccountResponse {
     java.util.UUID accountId;
     String email;
     String fullName;
+    @JsonInclude(JsonInclude.Include.ALWAYS)
+    String phoneNumber;
+    @JsonInclude(JsonInclude.Include.ALWAYS)
+    String avatarUrl;
     @Schema(example = "ADMIN / LECTURER / STUDENT / COLLABORATOR / HoCFDC /  HoPDC / PDCM /  ")
     RoleResponse role;
     Boolean isActive;

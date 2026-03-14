@@ -45,7 +45,7 @@ public class AccountProfileController {
      * API cập nhật profile
      */
     @PutMapping("/{accountId}")
-    @PreAuthorize("hasAuthority('ACCOUNT_PROFILE_UPDATE')")
+//    @PreAuthorize("hasAuthority('ACCOUNT_PROFILE_UPDATE')")
     @Operation(
         summary = "Update account profile",
         description = "Update account profile information such as avatar URL and phone number. " +

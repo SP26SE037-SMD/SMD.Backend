@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -19,4 +20,7 @@ public interface AccountProfileRepository extends JpaRepository<Account_Profile,
     // Kiểm tra tồn tại profile theo account ID
     @Query("SELECT CASE WHEN COUNT(ap) > 0 THEN true ELSE false END FROM Account_Profile ap WHERE ap.account.accountId = :accountId")
     boolean existsByAccountId(@Param("accountId") UUID accountId);
+
+    @Query("SELECT ap FROM Account_Profile ap WHERE ap.account.accountId IN :accountIds")
+    List<Account_Profile> findByAccountIds(@Param("accountIds") List<UUID> accountIds);
 }

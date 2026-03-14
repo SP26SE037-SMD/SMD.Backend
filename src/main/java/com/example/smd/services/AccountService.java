@@ -4,10 +4,12 @@ import com.example.smd.dto.request.account.AccountRequest;
 import com.example.smd.dto.request.account.AccountUpdateRequest;
 import com.example.smd.dto.response.AccountResponse;
 import com.example.smd.entities.Account;
+import com.example.smd.entities.Account_Profile;
 import com.example.smd.entities.Role;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.AccountMapper;
+import com.example.smd.repositories.AccountProfileRepository;
 import com.example.smd.repositories.AccountRepository;
 import com.example.smd.repositories.RoleRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +25,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -31,6 +35,7 @@ import java.util.UUID;
 public class AccountService {
 
     private final AccountRepository accountRepository;
+    private final AccountProfileRepository accountProfileRepository;
     private final RoleRepository roleRepository;
     private final AccountMapper accountMapper;
     private final PasswordEncoder passwordEncoder;
@@ -77,7 +82,7 @@ public class AccountService {
         }
 
         // 3. Map nguyên Page<Entity> sang Page<DTO>
-        return accountPage.map(accountMapper::toResponse);
+        return mapAccountPageWithPhoneNumbers(accountPage);
     }
 
     // API tìm kiếm account theo khoảng thời gian createdAt
@@ -119,7 +124,7 @@ public class AccountService {
         }
 
         // 3. Map sang DTO
-        return accountPage.map(accountMapper::toResponse);
+        return mapAccountPageWithPhoneNumbers(accountPage);
     }
 
     // Lấy chi tiết tài khoản theo ID
@@ -128,7 +133,10 @@ public class AccountService {
         var convert = UUID.fromString(accountId);
         Account account = accountRepository.findById(convert)
                 .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND));
-        return accountMapper.toResponse(account);
+        Account_Profile profile = accountProfileRepository.findByAccountId(convert).orElse(null);
+        String phoneNumber = profile != null ? profile.getPhoneNumber() : null;
+        String avatarUrl = profile != null ? profile.getAvatarUrl() : null;
+        return accountMapper.toResponse(account, phoneNumber, avatarUrl);
     }
 
     // Tạo tài khoản mới
@@ -163,23 +171,26 @@ public class AccountService {
 
     // Cập nhật thông tin tài khoản
     @Transactional
-    public AccountResponse updateAccount(String accountId, String request) {
+    public AccountResponse updateAccount(String accountId,
+                                         boolean status,
+                                         String request) {
         var convert = UUID.fromString(accountId);
         Account account = accountRepository.findById(convert)
                 .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND));
         account.setFullName(request);
+        account.setIsActive(status);
         account = accountRepository.save(account);
         return accountMapper.toResponse(account);
     }
 
-    // Xóa tài khoản
+    // Xóa isActive tài khoản
     @Transactional
-    public boolean deleteAccount(String accountId) {
+    public boolean isActiveAccount(String accountId, boolean status) {
         var convert = UUID.fromString(accountId);
         Account account = accountRepository.findById(convert)
                 .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND));
 
-        account.setIsActive(false);
+        account.setIsActive(status);
         accountRepository.save(account);
 
         return true;
@@ -193,5 +204,31 @@ public class AccountService {
             return Sort.Direction.DESC;
         }
         return Sort.Direction.ASC;
+    }
+
+    private Page<AccountResponse> mapAccountPageWithPhoneNumbers(Page<Account> accountPage) {
+        List<UUID> accountIds = accountPage.getContent().stream()
+                .map(Account::getAccountId)
+                .toList();
+
+        if (accountIds.isEmpty()) {
+            return accountPage.map(account -> accountMapper.toResponse(account, null, null));
+        }
+
+        Map<UUID, Account_Profile> profileByAccountId = accountProfileRepository.findByAccountIds(accountIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        ap -> ap.getAccount().getAccountId(),
+                        ap -> ap
+                ));
+
+        return accountPage.map(account -> {
+            Account_Profile ap = profileByAccountId.get(account.getAccountId());
+            return accountMapper.toResponse(
+                    account,
+                    ap != null ? ap.getPhoneNumber() : null,
+                    ap != null ? ap.getAvatarUrl() : null
+            );
+        });
     }
 }
