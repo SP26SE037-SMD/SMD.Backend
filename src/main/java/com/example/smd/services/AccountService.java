@@ -25,6 +25,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -189,7 +191,7 @@ public class AccountService {
         return true;
     }
 
-
+    //Import tài khoản từ file Excel
     public ImportResult importAccounts(MultipartFile file, String roleName) {
 
         Role role = roleRepository.findByRoleName(roleName.toUpperCase())
@@ -295,6 +297,39 @@ public class AccountService {
                 (int) failed,
                 results
         );
+    }
+
+    public ByteArrayInputStream exportAccounts() throws IOException {
+        List<Account> accounts = accountRepository.findAllWithRole();
+
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet("Accounts");
+
+        Row header = sheet.createRow(0);
+
+        header.createCell(0).setCellValue("Email");
+        header.createCell(1).setCellValue("Full Name");
+        header.createCell(2).setCellValue("Phone Number");
+        header.createCell(3).setCellValue("Role");
+
+        int rowIdx = 1;
+
+        for (Account account : accounts) {
+
+            Row row = sheet.createRow(rowIdx++);
+
+            row.createCell(0).setCellValue(account.getEmail());
+            row.createCell(1).setCellValue(account.getFullName());
+            row.createCell(2).setCellValue(account.getPhoneNumber());
+            row.createCell(3).setCellValue(account.getRole().getRoleName());
+
+        }
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        workbook.write(out);
+        workbook.close();
+
+        return new ByteArrayInputStream(out.toByteArray());
     }
 
     private String generateRandomPassword() {
