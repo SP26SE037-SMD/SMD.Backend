@@ -188,6 +188,50 @@ public class SubjectService {
         subject.setApprovedDate(Instant.now());  // Lưu ngày phê duyệt (nếu có field này)
 
         // 3. Lưu và trả về response
-        return subjectMapper.toSubjectResponse(subjectRepository.save(subject));
+        SubjectResponse response = subjectMapper.toSubjectResponse(subjectRepository.save(subject));
+
+        List<PrerequisiteResponse> prerequisites = prerequisiteRepository.findBySubject_SubjectId(subjectId)
+                .stream()
+                .map(prerequisiteMapper::toResponse)
+                .toList();
+        response.setPreRequisite(prerequisites);
+
+        // Lấy danh sách Elective từ bảng trung gian Elective_Subject
+        List<ElectiveResponse> electives = electiveSubjectRepository.findBySubject_SubjectId(subjectId)
+                .stream()
+                .map(es -> electiveMapper.toElectiveResponse(es.getElective()))
+                .toList();
+        response.setElectives(electives);
+
+        return response;
+    }
+
+    @Transactional
+    public SubjectResponse publishSubjectInternal(UUID subjectId) {
+        // 1. Tìm môn học, nếu không thấy thì ném lỗi
+        Subject subject = subjectRepository.findById(subjectId)
+                .orElseThrow(() -> new AppException(ErrorCode.SUBJECT_NOT_FOUND));
+
+        // 2. Cập nhật các trường liên quan đến việc ban hành
+        subject.setStatus(SubjectStatus.INTERNAL_REVIEW.toString());                 // Chuyển từ Draft (null) sang Active (true)
+        subject.setApprovedDate(Instant.now());  // Lưu ngày phê duyệt (nếu có field này)
+
+        // 3. Lưu và trả về response
+        SubjectResponse response = subjectMapper.toSubjectResponse(subjectRepository.save(subject));
+
+        List<PrerequisiteResponse> prerequisites = prerequisiteRepository.findBySubject_SubjectId(subjectId)
+                .stream()
+                .map(prerequisiteMapper::toResponse)
+                .toList();
+        response.setPreRequisite(prerequisites);
+
+        // Lấy danh sách Elective từ bảng trung gian Elective_Subject
+        List<ElectiveResponse> electives = electiveSubjectRepository.findBySubject_SubjectId(subjectId)
+                .stream()
+                .map(es -> electiveMapper.toElectiveResponse(es.getElective()))
+                .toList();
+        response.setElectives(electives);
+
+        return response;
     }
 }

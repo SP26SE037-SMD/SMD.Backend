@@ -114,4 +114,18 @@ public class SubjectController {
                 .message("Subject published successfully with decision: " + request.getDecisionNo())
                 .build();
     }
+
+    @PatchMapping("/{id}/internal-review")
+    @PreAuthorize("hasAuthority('SUBJECT_UPDATE')")
+    @Operation(
+            summary = "Move subject to internal review",
+            description = "Transitions the subject status from DRAFT to INTERNAL_REVIEW. " +
+                    "This allows faculty members and experts to access the subject for internal auditing and feedback."
+    )
+    public ResponseObject<SubjectResponse> publishInternal(@PathVariable UUID id) {
+        return ResponseObject.<SubjectResponse>builder()
+                .data(subjectService.publishSubjectInternal(id))
+                .message("Subject has been successfully moved to internal review status.")
+                .build();
+    }
 }

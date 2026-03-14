@@ -2,6 +2,7 @@ package com.example.smd.controller;
 
 import com.example.smd.dto.request.MajorRequest;
 import com.example.smd.dto.response.MajorResponse;
+import com.example.smd.dto.response.PLOsResponse;
 import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.entities.Major;
@@ -112,6 +113,30 @@ public class MajorController {
                 .status(1000)
                 .data(majorService.getMajorDetail(majorCode))
                 .message("Get major details successfully")
+                .build();
+    }
+
+    @PatchMapping("/{id}/status")
+    @PreAuthorize("hasAuthority('MAJOR_UPDATE_STATUS')")
+    @Operation(
+            summary = "Update Major status",
+            description = "### Lifecycle Management for Academic Majors:\n" +
+                    "Select one of the following statuses to coordinate the availability and enrollment of the major:\n\n" +
+                    "| Status | Detailed Business Description |\n" +
+                    "| :--- | :--- |\n" +
+                    "| **DRAFT** | **Draft:** The major is under initial definition. It is hidden from public view and cannot have Curricula assigned yet. |\n" +
+                    "| **INTERNAL_REVIEW** | **Internal Review:** Content and learning goals are shared with the Academic Board for internal auditing and feedback before official launch. |\n" +
+                    "| **PUBLISHED** | **Published:** The major is officially active. Students can enroll, and it can be linked to active Curricula and Subjects. |\n" +
+                    "| **ARCHIVED** | **Archived:** The major is no longer accepting new enrollments. Data is kept as Read-only for historical transcript and degree verification. |"
+    )
+    public ResponseObject<MajorResponse> changeStatus(
+            @PathVariable String id,
+            @RequestParam String newStatus
+    ) {
+        return ResponseObject.<MajorResponse>builder()
+                .status(1000)
+                .data(majorService.updateStatus(id, newStatus))
+                .message("Cập nhật trạng thái Major thành công")
                 .build();
     }
 }
