@@ -152,7 +152,7 @@ public class AccountService {
 
         // 3. Gán role cho account nếu có
         if (request.getRoleName() != null) {
-            Role role = roleRepository.findByRoleName(request.getRoleName().toUpperCase())
+            Role role = roleRepository.findByRoleName(request.getRoleName())
                     .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
             account.setRole(role);
         }
