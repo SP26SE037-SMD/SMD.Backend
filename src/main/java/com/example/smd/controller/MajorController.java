@@ -8,6 +8,7 @@ import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.entities.Major;
 import com.example.smd.services.MajorService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -37,16 +38,18 @@ public class MajorController {
     @GetMapping
     @Operation(
             summary = "Get majors with pagination and filters",
-            description = "Retrieve a paginated list of majors. You can filter by 'major_code', 'major_name', or search across both fields."
+            description = "Retrieve a paginated list of majors. Filter by 'major_code', 'major_name', and lifecycle 'status'."
     )
     public ResponseObject<PagedResponse<MajorResponse>> getAllMajors(
             @RequestParam(required = false) String search,
-            @RequestParam(required = false, defaultValue = "code") String searchBy,
+            @RequestParam(required = false, defaultValue = "all") String searchBy,
+            @Parameter(description = "Filter by major status (DRAFT, INTERNAL_REVIEW, PUBLISHED, ARCHIVED)")
+            @RequestParam(required = false) String status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "majorCode,asc") String[] sort
     ) {
-        Page<MajorResponse> majors = majorService.getAllMajors(search, searchBy, page, size, sort);
+        Page<MajorResponse> majors = majorService.getAllMajors(search, searchBy, status, page, size, sort);
 
         return ResponseObject.<PagedResponse<MajorResponse>>builder()
                 .status(1000)
@@ -117,7 +120,7 @@ public class MajorController {
     }
 
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasAuthority('MAJOR_UPDATE_STATUS')")
+//    @PreAuthorize("hasAuthority('MAJOR_UPDATE_STATUS')")
     @Operation(
             summary = "Update Major status",
             description = "### Lifecycle Management for Academic Majors:\n" +

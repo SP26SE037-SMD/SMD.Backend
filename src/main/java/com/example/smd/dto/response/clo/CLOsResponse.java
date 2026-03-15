@@ -15,11 +15,8 @@ import java.util.UUID;
 public class CLOsResponse {
     UUID cloId;
     String cloCode;
-    String cloName;
     String description;
     String bloomLevel;
-    String subjectId;
-    String subjectName;
     String status;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+7")
     Instant createdAt;

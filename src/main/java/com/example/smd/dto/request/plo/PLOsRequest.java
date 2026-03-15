@@ -1,4 +1,4 @@
-package com.example.smd.dto.request;
+package com.example.smd.dto.request.plo;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -14,8 +14,6 @@ public class PLOsRequest {
     @NotBlank(message = "PLO_CODE_REQUIRED")
     @Size(max = 20)
     String ploCode;
-    @NotBlank(message = "PLO_NAME_REQUIRED")
-    String ploName;
     String description;
 
     @NotBlank(message = "CURRICULUM_ID_REQUIRED")

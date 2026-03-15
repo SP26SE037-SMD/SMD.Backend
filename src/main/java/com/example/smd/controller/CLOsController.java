@@ -1,5 +1,6 @@
 package com.example.smd.controller;
 
+import com.example.smd.dto.request.clo.CLOsCreateRequest;
 import com.example.smd.dto.request.clo.CLOsRequest;
 import com.example.smd.dto.request.clo.CloCheckRequest;
 import com.example.smd.dto.request.clo.CloGenerationRequest;
@@ -33,14 +34,16 @@ public class CLOsController {
     CLOsService closService;
     GeminiService geminiService;
 
-    @PostMapping
+    @PostMapping("/subject/{subjectId}")
     @PreAuthorize("hasAuthority('CLOS_CREATE')")
-    @Operation(summary = "Create a new CLO for a specific Subject")
-    public ResponseObject<List<CLOsResponse>> create(@RequestBody @Valid List<CLOsRequest> request) {
+    @Operation(summary = "Create multiple CLOs", description = "Create CLOs linked to a specific Subject via PathVariable.")
+    public ResponseObject<List<CLOsResponse>> createBulk(
+            @PathVariable String subjectId,
+            @RequestBody @Valid List<CLOsCreateRequest> request) {
         return ResponseObject.<List<CLOsResponse>>builder()
                 .status(1000)
-                .data(closService.createBulkClos(request))
-                .message("CLO created successfully")
+                .data(closService.createBulkClos(subjectId, request))
+                .message("CLOs created successfully")
                 .build();
     }
 

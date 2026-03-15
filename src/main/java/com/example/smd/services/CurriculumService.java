@@ -4,6 +4,7 @@ import com.example.smd.dto.request.curriculum.CurriculumCreateRequest;
 import com.example.smd.dto.response.CurriculumResponse;
 import com.example.smd.entities.Curriculum;
 import com.example.smd.entities.Major;
+import com.example.smd.enums.CurriculumStatus;
 import com.example.smd.enums.PloStatus;
 import com.example.smd.enums.SyllabusStatus;
 import com.example.smd.exception.AppException;
@@ -180,10 +181,10 @@ public class CurriculumService {
         
         Curriculum curriculum = curriculumRepository.findById(UUID.fromString(id))
                 .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));
-        PloStatus curriculumStatus;
+        CurriculumStatus curriculumStatus;
         try {
             // valueOf so sánh chuỗi với tên của các hằng số trong Enum (VD: "DRAFT")
-            curriculumStatus = PloStatus.valueOf(status.toUpperCase());
+            curriculumStatus = CurriculumStatus.valueOf(status.toUpperCase());
         } catch (IllegalArgumentException | NullPointerException e) {
             // Ném ra lỗi của hệ thống nếu trạng thái không tồn tại
             throw new AppException(ErrorCode.INVALID_CURRICULUM_STATUS);

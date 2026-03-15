@@ -33,33 +33,39 @@ public class MajorService {
     MajorMapper majorMapper;
 
     // GetAll có phân trang
-    public Page<MajorResponse> getAllMajors(String search, String searchBy, int page, int size, String[] sort) {
-        // 1. Xử lý sắp xếp (Sắp xếp theo field CamelCase của Java)
+    public Page<MajorResponse> getAllMajors(String search, String searchBy, String status, int page, int size, String[] sort) {
         Sort.Direction direction = sort.length > 1 && sort[1].equalsIgnoreCase("desc")
                 ? Sort.Direction.DESC : Sort.Direction.ASC;
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sort[0]));
 
         Page<Major> majorPage;
 
-        // 2. Logic tìm kiếm để lấy Page<Entity>
-        if (search == null || search.trim().isEmpty()) {
-            majorPage = majorRepository.findAll(pageable);
+        // Kiểm tra nếu có filter theo status
+        boolean hasStatus = status != null && !status.trim().isEmpty();
+        boolean hasSearch = search != null && !search.trim().isEmpty();
+
+        if (!hasSearch) {
+            majorPage = hasStatus ? majorRepository.findByStatus(status, pageable)
+                    : majorRepository.findAll(pageable);
         } else {
-            switch (searchBy.toLowerCase()) {
-                case "code":
-                    majorPage = majorRepository.findByMajorCodeContainingIgnoreCase(search, pageable);
-                    break;
-                case "name":
-                    majorPage = majorRepository.findByMajorNameContainingIgnoreCase(search, pageable);
-                    break;
-                default:
-                    majorPage = majorRepository.findByMajorNameContainingIgnoreCaseOrMajorCodeContainingIgnoreCase(
-                            search, search, pageable);
-                    break;
+            String searchLower = search.trim();
+            if (hasStatus) {
+                // Logic Search + Status
+                majorPage = switch (searchBy.toLowerCase()) {
+                    case "code" -> majorRepository.findByMajorCodeContainingIgnoreCaseAndStatus(searchLower, status, pageable);
+                    case "name" -> majorRepository.findByMajorNameContainingIgnoreCaseAndStatus(searchLower, status, pageable);
+                    default -> majorRepository.searchAllFieldsWithStatus(searchLower, status, pageable);
+                };
+            } else {
+                // Logic Search cũ (không có status)
+                majorPage = switch (searchBy.toLowerCase()) {
+                    case "code" -> majorRepository.findByMajorCodeContainingIgnoreCase(searchLower, pageable);
+                    case "name" -> majorRepository.findByMajorNameContainingIgnoreCase(searchLower, pageable);
+                    default -> majorRepository.findByMajorNameContainingIgnoreCaseOrMajorCodeContainingIgnoreCase(searchLower, searchLower, pageable);
+                };
             }
         }
 
-        // 3. Map nguyên List Entity sang DTO bằng method reference của MapStruct
         return majorPage.map(majorMapper::toMajorResponse);
     }
 

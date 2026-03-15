@@ -153,22 +153,21 @@ public class CurriculumController {
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasAuthority('CURRICULUM_UPDATE')")
     @Operation(
-            summary = "Update curriculum status",
-            description = "### Quy trình cập nhật trạng thái của Khung chương trình (Curriculum):\n" +
-                    "Chọn một trong các giá trị sau từ danh sách thả xuống để điều phối luồng nghiệp vụ:\n\n" +
+            summary = "Update Curriculum Status",
+            description = "### Quy trình cập nhật trạng thái vòng đời của Khung chương trình (Curriculum):\n" +
+                    "Chọn một trong các giá trị sau để điều phối luồng phê duyệt và biên soạn Syllabus:\n\n" +
                     "| Status | Mô tả chi tiết (Nghiệp vụ) |\n" +
                     "| :--- | :--- |\n" +
-                    "| **DRAFT** | **Bản thảo:** Đang trong quá trình biên soạn, chỉ người tạo mới có quyền xem và chỉnh sửa. |\n" +
-                    "| **INTERNAL_REVIEW** | **Công khai nội bộ:** Đã hoàn thiện sơ bộ và mở quyền cho Giảng viên/Chuyên gia vào rà soát và gửi Feedback. |\n" +
-                    "| **ACTIVE** | **Đang áp dụng:** Khung chương trình chính thức có hiệu lực, Sinh viên có thể xem và đăng ký học tập theo lộ trình này. |\n" +
-                    "| **REVISING** | **Đang cập nhật:** Trạng thái khi cần đại tu hoặc chỉnh sửa nội dung nhưng vẫn giữ phiên bản cũ để đối chiếu. |\n" +
-                    "| **ARCHIVED** | **Lưu trữ:** Khung chương trình đã hết hiệu lực hoặc bị thay thế, chỉ dùng để tra cứu lịch sử (Read-only). |"
+                    "| **DRAFT** | **Biên soạn:** Giai đoạn khởi tạo khung. Chỉ hiển thị nội bộ cho HoC/FDC để thiết kế danh mục môn học. |\n" +
+                    "| **INTERNAL_REVIEW_WITHOUT_ENACTMENT** | **Chờ duyệt hành chính:** HoP đã chốt danh sách môn nhưng chưa có quyết định từ Văn phòng (VP). Chỉ được sửa mô tả môn học. |\n" +
+                    "| **INTERNAL_REVIEW_WITH_ENACTMENT** | **Đã duyệt hành chính:** Đã có quyết định chính thức từ VP. **Kích hoạt quyền biên soạn Syllabus** cho các bộ môn. |\n" +
+                    "| **PUBLISHED** | **Đã xuất bản:** Khung chương trình chính thức áp dụng. Toàn bộ danh mục môn học và cấu trúc bị khóa để đảm bảo tính pháp lý. |\n" +
+                    "| **ARCHIVED** | **Lưu trữ:** Khung cũ đã hết hiệu lực, không áp dụng cho các khóa mới nhưng vẫn giữ lại để tra cứu lịch sử (Read-only). |"
     )
     public ResponseObject<CurriculumResponse> updateCurriculumStatus(
             @Parameter(description = "Curriculum ID (UUID)")
             @PathVariable String id,
-
-            @Parameter(description = "New status: ACTIVE, INACTIVE, DRAFT, ARCHIVED")
+            @Parameter(description = "New status: DRAFT, INTERNAL_REVIEW_WITHOUT_ENACTMENT, INTERNAL_REVIEW_WITH_ENACTMENT, PUBLISHED, ARCHIVED")
             @RequestParam String status
     ) {
         return ResponseObject.<CurriculumResponse>builder()

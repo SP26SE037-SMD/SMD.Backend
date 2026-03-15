@@ -1,4 +1,4 @@
-package com.example.smd.dto.request;
+package com.example.smd.dto.request.po;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
@@ -12,8 +12,6 @@ import lombok.experimental.FieldDefaults;
 public class POsRequest {
     @NotBlank(message = "PO Code is required")
     private String poCode;
-    @NotBlank(message = "PO Name is required") // Thêm dòng này
-    private String poName;
     private String description;
     @NotBlank(message = "Major ID is required")
     private String majorId;

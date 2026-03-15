@@ -10,9 +10,6 @@ public enum SyllabusStatus {
     @Schema(description = "Đã gửi và đang chờ được phân công review")
     PENDING_REVIEW,
 
-    @Schema(description = "Đang trong quá trình đánh giá bởi hội đồng/chuyên gia")
-    IN_REVIEW,
-
     @Schema(description = "Bị phản hồi và yêu cầu người soạn thảo chỉnh sửa lại")
     REVISION_REQUESTED,
 

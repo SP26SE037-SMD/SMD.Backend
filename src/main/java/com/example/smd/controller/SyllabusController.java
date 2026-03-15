@@ -91,7 +91,6 @@ public class SyllabusController {
                     "| Status | Mô tả chi tiết (Nghiệp vụ) |\n" +
                     "| :--- | :--- |\n" +
                     "| **PENDING_REVIEW** | Chờ duyệt: Đã gửi yêu cầu và đợi HoD phê duyệt. |\n" +
-                    "| **IN_REVIEW** | Đang đánh giá: Chuyên gia đang xem xét nội dung. |\n" +
                     "| **REVISION_REQUESTED** | Yêu cầu chỉnh sửa: Cần sửa lại theo feedback của người duyệt. |\n" +
                     "| **APPROVED** | Đã duyệt: Nội dung đạt yêu cầu, sẵn sàng để xuất bản. |\n" +
                     "| **REJECTED** | Bị từ chối: Nội dung không đạt yêu cầu hệ thống. |\n" +

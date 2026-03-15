@@ -1,6 +1,7 @@
 package com.example.smd.controller;
 
-import com.example.smd.dto.request.POsRequest;
+import com.example.smd.dto.request.po.POsCreateRequest;
+import com.example.smd.dto.request.po.POsRequest;
 import com.example.smd.dto.response.POsResponse;
 import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.ResponseObject;
@@ -26,13 +27,15 @@ import java.util.List;
 public class POsController {
     POsService poService;
 
-    @PostMapping()
+    @PostMapping("/major/{majorId}")
     @PreAuthorize("hasAuthority('POS_CREATE')")
-    @Operation(summary = "Create multiple POs", description = "Allows batch creation of POs linked to a specific Major.")
-    public ResponseObject<List<POsResponse>> createBulk(@RequestBody @Valid List<POsRequest> requests) {
+    @Operation(summary = "Create multiple POs", description = "Create POs linked to a specific Major via PathVariable.")
+    public ResponseObject<List<POsResponse>> createBulk(
+            @PathVariable String majorId,
+            @RequestBody @Valid List<POsCreateRequest> request) {
         return ResponseObject.<List<POsResponse>>builder()
                 .status(1000)
-                .data(poService.createBulkPos(requests))
+                .data(poService.createBulkPos(majorId, request))
                 .message("POs created successfully")
                 .build();
     }

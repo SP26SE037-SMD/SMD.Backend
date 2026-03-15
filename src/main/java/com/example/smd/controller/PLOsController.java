@@ -1,10 +1,10 @@
 package com.example.smd.controller;
 
-import com.example.smd.dto.request.PLOsRequest;
+import com.example.smd.dto.request.plo.PLOsCreateRequest;
+import com.example.smd.dto.request.plo.PLOsRequest;
 import com.example.smd.dto.response.PLOsResponse;
 import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.ResponseObject;
-import com.example.smd.dto.response.clo.CLOsResponse;
 import com.example.smd.services.PLOsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -13,12 +13,10 @@ import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.data.domain.Page;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/plos")
@@ -29,14 +27,16 @@ import java.util.UUID;
 public class PLOsController {
     PLOsService ploService;
 
-    @PostMapping
+    @PostMapping("/curriculum/{curriculumId}")
     @PreAuthorize("hasAuthority('PLOS_CREATE')")
-    @Operation(summary = "Create a new PLO", description = "Create a PLO linked to a specific Major.")
-    public ResponseObject<List<PLOsResponse>> create(@RequestBody @Valid List<PLOsRequest> request) {
+    @Operation(summary = "Create multiple PLOs", description = "Create PLOs linked to a specific Curriculum via PathVariable.")
+    public ResponseObject<List<PLOsResponse>> createBulk(
+            @PathVariable String curriculumId,
+            @RequestBody @Valid List<PLOsCreateRequest> request) {
         return ResponseObject.<List<PLOsResponse>>builder()
                 .status(1000)
-                .data(ploService.createBulkPlos(request))
-                .message("PLO created successfully")
+                .data(ploService.createBulkPlos(curriculumId, request))
+                .message("PLOs created successfully")
                 .build();
     }
 

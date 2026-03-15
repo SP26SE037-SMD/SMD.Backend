@@ -1,6 +1,7 @@
 package com.example.smd.services;
 
-import com.example.smd.dto.request.POsRequest;
+import com.example.smd.dto.request.po.POsCreateRequest;
+import com.example.smd.dto.request.po.POsRequest;
 import com.example.smd.dto.response.POsResponse;
 import com.example.smd.entities.Major;
 import com.example.smd.entities.PO;
@@ -33,30 +34,31 @@ public class POsService {
     POsMapper poMapper;
 
     @Transactional
-    public List<POsResponse> createBulkPos(List<POsRequest> requests) {
+    public List<POsResponse> createBulkPos(String majorId, List<POsCreateRequest> requests) {
         if (requests == null || requests.isEmpty()) return Collections.emptyList();
 
-        UUID majorId = UUID.fromString(requests.get(0).getMajorId());
-        Major major = majorRepository.findById(majorId)
+        // 1. Kiểm tra Major tồn tại
+        UUID uuidMajorId = UUID.fromString(majorId);
+        Major major = majorRepository.findById(uuidMajorId)
                 .orElseThrow(() -> new AppException(ErrorCode.MAJOR_NOT_FOUND));
 
-        // 1. Local Check
+        // 2. Check trùng mã nội bộ trong JSON gửi lên
         Set<String> uniqueCodes = new HashSet<>();
-        for (POsRequest req : requests) {
+        for (POsCreateRequest req : requests) {
             if (!uniqueCodes.add(req.getPoCode())) {
                 throw new AppException(ErrorCode.PO_CODE_EXISTS);
             }
         }
 
-        // 2. Database Check
-        List<String> poCodes = requests.stream().map(POsRequest::getPoCode).toList();
-        if (poRepository.existsByPoCodeInAndMajor_MajorId(poCodes, majorId)) {
+        // 3. Check trùng mã với Database (Global Check cho riêng Major này)
+        List<String> poCodes = requests.stream().map(POsCreateRequest::getPoCode).toList();
+        if (poRepository.existsByPoCodeInAndMajor_MajorId(poCodes, uuidMajorId)) {
             throw new AppException(ErrorCode.PO_CODE_EXISTS);
         }
 
-        // 3. Map & Save
+        // 4. Map và Save hàng loạt
         List<PO> posToSave = requests.stream().map(request -> {
-            PO po = poMapper.toPo(request);
+            PO po = poMapper.toPoCreate(request); // Đảm bảo Mapper của bạn map từ POsCreateRequest
             po.setMajor(major);
             po.setStatus(PloStatus.DRAFT.toString());
             return po;
@@ -79,7 +81,6 @@ public class POsService {
         }
 
         po.setPoCode(request.getPoCode());
-        po.setPoName(request.getPoName());
         po.setDescription(request.getDescription());
 
         return poMapper.toPoResponse(poRepository.save(po));
