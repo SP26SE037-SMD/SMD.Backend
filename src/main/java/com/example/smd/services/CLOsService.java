@@ -1,5 +1,6 @@
 package com.example.smd.services;
 
+import com.example.smd.dto.request.clo.CLOsCreateRequest;
 import com.example.smd.dto.request.clo.CLOsRequest;
 import com.example.smd.dto.response.clo.CLOsResponse;
 import com.example.smd.entities.CLOs;
@@ -35,35 +36,35 @@ public class CLOsService {
     CLOsMapper closMapper;
 
     @Transactional
-    public List<CLOsResponse> createBulkClos(List<CLOsRequest> requests) {
+    public List<CLOsResponse> createBulkClos(String subjectId, List<CLOsCreateRequest> requests) {
         if (requests == null || requests.isEmpty()) {
             return Collections.emptyList();
         }
 
-        // 1. Lấy subjectId từ request đầu tiên (Giả định 1 danh sách gửi lên thuộc cùng 1 môn học)
-        UUID subjectId = UUID.fromString(requests.get(0).getSubjectId());
-        Subject subject = subjectRepository.findById(subjectId)
+        // 1. Kiểm tra Môn học (Subject) tồn tại
+        UUID uuidSubjectId = UUID.fromString(subjectId);
+        Subject subject = subjectRepository.findById(uuidSubjectId)
                 .orElseThrow(() -> new AppException(ErrorCode.SUBJECT_NOT_FOUND));
 
-        // 2. Check trùng mã CLO ngay trong danh sách gửi lên (Local Validation)
-        Set<String> duplicateCodes = new HashSet<>();
-        for (CLOsRequest req : requests) {
-            if (!duplicateCodes.add(req.getCloCode())) {
-                throw new AppException(ErrorCode.CLO_CODE_EXISTS); // Trùng mã ngay trong mảng JSON
+        // 2. Check trùng mã CLO ngay trong danh sách gửi lên (Local Check)
+        Set<String> uniqueCodes = new HashSet<>();
+        for (CLOsCreateRequest req : requests) {
+            if (!uniqueCodes.add(req.getCloCode())) {
+                throw new AppException(ErrorCode.CLO_CODE_EXISTS);
             }
         }
 
-        // 3. Check trùng mã CLO với Database (Global Validation - 1 lần duy nhất)
-        List<String> incomingCodes = requests.stream().map(CLOsRequest::getCloCode).toList();
-        if (closRepository.existsByCloCodeInAndSubject_SubjectId(incomingCodes, subjectId)) {
+        // 3. Check trùng mã CLO với Database cho riêng môn học này (Global Check)
+        List<String> incomingCodes = requests.stream().map(CLOsCreateRequest::getCloCode).toList();
+        if (closRepository.existsByCloCodeInAndSubject_SubjectId(incomingCodes, uuidSubjectId)) {
             throw new AppException(ErrorCode.CLO_CODE_EXISTS);
         }
 
         // 4. Map và Set các giá trị mặc định
         List<CLOs> closToSave = requests.stream().map(request -> {
-            CLOs clo = closMapper.toClo(request);
+            CLOs clo = closMapper.toCloCreate(request); // Đảm bảo Mapper nhận CLOsCreateRequest
             clo.setSubject(subject);
-            clo.setStatus("DRAFT"); // Sử dụng Enum để đồng bộ
+            clo.setStatus("DRAFT");
             return clo;
         }).toList();
 
@@ -102,7 +103,6 @@ public class CLOsService {
 
         // Cập nhật các trường thông tin
         clo.setCloCode(request.getCloCode());
-        clo.setCloName(request.getCloName()); // Trường cloName bạn yêu cầu thêm
         clo.setDescription(request.getDescription());
         clo.setBloomLevel(request.getBloomLevel());
 

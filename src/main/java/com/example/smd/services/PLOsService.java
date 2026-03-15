@@ -1,19 +1,15 @@
 package com.example.smd.services;
 
-import com.example.smd.dto.request.PLOsRequest;
+import com.example.smd.dto.request.plo.PLOsCreateRequest;
+import com.example.smd.dto.request.plo.PLOsRequest;
 import com.example.smd.dto.response.PLOsResponse;
-import com.example.smd.dto.response.clo.CLOsResponse;
-import com.example.smd.entities.CLOs;
 import com.example.smd.entities.Curriculum;
-import com.example.smd.entities.Major;
 import com.example.smd.entities.PLOs;
 import com.example.smd.enums.PloStatus;
-import com.example.smd.enums.SyllabusStatus;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.PLOsMapper;
 import com.example.smd.repositories.CurriculumRepository;
-import com.example.smd.repositories.MajorRepository;
 import com.example.smd.repositories.PLOsRepository;
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
@@ -39,31 +35,31 @@ public class PLOsService {
     PLOsMapper plOsMapper;
 
     @Transactional
-    public List<PLOsResponse> createBulkPlos(List<PLOsRequest> requests) {
+    public List<PLOsResponse> createBulkPlos(String curriculumId, List<PLOsCreateRequest> requests) {
         if (requests == null || requests.isEmpty()) return Collections.emptyList();
 
-        // 1. Lấy CurriculumId (giả định cùng 1 list là cùng 1 Curriculum/Major)
-        UUID curriculumId = UUID.fromString(requests.get(0).getCurriculumId());
-        Curriculum curriculum = curriculumRepository.findById(curriculumId)
+        // 1. Kiểm tra Curriculum tồn tại
+        UUID uuidCurriculumId = UUID.fromString(curriculumId);
+        Curriculum curriculum = curriculumRepository.findById(uuidCurriculumId)
                 .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));
 
-        // 2. Check trùng mã ngay trong danh sách gửi lên (Local Check)
+        // 2. Check trùng mã nội bộ trong JSON gửi lên (Local Check)
         Set<String> uniqueCodes = new HashSet<>();
-        for (PLOsRequest req : requests) {
+        for (PLOsCreateRequest req : requests) {
             if (!uniqueCodes.add(req.getPloCode())) {
-                throw new AppException(ErrorCode.PLO_CODE_EXISTS); // Có mã trùng trong mảng JSON
+                throw new AppException(ErrorCode.PLO_CODE_EXISTS);
             }
         }
 
-        // 3. Check trùng với Database (Global Check - 1 lần duy nhất)
-        List<String> ploCodes = requests.stream().map(PLOsRequest::getPloCode).toList();
-        if (plOsRepository.existsByPloCodeInAndCurriculum_CurriculumId(ploCodes, curriculumId)) {
+        // 3. Check trùng mã với Database (Global Check cho riêng Curriculum này)
+        List<String> ploCodes = requests.stream().map(PLOsCreateRequest::getPloCode).toList();
+        if (plOsRepository.existsByPloCodeInAndCurriculum_CurriculumId(ploCodes, uuidCurriculumId)) {
             throw new AppException(ErrorCode.PLO_CODE_EXISTS);
         }
 
         // 4. Map và Save hàng loạt
         List<PLOs> plosToSave = requests.stream().map(request -> {
-            PLOs plo = plOsMapper.toPlo(request);
+            PLOs plo = plOsMapper.toPloCreate(request); // Sử dụng Mapper cho PLOsCreateRequest
             plo.setCurriculum(curriculum);
             plo.setStatus(PloStatus.DRAFT.toString());
             return plo;
@@ -88,7 +84,6 @@ public class PLOsService {
             }
 
             plo.setPloCode(request.getPloCode());
-            plo.setPloName(request.getPloName());
             plo.setDescription(request.getDescription());
 
             return plOsMapper.toPloResponse(plOsRepository.save(plo));

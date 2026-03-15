@@ -15,10 +15,9 @@ import java.util.UUID;
 public class POsResponse {
     String poId;
     String poCode;
-    String poName;
     String description;
     String status;
-    String majorId;
+
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+7")
     Instant createdAt;
 }

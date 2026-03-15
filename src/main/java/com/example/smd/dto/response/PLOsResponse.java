@@ -14,7 +14,6 @@ import java.time.Instant;
 public class PLOsResponse {
     String ploId;
     String ploCode;
-    String ploName;
     String description;
     String status;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+7")

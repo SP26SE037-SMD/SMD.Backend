@@ -10,7 +10,7 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class CLOsRequest {
+public class CLOsCreateRequest {
     @NotBlank(message = "CLO_CODE_REQUIRED")
     String cloCode;
 
@@ -18,7 +18,4 @@ public class CLOsRequest {
 
     @NotNull(message = "BLOOM_LEVEL_REQUIRED")
     String bloomLevel;
-
-    @NotBlank(message = "SUBJECT_ID_REQUIRED")
-    String subjectId;
 }
