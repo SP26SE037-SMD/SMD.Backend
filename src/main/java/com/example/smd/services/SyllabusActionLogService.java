@@ -97,7 +97,6 @@ public class SyllabusActionLogService {
 
         return switch (syllabusStatus) {
             case PENDING_REVIEW -> SyllabusActionType.SUBMIT;
-            case IN_REVIEW -> SyllabusActionType.START_REVIEW;
             case REVISION_REQUESTED -> SyllabusActionType.REQUEST_REVISION;
             case APPROVED -> SyllabusActionType.APPROVE;
             case REJECTED -> SyllabusActionType.REJECT;
