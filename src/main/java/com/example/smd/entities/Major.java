@@ -38,6 +38,9 @@ public class Major {
     @Column(name = "created_at")
     Instant createdAt;
 
+    @Column(name = "updated_at")
+    Instant updatedAt;
+
     @OneToMany(mappedBy = "major", fetch = FetchType.LAZY)
     List<Curriculum> curriculums;
 
