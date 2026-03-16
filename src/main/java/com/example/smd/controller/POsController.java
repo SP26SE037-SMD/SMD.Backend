@@ -28,7 +28,7 @@ public class POsController {
     POsService poService;
 
     @PostMapping("/major/{majorId}")
-    @PreAuthorize("hasAuthority('POS_CREATE')")
+//    @PreAuthorize("hasAuthority('POS_CREATE')")
     @Operation(summary = "Create multiple POs", description = "Create POs linked to a specific Major via PathVariable.")
     public ResponseObject<List<POsResponse>> createBulk(
             @PathVariable String majorId,
@@ -41,7 +41,7 @@ public class POsController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAuthority('POS_UPDATE')")
+//    @PreAuthorize("hasAuthority('POS_UPDATE')")
     @Operation(summary = "Update PO", description = "Update po_code and description for a specific PO.")
     public ResponseObject<POsResponse> update(@PathVariable String id, @RequestBody @Valid POsRequest request) {
         return ResponseObject.<POsResponse>builder()
@@ -75,7 +75,7 @@ public class POsController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('POS_DELETE')")
+//    @PreAuthorize("hasAuthority('POS_DELETE')")
     @Operation(summary = "Delete PO", description = "Soft delete a PO by moving its status to ARCHIVED.")
     public ResponseObject<Void> delete(@PathVariable String id) {
         poService.deletePo(id);
@@ -86,7 +86,7 @@ public class POsController {
     }
 
     @PatchMapping("/major/{majorId}/status")
-    @PreAuthorize("hasAuthority('POS_UPDATE_STATUS')")
+//    @PreAuthorize("hasAuthority('POS_UPDATE_STATUS')")
     @Operation(
             summary = "Update POs status by Major",
             description = "### Quy trình cập nhật trạng thái của Chuẩn đầu ra (PO):\n" +

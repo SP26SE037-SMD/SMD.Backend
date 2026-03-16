@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -39,4 +40,14 @@ public interface MajorRepository extends JpaRepository<Major, UUID> {
     @Query("SELECT m FROM Major m WHERE (LOWER(m.majorName) LIKE LOWER(CONCAT('%', :search, '%')) " +
             "OR LOWER(m.majorCode) LIKE LOWER(CONCAT('%', :search, '%'))) AND m.status = :status")
     Page<Major> searchAllFieldsWithStatus(@Param("search") String search, @Param("status") String status, Pageable pageable);
+
+    @Query("SELECT m FROM Major m WHERE " +
+            "(:status IS NULL OR CAST(m.status AS string) = :status) AND " +
+            "m.updatedAt >= :startTime AND " +
+            "m.updatedAt < :endTime")
+    Page<Major> findByStatusAndUpdatedBetween(
+            @Param("status") String status,
+            @Param("startTime") Instant startTime,
+            @Param("endTime") Instant endTime,
+            Pageable pageable);
 }
