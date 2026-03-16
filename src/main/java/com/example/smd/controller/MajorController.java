@@ -45,11 +45,18 @@ public class MajorController {
             @RequestParam(required = false, defaultValue = "all") String searchBy,
             @Parameter(description = "Filter by major status (DRAFT, INTERNAL_REVIEW, PUBLISHED, ARCHIVED)")
             @RequestParam(required = false) String status,
+            @RequestParam(required = false) Boolean updatedYesterday,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "majorCode,asc") String[] sort
     ) {
-        Page<MajorResponse> majors = majorService.getAllMajors(search, searchBy, status, page, size, sort);
+        Page<MajorResponse> majors;
+        if (Boolean.TRUE.equals(updatedYesterday)) {
+            majors = majorService.getMajorsUpdatedInLast24Hours(status, page, size);
+        } else {
+            // Gọi logic getAll cũ của bạn
+            majors = majorService.getAllMajors(search, "code", null, page, size, new String[]{"majorCode", "asc"});
+        }
 
         return ResponseObject.<PagedResponse<MajorResponse>>builder()
                 .status(1000)

@@ -136,8 +136,13 @@ public class PLOsService {
 //            }
 
             // 3. Thực hiện xóa
-            plo.setStatus(PloStatus.ARCHIVED.toString());
-            plOsRepository.save(plo);
+            if(plo.getStatus().equals(PloStatus.DRAFT.toString())) {
+                plOsRepository.delete(plo);
+            } else {
+                plo.setStatus(PloStatus.ARCHIVED.toString());
+                plOsRepository.save(plo);
+            }
+
 
         } catch (IllegalArgumentException e) {
             throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
