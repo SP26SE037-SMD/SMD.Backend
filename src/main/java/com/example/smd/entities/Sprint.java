@@ -1,8 +1,10 @@
 package com.example.smd.entities;
+
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import java.util.List;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -14,7 +16,7 @@ import java.util.List;
 public class Sprint {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    String sprintId;
+    UUID sprintId;
 
     @Column(name = "sprint_name", nullable = false, length = 100)
     String sprintName;
@@ -30,7 +32,4 @@ public class Sprint {
 
     @OneToMany(mappedBy = "sprint", fetch = FetchType.LAZY)
     List<Task> tasks;
-
-    @OneToMany(mappedBy = "sprint", fetch = FetchType.LAZY)
-    List<Sprint_Member> sprintMembers;
 }
