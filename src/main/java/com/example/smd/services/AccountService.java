@@ -1,5 +1,7 @@
 package com.example.smd.services;
 
+import com.example.smd.dto.excel.AccountExportDTO;
+import com.example.smd.dto.excel.AccountImportDTO;
 import com.example.smd.dto.request.account.AccountRequest;
 import com.example.smd.dto.response.account.AccountResponse;
 import com.example.smd.dto.response.account.ImportAccountResult;
@@ -11,6 +13,8 @@ import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.AccountMapper;
 import com.example.smd.repositories.AccountRepository;
 import com.example.smd.repositories.RoleRepository;
+import com.example.smd.services.excelService.ExcelExporter;
+import com.example.smd.services.excelService.ExcelImporter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -194,102 +198,105 @@ public class AccountService {
     //Import tài khoản từ file Excel
     public ImportResult importAccounts(MultipartFile file, String roleName) {
 
-        Role role = roleRepository.findByRoleName(roleName.toUpperCase())
+        Role role = roleRepository.findByRoleName(roleName)
                 .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
+
+        List<AccountImportDTO> rows =
+                null;
+        try {
+            rows = ExcelImporter.importFromExcel(file, AccountImportDTO.class);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
 
         Set<String> emailSet = new HashSet<>();
         List<Account> accounts = new ArrayList<>();
         List<ImportAccountResult> results = new ArrayList<>();
+
         String randomPassword = generateRandomPassword();
 
-        try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
+        for (AccountImportDTO dto : rows) {
 
-            Sheet sheet = workbook.getSheetAt(0);
+            try {
 
-            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+                String email = dto.getEmail() != null ? dto.getEmail().trim() : "";
+                String fullName = dto.getFullName() != null ? dto.getFullName().trim() : "";
 
-                Row row = sheet.getRow(i);
-                int rowNumber = i + 1;
-
-                if (row == null) continue;
-
-                try {
-
-                    String email = row.getCell(0).getStringCellValue().trim();
-                    String fullName = row.getCell(1).getStringCellValue().trim();
-
-                    // duplicate trong file
-                    if (!emailSet.add(email)) {
-                        results.add(new ImportAccountResult(
-                                email,
-                                "FAILED",
-                                "Duplicate email in Excel"
-                        ));
-                        continue;
-                    }
-
-                    Account account = new Account();
-                    account.setEmail(email);
-                    account.setFullName(fullName);
-                    account.setRole(role);   // 👈 gán role từ API
-                    account.setIsActive(true);
-                    account.setPasswordHash(passwordEncoder.encode(randomPassword));
-
-                    accounts.add(account);
-
-                } catch (Exception e) {
+                // duplicate trong file
+                if (!emailSet.add(email)) {
 
                     results.add(new ImportAccountResult(
-                            null,
+                            email,
                             "FAILED",
-                            "Invalid data format"
+                            "Duplicate email in Excel"
                     ));
+
+                    continue;
                 }
+
+                Account account = new Account();
+                account.setEmail(email);
+                account.setFullName(fullName);
+                account.setRole(role);
+                account.setIsActive(true);
+                account.setPasswordHash(passwordEncoder.encode(randomPassword));
+
+                accounts.add(account);
+
+            } catch (Exception e) {
+
+                results.add(new ImportAccountResult(
+                        null,
+                        "FAILED",
+                        "Invalid data format"
+                ));
             }
-
-            // check duplicate trong DB
-            Set<String> emails = accounts.stream()
-                    .map(Account::getEmail)
-                    .collect(Collectors.toSet());
-
-            List<Account> existingAccounts = accountRepository.findByEmailIn(emails);
-
-            Set<String> existingEmails = existingAccounts.stream()
-                    .map(Account::getEmail)
-                    .collect(Collectors.toSet());
-
-            List<Account> accountsToSave = new ArrayList<>();
-
-            for (Account account : accounts) {
-
-                if (existingEmails.contains(account.getEmail())) {
-
-                    results.add(new ImportAccountResult(
-                            account.getEmail(),
-                            "FAILED",
-                            "Email already exists"
-                    ));
-
-                } else {
-
-                    accountsToSave.add(account);
-
-                    results.add(new ImportAccountResult(
-                            account.getEmail(),
-                            "SUCCESS",
-                            "Created successfully"
-                    ));
-                }
-            }
-
-            accountRepository.saveAll(accountsToSave);
-
-        } catch (IOException e) {
-            throw new RuntimeException("Import failed", e);
         }
 
-        long success = results.stream().filter(r -> r.getStatus().equals("SUCCESS")).count();
-        long failed = results.stream().filter(r -> r.getStatus().equals("FAILED")).count();
+        // check duplicate DB
+        Set<String> emails = accounts.stream()
+                .map(Account::getEmail)
+                .collect(Collectors.toSet());
+
+        List<Account> existingAccounts = accountRepository.findByEmailIn(emails);
+
+        Set<String> existingEmails = existingAccounts.stream()
+                .map(Account::getEmail)
+                .collect(Collectors.toSet());
+
+        List<Account> accountsToSave = new ArrayList<>();
+
+        for (Account account : accounts) {
+
+            if (existingEmails.contains(account.getEmail())) {
+
+                results.add(new ImportAccountResult(
+                        account.getEmail(),
+                        "FAILED",
+                        "Email already exists"
+                ));
+
+            } else {
+
+                accountsToSave.add(account);
+
+                results.add(new ImportAccountResult(
+                        account.getEmail(),
+                        "SUCCESS",
+                        "Created successfully"
+                ));
+            }
+        }
+
+        accountRepository.saveAll(accountsToSave);
+
+        long success = results.stream()
+                .filter(r -> r.getStatus().equals("SUCCESS"))
+                .count();
+
+        long failed = results.stream()
+                .filter(r -> r.getStatus().equals("FAILED"))
+                .count();
 
         return new ImportResult(
                 results.size(),
@@ -299,37 +306,25 @@ public class AccountService {
         );
     }
 
-    public ByteArrayInputStream exportAccounts() throws IOException {
+    public ByteArrayInputStream exportAccounts() throws Exception {
+
         List<Account> accounts = accountRepository.findAllWithRole();
 
-        Workbook workbook = new XSSFWorkbook();
-        Sheet sheet = workbook.createSheet("Accounts");
+        List<AccountExportDTO> dtoList = accounts.stream()
+                .map(a -> {
 
-        Row header = sheet.createRow(0);
+                    AccountExportDTO dto = new AccountExportDTO();
 
-        header.createCell(0).setCellValue("Email");
-        header.createCell(1).setCellValue("Full Name");
-        header.createCell(2).setCellValue("Phone Number");
-        header.createCell(3).setCellValue("Role");
+                    dto.setEmail(a.getEmail());
+                    dto.setFullName(a.getFullName());
+                    dto.setPhoneNumber(a.getPhoneNumber());
+                    dto.setRole(a.getRole().getRoleName());
 
-        int rowIdx = 1;
+                    return dto;
 
-        for (Account account : accounts) {
+                }).toList();
 
-            Row row = sheet.createRow(rowIdx++);
-
-            row.createCell(0).setCellValue(account.getEmail());
-            row.createCell(1).setCellValue(account.getFullName());
-            row.createCell(2).setCellValue(account.getPhoneNumber());
-            row.createCell(3).setCellValue(account.getRole().getRoleName());
-
-        }
-
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        workbook.write(out);
-        workbook.close();
-
-        return new ByteArrayInputStream(out.toByteArray());
+        return ExcelExporter.export(dtoList, AccountExportDTO.class);
     }
 
     private String generateRandomPassword() {
