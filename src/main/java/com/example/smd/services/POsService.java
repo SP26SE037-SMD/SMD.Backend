@@ -108,9 +108,13 @@ public class POsService {
         PO po = poRepository.findById(UUID.fromString(id))
                 .orElseThrow(() -> new AppException(ErrorCode.PO_NOT_FOUND));
 
-        // Soft Delete (Archive)
-        po.setStatus(PloStatus.ARCHIVED.toString());
-        poRepository.save(po);
+        if(po.getStatus().equals(PloStatus.DRAFT.toString())) {
+            poRepository.delete(po);
+        } else {
+            // Soft Delete (Archive)
+            po.setStatus(PloStatus.ARCHIVED.toString());
+            poRepository.save(po);
+        }
     }
 
     @Transactional

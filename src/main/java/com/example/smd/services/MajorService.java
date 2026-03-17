@@ -21,6 +21,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 
@@ -88,6 +92,7 @@ public class MajorService {
 
         major.setMajorName(request.getMajorName());
         major.setDescription(request.getDescription());
+        major.setUpdatedAt(Instant.now());
 
         var response = majorRepository.save(major);
         return majorMapper.toMajorResponse(response);
@@ -126,7 +131,20 @@ public class MajorService {
 
         // 3. Cập nhật trạng thái
         major.setStatus(status.toString());
-
+        major.setUpdatedAt(Instant.now());
         return majorMapper.toMajorResponse(majorRepository.save(major));
+    }
+
+    public Page<MajorResponse> getMajorsUpdatedInLast24Hours(String status, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("updatedAt").descending());
+
+        // Mốc bắt đầu: 24 tiếng trước
+        Instant startTime = Instant.now().minus(24, ChronoUnit.HOURS);
+        // Mốc kết thúc: Bây giờ
+        Instant endTime = Instant.now();
+
+        // Truyền đủ 2 tham số vào hàm Repo đã viết
+        return majorRepository.findByStatusAndUpdatedBetween(status, startTime, endTime, pageable)
+                .map(majorMapper::toMajorResponse);
     }
 }

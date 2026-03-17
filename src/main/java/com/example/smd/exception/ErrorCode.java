@@ -148,9 +148,15 @@ public enum ErrorCode {
     PO_IN_USE(21004, "PO is currently mapped to PLOs and cannot be deleted", HttpStatus.CONFLICT),
     INVALID_PO_STATUS(21005, "Invalid PO status transition", HttpStatus.BAD_REQUEST),
 
-    //PO_PLO_MAPPING
+    // PO_PLO_MAPPING
     PO_PLO_MAPPING_NOT_FOUND(22001, "PO-PLO mapping not found", HttpStatus.NOT_FOUND),
     PO_PLO_MAPPING_EXISTS(22002, "This PLO is already mapped to this PO", HttpStatus.BAD_REQUEST),
+
+    // SPRINT
+    SPRINT_NOT_FOUND(23001, "Sprint not found", HttpStatus.NOT_FOUND),
+    SPRINT_NAME_REQUIRED(23002, "Sprint name is required", HttpStatus.BAD_REQUEST),
+    SPRINT_NAME_TOO_LONG(23003, "Sprint name must not exceed 100 characters", HttpStatus.BAD_REQUEST),
+    STATUS_TOO_LONG(23004, "Status must not exceed 20 characters", HttpStatus.BAD_REQUEST),
 
     // General
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),

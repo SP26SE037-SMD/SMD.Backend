@@ -1,26 +1,25 @@
-package com.example.smd.dto.response;
+package com.example.smd.dto.response.sprint;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.time.Instant;
 
-@Data // Tự động tạo Getter, Setter, toString...
+@Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class MajorResponse {
-    String majorId;
-    String majorCode;
-    String majorName;
-    String description;
+public class SprintResponse {
+    String sprintId;
+    String sprintName;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+7")
+    Instant startDate;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+7")
+    Instant endDate;
+
     String status;
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+7")
-    Instant createdAt;
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+7")
-    Instant updatedAt;
 }

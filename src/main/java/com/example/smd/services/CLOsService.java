@@ -5,6 +5,7 @@ import com.example.smd.dto.request.clo.CLOsRequest;
 import com.example.smd.dto.response.clo.CLOsResponse;
 import com.example.smd.entities.CLOs;
 import com.example.smd.entities.Subject;
+import com.example.smd.enums.PloStatus;
 import com.example.smd.enums.SyllabusStatus;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
@@ -117,9 +118,13 @@ public class CLOsService {
             // Kiểm tra xem CLO có tồn tại không
             CLOs clo = closRepository.findById(cloId)
                     .orElseThrow(() -> new AppException(ErrorCode.CLO_NOT_FOUND));
+            if(clo.getStatus().equals("DRAFT")) {
+                closRepository.delete(clo);
+            } else{
+                clo.setStatus("ARCHIVED");
+                closRepository.save(clo);
+            }
 
-            clo.setStatus("ARCHIVED");
-            closRepository.save(clo);
         } catch (IllegalArgumentException e) {
             throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
         }
