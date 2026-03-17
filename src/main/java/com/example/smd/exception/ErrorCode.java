@@ -158,6 +158,12 @@ public enum ErrorCode {
     SPRINT_NAME_TOO_LONG(23003, "Sprint name must not exceed 100 characters", HttpStatus.BAD_REQUEST),
     STATUS_TOO_LONG(23004, "Status must not exceed 20 characters", HttpStatus.BAD_REQUEST),
 
+    // SOURCE
+    SOURCE_NOT_FOUND(24001, "Source not found", HttpStatus.NOT_FOUND),
+    INVALID_SOURCE_TYPE(24002, "Invalid source type. Please choose from: TEXTBOOK, REFERENCE_BOOK, ONLINE_COURSE, DOCUMENTATION, JOURNAL_PAPER, ARTICLE", HttpStatus.BAD_REQUEST),
+    INVALID_YEAR(24003, "Published year must be between 1900 and the current year", HttpStatus.BAD_REQUEST),
+    MAPPING_NOT_FOUND(24004, "Syllabus and Source mapping not found", HttpStatus.NOT_FOUND),
+    SOURCE_ALREADY_MAPPED(24005, "Source is already assigned to this syllabus", HttpStatus.CONFLICT),
     // General
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),
     INVALID_KEY(1000, "Invalid message key", HttpStatus.BAD_REQUEST),

@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -31,4 +32,11 @@ public interface SubjectRepository extends JpaRepository<Subject, UUID>, JpaSpec
     @EntityGraph(attributePaths = {"department", "clos"})
     @Override
     Page<Subject> findAll(Specification<Subject> spec, Pageable pageable);
+
+    @Query("SELECT s FROM Subject s JOIN FETCH s.department WHERE s.department.departmentId = :deptId")
+    List<Subject> findAllByDepartmentId(@Param("deptId") UUID deptId);
+
+    @Query("SELECT s FROM Subject s WHERE s.subjectId IN " +
+            "(SELECT es.subject.subjectId FROM Elective_Subject es WHERE es.elective.electiveId = :electiveId)")
+    List<Subject> findSubjectsByElectiveId(@Param("electiveId") UUID electiveId);
 }
