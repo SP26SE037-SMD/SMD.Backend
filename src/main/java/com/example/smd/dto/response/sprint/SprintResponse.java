@@ -5,6 +5,7 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @Data
 @Builder
@@ -12,7 +13,7 @@ import java.time.Instant;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class SprintResponse {
-    String sprintId;
+    UUID sprintId;
     String sprintName;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+7")

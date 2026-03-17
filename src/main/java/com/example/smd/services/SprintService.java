@@ -15,6 +15,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.UUID;
+
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -47,14 +49,14 @@ public class SprintService {
         return pageData.map(sprintMapper::toSprintResponse);
     }
 
-    public SprintResponse getDetail(String id) {
+    public SprintResponse getDetail(UUID id) {
         Sprint sprint = sprintRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.SPRINT_NOT_FOUND));
         return sprintMapper.toSprintResponse(sprint);
     }
 
     @Transactional
-    public SprintResponse update(String id, SprintRequest request) {
+    public SprintResponse update(UUID id, SprintRequest request) {
         Sprint sprint = sprintRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.SPRINT_NOT_FOUND));
 
@@ -65,7 +67,7 @@ public class SprintService {
     }
 
     @Transactional
-    public void delete(String id) {
+    public void delete(UUID id) {
         if (!sprintRepository.existsById(id)) {
             throw new AppException(ErrorCode.SPRINT_NOT_FOUND);
         }

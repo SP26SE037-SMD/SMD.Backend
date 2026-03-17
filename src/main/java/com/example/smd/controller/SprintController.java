@@ -17,6 +17,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 @RestController
 @RequestMapping("/api/sprints")
 @RequiredArgsConstructor
@@ -57,7 +59,7 @@ public class SprintController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Get sprint detail by ID")
-    public ResponseObject<SprintResponse> getDetail(@PathVariable String id) {
+    public ResponseObject<SprintResponse> getDetail(@PathVariable UUID id) {
         return ResponseObject.<SprintResponse>builder()
                 .data(sprintService.getDetail(id))
                 .message("Sprint detail retrieved successfully")
@@ -67,7 +69,7 @@ public class SprintController {
     @PutMapping("/{id}")
     @Operation(summary = "Update sprint information")
     public ResponseObject<SprintResponse> update(
-            @PathVariable String id,
+            @PathVariable UUID id,
             @RequestBody @Valid SprintRequest request) {
         return ResponseObject.<SprintResponse>builder()
                 .data(sprintService.update(id, request))
@@ -77,7 +79,7 @@ public class SprintController {
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete sprint")
-    public ResponseObject<Void> delete(@PathVariable String id) {
+    public ResponseObject<Void> delete(@PathVariable UUID id) {
         sprintService.delete(id);
         return ResponseObject.<Void>builder()
                 .message("Sprint deleted successfully")
