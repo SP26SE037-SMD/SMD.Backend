@@ -191,7 +191,7 @@ public class AccountController {
     }
 
     @GetMapping("/export")
-    public ResponseEntity<InputStreamResource> exportAccounts() throws IOException {
+    public ResponseEntity<InputStreamResource> exportAccounts() throws Exception {
         ByteArrayInputStream excel = accountService.exportAccounts();
 
         HttpHeaders headers = new HttpHeaders();

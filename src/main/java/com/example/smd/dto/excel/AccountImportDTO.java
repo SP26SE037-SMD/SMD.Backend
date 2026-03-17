@@ -1,0 +1,19 @@
+package com.example.smd.dto.excel;
+import jakarta.validation.constraints.Pattern;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
+public class AccountImportDTO {
+
+    @ExcelColumn(name = "Email", order = 0, required = true)
+    private String email;
+
+    @ExcelColumn(name = "Full Name", order = 1, required = true)
+    private String fullName;
+
+}

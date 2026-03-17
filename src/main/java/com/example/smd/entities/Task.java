@@ -20,10 +20,10 @@ public class Task {
     @JoinColumn(name = "sprint_id", nullable = false)
     Sprint sprint;
 
-    // Người được giao việc (Assignee)
+    // Người được giao việc
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "assignee_id")
-    Account assignee;
+    @JoinColumn(name = "assigned_to")
+    Account account;
 
     // Task này liên quan đến Syllabus nào? (Optional)
     @ManyToOne(fetch = FetchType.LAZY)
