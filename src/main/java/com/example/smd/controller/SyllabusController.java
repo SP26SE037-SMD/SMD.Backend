@@ -47,7 +47,7 @@ public class SyllabusController {
         syllabusActionLogService.createLog(logRequest);
 
         return ResponseObject.<SyllabusResponse>builder()
-                .data(syllabusService.create(request))
+                .data(response)
                 .message("Syllabus created successfully")
                 .build();
     }

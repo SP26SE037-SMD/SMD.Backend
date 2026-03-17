@@ -234,4 +234,58 @@ public class SubjectService {
 
         return response;
     }
+
+    @Transactional
+    public List<SubjectResponse> getSubjectsByDepartment(UUID departmentId) {
+        // Fetch entities from DB
+        List<Subject> subjects = subjectRepository.findAllByDepartmentId(departmentId);
+
+        // Map to Response DTOs
+        return subjects.stream()
+                .map(subject -> {
+                    SubjectResponse response = subjectMapper.toSubjectResponse(subject);
+
+                    // 1. Bổ sung Electives từ bảng trung gian
+                    List<ElectiveResponse> electives = electiveSubjectRepository.findBySubject_SubjectId(subject.getSubjectId())
+                            .stream()
+                            .map(es -> electiveMapper.toElectiveResponse(es.getElective()))
+                            .toList();
+                    response.setElectives(electives);
+
+                    // 2. Bổ sung Prerequisites
+                    List<PrerequisiteResponse> prerequisites = prerequisiteRepository.findBySubject_SubjectId(subject.getSubjectId())
+                            .stream()
+                            .map(prerequisiteMapper::toResponse)
+                            .toList();
+                    response.setPreRequisite(prerequisites);
+
+                    return response;})
+                .toList();
+    }
+
+    @Transactional
+    public List<SubjectResponse> getSubjectsByElective(UUID electiveId) {
+        List<Subject> subjects = subjectRepository.findSubjectsByElectiveId(electiveId);
+
+        return subjects.stream()
+                .map(subject -> {
+                    SubjectResponse response = subjectMapper.toSubjectResponse(subject);
+
+                    // 1. Bổ sung Electives từ bảng trung gian
+                    List<ElectiveResponse> electives = electiveSubjectRepository.findBySubject_SubjectId(subject.getSubjectId())
+                            .stream()
+                            .map(es -> electiveMapper.toElectiveResponse(es.getElective()))
+                            .toList();
+                    response.setElectives(electives);
+
+                    // 2. Bổ sung Prerequisites
+                    List<PrerequisiteResponse> prerequisites = prerequisiteRepository.findBySubject_SubjectId(subject.getSubjectId())
+                            .stream()
+                            .map(prerequisiteMapper::toResponse)
+                            .toList();
+                    response.setPreRequisite(prerequisites);
+
+                    return response;})
+                .toList();
+    }
 }

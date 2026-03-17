@@ -3,6 +3,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import java.util.List;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -15,12 +16,12 @@ import java.util.List;
 public class Source {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    String sourceId;
+    UUID sourceId;
 
-    @Column(name = "source_name", length = 100)
+    @Column(name = "source_name", columnDefinition = "TEXT")
     String sourceName;
 
-    @Column(length = 20)
+    @Column(name = "source_type")
     String type;
 
     @Column(length = 100)
@@ -29,9 +30,11 @@ public class Source {
     @Column(length = 100)
     String publisher;
 
-    @Column(name = "published_date")
-    java.time.Instant publishedDate;
+    @Column(name = "publication_year") // Đổi tên cột cho rõ nghĩa
+    int publishedYear;
 
     @Column(length = 20)
     String isbn;
+
+    String url;
 }

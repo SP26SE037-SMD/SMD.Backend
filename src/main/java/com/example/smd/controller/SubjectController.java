@@ -20,6 +20,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -134,6 +135,32 @@ public class SubjectController {
         return ResponseObject.<SubjectResponse>builder()
                 .data(subjectService.publishSubjectInternal(id))
                 .message("Subject has been successfully moved to internal review status.")
+                .build();
+    }
+
+    @GetMapping("/department/{departmentId}")
+    @Operation(
+            summary = "Get subjects by department",
+            description = "Returns a list of all subjects belonging to a specific department ID."
+    )
+    public ResponseObject<List<SubjectResponse>> getByDepartment(@PathVariable UUID departmentId) {
+        return ResponseObject.<List<SubjectResponse>>builder()
+                .status(1000)
+                .data(subjectService.getSubjectsByDepartment(departmentId))
+                .message("Subjects retrieved successfully for department: " + departmentId)
+                .build();
+    }
+
+    @GetMapping("/elective/{electiveId}")
+    @Operation(
+            summary = "Get subjects by elective group",
+            description = "Retrieves all subjects associated with a specific elective ID from the Subject Repository."
+    )
+    public ResponseObject<List<SubjectResponse>> getByElective(@PathVariable UUID electiveId) {
+        return ResponseObject.<List<SubjectResponse>>builder()
+                .status(1000)
+                .data(subjectService.getSubjectsByElective(electiveId))
+                .message("Subjects retrieved successfully for elective: " + electiveId)
                 .build();
     }
 }
