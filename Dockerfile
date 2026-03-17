@@ -35,5 +35,8 @@ COPY --from=build /app/target/smd-*.jar app.jar
 EXPOSE 8080
 
 # Command to run the application
-ENTRYPOINT ["java", "-jar", "app.jar"]
+#ENTRYPOINT ["java", "-jar", "app.jar"] // Đang để mặc định, nên JVM đang chiếm nhiều RAM nen luu y
 
+ENTRYPOINT ["java","-Xms256m","-Xmx512m","-jar","app.jar"]
+# '-Xms256m' _ Giới hạn RAM tối đa cho JVM để tránh chiếm quá nhiều tài nguyên trên máy chủ
+#Khi app start → Java dùng 256MB RAM, nhưng trong quá trình chạy có thể tăng lên tối đa 512MB nếu cần thiết.
