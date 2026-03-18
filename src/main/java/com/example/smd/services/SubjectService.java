@@ -9,6 +9,7 @@ import com.example.smd.entities.Elective;
 import com.example.smd.entities.Elective_Subject;
 import com.example.smd.entities.Subject;
 import com.example.smd.enums.SubjectStatus;
+import com.example.smd.enums.SyllabusStatus;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.ElectiveMapper;
@@ -184,7 +185,7 @@ public class SubjectService {
         // 2. Cập nhật các trường liên quan đến việc ban hành
         subject.setDecisionNo(decisionNo);       // Gán số quyết định ban hành
         subject.setIsApproved(true);             // Đánh dấu đã phê duyệt
-        subject.setStatus(SubjectStatus.PUBLISHED.toString());                 // Chuyển từ Draft (null) sang Active (true)
+        subject.setStatus(SubjectStatus.COMPLETED.toString());                 // Chuyển từ Draft (null) sang Active (true)
         subject.setApprovedDate(Instant.now());  // Lưu ngày phê duyệt (nếu có field này)
 
         // 3. Lưu và trả về response
@@ -207,14 +208,22 @@ public class SubjectService {
     }
 
     @Transactional
-    public SubjectResponse publishSubjectInternal(UUID subjectId) {
+    public SubjectResponse updateSubjectStatus(UUID subjectId, String newStatus) {
         // 1. Tìm môn học, nếu không thấy thì ném lỗi
         Subject subject = subjectRepository.findById(subjectId)
                 .orElseThrow(() -> new AppException(ErrorCode.SUBJECT_NOT_FOUND));
 
+        SubjectStatus status;
+        try {
+            // valueOf so sánh chuỗi với tên của các hằng số trong Enum (VD: "DRAFT")
+            status = SubjectStatus.valueOf(newStatus.toUpperCase());
+        } catch (IllegalArgumentException | NullPointerException e) {
+            // Ném ra lỗi của hệ thống nếu trạng thái không tồn tại
+            throw new AppException(ErrorCode.INVALID_SUBJECT_STATUS);
+        }
+
         // 2. Cập nhật các trường liên quan đến việc ban hành
-        subject.setStatus(SubjectStatus.INTERNAL_REVIEW.toString());                 // Chuyển từ Draft (null) sang Active (true)
-        subject.setApprovedDate(Instant.now());  // Lưu ngày phê duyệt (nếu có field này)
+        subject.setStatus(status.toString());
 
         // 3. Lưu và trả về response
         SubjectResponse response = subjectMapper.toSubjectResponse(subjectRepository.save(subject));

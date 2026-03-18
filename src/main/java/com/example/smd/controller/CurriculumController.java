@@ -153,16 +153,18 @@ public class CurriculumController {
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasAuthority('CURRICULUM_UPDATE')")
     @Operation(
-            summary = "Update Curriculum Status",
-            description = "### Quy trình cập nhật trạng thái vòng đời của Khung chương trình (Curriculum):\n" +
-                    "Chọn một trong các giá trị sau để điều phối luồng phê duyệt và biên soạn Syllabus:\n\n" +
-                    "| Status | Mô tả chi tiết (Nghiệp vụ) |\n" +
+            summary = "Update Curriculum Life-cycle Status",
+            description = "### Curriculum Life-cycle Workflow (Quy trình vòng đời Khung chương trình):\n" +
+                    "Select one of the following values to coordinate the approval and syllabus development flow:\n\n" +
+                    "| Status | Business Logic Description (Mô tả nghiệp vụ) |\n" +
                     "| :--- | :--- |\n" +
-                    "| **DRAFT** | **Biên soạn:** Giai đoạn khởi tạo khung. Chỉ hiển thị nội bộ cho HoC/FDC để thiết kế danh mục môn học. |\n" +
-                    "| **INTERNAL_REVIEW_WITHOUT_ENACTMENT** | **Chờ duyệt hành chính:** HoP đã chốt danh sách môn nhưng chưa có quyết định từ Văn phòng (VP). Chỉ được sửa mô tả môn học. |\n" +
-                    "| **INTERNAL_REVIEW_WITH_ENACTMENT** | **Đã duyệt hành chính:** Đã có quyết định chính thức từ VP. **Kích hoạt quyền biên soạn Syllabus** cho các bộ môn. |\n" +
-                    "| **PUBLISHED** | **Đã xuất bản:** Khung chương trình chính thức áp dụng. Toàn bộ danh mục môn học và cấu trúc bị khóa để đảm bảo tính pháp lý. |\n" +
-                    "| **ARCHIVED** | **Lưu trữ:** Khung cũ đã hết hiệu lực, không áp dụng cho các khóa mới nhưng vẫn giữ lại để tra cứu lịch sử (Read-only). |"
+                    "| **DRAFT** | **Khởi tạo:** HoC/FDC đang thiết kế cấu trúc khung và danh mục môn học. Chỉ hiển thị nội bộ, cho phép chỉnh sửa toàn diện. |\n" +
+                    "| **STRUCTURE_REVIEWED** | **Đã duyệt cấu trúc:** Văn phòng (VP) đã duyệt danh mục môn học. Chờ quyết định hành chính để triển khai tiếp. |\n" +
+                    "| **SYLLABUS_DEVELOPING** | **Soạn thảo Syllabus:** Hệ thống mở quyền cho các Bộ môn bắt đầu biên soạn Syllabus chi tiết dựa trên khung đã duyệt. |\n" +
+                    "| **FINAL_REVIEW** | **Rà soát tổng thể:** HoC/FDC kiểm tra lại toàn bộ nội dung Syllabus và Khung trước khi trình ký chính thức. |\n" +
+                    "| **SIGNED** | **Đã ký ban hành:** VP đã ký quyết định phê duyệt. Dữ liệu được khóa để chuẩn bị xuất bản. |\n" +
+                    "| **PUBLISHED** | **Đã xuất bản:** Khung chương trình chính thức áp dụng cho khóa tuyển sinh. Cho phép mọi người dùng xem (Public view). |\n" +
+                    "| **ARCHIVED** | **Lưu trữ:** Khung cũ đã hết hiệu lực. Chuyển sang chế độ chỉ đọc (Read-only) để tra cứu lịch sử đào tạo. |"
     )
     public ResponseObject<CurriculumResponse> updateCurriculumStatus(
             @Parameter(description = "Curriculum ID (UUID)")
