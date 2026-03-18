@@ -59,7 +59,7 @@ public enum ErrorCode {
     DECISION_NO_REQUIRED(8003, "Decision number cannot be blank", HttpStatus.BAD_REQUEST),
     SUBJECT_CODE_REQUIRED(8004, "Subject code cannot be blank", HttpStatus.BAD_REQUEST),
     SUBJECT_NAME_REQUIRED(8005, "Subject name cannot be blank", HttpStatus.BAD_REQUEST),
-
+    INVALID_SUBJECT_STATUS(8006, "Invalid subject status. Please follow the workflow: DRAFT -> DEFINED -> WAITING_SYLLABUS -> COMPLETED.", HttpStatus.BAD_REQUEST),
     // Gemini
     // AI & External Services (9xxx)
     AI_GENERATION_FAILED(9001, "AI failed to generate valid content, please try again", HttpStatus.INTERNAL_SERVER_ERROR),
