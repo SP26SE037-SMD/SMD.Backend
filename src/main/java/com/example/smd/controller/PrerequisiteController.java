@@ -3,15 +3,19 @@ package com.example.smd.controller;
 import com.example.smd.dto.request.PrerequisiteRequest;
 import com.example.smd.dto.response.PrerequisiteResponse;
 import com.example.smd.dto.response.ResponseObject;
+import com.example.smd.dto.response.prerequisite.ImportPrerequisiteResponse;
 import com.example.smd.services.PrerequisiteService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -20,6 +24,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Tag(name = "Prerequisite", description = "Endpoints for managing subject prerequisites")
+@SecurityRequirement(name = "bearerAuth")
 public class PrerequisiteController {
     PrerequisiteService prerequisiteService;
 
@@ -63,6 +68,17 @@ public class PrerequisiteController {
         return ResponseObject.<Void>builder()
                 .status(1000)
                 .message("Delete prerequisite successfully")
+                .build();
+    }
+
+    @PostMapping(value = "/import", consumes =
+            MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Import prerequisites from Excel")
+    public ResponseObject<ImportPrerequisiteResponse> importPrerequisites(@RequestParam("file") MultipartFile file) {
+        return ResponseObject.<ImportPrerequisiteResponse>builder()
+                .status(1000)
+                .data(prerequisiteService.importPrerequisites(file))
+                .message("Import prerequisites successfully")
                 .build();
     }
 }

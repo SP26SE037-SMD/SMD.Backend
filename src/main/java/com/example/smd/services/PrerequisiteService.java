@@ -1,7 +1,10 @@
 package com.example.smd.services;
 
+import com.example.smd.dto.excel.PrerequisiteImportDTO;
 import com.example.smd.dto.request.PrerequisiteRequest;
 import com.example.smd.dto.response.PrerequisiteResponse;
+import com.example.smd.dto.response.prerequisite.ImportPrerequisiteResponse;
+import com.example.smd.dto.response.prerequisite.ImportPrerequisiteResult;
 import com.example.smd.entities.Subject;
 import com.example.smd.entities.Subject_Prerequisite;
 import com.example.smd.exception.AppException;
@@ -9,14 +12,19 @@ import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.PrerequisiteMapper;
 import com.example.smd.repositories.PrerequisiteRepository;
 import com.example.smd.repositories.SubjectRepository;
+import com.example.smd.services.excelService.ExcelImporter;
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Slf4j
@@ -73,5 +81,151 @@ public class PrerequisiteService {
         if (!prerequisiteRepository.existsById(id))
             throw new AppException(ErrorCode.PREREQUISITE_NOT_FOUND);
         prerequisiteRepository.deleteById(id);
+    }
+
+    @Transactional
+    public ImportPrerequisiteResponse importPrerequisites(MultipartFile file) {
+        List<ImportPrerequisiteResult> details = new ArrayList<>();
+        List<Subject_Prerequisite> entitiesToSave = new ArrayList<>();
+        Set<String> uniquePairsInFile = new HashSet<>();
+
+        try {
+            List<PrerequisiteImportDTO> rows = ExcelImporter.importFromExcel(file, PrerequisiteImportDTO.class);
+
+            for (PrerequisiteImportDTO row : rows) {
+                String subjectCode = trim(row.getSubjectCode());
+                String prerequisiteCode = trim(row.getPrerequisiteSubjectCode());
+
+                if (subjectCode == null || prerequisiteCode == null) {
+                    details.add(ImportPrerequisiteResult.builder()
+                            .subjectCode(subjectCode)
+                            .prerequisiteSubjectCode(prerequisiteCode)
+                            .status("FAILED")
+                            .message("Missing required fields: Subject code, Subject Prerequisite")
+                            .build());
+                    continue;
+                }
+
+                Subject subject = subjectRepository.findBySubjectCode(subjectCode).orElse(null);
+                if (subject == null) {
+                    details.add(ImportPrerequisiteResult.builder()
+                            .subjectCode(subjectCode)
+                            .prerequisiteSubjectCode(prerequisiteCode)
+                            .status("FAILED")
+                            .message("Subject code not found")
+                            .build());
+                    continue;
+                }
+
+                Subject prerequisiteSubject = subjectRepository.findBySubjectCode(prerequisiteCode).orElse(null);
+                if (prerequisiteSubject == null) {
+                    details.add(ImportPrerequisiteResult.builder()
+                            .subjectCode(subjectCode)
+                            .prerequisiteSubjectCode(prerequisiteCode)
+                            .status("FAILED")
+                            .message("Prerequisite subject code not found")
+                            .build());
+                    continue;
+                }
+
+                if (subject.getSubjectId().equals(prerequisiteSubject.getSubjectId())) {
+                    details.add(ImportPrerequisiteResult.builder()
+                            .subjectCode(subjectCode)
+                            .prerequisiteSubjectCode(prerequisiteCode)
+                            .status("FAILED")
+                            .message("A subject cannot be its own prerequisite")
+                            .build());
+                    continue;
+                }
+
+                String uniquePair = subject.getSubjectId() + "-" + prerequisiteSubject.getSubjectId();
+                if (!uniquePairsInFile.add(uniquePair)) {
+                    details.add(ImportPrerequisiteResult.builder()
+                            .subjectCode(subjectCode)
+                            .prerequisiteSubjectCode(prerequisiteCode)
+                            .status("FAILED")
+                            .message("Duplicate prerequisite mapping in file")
+                            .build());
+                    continue;
+                }
+
+                if (prerequisiteRepository.existsBySubject_SubjectIdAndPrerequisiteSubject_SubjectId(
+                        subject.getSubjectId(), prerequisiteSubject.getSubjectId())) {
+                    details.add(ImportPrerequisiteResult.builder()
+                            .subjectCode(subjectCode)
+                            .prerequisiteSubjectCode(prerequisiteCode)
+                            .status("FAILED")
+                            .message("This prerequisite relationship already exists")
+                            .build());
+                    continue;
+                }
+
+                Boolean isMandatory;
+                try {
+                    isMandatory = parseMandatory(row.getIsMandatory());
+                } catch (AppException ex) {
+                    details.add(ImportPrerequisiteResult.builder()
+                            .subjectCode(subjectCode)
+                            .prerequisiteSubjectCode(prerequisiteCode)
+                            .status("FAILED")
+                            .message(ex.getMessage())
+                            .build());
+                    continue;
+                }
+
+                entitiesToSave.add(Subject_Prerequisite.builder()
+                        .subject(subject)
+                        .prerequisiteSubject(prerequisiteSubject)
+                        .isMandatory(isMandatory)
+                        .build());
+
+                details.add(ImportPrerequisiteResult.builder()
+                        .subjectCode(subjectCode)
+                        .prerequisiteSubjectCode(prerequisiteCode)
+                        .status("SUCCESS")
+                        .message("Created successfully")
+                        .build());
+            }
+
+            prerequisiteRepository.saveAll(entitiesToSave);
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION, "Import prerequisite failed: " + e.getMessage());
+        }
+
+        int total = details.size();
+        int success = (int) details.stream().filter(d -> "SUCCESS".equals(d.getStatus())).count();
+        int failed = total - success;
+
+        return ImportPrerequisiteResponse.builder()
+                .total(total)
+                .success(success)
+                .failed(failed)
+                .details(details)
+                .build();
+    }
+
+    private Boolean parseMandatory(String raw) {
+        String value = trim(raw);
+        if (value == null) {
+            return true;
+        }
+
+        String normalized = value.toLowerCase();
+        if ("true".equals(normalized) || "1".equals(normalized) || "yes".equals(normalized) || "y".equals(normalized)) {
+            return true;
+        }
+        if ("false".equals(normalized) || "0".equals(normalized) || "no".equals(normalized) || "n".equals(normalized)) {
+            return false;
+        }
+
+        throw new AppException(ErrorCode.INVALID_KEY, "Invalid isMandantory value: " + value);
+    }
+
+    private String trim(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }

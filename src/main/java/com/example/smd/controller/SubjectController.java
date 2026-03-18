@@ -5,6 +5,7 @@ import com.example.smd.dto.request.subject.SubjectRequest;
 import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.dto.response.SubjectResponse;
+import com.example.smd.dto.response.subject.ImportSubjectResponse;
 import com.example.smd.services.SubjectService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -17,8 +18,10 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.UUID;
 
@@ -136,4 +139,19 @@ public class SubjectController {
                 .message("Subject has been successfully moved to internal review status.")
                 .build();
     }
+
+        @PostMapping(value = "/import", consumes =
+                MediaType.MULTIPART_FORM_DATA_VALUE)
+        @PreAuthorize("hasAuthority('SUBJECT_CREATE')")
+        @Operation(
+                        summary = "Import subjects from Excel",
+                        description = "Import subject records from Excel columns: subjectCode, subjectName, credits, degreeLevel, timeAllocation, description, departmentCode, mintopass, studentLimit, studentTasks, scoringScale"
+        )
+        public ResponseObject<ImportSubjectResponse> importSubjects(@RequestParam("file") MultipartFile file) {
+                return ResponseObject.<ImportSubjectResponse>builder()
+                                .status(1000)
+                                .data(subjectService.importSubjects(file))
+                                .message("Import subjects successfully")
+                                .build();
+        }
 }
