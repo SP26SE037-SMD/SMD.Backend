@@ -158,6 +158,14 @@ public enum ErrorCode {
     SPRINT_NAME_TOO_LONG(23003, "Sprint name must not exceed 100 characters", HttpStatus.BAD_REQUEST),
     STATUS_TOO_LONG(23004, "Status must not exceed 20 characters", HttpStatus.BAD_REQUEST),
 
+    // TASK
+    TASK_NOT_FOUND(24001, "Task not found", HttpStatus.NOT_FOUND),
+    TASK_NAME_REQUIRED(24002, "Task name is required", HttpStatus.BAD_REQUEST),
+    TASK_NAME_TOO_LONG(24003, "Task name must not exceed 150 characters", HttpStatus.BAD_REQUEST),
+    SPRINT_ID_REQUIRED(24004, "Sprint ID is required", HttpStatus.BAD_REQUEST),
+    PRIORITY_TOO_LONG(24005, "Priority must not exceed 20 characters", HttpStatus.BAD_REQUEST),
+    TASK_LIST_REQUIRED(24006, "Task list is required", HttpStatus.BAD_REQUEST),
+
     // General
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),
     INVALID_KEY(1000, "Invalid message key", HttpStatus.BAD_REQUEST),
