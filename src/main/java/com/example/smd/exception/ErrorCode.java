@@ -159,13 +159,19 @@ public enum ErrorCode {
     STATUS_TOO_LONG(23004, "Status must not exceed 20 characters", HttpStatus.BAD_REQUEST),
 
     // TASK
-    TASK_NOT_FOUND(24001, "Task not found", HttpStatus.NOT_FOUND),
-    TASK_NAME_REQUIRED(24002, "Task name is required", HttpStatus.BAD_REQUEST),
-    TASK_NAME_TOO_LONG(24003, "Task name must not exceed 150 characters", HttpStatus.BAD_REQUEST),
-    SPRINT_ID_REQUIRED(24004, "Sprint ID is required", HttpStatus.BAD_REQUEST),
-    PRIORITY_TOO_LONG(24005, "Priority must not exceed 20 characters", HttpStatus.BAD_REQUEST),
-    TASK_LIST_REQUIRED(24006, "Task list is required", HttpStatus.BAD_REQUEST),
+    TASK_NOT_FOUND(25001, "Task not found", HttpStatus.NOT_FOUND),
+    TASK_NAME_REQUIRED(25002, "Task name is required", HttpStatus.BAD_REQUEST),
+    TASK_NAME_TOO_LONG(25003, "Task name must not exceed 150 characters", HttpStatus.BAD_REQUEST),
+    SPRINT_ID_REQUIRED(25004, "Sprint ID is required", HttpStatus.BAD_REQUEST),
+    PRIORITY_TOO_LONG(25005, "Priority must not exceed 20 characters", HttpStatus.BAD_REQUEST),
+    TASK_LIST_REQUIRED(25006, "Task list is required", HttpStatus.BAD_REQUEST),
 
+    // SOURCE
+    SOURCE_NOT_FOUND(24001, "Source not found", HttpStatus.NOT_FOUND),
+    INVALID_SOURCE_TYPE(24002, "Invalid source type. Please choose from: TEXTBOOK, REFERENCE_BOOK, ONLINE_COURSE, DOCUMENTATION, JOURNAL_PAPER, ARTICLE", HttpStatus.BAD_REQUEST),
+    INVALID_YEAR(24003, "Published year must be between 1900 and the current year", HttpStatus.BAD_REQUEST),
+    MAPPING_NOT_FOUND(24004, "Syllabus and Source mapping not found", HttpStatus.NOT_FOUND),
+    SOURCE_ALREADY_MAPPED(24005, "Source is already assigned to this syllabus", HttpStatus.CONFLICT),
     // General
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),
     INVALID_KEY(1000, "Invalid message key", HttpStatus.BAD_REQUEST),
