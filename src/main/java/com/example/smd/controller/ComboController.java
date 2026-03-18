@@ -4,14 +4,17 @@ import com.example.smd.dto.request.ComboRequest;
 import com.example.smd.dto.response.ComboResponse;
 import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.ResponseObject;
+import com.example.smd.dto.response.combo.ImportComboResponse;
 import com.example.smd.services.ComboService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @Tag(name = "Combo", description = "Combo Management APIs")
 @RestController
@@ -87,6 +90,18 @@ public class ComboController {
                 .status(1000)
                 .data(comboService.updateCombo(id, request))
                 .message("Update combo successfully")
+                .build();
+    }
+
+    @PostMapping(value = "/import", consumes =
+            MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAuthority('COMBO_CREATE')")
+    @Operation(summary = "Import combos from Excel")
+    public ResponseObject<ImportComboResponse> importCombos(@RequestParam("file") MultipartFile file) {
+        return ResponseObject.<ImportComboResponse>builder()
+                .status(1000)
+                .data(comboService.importCombos(file))
+                .message("Import combos successfully")
                 .build();
     }
 }

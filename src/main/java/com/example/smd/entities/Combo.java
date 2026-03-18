@@ -30,7 +30,7 @@ public class Combo {
     String description;
 
     @Column(name = "combo_type",length = 20)
-    String type; // Elective / Mandatory
+    String type; // Elective / Mandatory 
 
     @Column(name = "created_at")
     Instant createdAt;

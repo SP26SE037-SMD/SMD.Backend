@@ -1,12 +1,16 @@
 package com.example.smd.services;
 
+import com.example.smd.dto.excel.ComboImportDTO;
 import com.example.smd.dto.request.ComboRequest;
 import com.example.smd.dto.response.ComboResponse;
+import com.example.smd.dto.response.combo.ImportComboResponse;
+import com.example.smd.dto.response.combo.ImportComboResult;
 import com.example.smd.entities.Combo;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.ComboMapper;
 import com.example.smd.repositories.ComboRepository;
+import com.example.smd.services.excelService.ExcelImporter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -15,9 +19,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Slf4j
@@ -128,5 +135,88 @@ public class ComboService {
             return Sort.Direction.DESC;
         }
         return Sort.Direction.ASC;
+    }
+
+    @Transactional
+    public ImportComboResponse importCombos(MultipartFile file) {
+        List<ImportComboResult> details = new ArrayList<>();
+        List<Combo> combosToSave = new ArrayList<>();
+        Set<String> comboCodesInFile = new HashSet<>();
+
+        try {
+            List<ComboImportDTO> rows = ExcelImporter.importFromExcel(file, ComboImportDTO.class);
+
+            for (ComboImportDTO row : rows) {
+                String comboCode = trim(row.getComboCode());
+                String comboName = trim(row.getComboName());
+                String description = trim(row.getDescription());
+                String type = trim(row.getType());
+
+                if (comboCode == null) {
+                    details.add(ImportComboResult.builder()
+                            .comboCode(null)
+                            .status("FAILED")
+                            .message("Missing required field: Combo Code")
+                            .build());
+                    continue;
+                }
+
+                if (!comboCodesInFile.add(comboCode.toUpperCase())) {
+                    details.add(ImportComboResult.builder()
+                            .comboCode(comboCode)
+                            .status("FAILED")
+                            .message("Duplicate combo code in file")
+                            .build());
+                    continue;
+                }
+
+                if (comboRepository.existsByComboCode(comboCode)) {
+                    details.add(ImportComboResult.builder()
+                            .comboCode(comboCode)
+                            .status("FAILED")
+                            .message("Combo code already exists")
+                            .build());
+                    continue;
+                }
+
+                Combo combo = Combo.builder()
+                        .comboCode(comboCode)
+                        .comboName(comboName)
+                        .description(description)
+                        .type(type)
+                        .createdAt(java.time.Instant.now())
+                        .build();
+
+                combosToSave.add(combo);
+                details.add(ImportComboResult.builder()
+                        .comboCode(comboCode)
+                        .status("SUCCESS")
+                        .message("Created successfully")
+                        .build());
+            }
+
+            comboRepository.saveAll(combosToSave);
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION, "Import combo failed: " + e.getMessage());
+        }
+
+        int total = details.size();
+        int success = (int) details.stream().filter(d -> "SUCCESS".equals(d.getStatus())).count();
+        int failed = total - success;
+
+        return ImportComboResponse.builder()
+                .total(total)
+                .success(success)
+                .failed(failed)
+                .details(details)
+                .build();
+    }
+
+    private String trim(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }
