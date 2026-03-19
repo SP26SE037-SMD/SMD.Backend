@@ -51,7 +51,8 @@ public enum ErrorCode {
     SYLLABUS_ID_REQUIRED(7005, "Syllabus (Subject) ID is required", HttpStatus.BAD_REQUEST),
     BLOOM_LEVEL_REQUIRED(7006, "Bloom level is required and must be between 1-6", HttpStatus.BAD_REQUEST),
     INVALID_STATUS_INPUT(7007, "Invalid status provided. Please check the allowed list.", HttpStatus.BAD_REQUEST),
-    INVALID_CLO_STATUS(6005, "Invalid CLO status transition", HttpStatus.BAD_REQUEST),
+    INVALID_CLO_STATUS(7005, "Invalid CLO status transition",
+            HttpStatus.BAD_REQUEST),
 
     // Subject
     SUBJECT_NOT_FOUND(8001, "Subject not found", HttpStatus.NOT_FOUND),
