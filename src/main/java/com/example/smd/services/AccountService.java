@@ -7,11 +7,13 @@ import com.example.smd.dto.response.account.AccountResponse;
 import com.example.smd.dto.response.account.ImportAccountResult;
 import com.example.smd.dto.response.account.ImportResult;
 import com.example.smd.entities.Account;
+import com.example.smd.entities.Department;
 import com.example.smd.entities.Role;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.AccountMapper;
 import com.example.smd.repositories.AccountRepository;
+import com.example.smd.repositories.DepartmentRepository;
 import com.example.smd.repositories.RoleRepository;
 import com.example.smd.services.excelService.ExcelExporter;
 import com.example.smd.services.excelService.ExcelImporter;
@@ -44,6 +46,7 @@ public class AccountService {
     private final RoleRepository roleRepository;
     private final AccountMapper accountMapper;
     private final PasswordEncoder passwordEncoder;
+    private final DepartmentRepository departmentRepository;
 
     // GetAll tài khoản có phân trang và tìm kiếm theo role name hoặc full name
     @Transactional(readOnly = true)
@@ -148,6 +151,8 @@ public class AccountService {
             throw new AppException(ErrorCode.EMAIL_EXISTS);
         } else if (!roleRepository.existsByRoleName(request.getRoleName().toUpperCase(Locale.ROOT))) {
             throw new AppException(ErrorCode.ROLE_NOT_FOUND);
+        } else if (!departmentRepository.existsByDepartmentCode(request.getDepartmentCode().toUpperCase(Locale.ROOT))) {
+            throw new AppException(ErrorCode.DEPARTMENT_NOT_FOUND);
         }
 
         // 2. Tạo entity Account và mã hóa password
@@ -160,10 +165,16 @@ public class AccountService {
                     .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
             account.setRole(role);
         }
+        if(request.getDepartmentCode() != null) {
+            Department department = departmentRepository.findByDepartmentCode(request.getDepartmentCode())
+                    .orElseThrow(() -> new AppException(ErrorCode.DEPARTMENT_NOT_FOUND));
+            account.setDepartment(department);
+        }
 
         // 4. Lưu account
         account = accountRepository.save(account);
-        log.info("Created new account with ID: {}", account.getAccountId());
+        log.info("Created new account with ID: {}, {}",
+                account.getAccountId(), account.getDepartment().getDepartmentCode());
 
         return accountMapper.toResponse(account);
     }
@@ -195,6 +206,21 @@ public class AccountService {
         return true;
     }
 
+    @Transactional
+    public boolean changeDepartment(String accountId,
+                                    String departmentCode) {
+        var convert = UUID.fromString(accountId);
+        Account account = accountRepository.findById(convert)
+                .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND));
+        Department department = departmentRepository.findByDepartmentCode(departmentCode)
+                .orElseThrow(() -> new AppException(ErrorCode.DEPARTMENT_NOT_FOUND));
+
+        account.setDepartment(department);
+        accountRepository.save(account);
+
+        return true;
+    }
+
     //Import tài khoản từ file Excel
     public ImportResult importAccounts(MultipartFile file, String roleName) {
 
@@ -221,6 +247,7 @@ public class AccountService {
 
                 String email = dto.getEmail() != null ? dto.getEmail().trim() : "";
                 String fullName = dto.getFullName() != null ? dto.getFullName().trim() : "";
+                String departmentCode = dto.getDepartmentCode() != null ? dto.getDepartmentCode().trim() : "";
 
                 // duplicate trong file
                 if (!emailSet.add(email)) {
@@ -234,17 +261,29 @@ public class AccountService {
                     continue;
                 }
 
+                Department department = departmentRepository.findByDepartmentCode(departmentCode)
+                        .orElse(null);
+                if (department == null) {
+                    results.add(new ImportAccountResult(
+                            email,
+                            "FAILED",
+                            "Department code not found"
+                    ));
+                    continue;
+                }
+
+
+
                 Account account = new Account();
                 account.setEmail(email);
                 account.setFullName(fullName);
                 account.setRole(role);
                 account.setIsActive(true);
                 account.setPasswordHash(passwordEncoder.encode(randomPassword));
-
+                account.setDepartment(department);
                 accounts.add(account);
 
             } catch (Exception e) {
-
                 results.add(new ImportAccountResult(
                         null,
                         "FAILED",
@@ -308,23 +347,25 @@ public class AccountService {
 
     public ByteArrayInputStream exportAccounts() throws Exception {
 
-        List<Account> accounts = accountRepository.findAllWithRole();
+        List<AccountExportDTO> accounts =
+                accountRepository.exportAccounts();
 
-        List<AccountExportDTO> dtoList = accounts.stream()
-                .map(a -> {
+//        List<AccountExportDTO> dtoList = accounts.stream()
+//                .map(a -> {
+//
+//                    AccountExportDTO dto = new AccountExportDTO();
+//
+//                    dto.setEmail(a.getEmail());
+//                    dto.setFullName(a.getFullName());
+//                    dto.setPhoneNumber(a.getPhoneNumber());
+//                    dto.setRole(a.getRole().getRoleName());
+//                    dto.setDepartmentCode(a.getDepartment() != null ? a.getDepartment().getDepartmentCode() : "");
+//                    dto.setDepartmentName(a.getDepartment() != null ? a.getDepartment().getDepartmentName() : "");
+//                    return dto;
+//
+//                }).toList();
 
-                    AccountExportDTO dto = new AccountExportDTO();
-
-                    dto.setEmail(a.getEmail());
-                    dto.setFullName(a.getFullName());
-                    dto.setPhoneNumber(a.getPhoneNumber());
-                    dto.setRole(a.getRole().getRoleName());
-
-                    return dto;
-
-                }).toList();
-
-        return ExcelExporter.export(dtoList, AccountExportDTO.class);
+        return ExcelExporter.export(accounts, AccountExportDTO.class);
     }
 
     private String generateRandomPassword() {

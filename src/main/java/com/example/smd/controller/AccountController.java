@@ -176,6 +176,17 @@ public class AccountController {
                 .build();
     }
 
+    @PutMapping("/Department/{id}")
+    @PreAuthorize("hasAuthority('ACCOUNT_UPDATE')")
+    @Operation(summary = "Update Department account by ID")
+    public ResponseObject<Boolean> changeDepartment(@PathVariable String id, @RequestParam String departmentCode) {
+        return ResponseObject.<Boolean>builder()
+                .status(1000)
+                .data(accountService.changeDepartment(id, departmentCode))
+                .message("Update account successfully")
+                .build();
+    }
+
     @PostMapping(value = "/import", consumes =
             MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseObject<ImportResult> importAccounts(

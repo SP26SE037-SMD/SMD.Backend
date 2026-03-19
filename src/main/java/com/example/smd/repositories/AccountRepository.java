@@ -1,5 +1,6 @@
 package com.example.smd.repositories;
 
+import com.example.smd.dto.excel.AccountExportDTO;
 import com.example.smd.entities.Account;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -56,5 +57,20 @@ public interface AccountRepository extends JpaRepository<Account, java.util.UUID
 
     @Query("SELECT a FROM Account a JOIN FETCH a.role")
     List<Account> findAllWithRole();
+
+    @Query("""
+    SELECT new com.example.smd.dto.excel.AccountExportDTO(
+        a.email,
+        a.fullName,
+        a.phoneNumber,
+        d.departmentCode,
+        d.departmentName,
+        r.roleName
+    )
+    FROM Account a
+    LEFT JOIN a.department d
+    LEFT JOIN a.role r
+""")
+    List<AccountExportDTO> exportAccounts();
 
 }

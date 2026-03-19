@@ -49,6 +49,10 @@ public class Account {
     @Column(name = "last_login")
     Instant lastLogin;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "department_id", nullable = false)
+    Department department;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = Instant.now();

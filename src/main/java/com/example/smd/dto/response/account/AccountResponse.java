@@ -32,4 +32,7 @@ public class AccountResponse {
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+7")
     Instant lastLogin;
+
+    @JsonInclude
+    String departmentName;
 }
