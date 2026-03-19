@@ -21,6 +21,8 @@ public interface SubjectRepository extends JpaRepository<Subject, UUID>, JpaSpec
     // Giữ lại hàm kiểm tra trùng mã môn học hiện có
     boolean existsBySubjectCode(String subjectCode);
 
+    Optional<Subject> findBySubjectCode(String subjectCode);
+
     // JPQL sử dụng JOIN FETCH để lấy kèm Department và CLOs
     @Query("SELECT DISTINCT s FROM Subject s " +
             "LEFT JOIN FETCH s.department " +

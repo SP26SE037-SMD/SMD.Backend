@@ -62,7 +62,7 @@ public class Subject {
     Boolean isApproved = false;
 
     @Column(name = "status")
-    String status; // Active/Inactive
+    String status;
 
     @Column(name = "approved_date")
     Instant approvedDate;

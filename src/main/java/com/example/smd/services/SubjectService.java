@@ -1,9 +1,12 @@
 package com.example.smd.services;
 
+import com.example.smd.dto.excel.SubjectImportDTO;
 import com.example.smd.dto.request.subject.SubjectRequest;
 import com.example.smd.dto.response.ElectiveResponse;
 import com.example.smd.dto.response.PrerequisiteResponse;
 import com.example.smd.dto.response.SubjectResponse;
+import com.example.smd.dto.response.subject.ImportSubjectResponse;
+import com.example.smd.dto.response.subject.ImportSubjectResult;
 import com.example.smd.entities.Department;
 import com.example.smd.entities.Elective;
 import com.example.smd.entities.Elective_Subject;
@@ -16,12 +19,14 @@ import com.example.smd.mapper.ElectiveMapper;
 import com.example.smd.mapper.PrerequisiteMapper;
 import com.example.smd.mapper.SubjectMapper;
 import com.example.smd.repositories.*;
+import com.example.smd.services.excelService.ExcelImporter;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -29,7 +34,9 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Slf4j
@@ -244,6 +251,137 @@ public class SubjectService {
         return response;
     }
 
+        @Transactional
+        public ImportSubjectResponse importSubjects(MultipartFile file) {
+                List<ImportSubjectResult> details = new ArrayList<>();
+                List<Subject> subjectsToSave = new ArrayList<>();
+                Set<String> subjectCodesInFile = new HashSet<>();
+
+                try {
+                        List<SubjectImportDTO> rows = ExcelImporter.importFromExcel(file, SubjectImportDTO.class);
+
+                        for (SubjectImportDTO row : rows) {
+                                String subjectCode = trim(row.getSubjectCode());
+                                try {
+                                    String subjectName = trim(row.getSubjectName());
+                                    String departmentCode = trim(row.getDepartmentCode());
+
+                                    if (subjectCode == null || subjectName == null || departmentCode == null) {
+                                        details.add(ImportSubjectResult.builder()
+                                                .subjectCode(subjectCode)
+                                                .status("FAILED")
+                                                .message("Missing required fields: subjectCode, subjectName, departmentCode")
+                                                .build());
+                                        continue;
+                                    }
+
+                                    Integer credits = parseInteger(row.getCredits(), "credits");
+                                    if (credits == null) {
+                                        details.add(ImportSubjectResult.builder()
+                                                .subjectCode(subjectCode)
+                                                .status("FAILED")
+                                                .message("Invalid credits")
+                                                .build());
+                                        continue;
+                                    }
+
+                                    if (!subjectCodesInFile.add(subjectCode.toUpperCase())) {
+                                        details.add(ImportSubjectResult.builder()
+                                                .subjectCode(subjectCode)
+                                                .status("FAILED")
+                                                .message("Duplicate subjectCode in file")
+                                                .build());
+                                        continue;
+                                    }
+
+                                    if (subjectRepository.existsBySubjectCode(subjectCode)) {
+                                        details.add(ImportSubjectResult.builder()
+                                                .subjectCode(subjectCode)
+                                                .status("FAILED")
+                                                .message("Subject code already exists")
+                                                .build());
+                                        continue;
+                                    }
+
+                                    Department department = departmentRepository.findByDepartmentCode(departmentCode)
+                                            .orElse(null);
+                                    if (department == null) {
+                                        details.add(ImportSubjectResult.builder()
+                                                .subjectCode(subjectCode)
+                                                .status("FAILED")
+                                                .message("Department code not found")
+                                                .build());
+                                        continue;
+                                    }
+
+                                    Subject subject = Subject.builder()
+                                            .subjectCode(subjectCode)
+                                            .subjectName(subjectName)
+                                            .credits(credits)
+                                            .degreeLevel(trim(row.getDegreeLevel()))
+                                            .timeAllocation(trim(row.getTimeAllocation()))
+                                            .description(trim(row.getDescription()))
+                                            .department(department)
+                                            .minToPass(parseInteger(row.getMinToPass(), "minToPass"))
+                                            .studentLimit(parseInteger(row.getStudentLimit(), "studentLimit"))
+                                            .studentTasks(trim(row.getStudentTasks()))
+                                            .scoringScale(parseInteger(row.getScoringScale(), "scoringScale"))
+                                            .status(SubjectStatus.DRAFT.toString())
+                                            .createdAt(Instant.now())
+                                            .build();
+
+                                    subjectsToSave.add(subject);
+                                    details.add(ImportSubjectResult.builder()
+                                            .subjectCode(subjectCode)
+                                            .status("SUCCESS")
+                                            .message("Created successfully")
+                                            .build());
+                                } catch (AppException ex) {
+                                    details.add(ImportSubjectResult.builder()
+                                            .subjectCode(subjectCode)
+                                            .status("FAILED")
+                                            .message(ex.getMessage())
+                                            .build());
+                                }
+                        }
+
+                        subjectRepository.saveAll(subjectsToSave);
+                } catch (Exception e) {
+                        throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION, "Import subject failed: " + e.getMessage());
+                }
+
+                int total = details.size();
+                int success = (int) details.stream().filter(d -> "SUCCESS".equals(d.getStatus())).count();
+                int failed = total - success;
+
+                return ImportSubjectResponse.builder()
+                                .total(total)
+                                .success(success)
+                                .failed(failed)
+                                .details(details)
+                                .build();
+        }
+
+        private Integer parseInteger(String raw, String fieldName) {
+                String value = trim(raw);
+                if (value == null) {
+                        return null;
+                }
+
+                try {
+                        return Integer.parseInt(value);
+                } catch (NumberFormatException e) {
+                        throw new AppException(ErrorCode.INVALID_KEY, "Invalid number for field " + fieldName + ": " + value);
+                }
+        }
+
+        private String trim(String value) {
+                if (value == null) {
+                        return null;
+                }
+                String trimmed = value.trim();
+                return trimmed.isEmpty() ? null : trimmed;
+        }
     @Transactional
     public List<SubjectResponse> getSubjectsByDepartment(UUID departmentId) {
         // Fetch entities from DB
