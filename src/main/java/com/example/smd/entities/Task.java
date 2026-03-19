@@ -44,6 +44,6 @@ public class Task {
     @Column(name = "priority", length = 20)
     String priority;
 
-    @Column(name = "deadline")
+    @Column(name = "due_date")
     java.time.Instant deadline;
 }
