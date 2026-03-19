@@ -44,5 +44,5 @@ public class Material {
     String status;
 
     @OneToMany(mappedBy = "material", fetch = FetchType.LAZY)
-    List<Block> blocks;
+    List<Blocks> blocks;
 }

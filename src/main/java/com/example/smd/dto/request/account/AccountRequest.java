@@ -27,4 +27,6 @@ public class AccountRequest {
     String roleName;
 
     Boolean isActive;
+
+    String departmentCode;
 }

@@ -32,6 +32,7 @@ public class AccountMapper {
                 .isActive(account.getIsActive())
                 .createdAt(account.getCreatedAt())
                 .lastLogin(account.getLastLogin())
+                .departmentName(account.getDepartment() != null ? account.getDepartment().getDepartmentName() : null)
                 .build();
     }
 

@@ -5,7 +5,7 @@ import lombok.experimental.FieldDefaults;
 @Data
 @Builder
 @NoArgsConstructor
-@AllArgsConstructor
+//@AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class AccountExportDTO {
 
@@ -18,6 +18,28 @@ public class AccountExportDTO {
     @ExcelColumn(name = "Phone Number", order = 2)
     private String phoneNumber;
 
-    @ExcelColumn(name = "Role", order = 3)
+    @ExcelColumn(name = "Department Code", order = 3)
+    private String departmentCode;
+
+    @ExcelColumn(name = "Department Name", order = 4)
+    private String departmentName;
+
+    @ExcelColumn(name = "Role", order = 5)
     private String role;
+
+    public AccountExportDTO(
+            String email,
+            String fullName,
+            String phoneNumber,
+            String departmentCode,
+            String departmentName,
+            String role
+    ) {
+        this.email = email;
+        this.fullName = fullName;
+        this.phoneNumber = phoneNumber;
+        this.departmentCode = departmentCode;
+        this.departmentName = departmentName;
+        this.role = role;
+    }
 }

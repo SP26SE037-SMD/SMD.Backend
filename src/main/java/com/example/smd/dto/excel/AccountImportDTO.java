@@ -16,4 +16,8 @@ public class AccountImportDTO {
     @ExcelColumn(name = "Full Name", order = 1, required = true)
     private String fullName;
 
+    @ExcelColumn(name = "Department Code", order = 2, required = true)
+    private String departmentCode;
+
+
 }
