@@ -1,4 +1,4 @@
-package com.example.smd.dto.response.sprint;
+package com.example.smd.dto.response.task;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.*;
@@ -12,15 +12,16 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class SprintResponse {
+public class TaskResponse {
+    UUID taskId;
     UUID sprintId;
-    String sprintName;
-
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+7")
-    Instant startDate;
-
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+7")
-    Instant endDate;
-
+    UUID accountId;
+    UUID syllabusId;
+    String taskName;
+    String description;
     String status;
+    String priority;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+7")
+    Instant deadline;
 }

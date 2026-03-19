@@ -23,6 +23,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -126,16 +127,23 @@ public class SubjectController {
                 .build();
     }
 
-    @PatchMapping("/{id}/internal-review")
+    @PatchMapping("/{id}/status")
     @PreAuthorize("hasAuthority('SUBJECT_UPDATE')")
     @Operation(
-            summary = "Move subject to internal review",
-            description = "Transitions the subject status from DRAFT to INTERNAL_REVIEW. " +
-                    "This allows faculty members and experts to access the subject for internal auditing and feedback."
+            summary = "Update Subject Lifecycle Status",
+            description = "### Subject Workflow (Quy trình vòng đời Môn học):\n" +
+                    "Select a status to manage the subject's readiness for the Curriculum and Syllabus development:\n\n" +
+                    "| Status | Business Logic Description (Mô tả nghiệp vụ) |\n" +
+                    "| :--- | :--- |\n" +
+                    "| **DRAFT** | **Biên soạn nháp:** Initial creation. Basic info (code, name) is being entered. Not visible to Curriculum proposals. |\n" +
+                    "| **DEFINED** | **Đã xác định nội dung:** Description and credits are finalized. Subject is now eligible to be included in a Curriculum draft for VP approval. |\n" +
+                    "| **WAITING_SYLLABUS** | **Chờ Syllabus:** The Curriculum containing this subject is approved. System is waiting for the Department to submit a detailed Syllabus. |\n" +
+                    "| **COMPLETED** | **Hoàn tất:** Detailed Syllabus is approved and linked. The subject is fully validated and ready for teaching/enrollment. |\n" +
+                    "| **ARCHIVED** | **Lưu trữ:** Subject is retired from active curricula. Kept as Read-only for historical academic records. |"
     )
-    public ResponseObject<SubjectResponse> publishInternal(@PathVariable UUID id) {
+    public ResponseObject<SubjectResponse> publishInternal(@PathVariable UUID id, String newStatus) {
         return ResponseObject.<SubjectResponse>builder()
-                .data(subjectService.publishSubjectInternal(id))
+                .data(subjectService.updateSubjectStatus(id, newStatus))
                 .message("Subject has been successfully moved to internal review status.")
                 .build();
     }
@@ -154,4 +162,30 @@ public class SubjectController {
                                 .message("Import subjects successfully")
                                 .build();
         }
+
+    @GetMapping("/department/{departmentId}")
+    @Operation(
+            summary = "Get subjects by department",
+            description = "Returns a list of all subjects belonging to a specific department ID."
+    )
+    public ResponseObject<List<SubjectResponse>> getByDepartment(@PathVariable UUID departmentId) {
+        return ResponseObject.<List<SubjectResponse>>builder()
+                .status(1000)
+                .data(subjectService.getSubjectsByDepartment(departmentId))
+                .message("Subjects retrieved successfully for department: " + departmentId)
+                .build();
+    }
+
+    @GetMapping("/elective/{electiveId}")
+    @Operation(
+            summary = "Get subjects by elective group",
+            description = "Retrieves all subjects associated with a specific elective ID from the Subject Repository."
+    )
+    public ResponseObject<List<SubjectResponse>> getByElective(@PathVariable UUID electiveId) {
+        return ResponseObject.<List<SubjectResponse>>builder()
+                .status(1000)
+                .data(subjectService.getSubjectsByElective(electiveId))
+                .message("Subjects retrieved successfully for elective: " + electiveId)
+                .build();
+    }
 }
