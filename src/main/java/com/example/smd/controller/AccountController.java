@@ -1,6 +1,7 @@
 package com.example.smd.controller;
 
 import com.example.smd.dto.request.account.AccountRequest;
+import com.example.smd.dto.request.account.AccountUpdateRequest;
 import com.example.smd.dto.response.account.AccountResponse;
 import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.ResponseObject;
@@ -152,13 +153,13 @@ public class AccountController {
     @Operation(summary = "Update account by ID")
     public ResponseObject<AccountResponse> updateInformationAccount(
             @RequestParam String id,
-            @RequestParam String fullName,
+            @Valid @RequestBody AccountUpdateRequest request,
             @RequestParam Boolean status
     ) {
         return ResponseObject.<AccountResponse>builder()
                 .status(1000)
                 .data(accountService.updateAccount(id, status,
-                        fullName))
+                        request))
                 .message("Update account successfully")
                 .build();
     }

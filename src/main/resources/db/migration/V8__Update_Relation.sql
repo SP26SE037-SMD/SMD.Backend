@@ -11,3 +11,6 @@ ALTER TABLE request ADD CONSTRAINT request_account_fk FOREIGN KEY (requester_id)
 
 ALTER TABLE account ADD department_id uuid NULL;
 ALTER TABLE account ADD CONSTRAINT account_department_fk FOREIGN KEY (department_id) REFERENCES department(department_id);
+
+ALTER TABLE subjects ADD tool varchar(150) NULL;
+

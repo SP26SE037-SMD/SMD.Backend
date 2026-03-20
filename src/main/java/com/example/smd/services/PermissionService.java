@@ -1,12 +1,16 @@
 package com.example.smd.services;
 
+import com.example.smd.dto.excel.PermissionImportDTO;
 import com.example.smd.dto.request.PermissionRequest;
 import com.example.smd.dto.response.PermissionResponse;
+import com.example.smd.dto.response.permission.ImportPermissionResponse;
+import com.example.smd.dto.response.permission.ImportPermissionResult;
 import com.example.smd.entities.Permission;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.PermissionMapper;
 import com.example.smd.repositories.PermissionRepository;
+import com.example.smd.services.excelService.ExcelImporter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -15,9 +19,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Slf4j
@@ -103,6 +110,78 @@ public class PermissionService {
         return true;
     }
 
+    @Transactional
+    public ImportPermissionResponse importPermissions(MultipartFile file) {
+        List<ImportPermissionResult> details = new ArrayList<>();
+        List<Permission> permissionsToSave = new ArrayList<>();
+        Set<String> permissionNamesInFile = new HashSet<>();
+
+        try {
+            List<PermissionImportDTO> rows = ExcelImporter.importFromExcel(file, PermissionImportDTO.class);
+
+            for (PermissionImportDTO row : rows) {
+                String permissionName = trim(row.getPermissionName());
+                String description = trim(row.getDescription());
+
+                if (permissionName == null) {
+                    details.add(ImportPermissionResult.builder()
+                            .permissionName(null)
+                            .status("FAILED")
+                            .message("Missing required field: Permission Name")
+                            .build());
+                    continue;
+                }
+
+                String normalizedName = permissionName.toUpperCase();
+                if (!permissionNamesInFile.add(normalizedName)) {
+                    details.add(ImportPermissionResult.builder()
+                            .permissionName(permissionName)
+                            .status("FAILED")
+                            .message("Duplicate permission name in file")
+                            .build());
+                    continue;
+                }
+
+                if (permissionRepository.existsByPermissionName(permissionName)) {
+                    details.add(ImportPermissionResult.builder()
+                            .permissionName(permissionName)
+                            .status("FAILED")
+                            .message("Permission name already exists")
+                            .build());
+                    continue;
+                }
+
+                Permission permission = Permission.builder()
+                        .permissionName(permissionName)
+                        .description(description)
+                        .build();
+
+                permissionsToSave.add(permission);
+                details.add(ImportPermissionResult.builder()
+                        .permissionName(permissionName)
+                        .status("SUCCESS")
+                        .message("Created successfully")
+                        .build());
+            }
+
+            permissionRepository.saveAll(permissionsToSave);
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION,
+                    "Import permission failed: " + e.getMessage());
+        }
+
+        int total = details.size();
+        int success = (int) details.stream().filter(d -> "SUCCESS".equals(d.getStatus())).count();
+        int failed = total - success;
+
+        return ImportPermissionResponse.builder()
+                .total(total)
+                .success(success)
+                .failed(failed)
+                .details(details)
+                .build();
+    }
+
     // Helper method để xử lý hướng sắp xếp
     private Sort.Direction getSortDirection(String direction) {
         if (direction.equalsIgnoreCase("asc")) {
@@ -111,5 +190,13 @@ public class PermissionService {
             return Sort.Direction.DESC;
         }
         return Sort.Direction.ASC;
+    }
+
+    private String trim(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }

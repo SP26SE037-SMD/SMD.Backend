@@ -70,5 +70,11 @@ public class AccountMapper {
         if (request.getFullName() != null) {
             account.setFullName(request.getFullName());
         }
+        if (request.getPhoneNumber() != null) {
+            account.setPhoneNumber(request.getPhoneNumber());
+        }
+        if (request.getAvatarUrl() != null) {
+            account.setAvatarUrl(request.getAvatarUrl());
+        }
     }
 }
