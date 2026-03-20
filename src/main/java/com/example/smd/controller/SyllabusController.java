@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/syllabuses")
+@RequestMapping("/api/syllabus")
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Tag(name = "Syllabus", description = "Endpoints for managing course syllabuses and their review lifecycle")
@@ -83,7 +83,7 @@ public class SyllabusController {
     }
 
     @PatchMapping("/{id}/account/{email}/status")
-//    @PreAuthorize("hasAuthority('SYLLABUS_UPDATE_STATUS')")
+    @PreAuthorize("hasAuthority('SYLLABUS_UPDATE_STATUS')")
     @Operation(
             summary = "Change Syllabus Status",
             description = "### Quy trình cập nhật trạng thái của CLO:\n" +
