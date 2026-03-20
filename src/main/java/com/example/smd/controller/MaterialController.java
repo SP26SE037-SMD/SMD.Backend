@@ -27,7 +27,7 @@ public class MaterialController {
     MaterialService materialService;
 
     @PostMapping
-    @PreAuthorize("hasAuthority('MATERIAL_CREATE')")
+//    @PreAuthorize("hasAuthority('MATERIAL_CREATE')")
     @Operation(summary = "Create new material for a syllabus")
     public ResponseObject<MaterialResponse> create(@RequestBody @Valid MaterialRequest request) {
         return ResponseObject.<MaterialResponse>builder()
