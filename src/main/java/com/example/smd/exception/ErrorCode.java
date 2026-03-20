@@ -176,6 +176,11 @@ public enum ErrorCode {
     INVALID_YEAR(24003, "Published year must be between 1900 and the current year", HttpStatus.BAD_REQUEST),
     MAPPING_NOT_FOUND(24004, "Syllabus and Source mapping not found", HttpStatus.NOT_FOUND),
     SOURCE_ALREADY_MAPPED(24005, "Source is already assigned to this syllabus", HttpStatus.CONFLICT),
+
+    //Material
+    MATERIAL_NOT_FOUND(25001, "Material not found", HttpStatus.NOT_FOUND),
+    INVALID_MATERIAL_STATUS(25002, "Invalid material status", HttpStatus.BAD_REQUEST),
+
     // General
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),
     INVALID_KEY(1000, "Invalid message key", HttpStatus.BAD_REQUEST),
