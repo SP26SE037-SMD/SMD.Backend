@@ -58,22 +58,24 @@ public class SubjectController {
                     description = "Filter subjects by their current lifecycle status. Valid values are:\n" +
                             "| Status | Description |\n" +
                             "| :--- | :--- |\n" +
-                            "| **DRAFT** | The subject is under initial creation (Biên soạn). |\n" +
-                            "| **INTERNAL_REVIEW** | The subject is open for internal auditing and faculty feedback (Xuất bản nội bộ). |\n" +
-                            "| **PUBLISHED** | The subject is officially active and applicable to curricula (Xuất bản). |\n" +
-                            "| **ARCHIVED** | The subject is no longer in use but kept for historical records (Lưu trữ). |"
+                            "| **DRAFT** | **Biên soạn nháp:** Initial creation. Basic info (code, name) is being entered. Not visible to Curriculum proposals. |\n" +
+                            "| **DEFINED** | **Đã xác định nội dung:** Description and credits are finalized. Subject is now eligible to be included in a Curriculum draft for VP approval. |\n" +
+                            "| **WAITING_SYLLABUS** | **Chờ Syllabus:** The Curriculum containing this subject is approved. System is waiting for the Department to submit a detailed Syllabus. |\n" +
+                            "| **COMPLETED** | **Hoàn tất:** Detailed Syllabus is approved and linked. The subject is fully validated and ready for teaching/enrollment. |\n" +
+                            "| **ARCHIVED** | **Lưu trữ:** Subject is retired from active curricula. Kept as Read-only for historical academic records. |"
             )
             @RequestParam(required = false) String status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "subjectCode") String sortBy,
+            @RequestParam(required = false) UUID departmentId,
             @RequestParam(defaultValue = "asc") String direction) {
 
         Sort sort = direction.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
         Pageable pageable = PageRequest.of(page, size, sort);
 
         return ResponseObject.<PagedResponse<SubjectResponse>>builder()
-                .data(PagedResponse.of(subjectService.getAll(search, searchBy,status, pageable)))
+                .data(PagedResponse.of(subjectService.getAll(search, searchBy,status, departmentId, pageable)))
                 .message("Subjects retrieved successfully")
                 .build();
     }
@@ -148,20 +150,20 @@ public class SubjectController {
                 .build();
     }
 
-        @PostMapping(value = "/import", consumes =
+    @PostMapping(value = "/import", consumes =
                 MediaType.MULTIPART_FORM_DATA_VALUE)
-        @PreAuthorize("hasAuthority('SUBJECT_CREATE')")
-        @Operation(
-                        summary = "Import subjects from Excel",
-                        description = "Import subject records from Excel columns: subjectCode, subjectName, credits, degreeLevel, timeAllocation, description, departmentCode, mintopass, studentLimit, studentTasks, scoringScale"
-        )
-        public ResponseObject<ImportSubjectResponse> importSubjects(@RequestParam("file") MultipartFile file) {
-                return ResponseObject.<ImportSubjectResponse>builder()
-                                .status(1000)
-                                .data(subjectService.importSubjects(file))
-                                .message("Import subjects successfully")
-                                .build();
-        }
+    @PreAuthorize("hasAuthority('SUBJECT_CREATE')")
+    @Operation(
+            summary = "Import subjects from Excel",
+            description = "Import subject records from Excel columns: subjectCode, subjectName, credits, degreeLevel, timeAllocation, description, departmentCode, mintopass, studentLimit, studentTasks, scoringScale"
+    )
+    public ResponseObject<ImportSubjectResponse> importSubjects(@RequestParam("file") MultipartFile file) {
+        return ResponseObject.<ImportSubjectResponse>builder()
+                .status(1000)
+                .data(subjectService.importSubjects(file))
+                .message("Import subjects successfully")
+                .build();
+    }
 
     @GetMapping("/department/{departmentId}")
     @Operation(
@@ -173,19 +175,6 @@ public class SubjectController {
                 .status(1000)
                 .data(subjectService.getSubjectsByDepartment(departmentId))
                 .message("Subjects retrieved successfully for department: " + departmentId)
-                .build();
-    }
-
-    @GetMapping("/elective/{electiveId}")
-    @Operation(
-            summary = "Get subjects by elective group",
-            description = "Retrieves all subjects associated with a specific elective ID from the Subject Repository."
-    )
-    public ResponseObject<List<SubjectResponse>> getByElective(@PathVariable UUID electiveId) {
-        return ResponseObject.<List<SubjectResponse>>builder()
-                .status(1000)
-                .data(subjectService.getSubjectsByElective(electiveId))
-                .message("Subjects retrieved successfully for elective: " + electiveId)
                 .build();
     }
 }

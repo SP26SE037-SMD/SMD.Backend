@@ -25,6 +25,6 @@ public class SubjectRequest {
     String studentTasks;
     Integer scoringScale;
     Integer minToPass;
+    String tool;
     UUID departmentId;
-    UUID electiveId;
 }

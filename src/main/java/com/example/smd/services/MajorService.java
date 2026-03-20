@@ -113,6 +113,13 @@ public class MajorService {
         return majorMapper.toMajorResponse(major);
     }
 
+    public MajorResponse getMajorById(UUID id) {
+        Major major = majorRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.MAJOR_NOT_FOUND));
+
+        return majorMapper.toMajorResponse(major);
+    }
+
     @Transactional
     public MajorResponse updateStatus(String id, String newStatus) {
         // 1. Kiểm tra trạng thái có hợp lệ không

@@ -126,6 +126,19 @@ public class MajorController {
                 .build();
     }
 
+    @GetMapping("/{id}")
+    @Operation(
+            summary = "Get Major details by ID",
+            description = "Retrieves comprehensive information about a specific Major using its unique UUID."
+    )
+    public ResponseObject<MajorResponse> getDetail(@PathVariable UUID id) {
+        return ResponseObject.<MajorResponse>builder()
+                .status(1000)
+                .data(majorService.getMajorById(id))
+                .message("Major details retrieved successfully")
+                .build();
+    }
+
     @PatchMapping("/{id}/status")
 //    @PreAuthorize("hasAuthority('MAJOR_UPDATE_STATUS')")
     @Operation(

@@ -37,8 +37,4 @@ public interface SubjectRepository extends JpaRepository<Subject, UUID>, JpaSpec
 
     @Query("SELECT s FROM Subject s JOIN FETCH s.department WHERE s.department.departmentId = :deptId")
     List<Subject> findAllByDepartmentId(@Param("deptId") UUID deptId);
-
-    @Query("SELECT s FROM Subject s WHERE s.subjectId IN " +
-            "(SELECT es.subject.subjectId FROM Elective_Subject es WHERE es.elective.electiveId = :electiveId)")
-    List<Subject> findSubjectsByElectiveId(@Param("electiveId") UUID electiveId);
 }
