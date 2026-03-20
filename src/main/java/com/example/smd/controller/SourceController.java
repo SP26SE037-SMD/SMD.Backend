@@ -17,6 +17,7 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -86,6 +87,19 @@ public class SourceController {
         return ResponseObject.<Void>builder()
                 .status(1000)
                 .message("Source deleted successfully")
+                .build();
+    }
+
+    @GetMapping("/subject/{subjectId}")
+    @Operation(
+            summary = "Get all sources for a subject",
+            description = "Retrieves a consolidated list of all reference sources across all syllabuses linked to the specified Subject ID."
+    )
+    public ResponseObject<List<SourceResponse>> getBySubject(@PathVariable UUID subjectId) {
+        return ResponseObject.<List<SourceResponse>>builder()
+                .status(1000)
+                .data(service.getSourcesBySubject(subjectId))
+                .message("Sources retrieved successfully for Subject ID: " + subjectId)
                 .build();
     }
 }

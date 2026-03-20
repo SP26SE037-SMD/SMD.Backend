@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.UUID;
 
 @Repository
@@ -25,4 +26,10 @@ public interface SourceRepository extends JpaRepository<Source, UUID> {
             @Param("type") String type,
             @Param("search") String search,
             Pageable pageable);
+
+    @Query("SELECT DISTINCT src FROM Source src " +
+            "JOIN Syllabus_Source ss ON src.sourceId = ss.source.sourceId " +
+            "JOIN Syllabus syl ON ss.syllabus.syllabusId = syl.syllabusId " +
+            "WHERE syl.subject.subjectId = :subjectId")
+    List<Source> findAllBySubjectId(@Param("subjectId") UUID subjectId);
 }

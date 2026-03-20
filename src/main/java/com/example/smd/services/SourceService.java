@@ -9,6 +9,7 @@ import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.SourceMapper;
 import com.example.smd.repositories.SourceRepository;
+import com.example.smd.repositories.SubjectRepository;
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -28,6 +30,7 @@ import java.util.UUID;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class SourceService {
     SourceRepository repository;
+    SubjectRepository subjectRepository;
     SourceMapper mapper;
 
     @Transactional
@@ -90,5 +93,17 @@ public class SourceService {
             throw new AppException(ErrorCode.SOURCE_NOT_FOUND);
         }
         repository.deleteById(id);
+    }
+
+    public List<SourceResponse> getSourcesBySubject(UUID subjectId) {
+
+        if (!subjectRepository.existsById(subjectId)) {
+            throw new AppException(ErrorCode.SUBJECT_NOT_FOUND);
+        }
+        List<Source> sources = repository.findAllBySubjectId(subjectId);
+
+        return sources.stream()
+                .map(mapper::toResponse)
+                .toList();
     }
 }

@@ -24,6 +24,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.List;
+import java.util.UUID;
 
 @Tag(name = "Account", description = "Account Management APIs")
 @RestController
@@ -213,5 +214,18 @@ public class AccountController {
                 .headers(headers)
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .body(new InputStreamResource(excel));
+    }
+
+    @GetMapping("/department/{departmentId}")
+    @Operation(
+            summary = "Get accounts by department",
+            description = "Returns a list of all accounts belonging to a specific department ID, including their roles."
+    )
+    public ResponseObject<List<AccountResponse>> getByDepartment(@PathVariable UUID departmentId) {
+        return ResponseObject.<List<AccountResponse>>builder()
+                .status(1000)
+                .data(accountService.getAccountsByDepartment(departmentId))
+                .message("Accounts retrieved successfully for department: " + departmentId)
+                .build();
     }
 }

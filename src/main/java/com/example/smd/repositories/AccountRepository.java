@@ -14,6 +14,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 
 @Repository
 public interface AccountRepository extends JpaRepository<Account, java.util.UUID>, JpaSpecificationExecutor<Account> {
@@ -72,5 +73,10 @@ public interface AccountRepository extends JpaRepository<Account, java.util.UUID
     LEFT JOIN a.role r
 """)
     List<AccountExportDTO> exportAccounts();
+
+    @Query("SELECT a FROM Account a " +
+            "JOIN FETCH a.role " +
+            "WHERE a.department.departmentId = :deptId")
+    List<Account> findAllByDepartmentId(@Param("deptId") UUID deptId);
 
 }
