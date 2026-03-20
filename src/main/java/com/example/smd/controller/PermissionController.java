@@ -4,6 +4,7 @@ import com.example.smd.dto.request.PermissionRequest;
 import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.PermissionResponse;
 import com.example.smd.dto.response.ResponseObject;
+import com.example.smd.dto.response.permission.ImportPermissionResponse;
 import com.example.smd.services.PermissionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -11,8 +12,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.UUID;
 
@@ -100,6 +103,18 @@ public class PermissionController {
                 .status(1000)
                 .data(permissionService.deletePermission(id))
                 .message("Delete permission successfully")
+                .build();
+    }
+
+    @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Import permissions from Excel")
+    public ResponseObject<ImportPermissionResponse> importPermissions(
+            @RequestParam("file") MultipartFile file
+    ) {
+        return ResponseObject.<ImportPermissionResponse>builder()
+                .status(1000)
+                .data(permissionService.importPermissions(file))
+                .message("Import permissions successfully")
                 .build();
     }
 }
