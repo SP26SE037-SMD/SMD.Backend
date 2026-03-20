@@ -5,6 +5,7 @@ import com.example.smd.dto.request.task.TaskItemRequest;
 import com.example.smd.dto.request.task.TaskRequest;
 import com.example.smd.dto.response.task.TaskResponse;
 import com.example.smd.entities.Account;
+import com.example.smd.enums.TaskStatus;
 import com.example.smd.entities.Sprint;
 import com.example.smd.entities.Syllabus;
 import com.example.smd.entities.Task;
@@ -174,5 +175,23 @@ public class TaskService {
             throw new AppException(ErrorCode.TASK_NOT_FOUND);
         }
         taskRepository.deleteById(id);
+    }
+
+    @Transactional
+    public TaskResponse updateStatus(UUID id, String status) {
+        boolean isValid = java.util.Arrays.stream(TaskStatus.values())
+                .anyMatch(s -> s.name().equalsIgnoreCase(status));
+        if (!isValid) {
+            throw new AppException(ErrorCode.INVALID_TASK_STATUS);
+        }
+
+        TaskStatus taskStatus = TaskStatus.valueOf(status.toUpperCase());
+
+        Task task = taskRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.TASK_NOT_FOUND));
+
+        task.setStatus(taskStatus.name());
+        task = taskRepository.save(task);
+        return taskMapper.toTaskResponse(task);
     }
 }
