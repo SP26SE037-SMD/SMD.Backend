@@ -85,4 +85,15 @@ public class SprintController {
                 .message("Sprint deleted successfully")
                 .build();
     }
+
+    @PatchMapping("/{id}/status")
+    @Operation(summary = "Update sprint status", description = "Allowed values: Planning, Active, Completed")
+    public ResponseObject<SprintResponse> updateStatus(
+            @PathVariable UUID id,
+            @RequestParam String status) {
+        return ResponseObject.<SprintResponse>builder()
+                .data(sprintService.updateStatus(id, status))
+                .message("Sprint status updated successfully")
+                .build();
+    }
 }

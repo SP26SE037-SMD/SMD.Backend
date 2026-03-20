@@ -2,6 +2,7 @@ package com.example.smd.services;
 
 import com.example.smd.dto.request.sprint.SprintRequest;
 import com.example.smd.dto.response.sprint.SprintResponse;
+import com.example.smd.enums.SprintStatus;
 import com.example.smd.entities.Sprint;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
@@ -72,5 +73,23 @@ public class SprintService {
             throw new AppException(ErrorCode.SPRINT_NOT_FOUND);
         }
         sprintRepository.deleteById(id);
+    }
+
+    @Transactional
+    public SprintResponse updateStatus(UUID id, String status) {
+        boolean isValid = java.util.Arrays.stream(SprintStatus.values())
+                .anyMatch(s -> s.name().equalsIgnoreCase(status));
+        if (!isValid) {
+            throw new AppException(ErrorCode.INVALID_SPRINT_STATUS);
+        }
+
+        SprintStatus sprintStatus = SprintStatus.valueOf(status.toUpperCase());
+
+        Sprint sprint = sprintRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.SPRINT_NOT_FOUND));
+
+        sprint.setStatus(sprintStatus.name());
+        sprint = sprintRepository.save(sprint);
+        return sprintMapper.toSprintResponse(sprint);
     }
 }

@@ -100,4 +100,15 @@ public class TaskController {
                 .message("Task deleted successfully")
                 .build();
     }
+
+    @PatchMapping("/{id}/status")
+    @Operation(summary = "Update task status", description = "Allowed values: To Do, In Progress, Done")
+    public ResponseObject<TaskResponse> updateStatus(
+            @PathVariable UUID id,
+            @RequestParam String status) {
+        return ResponseObject.<TaskResponse>builder()
+                .data(taskService.updateStatus(id, status))
+                .message("Task status updated successfully")
+                .build();
+    }
 }
