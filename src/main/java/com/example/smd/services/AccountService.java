@@ -3,6 +3,7 @@ package com.example.smd.services;
 import com.example.smd.dto.excel.AccountExportDTO;
 import com.example.smd.dto.excel.AccountImportDTO;
 import com.example.smd.dto.request.account.AccountRequest;
+import com.example.smd.dto.request.account.AccountUpdateRequest;
 import com.example.smd.dto.response.account.AccountResponse;
 import com.example.smd.dto.response.account.ImportAccountResult;
 import com.example.smd.dto.response.account.ImportResult;
@@ -183,11 +184,11 @@ public class AccountService {
     @Transactional
     public AccountResponse updateAccount(String accountId,
                                          boolean status,
-                                         String request) {
+                                         AccountUpdateRequest request) {
         var convert = UUID.fromString(accountId);
         Account account = accountRepository.findById(convert)
                 .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND));
-        account.setFullName(request);
+        accountMapper.updateEntity(account, request);
         account.setIsActive(status);
         account = accountRepository.save(account);
         return accountMapper.toResponse(account);
@@ -247,6 +248,7 @@ public class AccountService {
 
                 String email = dto.getEmail() != null ? dto.getEmail().trim() : "";
                 String fullName = dto.getFullName() != null ? dto.getFullName().trim() : "";
+                String phoneNumber = dto.getPhoneNumber() != null ? dto.getPhoneNumber().trim() : "";
                 String departmentCode = dto.getDepartmentCode() != null ? dto.getDepartmentCode().trim() : "";
 
                 // duplicate trong file
@@ -261,6 +263,7 @@ public class AccountService {
                     continue;
                 }
 
+
                 Department department = departmentRepository.findByDepartmentCode(departmentCode)
                         .orElse(null);
                 if (department == null) {
@@ -274,9 +277,30 @@ public class AccountService {
 
 
 
+                // Validate phoneNumber
+                if (phoneNumber.isEmpty()) {
+                    results.add(new ImportAccountResult(
+                            email,
+                            "FAILED",
+                            "Phone number is required"
+                    ));
+                    continue;
+                }
+
+                // Validate phoneNumber format (10-11 digits)
+                if (!phoneNumber.matches("^[0-9]{10,11}$")) {
+                    results.add(new ImportAccountResult(
+                            email,
+                            "FAILED",
+                            "Phone number must be 10-11 digits"
+                    ));
+                    continue;
+                }
+
                 Account account = new Account();
                 account.setEmail(email);
                 account.setFullName(fullName);
+                account.setPhoneNumber(phoneNumber);
                 account.setRole(role);
                 account.setIsActive(true);
                 account.setPasswordHash(passwordEncoder.encode(randomPassword));

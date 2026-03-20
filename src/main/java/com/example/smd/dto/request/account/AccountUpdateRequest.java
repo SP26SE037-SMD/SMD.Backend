@@ -2,6 +2,7 @@ package com.example.smd.dto.request.account;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -17,4 +18,9 @@ public class AccountUpdateRequest {
 
     @Size(max = 100, message = "FULL_NAME_INVALID")
     String fullName;
+
+    @Pattern(regexp = "^[0-9]{10,11}$", message = "Phone number must be 10-11 digits")
+    String phoneNumber;
+
+     String avatarUrl;
 }
