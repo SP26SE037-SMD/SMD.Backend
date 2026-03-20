@@ -26,7 +26,7 @@ public class SubjectResponse {
     Integer scoringScale;
     String decisionNo;
     String tool;
-    Boolean isApproved;
+    Integer minToPass;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+7")
     Instant approvedDate; // Dùng Instant để đồng bộ với Entity

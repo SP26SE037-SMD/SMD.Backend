@@ -2,7 +2,10 @@ package com.example.smd.entities;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+
+import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -14,7 +17,7 @@ import java.util.List;
 public class Blocks {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    String blockId;
+    UUID blockId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "material_id", nullable = false)
@@ -23,6 +26,18 @@ public class Blocks {
     @Column(name = "block_style", length = 50)
     String blockStyle;
 
-    @Column(name = "content_text", columnDefinition = "TEXT")
+    @Column(name = "idx", nullable = false)
+    Integer idx; // Cột mới thay thế block_sequence
+
+    @Column(name = "content", columnDefinition = "TEXT")
     String contentText;
+
+    @Column(name = "created_at")
+    Instant createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = Instant.now();
+        if (this.idx == null) this.idx = 0;
+    }
 }

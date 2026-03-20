@@ -17,4 +17,16 @@ ALTER TABLE material DROP COLUMN IF EXISTS file_size;
 DROP TABLE elective_subject;
 DROP TABLE elective;
 
+-- 1. Xóa các cột không còn sử dụng
+ALTER TABLE blocks DROP COLUMN IF EXISTS block_sequence;
+ALTER TABLE blocks DROP COLUMN IF EXISTS page_number;
+
+-- 2. Thêm cột idx để quản lý thứ tự (Kiểu Integer)
+ALTER TABLE blocks ADD COLUMN idx INT4 DEFAULT 0;
+
+-- 3. Thêm ràng buộc NOT NULL cho idx nếu cần thiết
+ALTER TABLE blocks ALTER COLUMN idx SET NOT NULL;
+
+ALTER TABLE blocks ADD COLUMN IF NOT EXISTS block_style TEXT;
+
 

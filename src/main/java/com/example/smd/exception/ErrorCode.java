@@ -181,6 +181,11 @@ public enum ErrorCode {
     MATERIAL_NOT_FOUND(25001, "Material not found", HttpStatus.NOT_FOUND),
     INVALID_MATERIAL_STATUS(25002, "Invalid material status", HttpStatus.BAD_REQUEST),
 
+    //Blocks
+    BLOCK_NOT_FOUND(26001, "Block content could not be located", HttpStatus.NOT_FOUND),
+    BLOCK_LIST_EMPTY(26002, "Block list cannot be empty for bulk creation", HttpStatus.BAD_REQUEST),
+    INVALID_BLOCK_STYLE(26003, "The provided block style is not supported", HttpStatus.BAD_REQUEST),
+
     // General
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),
     INVALID_KEY(1000, "Invalid message key", HttpStatus.BAD_REQUEST),
