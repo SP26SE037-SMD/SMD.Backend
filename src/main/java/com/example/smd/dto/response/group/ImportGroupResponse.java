@@ -1,8 +1,10 @@
-package com.example.smd.dto.response.combo;
+package com.example.smd.dto.response.group;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+
+import java.util.List;
 
 @Data
 @Builder
@@ -10,8 +12,9 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ImportComboResult {
-    String comboCode;
-    String status;
-    String message;
+public class ImportGroupResponse {
+    int total;
+    int success;
+    int failed;
+    List<ImportGroupResult> details;
 }

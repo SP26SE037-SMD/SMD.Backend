@@ -131,19 +131,19 @@ public enum ErrorCode {
             , HttpStatus.BAD_REQUEST),
     ACCOUNT_NOT_OWNER(17003, "You can only access or modify your own profile", HttpStatus.FORBIDDEN),
 
-    //COMBO
-    COMBO_NOT_FOUND(19001, "Combo not found", HttpStatus.NOT_FOUND),
-    COMBO_CODE_EXISTS(19002, "Combo code already exists", HttpStatus.BAD_REQUEST),
-    COMBO_CODE_REQUIRED(19003, "Combo code is required", HttpStatus.BAD_REQUEST),
-    COMBO_NAME_REQUIRED(19004, "Combo name is required", HttpStatus.BAD_REQUEST),
+    //GROUP
+    GROUP_NOT_FOUND(19001, "Group not found", HttpStatus.NOT_FOUND),
+    GROUP_CODE_EXISTS(19002, "Group code already exists", HttpStatus.BAD_REQUEST),
+    GROUP_CODE_REQUIRED(19003, "Group code is required", HttpStatus.BAD_REQUEST),
+    GROUP_NAME_REQUIRED(19004, "Group name is required", HttpStatus.BAD_REQUEST),
 
     //SYLLABUS
     SYLLABUS_NOT_FOUND(18001, "The syllabus does not exist on the system.", HttpStatus.NOT_FOUND),
     INVALID_SYLLABUS_STATUS(18002, "The syllabus status is invalid.", HttpStatus.BAD_REQUEST),
 
-    //CURRICULUM_COMBO_SUBJECT
-    CURRICULUM_COMBO_SUBJECT_ALREADY_EXISTS(20001, "This subject is already added to this curriculum with the same combo", HttpStatus.BAD_REQUEST),
-    CURRICULUM_COMBO_SUBJECT_NOT_FOUND(20002, "Curriculum-Combo-Subject mapping not found", HttpStatus.NOT_FOUND),
+    //CURRICULUM_GROUP_SUBJECT
+    CURRICULUM_GROUP_SUBJECT_ALREADY_EXISTS(20001, "This subject is already added to this curriculum with the same group", HttpStatus.BAD_REQUEST),
+    CURRICULUM_GROUP_SUBJECT_NOT_FOUND(20002, "Curriculum-Group-Subject mapping not found", HttpStatus.NOT_FOUND),
 
     //POs
     PO_NOT_FOUND(21001, "Program Outcome (PO) not found", HttpStatus.NOT_FOUND),
@@ -179,14 +179,36 @@ public enum ErrorCode {
     MAPPING_NOT_FOUND(24004, "Syllabus and Source mapping not found", HttpStatus.NOT_FOUND),
     SOURCE_ALREADY_MAPPED(24005, "Source is already assigned to this syllabus", HttpStatus.CONFLICT),
 
+    // ASSESSMENT
+    ASSESSMENT_NOT_FOUND(26001, "Assessment not found", HttpStatus.NOT_FOUND),
+    ASSESSMENT_CATEGORY_NOT_FOUND(26002, "Assessment category not found", HttpStatus.NOT_FOUND),
+    ASSESSMENT_TYPE_NOT_FOUND(26003, "Assessment type not found", HttpStatus.NOT_FOUND),
+    ASSESSMENT_WEIGHT_EXCEEDS_LIMIT(26004, "Total assessment weight in a syllabus must not exceed 100", HttpStatus.BAD_REQUEST),
+    ASSESSMENT_WEIGHT_INVALID(26005, "Assessment weight must be greater than 0 and less than or equal to 100", HttpStatus.BAD_REQUEST),
+    ASSESSMENT_STATUS_REQUIRED(26006, "Assessment status is required", HttpStatus.BAD_REQUEST),
+    ASSESSMENT_CATEGORY_ID_REQUIRED(26007, "Assessment category ID is required", HttpStatus.BAD_REQUEST),
+    ASSESSMENT_TYPE_ID_REQUIRED(26008, "Assessment type ID is required", HttpStatus.BAD_REQUEST),
+    ASSESSMENT_PART_REQUIRED(26009, "Assessment part is required", HttpStatus.BAD_REQUEST),
+    ASSESSMENT_PART_INVALID(26010, "Assessment part must be greater than or equal to 1", HttpStatus.BAD_REQUEST),
+    ASSESSMENT_WEIGHT_REQUIRED(26011, "Assessment weight is required", HttpStatus.BAD_REQUEST),
+    ASSESSMENT_DURATION_INVALID(26012, "Assessment duration must be greater than or equal to 0", HttpStatus.BAD_REQUEST),
+    ASSESSMENT_QUESTION_TYPE_INVALID(26013, "Question type must not exceed 50 characters", HttpStatus.BAD_REQUEST),
+    ASSESSMENT_KNOWLEDGE_SKILL_INVALID(26014, "Knowledge/skill must not exceed 50 characters", HttpStatus.BAD_REQUEST),
+    ASSESSMENT_STATUS_INVALID(26015, "Assessment status must not exceed 20 characters", HttpStatus.BAD_REQUEST),
+    ASSESSMENT_CATEGORY_EXISTS(26016, "Assessment category already exists", HttpStatus.BAD_REQUEST),
+    ASSESSMENT_TYPE_EXISTS(26017, "Assessment type already exists", HttpStatus.BAD_REQUEST),
+    ASSESSMENT_CATEGORY_NAME_REQUIRED(26018, "Assessment category name is required", HttpStatus.BAD_REQUEST),
+    ASSESSMENT_CATEGORY_NAME_INVALID(26019, "Assessment category name must not exceed 50 characters", HttpStatus.BAD_REQUEST),
+    ASSESSMENT_TYPE_NAME_REQUIRED(26020, "Assessment type name is required", HttpStatus.BAD_REQUEST),
+    ASSESSMENT_TYPE_NAME_INVALID(26021, "Assessment type name must not exceed 50 characters", HttpStatus.BAD_REQUEST),
     //Material
     MATERIAL_NOT_FOUND(25001, "Material not found", HttpStatus.NOT_FOUND),
     INVALID_MATERIAL_STATUS(25002, "Invalid material status", HttpStatus.BAD_REQUEST),
 
     //Blocks
-    BLOCK_NOT_FOUND(26001, "Block content could not be located", HttpStatus.NOT_FOUND),
-    BLOCK_LIST_EMPTY(26002, "Block list cannot be empty for bulk creation", HttpStatus.BAD_REQUEST),
-    INVALID_BLOCK_STYLE(26003, "The provided block style is not supported", HttpStatus.BAD_REQUEST),
+    BLOCK_NOT_FOUND(27001, "Block content could not be located", HttpStatus.NOT_FOUND),
+    BLOCK_LIST_EMPTY(27002, "Block list cannot be empty for bulk creation", HttpStatus.BAD_REQUEST),
+    INVALID_BLOCK_STYLE(27003, "The provided block style is not supported", HttpStatus.BAD_REQUEST),
 
     // General
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),

@@ -10,16 +10,11 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class ComboRequest {
-    @NotBlank(message = "COMBO_CODE_REQUIRED")
-    @Size(max = 20, message = "COMBO_CODE_INVALID")
-    String comboCode;
+public class AssessmentCategoryRequest {
 
-    @Size(max = 100, message = "COMBO_NAME_INVALID")
-    String comboName;
+    @NotBlank(message = "ASSESSMENT_CATEGORY_NAME_REQUIRED")
+    @Size(max = 50, message = "ASSESSMENT_CATEGORY_NAME_INVALID")
+    String categoryName;
 
     String description;
-
-    @Size(max = 20, message = "TYPE_INVALID")
-    String type; // Elective / Mandatory
 }

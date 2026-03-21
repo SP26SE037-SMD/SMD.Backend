@@ -12,14 +12,14 @@ import java.util.UUID;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class CurriculumComboSubjectResponse {
+public class CurriculumGroupSubjectResponse {
     UUID id;
     UUID curriculumId;
     String curriculumCode;
     String curriculumName;
-    UUID comboId;
-    String comboCode;
-    String comboName;
+    UUID groupId;
+    String groupCode;
+    String groupName;
     UUID subjectId;
     String subjectCode;
     String subjectName;

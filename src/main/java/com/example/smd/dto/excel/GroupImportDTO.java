@@ -8,13 +8,13 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class ComboImportDTO {
+public class GroupImportDTO {
 
-    @ExcelColumn(name = "Combo Code", order = 0, required = true)
-    String comboCode;
+    @ExcelColumn(name = "Group Code", order = 0, required = true)
+    String groupCode;
 
-    @ExcelColumn(name = "Combo Name", order = 1)
-    String comboName;
+    @ExcelColumn(name = "Group Name", order = 1)
+    String groupName;
 
     @ExcelColumn(name = "description", order = 2)
     String description;

@@ -89,5 +89,5 @@ public class Subject {
     }
 
     @OneToMany(mappedBy = "subject", fetch = FetchType.LAZY)
-    private List<Curriculum_Combo_Subject> curriculumComboSubjects;
+    private List<Curriculum_Group_Subject> curriculumGroupSubjects;
 }

@@ -11,12 +11,12 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class CurriculumComboSubjectRequest {
+public class CurriculumGroupSubjectRequest {
 
     @NotNull(message = "CURRICULUM_ID_REQUIRED")
     UUID curriculumId;
 
-    UUID comboId; // Optional - có thể null
+    UUID groupId; // Optional - có thể null
 
     @NotNull(message = "SUBJECT_ID_REQUIRED")
     UUID subjectId;

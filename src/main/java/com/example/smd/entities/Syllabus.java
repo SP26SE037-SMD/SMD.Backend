@@ -47,7 +47,7 @@ public class Syllabus {
     List<Session> sessions;
 
     @OneToMany(mappedBy = "syllabus", fetch = FetchType.LAZY)
-    List<Assessment_Syllabus> assessmentsSyllabuses;
+    List<Assessment> assessments;
 
     @OneToMany(mappedBy = "syllabus", fetch = FetchType.LAZY)
     List<Syllabus_Source> syllabusSources;

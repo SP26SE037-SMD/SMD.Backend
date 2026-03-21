@@ -21,7 +21,7 @@ public class CurriculumResponse {
     String curriculumName;
 
     Integer startYear;
-
+    @JsonInclude
     Integer endYear;
 
     String status;

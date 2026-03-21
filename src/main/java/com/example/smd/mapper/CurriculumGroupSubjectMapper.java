@@ -1,20 +1,20 @@
 package com.example.smd.mapper;
 
-import com.example.smd.dto.response.CurriculumComboSubjectResponse;
-import com.example.smd.entities.Curriculum_Combo_Subject;
+import com.example.smd.dto.response.CurriculumGroupSubjectResponse;
+import com.example.smd.entities.Curriculum_Group_Subject;
 import org.springframework.stereotype.Component;
 
 @Component
-public class CurriculumComboSubjectMapper {
+public class CurriculumGroupSubjectMapper {
 
     // Chuyển đổi từ Entity sang DTO Response
-    public CurriculumComboSubjectResponse toResponse(Curriculum_Combo_Subject entity) {
+    public CurriculumGroupSubjectResponse toResponse(Curriculum_Group_Subject entity) {
         if (entity == null) {
             return null;
         }
 
-        CurriculumComboSubjectResponse.CurriculumComboSubjectResponseBuilder builder =
-            CurriculumComboSubjectResponse.builder()
+        CurriculumGroupSubjectResponse.CurriculumGroupSubjectResponseBuilder builder =
+            CurriculumGroupSubjectResponse.builder()
                 .id(entity.getId())
                 .semester(entity.getSemester());
 
@@ -25,11 +25,11 @@ public class CurriculumComboSubjectMapper {
                    .curriculumName(entity.getCurriculum().getCurriculumName());
         }
 
-        // Map Combo info (có thể null)
-        if (entity.getCombo() != null) {
-            builder.comboId(entity.getCombo().getComboId())
-                   .comboCode(entity.getCombo().getComboCode())
-                   .comboName(entity.getCombo().getComboName());
+        // Map Group info (có thể null)
+        if (entity.getGroup() != null) {
+            builder.groupId(entity.getGroup().getGroupId())
+                   .groupCode(entity.getGroup().getGroupCode())
+                   .groupName(entity.getGroup().getGroupName());
         }
 
         // Map Subject info

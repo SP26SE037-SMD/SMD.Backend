@@ -14,12 +14,12 @@ public interface CurriculumMapper {
     
     // Chuyển đổi từ Request sang Entity (không map major, sẽ set trong service)
     @Mapping(target = "curriculumId", ignore = true)
-    @Mapping(target = "curriculumComboSubjects", ignore = true)
+    @Mapping(target = "curriculumGroupSubjects", ignore = true)
     @Mapping(target = "major", ignore = true)
     Curriculum toCurriculum(CurriculumRequest request);
 
     @Mapping(target = "curriculumId", ignore = true)
-    @Mapping(target = "curriculumComboSubjects", ignore = true)
+    @Mapping(target = "curriculumGroupSubjects", ignore = true)
     @Mapping(target = "major", ignore = true)
     Curriculum toCreateCurriculum( CurriculumCreateRequest request);
     
