@@ -12,7 +12,8 @@ import java.util.UUID;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
-public class Curriculum_Combo_Subject {
+@Table(name = "curriculum_group_subject")
+public class Curriculum_Group_Subject {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     UUID id;
@@ -25,8 +26,8 @@ public class Curriculum_Combo_Subject {
     Curriculum curriculum;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "combo_id")
-    Combo combo;
+    @JoinColumn(name = "group_id")
+    Group group;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "subject_id", nullable = false)

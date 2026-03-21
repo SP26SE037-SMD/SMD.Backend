@@ -1,4 +1,4 @@
-package com.example.smd.dto.response.combo;
+package com.example.smd.dto.response.group;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
@@ -12,9 +12,9 @@ import java.util.List;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ImportComboResponse {
+public class ImportGroupResponse {
     int total;
     int success;
     int failed;
-    List<ImportComboResult> details;
+    List<ImportGroupResult> details;
 }

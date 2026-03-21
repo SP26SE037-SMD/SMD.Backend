@@ -14,22 +14,22 @@ import java.util.UUID;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
-@Table(name = "combo")
-public class Combo {
+@Table(name = "\"group\"")
+public class Group {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    UUID comboId;
+    UUID groupId;
 
-    @Column(name = "combo_code", nullable = false, length = 20)
-    String comboCode;
+    @Column(name = "group_code", nullable = false, length = 20)
+    String groupCode;
 
-    @Column(name = "combo_name", length = 100)
-    String comboName;
+    @Column(name = "group_name", length = 100)
+    String groupName;
 
     @Column(name = "description")
     String description;
 
-    @Column(name = "combo_type",length = 20)
+    @Column(name = "group_type",length = 20)
     String type; // Elective / Mandatory 
 
     @Column(name = "created_at")
@@ -40,6 +40,6 @@ public class Combo {
         this.createdAt = Instant.now();
     }
 
-    @OneToMany(mappedBy = "combo", fetch = FetchType.LAZY)
-    private List<Curriculum_Combo_Subject> curriculumComboSubjects;
+    @OneToMany(mappedBy = "group", fetch = FetchType.LAZY)
+    private List<Curriculum_Group_Subject> curriculumGroupSubjects;
 }

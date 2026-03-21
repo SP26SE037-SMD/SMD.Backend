@@ -14,10 +14,10 @@ import java.util.UUID;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ComboResponse {
-    UUID comboId;
-    String comboCode;
-    String comboName;
+public class GroupResponse {
+    UUID groupId;
+    String groupCode;
+    String groupName;
     String description;
     Instant createdAt;
     @Schema(example = "Elective / Mandatory")

@@ -34,7 +34,7 @@ public class Curriculum {
     String status; // Có thể dùng Enum nếu muốn
 
     @OneToMany(mappedBy = "curriculum", fetch = FetchType.LAZY)
-    private List<Curriculum_Combo_Subject> curriculumComboSubjects;
+    private List<Curriculum_Group_Subject> curriculumGroupSubjects;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "major_id", nullable = false)

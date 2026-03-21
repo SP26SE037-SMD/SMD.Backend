@@ -1,18 +1,26 @@
 package com.example.smd.services;
 
 import com.example.smd.config.GeminiConfig;
+import com.example.smd.dto.request.BlockRequest;
 import com.example.smd.dto.request.clo.CloCheckRequest;
 import com.example.smd.dto.request.clo.CloGenerationRequest;
+import com.example.smd.dto.response.ComparisonResult;
 import com.example.smd.dto.response.clo.CLOsGenerationResponse;
 import com.example.smd.dto.response.clo.CloCheckResponse;
+import com.example.smd.dto.response.syllabus.SyllabusStructureResponse;
+import com.example.smd.entities.Vector_Embeddings;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+
+import java.util.Arrays;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -30,6 +38,9 @@ public class GeminiService {
     @Value("${gemini.check.url}")
     private String apiCheckUrl;
 
+    @Value("${gemini.vector-embedding.url}")
+    private String apiEmbeddingUrl;
+
     public CLOsGenerationResponse generateClo(CloGenerationRequest req) {
         // 1. Ghép dữ liệu vào Prompt bằng hàm format đã chuẩn bị
         String finalPrompt = String.format(PromptTemplateService.CLO_GENERATOR,
@@ -40,7 +51,7 @@ public class GeminiService {
         );
 
         // 2. Gọi API Gemini
-        String response = gemini.generateClo(finalPrompt, apiGenerateUrl);
+        String response = gemini.prompt(finalPrompt, apiGenerateUrl);
 
         // 3. Xử lý Parse JSON
         try {
@@ -64,7 +75,7 @@ public class GeminiService {
                 req.getTargetLevel());
 
         // 2. Gọi API thông qua Gemini Client
-        String jsonResult = gemini.generateClo(prompt, apiCheckUrl);
+        String jsonResult = gemini.prompt(prompt, apiCheckUrl);
 
         // 3. Parse chuỗi JSON thành Object Java
         try {
@@ -91,5 +102,45 @@ public class GeminiService {
                 .replace("Output:", "")
                 .replace("*", "") // Gemini hay trả về dấu * đầu dòng
                 .trim();
+    }
+
+    @Transactional
+    public List<Double> getEmbeddingVector(String text) {
+//        try {
+            List<Double> vector = gemini.getEmbedding(text, apiEmbeddingUrl);
+            return vector;
+//        } catch (Exception e) {
+//            throw new AppException(ErrorCode.EMBEDDING_FAILED);
+//        }
+    }
+
+    public ComparisonResult compareSyllabus(SyllabusStructureResponse oldStruct, SyllabusStructureResponse newStruct) {
+        try {
+            // 2. Convert sang JSON String để nhét vào Prompt
+            String oldJson = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(oldStruct);
+            String newJson = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(newStruct);
+
+            // 3. Tạo Prompt
+            String prompt = String.format(PromptTemplateService.COMPARISON_PROMPT,
+                    oldJson,
+                    newJson);
+
+            // 4. Gọi Gemini API
+            String rawResponse = gemini.prompt(prompt, apiGenerateUrl);
+
+            // 5. Clean & Parse kết quả
+            String cleanJson = cleanJsonBlock(rawResponse);
+            return objectMapper.readValue(cleanJson, ComparisonResult.class);
+
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to analyze syllabus differences");
+        }
+    }
+
+    private String cleanJsonBlock(String response) {
+        if (response.contains("```json")) {
+            return response.replace("```json", "").replace("```", "").trim();
+        }
+        return response;
     }
 }

@@ -9,6 +9,7 @@ import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.BlockMapper;
 import com.example.smd.repositories.BlockRepository;
+import com.example.smd.repositories.EmbeddingRepository;
 import com.example.smd.repositories.MaterialRepository;
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
@@ -32,6 +33,7 @@ import java.util.UUID;
 public class BlockService {
     BlockRepository blockRepository;
     MaterialRepository materialRepository;
+    EmbeddingService embeddingService;
     BlockMapper blockMapper;
 
     // 1. Create List Blocks (Bulk Insert)
@@ -48,7 +50,18 @@ public class BlockService {
             blocksList.add(block);
         }
 
-        return blockRepository.saveAll(blocksList).stream()
+        // 1. Lưu danh sách Blocks vào DB trước để có ID
+        List<Blocks> savedBlocks = blockRepository.saveAll(blocksList);
+
+        // 2. Với mỗi block đã lưu, tạo Embedding tương ứng
+        for (Blocks block : savedBlocks) {
+            // Chỉ tạo embedding nếu nội dung text không rỗng
+            if (block.getContentText() != null && !block.getContentText().isBlank()) {
+                embeddingService.createEmbedding(block.getContentText(), block);
+            }
+        }
+
+        return savedBlocks.stream()
                 .map(blockMapper::toResponse)
                 .toList();
     }

@@ -43,7 +43,7 @@ public class BulkSemesterMappingRequest {
 
         @NotEmpty(message = "SUBJECTS_REQUIRED")
         @Valid
-        List<SubjectComboMappingDTO> subjects;
+        List<SubjectGroupMappingDTO> subjects;
     }
 
     @Data
@@ -51,12 +51,12 @@ public class BulkSemesterMappingRequest {
     @NoArgsConstructor
     @AllArgsConstructor
     @FieldDefaults(level = AccessLevel.PRIVATE)
-    public static class SubjectComboMappingDTO {
+    public static class SubjectGroupMappingDTO {
 
         @NotNull(message = "SUBJECT_ID_REQUIRED")
         UUID subjectId;
 
-        // Nullable - can be null for required subjects (không combo)
-        UUID comboId;
+        // Nullable - can be null for required subjects (không group)
+        UUID groupId;
     }
 }

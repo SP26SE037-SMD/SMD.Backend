@@ -67,7 +67,9 @@ public enum ErrorCode {
     AI_GENERATION_FAILED(9001, "AI failed to generate valid content, please try again", HttpStatus.INTERNAL_SERVER_ERROR),
     AI_RESPONSE_INVALID_FORMAT(9002, "AI response is not in a valid JSON format", HttpStatus.UNPROCESSABLE_ENTITY),
     GEMINI_API_ERROR(9003, "Error occurred while calling Gemini API", HttpStatus.BAD_GATEWAY),
-
+    AI_PROVIDER_ERROR(9004, "AI service connection or processing error (Gemini)", HttpStatus.SERVICE_UNAVAILABLE),
+    AI_QUOTA_EXCEEDED(9005, "AI API rate limit exceeded", HttpStatus.TOO_MANY_REQUESTS),
+    EMBEDDING_FAILED(9006, "Vector embedding generation failed", HttpStatus.UNPROCESSABLE_ENTITY),
     // Elective
     ELECTIVE_CODE_REQUIRED(11001, "Elective code cannot be blank", HttpStatus.BAD_REQUEST),
     ELECTIVE_NAME_REQUIRED(11002, "Elective name cannot be blank", HttpStatus.BAD_REQUEST),
@@ -129,19 +131,19 @@ public enum ErrorCode {
             , HttpStatus.BAD_REQUEST),
     ACCOUNT_NOT_OWNER(17003, "You can only access or modify your own profile", HttpStatus.FORBIDDEN),
 
-    //COMBO
-    COMBO_NOT_FOUND(19001, "Combo not found", HttpStatus.NOT_FOUND),
-    COMBO_CODE_EXISTS(19002, "Combo code already exists", HttpStatus.BAD_REQUEST),
-    COMBO_CODE_REQUIRED(19003, "Combo code is required", HttpStatus.BAD_REQUEST),
-    COMBO_NAME_REQUIRED(19004, "Combo name is required", HttpStatus.BAD_REQUEST),
+    //GROUP
+    GROUP_NOT_FOUND(19001, "Group not found", HttpStatus.NOT_FOUND),
+    GROUP_CODE_EXISTS(19002, "Group code already exists", HttpStatus.BAD_REQUEST),
+    GROUP_CODE_REQUIRED(19003, "Group code is required", HttpStatus.BAD_REQUEST),
+    GROUP_NAME_REQUIRED(19004, "Group name is required", HttpStatus.BAD_REQUEST),
 
     //SYLLABUS
     SYLLABUS_NOT_FOUND(18001, "The syllabus does not exist on the system.", HttpStatus.NOT_FOUND),
     INVALID_SYLLABUS_STATUS(18002, "The syllabus status is invalid.", HttpStatus.BAD_REQUEST),
 
-    //CURRICULUM_COMBO_SUBJECT
-    CURRICULUM_COMBO_SUBJECT_ALREADY_EXISTS(20001, "This subject is already added to this curriculum with the same combo", HttpStatus.BAD_REQUEST),
-    CURRICULUM_COMBO_SUBJECT_NOT_FOUND(20002, "Curriculum-Combo-Subject mapping not found", HttpStatus.NOT_FOUND),
+    //CURRICULUM_GROUP_SUBJECT
+    CURRICULUM_GROUP_SUBJECT_ALREADY_EXISTS(20001, "This subject is already added to this curriculum with the same group", HttpStatus.BAD_REQUEST),
+    CURRICULUM_GROUP_SUBJECT_NOT_FOUND(20002, "Curriculum-Group-Subject mapping not found", HttpStatus.NOT_FOUND),
 
     //POs
     PO_NOT_FOUND(21001, "Program Outcome (PO) not found", HttpStatus.NOT_FOUND),

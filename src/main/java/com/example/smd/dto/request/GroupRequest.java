@@ -10,13 +10,13 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class ComboRequest {
-    @NotBlank(message = "COMBO_CODE_REQUIRED")
-    @Size(max = 20, message = "COMBO_CODE_INVALID")
-    String comboCode;
+public class GroupRequest {
+    @NotBlank(message = "GROUP_CODE_REQUIRED")
+    @Size(max = 20, message = "GROUP_CODE_INVALID")
+    String groupCode;
 
-    @Size(max = 100, message = "COMBO_NAME_INVALID")
-    String comboName;
+    @Size(max = 100, message = "GROUP_NAME_INVALID")
+    String groupName;
 
     String description;
 

@@ -1,4 +1,4 @@
-package com.example.smd.dto.response;
+package com.example.smd.dto.response.syllabus;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.*;

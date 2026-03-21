@@ -54,7 +54,7 @@ public class BulkSemesterMappingResponse {
 
         UUID subjectId;
 
-        UUID comboId;
+        UUID groupId;
 
         String details;
     }

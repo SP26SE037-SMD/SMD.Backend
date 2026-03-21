@@ -1,12 +1,12 @@
 package com.example.smd.controller;
 
-import com.example.smd.dto.request.CurriculumComboSubjectRequest;
-import com.example.smd.dto.response.CurriculumComboSubjectResponse;
+import com.example.smd.dto.request.CurriculumGroupSubjectRequest;
+import com.example.smd.dto.response.CurriculumGroupSubjectResponse;
 import com.example.smd.dto.response.CurriculumSemesterMappingsResponse;
 import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.dto.response.SubjectSimpleResponse;
-import com.example.smd.services.CurriculumComboSubjectService;
+import com.example.smd.services.CurriculumGroupSubjectService;
 import com.example.smd.dto.request.BulkSemesterMappingRequest;
 import com.example.smd.dto.response.BulkSemesterMappingResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -19,53 +19,55 @@ import org.springframework.data.domain.Page;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "Curriculum Combo Subject", description = "Curriculum-Combo-Subject Mapping APIs - Quản lý môn học trong khung chương trình")
+@Tag(name = "Curriculum Group Subject", description = "Curriculum" +
+        "-Group-Subject Mapping APIs - Quản lý môn học trong khung " +
+        "chương trình")
 @RestController
-@RequestMapping("/api/curriculum-combo-subjects")
+@RequestMapping("/api/curriculum-group-subjects")
 @RequiredArgsConstructor
 @SecurityRequirement(name = "bearerAuth")
-public class CurriculumComboSubjectController {
+public class CurriculumGroupSubjectController {
 
-    private final CurriculumComboSubjectService curriculumComboSubjectService;
+    private final CurriculumGroupSubjectService curriculumGroupSubjectService;
 
     /**
-     * API thêm môn học vào curriculum thông qua combo
+     * API thêm môn học vào curriculum thông qua group
      */
     @PostMapping
     @PreAuthorize("hasAnyAuthority('CURRICULUM_UPDATE', " +
-            "'SUBJECT_UPDATE', 'COMBO_UPDATE')") // Yêu cầu quyền cập nhật curriculum, subject hoặc combo
+            "'SUBJECT_UPDATE', 'GROUP_UPDATE')") // Yêu cầu quyền cập nhật curriculum, subject hoặc group
     @Operation(
-        summary = "Add subject to curriculum (via combo)",
-        description = "Create a mapping between Curriculum, Combo (optional), and Subject. " +
-                      "This assigns a subject to a curriculum, optionally within a combo group, " +
+        summary = "Add subject to curriculum (via group)",
+        description = "Create a mapping between Curriculum, Group (optional), and Subject. " +
+                      "This assigns a subject to a curriculum, optionally within a group group, " +
                       "and specifies the recommended semester. Requires CURRICULUM_UPDATE permission."
     )
-    public ResponseObject<CurriculumComboSubjectResponse> createCurriculumComboSubject(
-            @Valid @RequestBody CurriculumComboSubjectRequest request
+    public ResponseObject<CurriculumGroupSubjectResponse> createCurriculumGroupSubject(
+            @Valid @RequestBody CurriculumGroupSubjectRequest request
     ) {
-        return ResponseObject.<CurriculumComboSubjectResponse>builder()
+        return ResponseObject.<CurriculumGroupSubjectResponse>builder()
                 .status(1000)
-                .data(curriculumComboSubjectService.createCurriculumComboSubject(request))
+                .data(curriculumGroupSubjectService.createCurriculumGroupSubject(request))
                 .message("Subject added to curriculum successfully")
                 .build();
     }
 
     /**
-     * API lấy danh sách subjects theo curriculum hoặc combo với phân trang
+     * API lấy danh sách subjects theo curriculum hoặc group với phân trang
      */
     @GetMapping("/subjects")
     @Operation(
-        summary = "Get subjects by curriculum or combo with pagination",
-        description = "Get subjects in a curriculum or combo by ID. " +
-                      "SearchType must be either 'curriculum' or 'combo'. " +
+        summary = "Get subjects by curriculum or group with pagination",
+        description = "Get subjects in a curriculum or group by ID. " +
+                      "SearchType must be either 'curriculum' or 'group'. " +
                       "Sort format: field (semester, credits), direction (asc/desc). " +
                       "Response includes semester information from curriculum mapping."
     )
     public ResponseObject<PagedResponse<SubjectSimpleResponse>> getSubjects(
-            @Parameter(description = "Search type: 'curriculum' or 'combo' (required)", required = true)
+            @Parameter(description = "Search type: 'curriculum' or 'group' (required)", required = true)
             @RequestParam(name = "searchType") String searchType,
 
-            @Parameter(description = "ID of curriculum or combo (UUID, required)", required = true)
+            @Parameter(description = "ID of curriculum or group (UUID, required)", required = true)
             @RequestParam(name = "searchId") String searchId,
 
             @Parameter(description = "Page number (0-based)")
@@ -77,7 +79,7 @@ public class CurriculumComboSubjectController {
             @Parameter(description = "Sort field and direction: semester or credits with asc|desc (e.g., semester,asc or credits,desc)")
             @RequestParam(defaultValue = "semester,asc") String[] sort
     ) {
-        Page<SubjectSimpleResponse> subjects = curriculumComboSubjectService.searchSubjects(
+        Page<SubjectSimpleResponse> subjects = curriculumGroupSubjectService.searchSubjects(
             searchType, searchId, page, size, sort
         );
 
@@ -92,14 +94,14 @@ public class CurriculumComboSubjectController {
         @Operation(
         summary = "Get semester mappings by curriculumId",
         description = "Return curriculum subject mappings grouped by semester. " +
-                  "Each subject includes subjectId, subjectCode, subjectName, and comboId."
+                  "Each subject includes subjectId, subjectCode, subjectName, and groupId."
         )
         public ResponseObject<CurriculumSemesterMappingsResponse> getSemesterMappingsByCurriculum(
             @Parameter(description = "Curriculum ID (UUID, required)", required = true)
             @RequestParam(name = "curriculumId") String curriculumId
         ) {
         CurriculumSemesterMappingsResponse response =
-            curriculumComboSubjectService.getSemesterMappingsByCurriculum(curriculumId);
+            curriculumGroupSubjectService.getSemesterMappingsByCurriculum(curriculumId);
 
         return ResponseObject.<CurriculumSemesterMappingsResponse>builder()
             .status(1000)
@@ -109,20 +111,20 @@ public class CurriculumComboSubjectController {
         }
 
         /**
-         * API bulk configure semester-combo-subject mappings
+         * API bulk configure semester-group-subject mappings
          */
         @PostMapping("/bulk-configure")
-        @PreAuthorize("hasAnyAuthority('CURRICULUM_UPDATE', 'SUBJECT_UPDATE', 'COMBO_UPDATE')")
+        @PreAuthorize("hasAnyAuthority('CURRICULUM_UPDATE', 'SUBJECT_UPDATE', 'GROUP_UPDATE')")
         @Operation(
-            summary = "Bulk configure semester-subject-combo mappings",
-            description = "Atomically insert multiple subject-semester-combo mappings for a curriculum. " +
-                          "ComboId can be null for required subjects (not tied to any combo)."
+            summary = "Bulk configure semester-subject-group mappings",
+            description = "Atomically insert multiple subject-semester-group mappings for a curriculum. " +
+                          "GroupId can be null for required subjects (not tied to any group)."
         )
         public ResponseObject<BulkSemesterMappingResponse> bulkConfigureSemesterMappings(
                 @Valid @RequestBody BulkSemesterMappingRequest request
         ) {
             BulkSemesterMappingResponse response =
-                curriculumComboSubjectService.bulkConfigureSemesterMappings(request);
+                curriculumGroupSubjectService.bulkConfigureSemesterMappings(request);
 
             return ResponseObject.<BulkSemesterMappingResponse>builder()
                     .status(response.isSuccess() ? 1000 : 400)

@@ -1,8 +1,7 @@
 package com.example.smd.services;
 
 import com.example.smd.dto.request.SyllabusRequest;
-import com.example.smd.dto.response.SyllabusResponse;
-import com.example.smd.entities.Material;
+import com.example.smd.dto.response.syllabus.SyllabusResponse;
 import com.example.smd.entities.Subject;
 import com.example.smd.entities.Syllabus;
 import com.example.smd.enums.SyllabusStatus;
