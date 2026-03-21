@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -23,6 +24,16 @@ public interface CurriculumComboSubjectRepository extends JpaRepository<Curricul
     boolean existsByCurriculumAndSubjectAndCombo(
         @Param("curriculumId") UUID curriculumId,
         @Param("subjectId") UUID subjectId,
+        @Param("comboId") UUID comboId
+    );
+
+    // Kiểm tra combo có thuộc curriculum thông qua bảng Curriculum_Combo_Subject
+    @Query("SELECT CASE WHEN COUNT(ccs) > 0 THEN true ELSE false END " +
+           "FROM Curriculum_Combo_Subject ccs " +
+           "WHERE ccs.curriculum.curriculumId = :curriculumId " +
+           "AND ccs.combo.comboId = :comboId")
+    boolean existsByCurriculumAndCombo(
+        @Param("curriculumId") UUID curriculumId,
         @Param("comboId") UUID comboId
     );
 
@@ -56,5 +67,14 @@ public interface CurriculumComboSubjectRepository extends JpaRepository<Curricul
         Page<Curriculum_Combo_Subject> findByComboId(
         @Param("comboId") UUID comboId,
         Pageable pageable
+    );
+
+    @Query("SELECT ccs FROM Curriculum_Combo_Subject ccs " +
+           "JOIN FETCH ccs.subject s " +
+           "LEFT JOIN FETCH ccs.combo c " +
+           "WHERE ccs.curriculum.curriculumId = :curriculumId " +
+           "ORDER BY ccs.semester ASC, s.subjectCode ASC")
+    List<Curriculum_Combo_Subject> findAllByCurriculumIdOrderBySemester(
+        @Param("curriculumId") UUID curriculumId
     );
 }

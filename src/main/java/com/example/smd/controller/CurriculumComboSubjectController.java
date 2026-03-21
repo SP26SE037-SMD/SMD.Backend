@@ -2,10 +2,13 @@ package com.example.smd.controller;
 
 import com.example.smd.dto.request.CurriculumComboSubjectRequest;
 import com.example.smd.dto.response.CurriculumComboSubjectResponse;
+import com.example.smd.dto.response.CurriculumSemesterMappingsResponse;
 import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.dto.response.SubjectSimpleResponse;
 import com.example.smd.services.CurriculumComboSubjectService;
+import com.example.smd.dto.request.BulkSemesterMappingRequest;
+import com.example.smd.dto.response.BulkSemesterMappingResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -84,4 +87,49 @@ public class CurriculumComboSubjectController {
                 .message("Get subjects successfully")
                 .build();
     }
+
+        @GetMapping("/semester-mappings")
+        @Operation(
+        summary = "Get semester mappings by curriculumId",
+        description = "Return curriculum subject mappings grouped by semester. " +
+                  "Each subject includes subjectId, subjectCode, subjectName, and comboId."
+        )
+        public ResponseObject<CurriculumSemesterMappingsResponse> getSemesterMappingsByCurriculum(
+            @Parameter(description = "Curriculum ID (UUID, required)", required = true)
+            @RequestParam(name = "curriculumId") String curriculumId
+        ) {
+        CurriculumSemesterMappingsResponse response =
+            curriculumComboSubjectService.getSemesterMappingsByCurriculum(curriculumId);
+
+        return ResponseObject.<CurriculumSemesterMappingsResponse>builder()
+            .status(1000)
+            .data(response)
+            .message("Get semester mappings successfully")
+            .build();
+        }
+
+        /**
+         * API bulk configure semester-combo-subject mappings
+         */
+        @PostMapping("/bulk-configure")
+        @PreAuthorize("hasAnyAuthority('CURRICULUM_UPDATE', 'SUBJECT_UPDATE', 'COMBO_UPDATE')")
+        @Operation(
+            summary = "Bulk configure semester-subject-combo mappings",
+            description = "Atomically insert multiple subject-semester-combo mappings for a curriculum. " +
+                          "ComboId can be null for required subjects (not tied to any combo)."
+        )
+        public ResponseObject<BulkSemesterMappingResponse> bulkConfigureSemesterMappings(
+                @Valid @RequestBody BulkSemesterMappingRequest request
+        ) {
+            BulkSemesterMappingResponse response =
+                curriculumComboSubjectService.bulkConfigureSemesterMappings(request);
+
+            return ResponseObject.<BulkSemesterMappingResponse>builder()
+                    .status(response.isSuccess() ? 1000 : 400)
+                    .data(response)
+                    .message(response.isSuccess() ?
+                             "Bulk mapping completed successfully" :
+                             "Bulk mapping failed - validation errors found")
+                    .build();
+        }
 }
