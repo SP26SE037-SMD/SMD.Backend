@@ -19,4 +19,7 @@ public class Assessment_Category {
 
     @Column(name = "category_name", nullable = false, length = 50)
     String categoryName;
+
+    @Column(columnDefinition = "TEXT")
+    String description;
 }

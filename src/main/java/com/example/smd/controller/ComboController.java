@@ -7,6 +7,7 @@ import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.dto.response.combo.ImportComboResponse;
 import com.example.smd.services.ComboService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -16,9 +17,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-@Tag(name = "Combo", description = "Combo Management APIs")
+@Tag(name = "Group", description = "Group Management APIs")
 @RestController
-@RequestMapping("/api/combos")
+@RequestMapping("/api/group")
 @RequiredArgsConstructor
 @SecurityRequirement(name = "bearerAuth")
 public class ComboController {
@@ -28,8 +29,8 @@ public class ComboController {
     // API lấy danh sách combo có phân trang và tìm kiếm
     @GetMapping
     @Operation(
-        summary = "Get all combos with pagination and search (combo code and combo name)",
-        description = "Search by combo code or combo name. " +
+                summary = "Get all combos with pagination, search, and type filter",
+                description = "Filter by type (Combo/Elective) first, then search by combo code or combo name. " +
                 "Sort format: field 1 là tên trường (comboCode, comboName, type), " +
                 "field 2 là hướng sắp xếp (asc hoặc desc). " +
                 "Ví dụ: sort=comboCode,asc"
@@ -37,13 +38,18 @@ public class ComboController {
     public ResponseObject<PagedResponse<ComboResponse>> getAllCombos(
             @RequestParam(required = false, name = "search")
             @io.swagger.v3.oas.annotations.Parameter(
-                description = "Search keyword for combo code or combo name"
+                description = "Search keyword for code or name"
             ) String search,
 
             @RequestParam(required = false, name = "searchBy")
-            @io.swagger.v3.oas.annotations.Parameter(
-                description = "Search type: 'code' (search by combo code), 'name' (search by combo name)"
+            @Parameter(
+                                description = "Search type: 'code' hoặc 'name'"
             ) String searchBy,
+
+            @RequestParam(required = false, name = "type")
+            @Parameter(
+                    description = "Type filter: 'Combo', 'Elective', or 'all'"
+            ) String type,
 
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -51,7 +57,7 @@ public class ComboController {
     ) {
         return ResponseObject.<PagedResponse<ComboResponse>>builder()
                 .status(1000)
-                .data(PagedResponse.of(comboService.getAllCombos(search, searchBy, page, size, sort)))
+                .data(PagedResponse.of(comboService.getAllCombos(search, searchBy, type, page, size, sort)))
                 .message("Get all combos successfully")
                 .build();
     }

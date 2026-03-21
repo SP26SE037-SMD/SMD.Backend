@@ -63,4 +63,7 @@ public class Assessment {
         this.createdAt = Instant.now();
     }
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "syllabus_id", nullable = false)
+    Syllabus syllabus;
 }

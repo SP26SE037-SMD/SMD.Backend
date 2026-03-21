@@ -35,9 +35,16 @@ public class ComboService {
     private final ComboRepository comboRepository;
     private final ComboMapper comboMapper;
 
-    // GetAll combo có phân trang và tìm kiếm theo combo code hoặc combo name
+    // GetAll combo: lọc theo type trước, sau đó mới tìm theo searchBy (code/name)
     @Transactional(readOnly = true)
-    public Page<ComboResponse> getAllCombos(String search, String searchBy, int page, int size, String[] sort) {
+    public Page<ComboResponse> getAllCombos(
+            String search,
+            String searchBy,
+            String type,
+            int page,
+            int size,
+            String[] sort
+    ) {
         // 1. Xử lý sắp xếp
         List<Sort.Order> orders = new ArrayList<>();
         if (sort[0].contains(",")) {
@@ -51,26 +58,32 @@ public class ComboService {
 
         Pageable pagingSort = PageRequest.of(page, size, Sort.by(orders));
 
-        // 2. Logic tìm kiếm dựa trên searchBy parameter
+        // 2. Logic: lọc theo type trước
         Page<Combo> comboPage;
+        String normalizedType = normalizeType(type);
         if (search == null || search.trim().isEmpty()) {
-            // Không có search, lấy tất cả combos
-            comboPage = comboRepository.findAll(pagingSort);
+            // Không có search: trả danh sách theo type (hoặc tất cả nếu type rỗng/all)
+            if (normalizedType == null) {
+                comboPage = comboRepository.findAll(pagingSort);
+            } else {
+                comboPage = comboRepository.findByType(normalizedType, pagingSort);
+            }
         } else {
             String searchTerm = search.trim();
-            // Xác định loại tìm kiếm dựa trên searchBy
-            switch (searchBy != null ? searchBy.toLowerCase() : "all") {
+            String normalizedSearchBy = normalizeSearchBy(searchBy);
+
+            // Có search: chỉ tìm theo searchBy = code/name
+            switch (normalizedSearchBy) {
                 case "code":
-                    // Tìm theo combo code
-                    comboPage = comboRepository.findByComboCodeContaining(searchTerm, pagingSort);
+                    comboPage = normalizedType == null
+                            ? comboRepository.findByComboCodeContaining(searchTerm, pagingSort)
+                            : comboRepository.findByTypeAndComboCodeContaining(normalizedType, searchTerm, pagingSort);
                     break;
                 case "name":
-                    // Tìm theo combo name
-                    comboPage = comboRepository.findByComboNameContaining(searchTerm, pagingSort);
-                    break;
-                case "all":
                 default:
-                    comboPage = comboRepository.findAll(pagingSort);
+                    comboPage = normalizedType == null
+                            ? comboRepository.findByComboNameContaining(searchTerm, pagingSort)
+                            : comboRepository.findByTypeAndComboNameContaining(normalizedType, searchTerm, pagingSort);
                     break;
             }
         }
@@ -135,6 +148,29 @@ public class ComboService {
             return Sort.Direction.DESC;
         }
         return Sort.Direction.ASC;
+    }
+
+    private String normalizeType(String type) {
+        if (type == null || type.trim().isEmpty() || "all".equalsIgnoreCase(type.trim())) {
+            return null;
+        }
+        if ("combo".equalsIgnoreCase(type.trim())) {
+            return "Combo";
+        }
+        if ("elective".equalsIgnoreCase(type.trim())) {
+            return "Elective";
+        }
+        return null;
+    }
+
+    private String normalizeSearchBy(String searchBy) {
+        if (searchBy == null || searchBy.trim().isEmpty()) {
+            return "name";
+        }
+        if ("code".equalsIgnoreCase(searchBy.trim())) {
+            return "code";
+        }
+        return "name";
     }
 
     @Transactional
