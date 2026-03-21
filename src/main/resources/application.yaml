@@ -97,6 +97,8 @@ gemini:
     url: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
   check:
     url: https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent
+  vector-embedding:
+    url: https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent
 ---
 # ==========================================
 # DEVELOPMENT PROFILE

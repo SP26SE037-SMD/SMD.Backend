@@ -1,38 +1,44 @@
 package com.example.smd.entities;
+
+import com.pgvector.PGvector;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
-import java.util.List;
+import java.time.Instant;
+import java.util.UUID;
 
-    @Getter
-    @Setter
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @FieldDefaults(level = AccessLevel.PRIVATE)
-    @Entity
-    @Table(name = "vector_embeddings")
-    public class Vector_Embeddings {
-        @Id
-        @GeneratedValue(strategy = GenerationType.UUID)
-        String id;
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
+@Entity
+@Table(name = "vector_embeddings")
+public class Vector_Embeddings {
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "embedding_id")
+    UUID id;
 
-        @OneToOne(fetch = FetchType.LAZY)
-        @JoinColumn(name = "block_id", nullable = false)
-        Blocks block;
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "block_id", nullable = false)
+    Blocks block;
 
-        // Nếu dùng PostgreSQL + PGVector, bạn có thể dùng @Column(columnDefinition = "vector")
-        // Nếu dùng DB thường, bạn có thể lưu dạng JSON hoặc Binary.
-        // Dưới đây là cách dùng JSON để lưu mảng float (tương thích nhiều DB)
-        @JdbcTypeCode(SqlTypes.JSON)
-        @Column(name = "embedding", columnDefinition = "jsonb")
-        List<Double> embedding;
+    // Sử dụng class PGvector để Hibernate tự động map xuống kiểu vector(768)
+    @Column(name = "embedding_vector", columnDefinition = "vector(3072)")
+    String embedding;
 
-        @JdbcTypeCode(SqlTypes.JSON)
-        @Column(name = "meta_data", columnDefinition = "jsonb")
-        String metaData; // Lưu metadata dạng JSON (source, page, etc.)
+    // BỎ @JdbcTypeCode(SqlTypes.JSON) đi nếu bạn chỉ lưu text bình thường
+    @Column(name = "content", columnDefinition = "TEXT")
+    String content;
+
+    @Column(name = "created_at")
+    Instant createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = Instant.now();
     }
-
+}

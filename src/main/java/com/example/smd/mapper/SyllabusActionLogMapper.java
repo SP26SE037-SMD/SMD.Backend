@@ -1,7 +1,7 @@
 package com.example.smd.mapper;
 
 import com.example.smd.dto.request.SyllabusActionLogRequest;
-import com.example.smd.dto.response.SyllabusActionLogResponse;
+import com.example.smd.dto.response.syllabus.SyllabusActionLogResponse;
 import com.example.smd.entities.Syllabus_Action_Logs;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;

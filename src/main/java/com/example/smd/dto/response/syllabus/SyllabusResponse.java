@@ -1,4 +1,4 @@
-package com.example.smd.dto.response;
+package com.example.smd.dto.response.syllabus;
 
 import lombok.*;
 import lombok.experimental.FieldDefaults;
