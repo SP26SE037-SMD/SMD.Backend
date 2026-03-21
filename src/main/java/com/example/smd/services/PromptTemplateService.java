@@ -44,4 +44,24 @@ public class PromptTemplateService {
                     "  \"detectedLevel\": \"...\",\n" +
                     "  \"suggestion\": \"...\"\n" +
                     "}";
+
+    public static final String COMPARISON_PROMPT = """
+    Role: Bạn là chuyên gia thẩm định giáo trình (Curriculum Auditor).
+    
+    Nhiệm vụ: So sánh 2 cấu trúc môn học dưới đây để tìm ra SỰ THAY ĐỔI VỀ KIẾN THỨC (Knowledge Delta).
+    
+    --- OLD SYLLABUS (Môn Cũ) ---
+    %s
+    
+    --- NEW SYLLABUS (Môn Mới) ---
+    %s
+    
+    Yêu cầu Output: Trả về duy nhất 1 JSON object (không markdown, không giải thích) theo định dạng:
+    {
+      "removed_concepts": ["List các concept kỹ thuật bị xóa"],
+      "added_concepts": ["List các concept mới thêm vào"],
+      "risk_assessment": "HIGH/MEDIUM/LOW",
+      "risk_reason": "Giải thích ngắn gọn tại sao rủi ro."
+    }
+    """;
 }

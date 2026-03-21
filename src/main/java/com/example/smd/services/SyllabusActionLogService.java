@@ -1,7 +1,7 @@
 package com.example.smd.services;
 
 import com.example.smd.dto.request.SyllabusActionLogRequest;
-import com.example.smd.dto.response.SyllabusActionLogResponse;
+import com.example.smd.dto.response.syllabus.SyllabusActionLogResponse;
 import com.example.smd.entities.Account;
 import com.example.smd.entities.Syllabus;
 import com.example.smd.entities.Syllabus_Action_Logs;

@@ -1,7 +1,7 @@
 package com.example.smd.mapper;
 
 import com.example.smd.dto.request.SyllabusRequest;
-import com.example.smd.dto.response.SyllabusResponse;
+import com.example.smd.dto.response.syllabus.SyllabusResponse;
 import com.example.smd.entities.Syllabus;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;

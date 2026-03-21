@@ -1,8 +1,7 @@
 package com.example.smd.controller;
 
-import com.example.smd.dto.request.SyllabusActionLogRequest;
 import com.example.smd.dto.response.ResponseObject;
-import com.example.smd.dto.response.SyllabusActionLogResponse;
+import com.example.smd.dto.response.syllabus.SyllabusActionLogResponse;
 import com.example.smd.services.SyllabusActionLogService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
