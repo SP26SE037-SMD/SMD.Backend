@@ -405,4 +405,17 @@ public class AccountService {
         }
         return Sort.Direction.ASC;
     }
+
+    public List<AccountResponse> getAccountsByDepartment(UUID departmentId) {
+        if (!departmentRepository.existsById(departmentId)) {
+            throw new AppException(ErrorCode.DEPARTMENT_NOT_FOUND);
+        }
+
+        // 2. Nếu tồn tại, tiến hành lấy danh sách account
+        List<Account> accounts = accountRepository.findAllByDepartmentId(departmentId);
+
+        return accounts.stream()
+                .map(accountMapper::toResponse)
+                .toList();
+    }
 }

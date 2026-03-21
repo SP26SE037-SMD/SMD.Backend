@@ -70,6 +70,9 @@ public class Subject {
     @Column(name = "created_at")
     Instant createdAt;
 
+    @Column(name = "tool")
+    String tool;
+
     // Relationships
     @OneToMany(mappedBy = "subject", fetch = FetchType.LAZY)
     List<CLOs> clos;

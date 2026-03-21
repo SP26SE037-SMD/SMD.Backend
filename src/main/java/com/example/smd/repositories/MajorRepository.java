@@ -50,4 +50,7 @@ public interface MajorRepository extends JpaRepository<Major, UUID> {
             @Param("startTime") Instant startTime,
             @Param("endTime") Instant endTime,
             Pageable pageable);
+
+    @Query("SELECT m FROM Major m LEFT JOIN FETCH m.curriculums WHERE m.majorId = :id")
+    Optional<Major> findByIdWithCurriculums(@Param("id") UUID id);
 }

@@ -2,6 +2,7 @@ package com.example.smd.services;
 
 import com.example.smd.dto.request.SyllabusRequest;
 import com.example.smd.dto.response.SyllabusResponse;
+import com.example.smd.entities.Material;
 import com.example.smd.entities.Subject;
 import com.example.smd.entities.Syllabus;
 import com.example.smd.enums.SyllabusStatus;
@@ -79,7 +80,20 @@ public class SyllabusService {
     // 4. Xóa đệm (Soft Delete)
     @Transactional
     public void delete(UUID id) {
-        updateStatus(id, "ARCHIVED");
+        try {
+            // Kiểm tra xem Material có tồn tại không
+            Syllabus syllabus = syllabusRepository.findById(id)
+                    .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
+            if(syllabus.getStatus().equals("DRAFT")) {
+                syllabusRepository.delete(syllabus);
+            } else{
+                syllabus.setStatus("ARCHIVED");
+                syllabusRepository.save(syllabus);
+            }
+
+        } catch (IllegalArgumentException e) {
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        }
     }
 
     // 5. Get All by Subject

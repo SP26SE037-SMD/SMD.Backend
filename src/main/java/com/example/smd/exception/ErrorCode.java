@@ -51,7 +51,7 @@ public enum ErrorCode {
     SYLLABUS_ID_REQUIRED(7005, "Syllabus (Subject) ID is required", HttpStatus.BAD_REQUEST),
     BLOOM_LEVEL_REQUIRED(7006, "Bloom level is required and must be between 1-6", HttpStatus.BAD_REQUEST),
     INVALID_STATUS_INPUT(7007, "Invalid status provided. Please check the allowed list.", HttpStatus.BAD_REQUEST),
-    INVALID_CLO_STATUS(7005, "Invalid CLO status transition",
+    INVALID_CLO_STATUS(7008, "Invalid CLO status transition",
             HttpStatus.BAD_REQUEST),
 
     // Subject
@@ -61,6 +61,7 @@ public enum ErrorCode {
     SUBJECT_CODE_REQUIRED(8004, "Subject code cannot be blank", HttpStatus.BAD_REQUEST),
     SUBJECT_NAME_REQUIRED(8005, "Subject name cannot be blank", HttpStatus.BAD_REQUEST),
     INVALID_SUBJECT_STATUS(8006, "Invalid subject status. Please follow the workflow: DRAFT -> DEFINED -> WAITING_SYLLABUS -> COMPLETED.", HttpStatus.BAD_REQUEST),
+
     // Gemini
     // AI & External Services (9xxx)
     AI_GENERATION_FAILED(9001, "AI failed to generate valid content, please try again", HttpStatus.INTERNAL_SERVER_ERROR),
@@ -198,6 +199,15 @@ public enum ErrorCode {
     ASSESSMENT_CATEGORY_NAME_INVALID(26019, "Assessment category name must not exceed 50 characters", HttpStatus.BAD_REQUEST),
     ASSESSMENT_TYPE_NAME_REQUIRED(26020, "Assessment type name is required", HttpStatus.BAD_REQUEST),
     ASSESSMENT_TYPE_NAME_INVALID(26021, "Assessment type name must not exceed 50 characters", HttpStatus.BAD_REQUEST),
+    //Material
+    MATERIAL_NOT_FOUND(25001, "Material not found", HttpStatus.NOT_FOUND),
+    INVALID_MATERIAL_STATUS(25002, "Invalid material status", HttpStatus.BAD_REQUEST),
+
+    //Blocks
+    BLOCK_NOT_FOUND(27001, "Block content could not be located", HttpStatus.NOT_FOUND),
+    BLOCK_LIST_EMPTY(27002, "Block list cannot be empty for bulk creation", HttpStatus.BAD_REQUEST),
+    INVALID_BLOCK_STYLE(27003, "The provided block style is not supported", HttpStatus.BAD_REQUEST),
+
     // General
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),
     INVALID_KEY(1000, "Invalid message key", HttpStatus.BAD_REQUEST),

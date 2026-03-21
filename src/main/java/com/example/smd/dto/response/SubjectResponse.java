@@ -25,8 +25,8 @@ public class SubjectResponse {
     String studentTasks;
     Integer scoringScale;
     String decisionNo;
-
-    Boolean isApproved;
+    String tool;
+    Integer minToPass;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+7")
     Instant approvedDate; // Dùng Instant để đồng bộ với Entity
@@ -37,7 +37,6 @@ public class SubjectResponse {
     // Trả về UUID của khoa để tiện cho việc truy vấn phía Frontend
     DepartmentResponse department;
     List<PrerequisiteResponse> preRequisite;
-    List<ElectiveResponse> electives;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+7")
     Instant createdAt;

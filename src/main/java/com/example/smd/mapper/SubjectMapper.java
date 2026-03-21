@@ -18,7 +18,6 @@ public interface SubjectMapper {
 
     // Chuyển từ Entity sang Response DTO để trả về cho Client
     @Mapping(target = "department", source = "department")
-    @Mapping(target = "electives", ignore = true)
     SubjectResponse toSubjectResponse(Subject subject);
 
     // Cập nhật Entity từ Request DTO

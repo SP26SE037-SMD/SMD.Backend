@@ -5,6 +5,7 @@ import lombok.experimental.FieldDefaults;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -13,35 +14,30 @@ import java.util.List;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
-@Table(name = "materials")
+@Table(name = "material")
 public class Material {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    String materialId;
+    UUID materialId;
 
-    @Column(nullable = false, length = 100)
+    @Column(nullable = false, length = 100, name = "material_name")
     String title;
-
-    @Column(length = 100)
-    String author;
-
-    @Column(length = 100)
-    String publisher;
-
-    @Column(name = "published_date")
-    java.time.Instant publishedDate;
 
     @Column(name = "material_type", length = 50)
     String materialType;
 
-    @Column(length = 100)
-    String url; // hoặc "edition" tùy context
+//    @Column(length = 100)
+//    String url; // hoặc "edition" tùy context
 
-    @Column(name = "uploaded_at")
+    @Column(name = "upload_date")
     java.time.Instant uploadedAt;
 
     @Column(name = "status")
     String status;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "syllabus_id", nullable = false)
+    Syllabus syllabus;
 
     @OneToMany(mappedBy = "material", fetch = FetchType.LAZY)
     List<Blocks> blocks;

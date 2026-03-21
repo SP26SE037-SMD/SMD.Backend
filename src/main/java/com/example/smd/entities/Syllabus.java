@@ -55,6 +55,10 @@ public class Syllabus {
     @OneToMany(mappedBy = "syllabus", fetch = FetchType.LAZY)
     List<Task> tasks;
 
+    // Trong class Syllabus
+    @OneToMany(mappedBy = "syllabus", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    List<Material> materials;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = Instant.now();
