@@ -45,7 +45,15 @@ public class MajorController {
     public ResponseObject<PagedResponse<MajorResponse>> getAllMajors(
             @RequestParam(required = false) String search,
             @RequestParam(required = false, defaultValue = "all") String searchBy,
-            @Parameter(description = "Filter by major status (DRAFT, INTERNAL_REVIEW, PUBLISHED, ARCHIVED)")
+            @Parameter(
+                    description = "Filter majors by their current lifecycle status. Valid values are:\n" +
+                            "| Status | Description |\n" +
+                            "| :--- | :--- |\n" +
+                            "| **DRAFT** | **Bản nháp:** Major is under initial definition. Hidden from public and cannot have Curricula assigned. |\n" +
+                            "| **INTERNAL_REVIEW** | **Kiểm tra nội bộ:** Content is shared with the Academic Board for auditing and feedback before launch. |\n" +
+                            "| **PUBLISHED** | **Công bố:** Major is officially active. Students can enroll, and it is linked to active Curricula. |\n" +
+                            "| **ARCHIVED** | **Lưu trữ:** No longer accepting new enrollments. Kept as Read-only for historical transcript verification. |"
+            )
             @RequestParam(required = false) String status,
             @RequestParam(required = false) Boolean updatedYesterday,
             @RequestParam(defaultValue = "0") int page,
@@ -53,7 +61,6 @@ public class MajorController {
             @RequestParam(defaultValue = "majorCode,asc") String[] sort,
             @AuthenticationPrincipal Jwt jwt
     ) {
-        System.out.println("Status:" + status);
         String userId = jwt.getClaimAsString("accountId");
         Page<MajorResponse> majors;
         if (Boolean.TRUE.equals(updatedYesterday)) {

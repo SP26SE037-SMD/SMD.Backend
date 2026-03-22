@@ -14,6 +14,9 @@ public enum SubjectStatus {
     @Schema(description = "Waiting Syllabus: Curriculum approved, now waiting for detailed Syllabus development")
     WAITING_SYLLABUS,
 
+    @Schema(description = "Submitted and awaiting review assignment.")
+    PENDING_REVIEW,
+
     @Schema(description = "Completed: Detailed Syllabus is linked, the subject is fully ready for use")
     COMPLETED,
 

@@ -4,6 +4,7 @@ import com.example.smd.dto.response.SourceResponse;
 import com.example.smd.entities.Source;
 import com.example.smd.entities.Syllabus;
 import com.example.smd.entities.Syllabus_Source;
+import com.example.smd.enums.SyllabusStatus;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.SourceMapper;
@@ -36,6 +37,10 @@ public class SyllabusSourceService {
         Syllabus syllabus = syllabusRepository.findById(syllabusId)
                 .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
 
+        if(!(syllabus.getStatus().equals("DRAFT") || syllabus.getStatus().equals(SyllabusStatus.REVISION_REQUESTED.toString()))) {
+            throw new AppException(ErrorCode.SYLLABUS_NOT_EDITABLE);
+        }
+
         for (UUID sourceId : sourceIds) {
             Source source = sourceRepository.findById(sourceId)
                     .orElseThrow(() -> new AppException(ErrorCode.SOURCE_NOT_FOUND));
@@ -56,6 +61,14 @@ public class SyllabusSourceService {
     // 2. Xóa Source khỏi Syllabus
     @Transactional
     public void removeSourceFromSyllabus(UUID syllabusId, UUID sourceId) {
+
+        Syllabus syllabus = syllabusRepository.findById(syllabusId)
+                .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
+
+        if(!(syllabus.getStatus().equals("DRAFT") || syllabus.getStatus().equals(SyllabusStatus.REVISION_REQUESTED.toString()))) {
+            throw new AppException(ErrorCode.SYLLABUS_NOT_EDITABLE);
+        }
+
         Syllabus_Source mapping = syllabusSourceRepository.findBySyllabus_SyllabusIdAndSource_SourceId(syllabusId, sourceId)
                 .orElseThrow(() -> new AppException(ErrorCode.MAPPING_NOT_FOUND));
 

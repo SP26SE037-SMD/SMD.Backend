@@ -12,4 +12,6 @@ import java.util.UUID;
 public interface SyllabusRepository extends JpaRepository<Syllabus, UUID> {
     @EntityGraph(attributePaths = {"subject"})
     List<Syllabus> findBySubject_SubjectId(UUID subjectId);
+
+    List<Syllabus> findBySubject_SubjectIdAndStatus(UUID subjectId, String status);
 }

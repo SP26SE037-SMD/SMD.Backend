@@ -19,6 +19,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -49,10 +51,11 @@ public class CLOsController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Get detailed information of a CLO by ID")
-    public ResponseObject<CLOsResponse> getDetail(@PathVariable String id) {
+    public ResponseObject<CLOsResponse> getDetail(@PathVariable String id, @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<CLOsResponse>builder()
                 .status(1000)
-                .data(closService.getCloDetail(id))
+                .data(closService.getCloDetail(id, userId))
                 .message("Get CLO detail successfully")
                 .build();
     }
@@ -62,10 +65,12 @@ public class CLOsController {
     public ResponseObject<PagedResponse<CLOsResponse>> getBySubject(
             @PathVariable String subjectId,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "10") int size,
+            @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<PagedResponse<CLOsResponse>>builder()
                 .status(1000)
-                .data(PagedResponse.of(closService.getClosBySubject(subjectId, page, size)))
+                .data(PagedResponse.of(closService.getClosBySubject(subjectId, page, size, userId)))
                 .message("Get CLOs by subject successfully")
                 .build();
     }

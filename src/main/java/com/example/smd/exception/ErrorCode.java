@@ -55,6 +55,8 @@ public enum ErrorCode {
     INVALID_STATUS_INPUT(7007, "Invalid status provided. Please check the allowed list.", HttpStatus.BAD_REQUEST),
     INVALID_CLO_STATUS(7008, "Invalid CLO status transition",
             HttpStatus.BAD_REQUEST),
+    CLO_SUBJECT_NOT_EDITABLE(7009, "CLO can edit when subject status in DRAFT or REVISION_REQUESTED status", HttpStatus.BAD_REQUEST),
+    CLO_NOT_EDITABLE(7010, "CLO can only be modified when the subject is in DRAFT status", HttpStatus.BAD_REQUEST),
 
     // Subject
     SUBJECT_NOT_FOUND(8001, "Subject not found", HttpStatus.NOT_FOUND),
@@ -63,6 +65,7 @@ public enum ErrorCode {
     SUBJECT_CODE_REQUIRED(8004, "Subject code cannot be blank", HttpStatus.BAD_REQUEST),
     SUBJECT_NAME_REQUIRED(8005, "Subject name cannot be blank", HttpStatus.BAD_REQUEST),
     INVALID_SUBJECT_STATUS(8006, "Invalid subject status. Please follow the workflow: DRAFT -> DEFINED -> WAITING_SYLLABUS -> COMPLETED.", HttpStatus.BAD_REQUEST),
+    SUBJECT_NOT_DRAFT(8007, "Subject can only be modified when in DRAFT status", HttpStatus.BAD_REQUEST),
 
     // Gemini
     // AI & External Services (9xxx)
@@ -98,6 +101,7 @@ public enum ErrorCode {
     SUBJECT_ID_REQUIRED(13004, "Subject ID is required", HttpStatus.BAD_REQUEST),
     PREREQUISITE_ID_REQUIRED(13005, "Prerequisite subject ID is required", HttpStatus.BAD_REQUEST),
     PREREQUISITE_CYCLE_DETECTED(13006, "Circular dependency detected: These subjects cannot be prerequisites of each other", HttpStatus.BAD_REQUEST),
+    PREREQUISITE_NOT_DEFINED(13007, "Subject must be in DEFINED status to update prerequisites", HttpStatus.BAD_REQUEST),
 
     //CURRICULUM
     CURRICULUM_NOT_FOUND(10001, "Curriculum not found", HttpStatus.NOT_FOUND),
@@ -144,6 +148,7 @@ public enum ErrorCode {
     //SYLLABUS
     SYLLABUS_NOT_FOUND(18001, "The syllabus does not exist on the system.", HttpStatus.NOT_FOUND),
     INVALID_SYLLABUS_STATUS(18002, "The syllabus status is invalid.", HttpStatus.BAD_REQUEST),
+    SYLLABUS_NOT_EDITABLE(18003, "Syllabus can only be modified when in DRAFT or REVISION_REQUESTED status", HttpStatus.BAD_REQUEST),
 
     //CURRICULUM_GROUP_SUBJECT
     CURRICULUM_GROUP_SUBJECT_ALREADY_EXISTS(20001, "This subject is already added to this curriculum", HttpStatus.BAD_REQUEST),
@@ -210,6 +215,7 @@ public enum ErrorCode {
     //Material
     MATERIAL_NOT_FOUND(25001, "Material not found", HttpStatus.NOT_FOUND),
     INVALID_MATERIAL_STATUS(25002, "Invalid material status", HttpStatus.BAD_REQUEST),
+    MATERIAL_NOT_EDITABLE(18003, "Material can only be modified when in DRAFT or REVISION_REQUESTED status", HttpStatus.BAD_REQUEST),
 
     //Blocks
     BLOCK_NOT_FOUND(27001, "Block content could not be located", HttpStatus.NOT_FOUND),

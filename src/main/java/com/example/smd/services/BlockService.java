@@ -5,6 +5,7 @@ import com.example.smd.dto.response.BlockResponse;
 import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.entities.Blocks;
 import com.example.smd.entities.Material;
+import com.example.smd.enums.SyllabusStatus;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.BlockMapper;
@@ -41,6 +42,10 @@ public class BlockService {
     public List<BlockResponse> createBlocks(UUID materialId, List<BlockRequest> requests) {
         Material material = materialRepository.findById(materialId)
                 .orElseThrow(() -> new AppException(ErrorCode.MATERIAL_NOT_FOUND));
+
+        if(!(material.getStatus().equals("DRAFT") || material.getStatus().equals(SyllabusStatus.REVISION_REQUESTED.toString()))) {
+            throw new AppException(ErrorCode.MATERIAL_NOT_EDITABLE);
+        }
 
         List<Blocks> blocksList = new ArrayList<>();
         for (int i = 0; i < requests.size(); i++) {
@@ -86,6 +91,12 @@ public class BlockService {
     // 4. Delete
     @Transactional
     public void delete(UUID blockId) {
+        Blocks block = blockRepository.findById(blockId)
+                .orElseThrow(() -> new AppException(ErrorCode.BLOCK_NOT_FOUND));
+
+        if(!(block.getMaterial().getStatus().equals("DRAFT") || block.getMaterial().getStatus().equals(SyllabusStatus.REVISION_REQUESTED.toString()))) {
+            throw new AppException(ErrorCode.MATERIAL_NOT_EDITABLE);
+        }
         blockRepository.deleteById(blockId);
     }
 

@@ -82,7 +82,7 @@ public class POsService {
         }
 
         if(!po.getStatus().toUpperCase().equals(PloStatus.DRAFT.toString())) {
-            new AppException(ErrorCode.PO_NOT_DRAFT);
+            throw new AppException(ErrorCode.PO_NOT_DRAFT);
         }
 
         po.setPoCode(request.getPoCode());
@@ -100,13 +100,13 @@ public class POsService {
         var account = accountService.getAccountById(accountId);
         if(account.getRole().getRoleName().equals("STUDENT") ||  account.getRole().getRoleName().equals("LECTURER")) {
             if(!po.getStatus().equals(PloStatus.PUBLISHED.toString())) {
-                new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+                throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
 
         if(po.getStatus().equals(PloStatus.DRAFT.toString())) {
             if(!account.getRole().getRoleName().equals("VP")){
-                new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+                throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
         return poRepository.findById(UUID.fromString(id))

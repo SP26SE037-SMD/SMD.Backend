@@ -5,6 +5,7 @@ import com.example.smd.dto.response.MaterialResponse;
 import com.example.smd.entities.CLOs;
 import com.example.smd.entities.Material;
 import com.example.smd.entities.Syllabus;
+import com.example.smd.enums.PloStatus;
 import com.example.smd.enums.SyllabusStatus;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
@@ -27,6 +28,7 @@ import java.util.UUID;
 public class MaterialService {
     MaterialRepository materialRepository;
     SyllabusRepository syllabusRepository;
+    AccountService accountService;
     MaterialMapper materialMapper;
 
     // 1. Create
@@ -34,6 +36,10 @@ public class MaterialService {
     public MaterialResponse create(MaterialRequest request) {
         Syllabus syllabus = syllabusRepository.findById(request.getSyllabusId())
                 .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
+
+        if(!(syllabus.getStatus().equals("DRAFT") && syllabus.getStatus().equals(SyllabusStatus.REVISION_REQUESTED.toString()))) {
+            throw new AppException(ErrorCode.SYLLABUS_NOT_EDITABLE);
+        }
 
         Material material = materialMapper.toEntity(request);
         material.setStatus("DRAFT");
@@ -48,6 +54,10 @@ public class MaterialService {
     public MaterialResponse update(UUID id, MaterialRequest request) {
         Material material = materialRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.MATERIAL_NOT_FOUND));
+
+        if(!(material.getStatus().equals("DRAFT") && material.getStatus().equals(SyllabusStatus.REVISION_REQUESTED.toString()))) {
+            throw new AppException(ErrorCode.MATERIAL_NOT_EDITABLE);
+        }
 
         materialMapper.updateMaterial(material, request);
 
@@ -78,6 +88,11 @@ public class MaterialService {
             // Kiểm tra xem Material có tồn tại không
             Material material = materialRepository.findById(id)
                     .orElseThrow(() -> new AppException(ErrorCode.MATERIAL_NOT_FOUND));
+
+            if(!(material.getSyllabus().getStatus().equals("DRAFT") && material.getSyllabus().getStatus().equals(SyllabusStatus.REVISION_REQUESTED.toString()))) {
+                throw new AppException(ErrorCode.SYLLABUS_NOT_EDITABLE);
+            }
+
             if(material.getStatus().equals("DRAFT")) {
                 materialRepository.delete(material);
             } else{
@@ -90,12 +105,87 @@ public class MaterialService {
     }
 
     // 5. Get All by SyllabusId
-    public List<MaterialResponse> getAllBySyllabus(UUID syllabusId) {
+    @Transactional
+    public List<MaterialResponse> getAllBySyllabus(UUID syllabusId, String status, String accountId) {
+        // 1. Kiểm tra Syllabus tồn tại
         if (!syllabusRepository.existsById(syllabusId)) {
             throw new AppException(ErrorCode.SYLLABUS_NOT_FOUND);
         }
-        return materialRepository.findAllBySyllabus_SyllabusId(syllabusId).stream()
+
+        // 2. Lấy Role để phân quyền
+        var account = accountService.getAccountById(accountId);
+        String roleName = account.getRole().getRoleName();
+
+        // Chuẩn hóa status đầu vào
+        String finalStatus = (status == null || status.trim().isEmpty()) ? null : status.trim().toUpperCase();
+
+        // 3. Ép buộc Role thấp chỉ được xem PUBLISHED
+        if (roleName.equals("STUDENT") || roleName.equals("LECTURER")) {
+            finalStatus = "PUBLISHED";
+        }
+
+        // 4. Truy vấn dữ liệu
+        List<Material> materials;
+        if (finalStatus != null) {
+            // Tìm theo Syllabus ID và Status cụ thể
+            materials = materialRepository.findAllBySyllabus_SyllabusIdAndStatus(syllabusId, finalStatus);
+        } else {
+            // Nếu không có filter status (chỉ dành cho Role cao), lấy toàn bộ
+            materials = materialRepository.findAllBySyllabus_SyllabusId(syllabusId);
+        }
+
+        return materials.stream()
                 .map(materialMapper::toResponse)
                 .toList();
+    }
+
+    @Transactional
+    public void updateMaterialStatusBySyllabus(String syllabusId, String newStatus) {
+        // 1. Kiểm tra trạng thái hợp lệ từ Enum SyllabusStatus (hoặc MaterialStatus nếu bạn có riêng)
+        SyllabusStatus status;
+        try {
+            status = SyllabusStatus.valueOf(newStatus.toUpperCase());
+        } catch (IllegalArgumentException | NullPointerException e) {
+            throw new AppException(ErrorCode.INVALID_MATERIAL_STATUS);
+        }
+
+        UUID uuidSyllabusId = UUID.fromString(syllabusId);
+
+        // 2. Kiểm tra Syllabus có tồn tại không trước khi update Material
+        if (!syllabusRepository.existsById(uuidSyllabusId)) {
+            throw new AppException(ErrorCode.SYLLABUS_NOT_FOUND);
+        }
+
+        // 3. Cập nhật hàng loạt trạng thái các Materials thuộc Syllabus này
+        // Lưu ý: Material đi theo Syllabus nên ta dùng updateStatusBySyllabusId
+        int affectedRows = materialRepository.updateStatusBySyllabusId(status.toString(), uuidSyllabusId);
+    }
+
+    @Transactional
+    public MaterialResponse getDetail(UUID materialId, String accountId) {
+        // 1. Tìm Material hoặc báo lỗi 404
+        Material material = materialRepository.findById(materialId)
+                .orElseThrow(() -> new AppException(ErrorCode.MATERIAL_NOT_FOUND));
+
+        // 2. Lấy thông tin Account để check Role
+        var account = accountService.getAccountById(accountId);
+        String roleName = account.getRole().getRoleName();
+
+        // 3. Logic Phân quyền:
+        // Nếu là STUDENT hoặc LECTURER, chỉ cho phép xem nếu status là PUBLISHED
+        if (roleName.equals("STUDENT") || roleName.equals("LECTURER")) {
+            if (!"PUBLISHED".equalsIgnoreCase(material.getStatus())) {
+                throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+            }
+        }
+
+        if(material.getStatus().equals("DRAFT")) {
+            if(!(account.getRole().getRoleName().equals("PDCM") || account.getRole().getRoleName().equals("COLLABORATOR"))){
+                throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+            }
+        }
+
+        // 4. Map và trả về Response
+        return materialMapper.toResponse(material);
     }
 }
