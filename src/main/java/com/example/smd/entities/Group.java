@@ -14,7 +14,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
-@Table(name = "\"group\"")
+@Table(name = "group")
 public class Group {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -30,7 +30,7 @@ public class Group {
     String description;
 
     @Column(name = "group_type",length = 20)
-    String type; // Elective / Mandatory 
+    String type; // Elective / Mandatory
 
     @Column(name = "created_at")
     Instant createdAt;
