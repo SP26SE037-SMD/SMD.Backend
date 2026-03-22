@@ -19,6 +19,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @RestController
@@ -32,7 +33,7 @@ public class TaskController {
     TaskService taskService;
 
     @PostMapping
-    @Operation(summary = "Create a new task")
+    @Operation(summary = "Create a new task", description = "accountId và taskName là bắt buộc. sprintId bắt buộc cho tất cả người dùng.")
     public ResponseObject<TaskResponse> create(@RequestBody @Valid TaskRequest request) {
         return ResponseObject.<TaskResponse>builder()
                 .data(taskService.create(request))
@@ -102,7 +103,7 @@ public class TaskController {
     }
 
     @PatchMapping("/{id}/status")
-    @Operation(summary = "Update task status", description = "Allowed values: To Do, In Progress, Done")
+        @Operation(summary = "Update task status", description = "Accepted values: TODO | TO_DO | To Do | IN_PROGRESS | In Progress | IN_REVIEW | In Review | DONE | Done | BLOCKED | Blocked | CANCELLED | Cancelled")
     public ResponseObject<TaskResponse> updateStatus(
             @PathVariable UUID id,
             @RequestParam String status) {
@@ -111,4 +112,22 @@ public class TaskController {
                 .message("Task status updated successfully")
                 .build();
     }
+
+        @GetMapping("/status-options")
+        @Operation(summary = "Get normalized task status options", description = "Danh sách status chuẩn hóa và input alias được chấp nhận")
+        public ResponseObject<List<String>> getStatusOptions() {
+                return ResponseObject.<List<String>>builder()
+                                .data(taskService.getNormalizedStatusOptions())
+                                .message("Task status options retrieved successfully")
+                                .build();
+        }
+
+        @GetMapping("/curriculums")
+        @Operation(summary = "Get curriculum IDs by accountId", description = "Trả về danh sách curriculumId duy nhất từ các task theo accountId")
+        public ResponseObject<Set<UUID>> getCurriculumIdsByAccountId(@RequestParam UUID accountId) {
+                return ResponseObject.<Set<UUID>>builder()
+                                .data(taskService.getCurriculumIdsByAccountId(accountId))
+                                .message("Curriculum IDs retrieved successfully")
+                                .build();
+        }
 }

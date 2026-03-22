@@ -3,7 +3,9 @@ package com.example.smd.entities;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import java.util.List;
+
+import java.time.Instant;
+import java.time.LocalDate;
 import java.util.UUID;
 
 @Getter
@@ -19,18 +21,22 @@ public class Task {
     UUID taskId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "sprint_id", nullable = false)
+    @JoinColumn(name = "sprint_id")
     Sprint sprint;
 
     // Người được giao việc
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "assigned_to")
+    @JoinColumn(name = "assigned_to", nullable = false)
     Account account;
 
     // Task này liên quan đến Syllabus nào? (Optional)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "syllabus_id")
     Syllabus syllabus;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "curriculum_id")
+    Curriculum curriculum;
 
     @Column(name = "task_name", nullable = false, length = 150)
     String taskName;
@@ -45,5 +51,21 @@ public class Task {
     String priority;
 
     @Column(name = "due_date")
-    java.time.Instant deadline;
+    LocalDate deadline;
+
+    @Column(name = "completed_at")
+    LocalDate completedAt;
+
+    @Column(name = "created_at")
+    LocalDate createdAt;
+
+    @Column(name = "task_type", length = 50)
+    String type;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDate.now();
+    }
+
+
 }

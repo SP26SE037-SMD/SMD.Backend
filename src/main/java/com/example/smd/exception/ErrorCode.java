@@ -170,7 +170,8 @@ public enum ErrorCode {
     SPRINT_ID_REQUIRED(25004, "Sprint ID is required", HttpStatus.BAD_REQUEST),
     PRIORITY_TOO_LONG(25005, "Priority must not exceed 20 characters", HttpStatus.BAD_REQUEST),
     TASK_LIST_REQUIRED(25006, "Task list is required", HttpStatus.BAD_REQUEST),
-    INVALID_TASK_STATUS(25007, "Invalid task status. Allowed values: To Do, In Progress, Done", HttpStatus.BAD_REQUEST),
+    INVALID_TASK_STATUS(25007, "Invalid task status. Allowed values: To Do, In Progress, In Review, Done, Blocked, Cancelled", HttpStatus.BAD_REQUEST),
+    TASK_TYPE_TOO_LONG(25008, "Task type must not exceed 50 characters", HttpStatus.BAD_REQUEST),
 
     // SOURCE
     SOURCE_NOT_FOUND(24001, "Source not found", HttpStatus.NOT_FOUND),

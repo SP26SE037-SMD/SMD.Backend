@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import java.time.Instant;
+import java.time.LocalDate;
 import java.util.UUID;
 
 @Data
@@ -17,11 +17,19 @@ public class TaskResponse {
     UUID sprintId;
     UUID accountId;
     UUID syllabusId;
+    UUID curriculumId;
     String taskName;
     String description;
     String status;
     String priority;
+    String type;
 
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+7")
-    Instant deadline;
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    LocalDate deadline;
+
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    LocalDate completedAt;
+
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    LocalDate createdAt;
 }
