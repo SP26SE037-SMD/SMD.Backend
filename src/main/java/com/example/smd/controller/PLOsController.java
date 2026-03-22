@@ -62,7 +62,7 @@ public class PLOsController {
     }
 
     @GetMapping("/curriculum/{curriculumId}")
-    @Operation(summary = "Get PLOs by Major ID")
+    @Operation(summary = "Get PLOs by Curriculum ID")
     public ResponseObject<PagedResponse<PLOsResponse>> getByCurriculum(
             @PathVariable String curriculumId,
             @RequestParam(defaultValue = "0") int page,

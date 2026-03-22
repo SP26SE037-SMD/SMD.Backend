@@ -3,6 +3,7 @@ package com.example.smd.controller;
 import com.example.smd.dto.request.SyllabusActionLogRequest;
 import com.example.smd.dto.request.SyllabusRequest;
 import com.example.smd.dto.response.ComparisonResult;
+import com.example.smd.dto.response.ImpactResponse;
 import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.dto.response.syllabus.SyllabusResponse;
 import com.example.smd.enums.SyllabusActionType;
@@ -20,6 +21,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -155,5 +157,20 @@ public class SyllabusController {
 
         // Trả về mã 200 OK kèm cục dữ liệu phân tích
         return ResponseEntity.ok(analysis);
+    }
+
+    @PostMapping("/check-impact")
+    public ResponseEntity<List<ImpactResponse>> checkProgramImpact(
+            @RequestParam("rootId") UUID rootId,
+            @RequestBody List<String> removedConcepts) {
+
+        // Gọi Service để quét qua toàn bộ chuỗi môn học phụ thuộc
+        List<ImpactResponse> impactReports = new ArrayList<>();
+        for (String removedConcept : removedConcepts) {
+            var response = embeddingService.checkImpact(removedConcept, rootId);
+            impactReports.add(response);
+        }
+
+        return ResponseEntity.ok(impactReports);
     }
 }

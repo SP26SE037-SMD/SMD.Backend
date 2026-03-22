@@ -5,6 +5,7 @@ import com.example.smd.dto.request.BlockRequest;
 import com.example.smd.dto.request.clo.CloCheckRequest;
 import com.example.smd.dto.request.clo.CloGenerationRequest;
 import com.example.smd.dto.response.ComparisonResult;
+import com.example.smd.dto.response.ImpactResponse;
 import com.example.smd.dto.response.clo.CLOsGenerationResponse;
 import com.example.smd.dto.response.clo.CloCheckResponse;
 import com.example.smd.dto.response.syllabus.SyllabusStructureResponse;
@@ -106,14 +107,15 @@ public class GeminiService {
 
     @Transactional
     public List<Double> getEmbeddingVector(String text) {
-//        try {
+        try {
             List<Double> vector = gemini.getEmbedding(text, apiEmbeddingUrl);
             return vector;
-//        } catch (Exception e) {
-//            throw new AppException(ErrorCode.EMBEDDING_FAILED);
-//        }
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.EMBEDDING_FAILED);
+        }
     }
 
+    @Transactional
     public ComparisonResult compareSyllabus(SyllabusStructureResponse oldStruct, SyllabusStructureResponse newStruct) {
         try {
             // 2. Convert sang JSON String để nhét vào Prompt
@@ -135,6 +137,13 @@ public class GeminiService {
         } catch (Exception e) {
             throw new RuntimeException("Failed to analyze syllabus differences");
         }
+    }
+
+    public String determineImapact(String gapConcept, String contextText){
+        String prompt = String.format(PromptTemplateService.DETERMINE_IMPACT,
+                gapConcept,
+                contextText);
+        return gemini.prompt(prompt, apiGenerateUrl);
     }
 
     private String cleanJsonBlock(String response) {

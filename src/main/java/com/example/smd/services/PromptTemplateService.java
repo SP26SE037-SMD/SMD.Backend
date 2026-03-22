@@ -46,22 +46,44 @@ public class PromptTemplateService {
                     "}";
 
     public static final String COMPARISON_PROMPT = """
-    Role: Bạn là chuyên gia thẩm định giáo trình (Curriculum Auditor).
-    
-    Nhiệm vụ: So sánh 2 cấu trúc môn học dưới đây để tìm ra SỰ THAY ĐỔI VỀ KIẾN THỨC (Knowledge Delta).
-    
-    --- OLD SYLLABUS (Môn Cũ) ---
-    %s
-    
-    --- NEW SYLLABUS (Môn Mới) ---
-    %s
-    
-    Yêu cầu Output: Trả về duy nhất 1 JSON object (không markdown, không giải thích) theo định dạng:
-    {
-      "removed_concepts": ["List các concept kỹ thuật bị xóa"],
-      "added_concepts": ["List các concept mới thêm vào"],
-      "risk_assessment": "HIGH/MEDIUM/LOW",
-      "risk_reason": "Giải thích ngắn gọn tại sao rủi ro."
-    }
-    """;
+Role: Bạn là chuyên gia thẩm định giáo trình (Curriculum Auditor) cấp cao.
+
+Nhiệm vụ: Phân tích sâu 2 cấu trúc JSON của giáo trình dưới đây. Hãy xác định những khái niệm kiến thức (concepts) nào đã bị loại bỏ và những khái niệm nào mới được đưa vào.
+
+--- DỮ LIỆU GIÁO TRÌNH ---
+[OLD SYLLABUS]:
+%s
+
+[NEW SYLLABUS]:
+%s
+
+Tiêu chuẩn phân tích:
+1. Tập trung vào các thuật ngữ chuyên môn, công nghệ và nguyên lý (ví dụ: Dependency Injection, SOLID, Java I/O).
+2. Nếu một khái niệm chỉ được viết lại bằng câu chữ khác nhưng ý nghĩa không đổi, ĐỪNG liệt kê vào Delta.
+3. 'risk_assessment' đánh giá dựa trên việc: Nếu sinh viên học môn cũ mà không có môn mới, họ sẽ bị hổng bao nhiêu kiến thức nền tảng quan trọng.
+
+Yêu cầu Output: Trả về DUY NHẤT 1 JSON object (không ```json, không text thừa) đúng cấu trúc:
+{
+  "removed_concepts": ["concept A", "concept B"],
+  "added_concepts": ["concept C", "concept D"],
+  "risk_assessment": "HIGH/MEDIUM/LOW",
+  "risk_reason": "Giải thích ngắn gọn bằng tiếng Việt về tác động của sự thay đổi."
+}
+""";
+
+    public static final String DETERMINE_IMPACT = """
+            Bạn là một chuyên gia phân tích chương trình đào tạo (Syllabus Analyst).
+            Tôi có một khái niệm kiến thức bị thiếu từ môn học trước là: "%s".
+            Dưới đây là nội dung tìm thấy trong môn học hiện tại:
+            ---
+            %s
+            ---
+            Dựa trên nội dung trên, hãy phân loại mối quan hệ của khái niệm này với môn học hiện tại theo 2 nhãn sau:
+            
+            1. 'RESOLVED': Nếu nội dung trên thực sự giảng dạy, giải thích định nghĩa hoặc hướng dẫn chi tiết lại khái niệm này cho sinh viên. (Đóng vai trò là phần bù đắp kiến thức).
+            
+            2. 'REQUIRED': Nếu nội dung trên chỉ yêu cầu sinh viên sử dụng, áp dụng khái niệm này để làm bài tập/dự án mà không giảng dạy lại lý thuyết. (Đóng vai trò là điều kiện tiên quyết).
+
+            Chỉ trả về duy nhất một từ là 'RESOLVED' hoặc 'REQUIRED'. Không giải thích gì thêm.
+            """;
 }
