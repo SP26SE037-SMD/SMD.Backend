@@ -30,7 +30,7 @@ public class Group {
     String description;
 
     @Column(name = "group_type",length = 20)
-    String type; // Elective / Mandatory 
+    String type; // Elective / Mandatory
 
     @Column(name = "created_at")
     Instant createdAt;
