@@ -35,7 +35,6 @@ public enum ErrorCode {
     MAJOR_CODE_TOO_LONG(5005, "Major code must not exceed 20 characters", HttpStatus.BAD_REQUEST),
     INVALID_MAJOR_STATUS(5006, "Invalid Major status transition", HttpStatus.BAD_REQUEST),
     MAJOR_NOT_DRAFT(5007, "Major can only be modified when in DRAFT status", HttpStatus.BAD_REQUEST),
-    ACCESS_DENIED_FOR_ROLE(5008, "Your role does not have permission to view this content", HttpStatus.FORBIDDEN),
 
     //PLOs
     PLO_NOT_FOUND(6001, "PLO not found", HttpStatus.NOT_FOUND),
@@ -43,6 +42,7 @@ public enum ErrorCode {
     PLO_CODE_REQUIRED(6003, "PLO code is required", HttpStatus.BAD_REQUEST),
     PLO_IN_USE(6004, "Cannot delete PLO because it is currently linked to courses", HttpStatus.CONFLICT),
     INVALID_PLO_STATUS(6005, "Invalid PLO status transition", HttpStatus.BAD_REQUEST),
+    PLO_NOT_DRAFT(6006, "PLO can only be modified when in DRAFT status", HttpStatus.BAD_REQUEST),
 
     //CLOs
     // CLO (Course Learning Outcomes)
@@ -153,6 +153,7 @@ public enum ErrorCode {
     PO_LIST_EMPTY(21003, "The provided PO list is empty", HttpStatus.BAD_REQUEST),
     PO_IN_USE(21004, "PO is currently mapped to PLOs and cannot be deleted", HttpStatus.CONFLICT),
     INVALID_PO_STATUS(21005, "Invalid PO status transition", HttpStatus.BAD_REQUEST),
+    PO_NOT_DRAFT(21006, "PO can only be modified when in DRAFT status", HttpStatus.BAD_REQUEST),
 
     // PO_PLO_MAPPING
     PO_PLO_MAPPING_NOT_FOUND(22001, "PO-PLO mapping not found", HttpStatus.NOT_FOUND),
@@ -215,6 +216,7 @@ public enum ErrorCode {
     // General
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),
     INVALID_KEY(1000, "Invalid message key", HttpStatus.BAD_REQUEST),
+    ACCESS_DENIED_FOR_ROLE(8888, "Your role does not have permission to view this content", HttpStatus.FORBIDDEN),
     ;
 
     private final int code;

@@ -14,6 +14,8 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -53,10 +55,11 @@ public class PLOsController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Get PLO Detail")
-    public ResponseObject<PLOsResponse> getDetail(@PathVariable String id) {
+    public ResponseObject<PLOsResponse> getDetail(@PathVariable String id, @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<PLOsResponse>builder()
                 .status(1000)
-                .data(ploService.getPloDetail(id))
+                .data(ploService.getPloDetail(id, userId))
                 .message("Get PLO detail successfully")
                 .build();
     }
@@ -66,10 +69,12 @@ public class PLOsController {
     public ResponseObject<PagedResponse<PLOsResponse>> getByCurriculum(
             @PathVariable String curriculumId,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "10") int size,
+            @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<PagedResponse<PLOsResponse>>builder()
                 .status(1000)
-                .data(PagedResponse.of(ploService.getPlosByCurriculum(curriculumId, page, size)))
+                .data(PagedResponse.of(ploService.getPlosByCurriculum(curriculumId, page, size, userId)))
                 .message("Get PLOs by major successfully")
                 .build();
     }
