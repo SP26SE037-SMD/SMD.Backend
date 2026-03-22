@@ -16,6 +16,7 @@ public class SubjectSimpleResponse {
     UUID subjectId;
     String subjectCode;
     String subjectName;
+    String status;
     Integer credits;
     Integer semester;
 }

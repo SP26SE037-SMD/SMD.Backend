@@ -4,9 +4,11 @@ import com.example.smd.dto.request.task.BatchTaskRequest;
 import com.example.smd.dto.request.task.TaskRequest;
 import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.ResponseObject;
+import com.example.smd.dto.response.task.TaskCurriculumResponse;
 import com.example.smd.dto.response.task.TaskResponse;
 import com.example.smd.services.TaskService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -19,7 +21,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 @RestController
@@ -122,12 +123,19 @@ public class TaskController {
                                 .build();
         }
 
-        @GetMapping("/curriculums")
-        @Operation(summary = "Get curriculum IDs by accountId", description = "Trả về danh sách curriculumId duy nhất từ các task theo accountId")
-        public ResponseObject<Set<UUID>> getCurriculumIdsByAccountId(@RequestParam UUID accountId) {
-                return ResponseObject.<Set<UUID>>builder()
-                                .data(taskService.getCurriculumIdsByAccountId(accountId))
-                                .message("Curriculum IDs retrieved successfully")
-                                .build();
-        }
+    @GetMapping("/curriculums")
+    @Operation(
+            summary = "Get curriculums by accountId",
+            description = "Trả về danh sách curriculum duy nhất từ task theo accountId, có thể lọc thêm theo curriculum status"
+    )
+    public ResponseObject<List<TaskCurriculumResponse>> getCurriculumIdsByAccountId(
+            @RequestParam UUID accountId,
+            @Parameter(description = "Curriculum status (optional)")
+            @RequestParam(name = "status", required = false) String curriculumStatus
+    ) {
+        return ResponseObject.<List<TaskCurriculumResponse>>builder()
+                .data(taskService.getCurriculumIdsByAccountId(accountId, curriculumStatus))
+                .message("Curriculums retrieved successfully")
+                .build();
+    }
 }

@@ -3,6 +3,7 @@ package com.example.smd.services;
 import com.example.smd.dto.request.task.BatchTaskRequest;
 import com.example.smd.dto.request.task.TaskItemRequest;
 import com.example.smd.dto.request.task.TaskRequest;
+import com.example.smd.dto.response.task.TaskCurriculumResponse;
 import com.example.smd.dto.response.task.TaskResponse;
 import com.example.smd.entities.Account;
 import com.example.smd.entities.Curriculum;
@@ -229,11 +230,28 @@ public class TaskService {
     }
 
     @Transactional(readOnly = true)
-    public Set<UUID> getCurriculumIdsByAccountId(UUID accountId) {
+    public List<TaskCurriculumResponse> getCurriculumIdsByAccountId(UUID accountId, String curriculumStatus) {
         if (!accountRepository.existsById(accountId)) {
             throw new AppException(ErrorCode.ACCOUNT_NOT_FOUND);
         }
-        return taskRepository.findDistinctCurriculumIdsByAccountId(accountId);
+
+        String normalizedStatus = curriculumStatus == null ? null : curriculumStatus.trim();
+        if (normalizedStatus != null && normalizedStatus.isEmpty()) {
+            normalizedStatus = null;
+        }
+
+        List<Curriculum> curriculums =
+                taskRepository.findDistinctCurriculumsByAccountIdAndStatus(accountId, normalizedStatus);
+
+        return curriculums.stream()
+                .map(curriculum -> TaskCurriculumResponse.builder()
+                        .curriculumId(curriculum.getCurriculumId())
+                        .curriculumCode(curriculum.getCurriculumCode())
+                        .curriculumName(curriculum.getCurriculumName())
+                        .startYear(curriculum.getStartYear())
+                        .status(curriculum.getStatus())
+                        .build())
+                .toList();
     }
 
     @Transactional(readOnly = true)

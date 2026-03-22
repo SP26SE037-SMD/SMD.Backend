@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -159,198 +160,6 @@ public class CurriculumGroupSubjectService {
     }
 
     /**
-     * Bulk configure semester mappings for a curriculum
-     * Atomically inserts multiple subject-semester-group mappings
-     */
-    @Transactional
-    public BulkSemesterMappingResponse bulkConfigureSemesterMappings(
-            BulkSemesterMappingRequest request) {
-        log.info("Starting bulk semester mapping configuration for curriculum: {}",
-                 request.getCurriculumId());
-
-        // Initialize response builder
-        var responseBuilder = BulkSemesterMappingResponse.builder()
-                .curriculumId(request.getCurriculumId())
-                .mappingsBySemester(new java.util.HashMap<>())
-                .errors(new ArrayList<>())
-                .warnings(new ArrayList<>());
-
-        // Phase 1: Validate Curriculum exists
-        Curriculum curriculum = curriculumRepository.findById(request.getCurriculumId())
-                .orElseThrow(() -> {
-                    var error = BulkSemesterMappingResponse.MappingError.builder()
-                            .errorCode("CURRICULUM_NOT_FOUND")
-                            .errorMessage("Curriculum not found")
-                            .details("CurriculumId: " + request.getCurriculumId())
-                            .build();
-                    responseBuilder.success(false).errors(List.of(error));
-                    return new AppException(ErrorCode.CURRICULUM_NOT_FOUND);
-                });
-
-        List<BulkSemesterMappingResponse.MappingError> validationErrors = new ArrayList<>();
-        List<String> warnings = new ArrayList<>();
-        int totalMappingsCreated = 0;
-        var mappingsBySemester = new java.util.HashMap<Integer, Integer>();
-
-        // Phase 2: Validate all mappings before creating any
-        java.util.Set<String> processingKeys = new java.util.HashSet<>();
-
-        for (BulkSemesterMappingRequest.SemesterMappingDTO semMapping : request.getSemesterMappings()) {
-            for (BulkSemesterMappingRequest.SubjectGroupMappingDTO subMapping : semMapping.getSubjects()) {
-                String processingKey = String.valueOf(subMapping.getSubjectId());
-
-                // Check duplicate in same request
-                if (!processingKeys.add(processingKey)) {
-                    var error = BulkSemesterMappingResponse.MappingError.builder()
-                            .errorCode("DUPLICATE_MAPPING_IN_REQUEST")
-                            .errorMessage("Duplicate subject found in request for the same curriculum")
-                            .semesterNo(semMapping.getSemesterNo())
-                            .subjectId(subMapping.getSubjectId())
-                            .groupId(subMapping.getGroupId())
-                            .build();
-                    validationErrors.add(error);
-                    continue;
-                }
-
-                // Validate Subject
-                Subject subject = subjectRepository.findById(subMapping.getSubjectId())
-                        .orElseGet(() -> {
-                            var error = BulkSemesterMappingResponse.MappingError.builder()
-                                    .errorCode("SUBJECT_NOT_FOUND")
-                                    .errorMessage("Subject not found")
-                                    .semesterNo(semMapping.getSemesterNo())
-                                    .subjectId(subMapping.getSubjectId())
-                                    .build();
-                            validationErrors.add(error);
-                            return null;
-                        });
-
-                if (subject == null) continue;
-
-                // Validate Group if provided (not null)
-                Group group = null;
-                if (subMapping.getGroupId() != null) {
-                    group = groupRepository.findById(subMapping.getGroupId())
-                            .orElseGet(() -> {
-                                var error = BulkSemesterMappingResponse.MappingError.builder()
-                                        .errorCode("GROUP_NOT_FOUND")
-                                        .errorMessage("Group not found")
-                                        .semesterNo(semMapping.getSemesterNo())
-                                        .groupId(subMapping.getGroupId())
-                                        .build();
-                                validationErrors.add(error);
-                                return null;
-                            });
-
-                    if (group == null) continue;
-
-            // Check group thuộc curriculum dựa trên bảng Curriculum_Group_Subject
-//            if (!curriculumGroupSubjectRepository.existsByCurriculumAndGroup(
-//                request.getCurriculumId(),
-//                subMapping.getGroupId())) {
-//                        var error = BulkSemesterMappingResponse.MappingError.builder()
-//                                .errorCode("GROUP_NOT_IN_CURRICULUM")
-//                                .errorMessage("Group does not belong to this curriculum")
-//                                .semesterNo(semMapping.getSemesterNo())
-//                                .groupId(subMapping.getGroupId())
-//                                .build();
-//                        validationErrors.add(error);
-//                        continue;
-//                    }
-                }
-
-                // Check if mapping already exists
-                boolean exists = curriculumGroupSubjectRepository.existsByCurriculumAndSubject(
-                    request.getCurriculumId(),
-                    subMapping.getSubjectId()
-                );
-
-                if (exists) {
-                    var error = BulkSemesterMappingResponse.MappingError.builder()
-                        .errorCode("CURRICULUM_GROUP_SUBJECT_ALREADY_EXISTS")
-                        .errorMessage("Subject already exists in this curriculum")
-                        .semesterNo(semMapping.getSemesterNo())
-                        .subjectId(subMapping.getSubjectId())
-                        .groupId(subMapping.getGroupId())
-                        .build();
-                    validationErrors.add(error);
-                }
-            }
-        }
-
-        // If there are validation errors, return early
-        if (!validationErrors.isEmpty()) {
-            log.warn("Validation errors found during bulk mapping: {} errors", validationErrors.size());
-            return responseBuilder
-                    .success(false)
-                    .errors(validationErrors)
-                    .warnings(warnings)
-                    .build();
-        }
-
-        // Phase 3: Create and save mappings (Transaction guaranteed)
-        try {
-            List<Curriculum_Group_Subject> entitiesToSave = new ArrayList<>();
-
-            for (BulkSemesterMappingRequest.SemesterMappingDTO semMapping : request.getSemesterMappings()) {
-                for (BulkSemesterMappingRequest.SubjectGroupMappingDTO subMapping : semMapping.getSubjects()) {
-                    // Skip if subject or group validation failed
-                    if (!subjectRepository.existsById(subMapping.getSubjectId())) {
-                        continue;
-                    }
-
-                    if (subMapping.getGroupId() != null &&
-                        !groupRepository.existsById(subMapping.getGroupId())) {
-                        continue;
-                    }
-
-                    Subject subject = subjectRepository.getReferenceById(subMapping.getSubjectId());
-                    Group group = subMapping.getGroupId() != null ?
-                                  groupRepository.getReferenceById(subMapping.getGroupId()) : null;
-
-                    Curriculum_Group_Subject entity = Curriculum_Group_Subject.builder()
-                            .curriculum(curriculum)
-                            .semester(semMapping.getSemesterNo())
-                            .subject(subject)
-                            .group(group)
-                            .build();
-
-                    entitiesToSave.add(entity);
-
-                    // Update semester mapping counter
-                    mappingsBySemester.merge(semMapping.getSemesterNo(), 1, Integer::sum);
-                    totalMappingsCreated++;
-                }
-            }
-
-            // Save all at once
-            curriculumGroupSubjectRepository.saveAll(entitiesToSave);
-            log.info("Successfully created {} curriculum-group-subject mappings for curriculum: {}",
-                     totalMappingsCreated, request.getCurriculumId());
-
-            return responseBuilder
-                    .success(true)
-                    .totalMappingsCreated(totalMappingsCreated)
-                    .totalSemestersMapped(mappingsBySemester.size())
-                    .mappingsBySemester(mappingsBySemester)
-                    .warnings(warnings.isEmpty() ? null : warnings)
-                    .build();
-
-        } catch (Exception e) {
-            log.error("Error during bulk mapping insertion: {}", e.getMessage(), e);
-            var error = BulkSemesterMappingResponse.MappingError.builder()
-                    .errorCode("DATABASE_ERROR")
-                    .errorMessage("Error during database insertion")
-                    .details(e.getMessage())
-                    .build();
-            return responseBuilder
-                    .success(false)
-                    .errors(List.of(error))
-                    .build();
-        }
-    }
-
-    /**
      * Bulk update-like configure for semester mappings.
      * Rule: duplicate subject in the same curriculum is only inserted when groupId is not null.
      * If duplicate subject has null groupId, skip that item and continue processing remaining items.
@@ -359,6 +168,13 @@ public class CurriculumGroupSubjectService {
     public BulkSemesterMappingResponse bulkConfigureSemesterMappingsPut(BulkSemesterMappingRequest request) {
         Curriculum curriculum = curriculumRepository.findById(request.getCurriculumId())
                 .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));
+
+        if (request.getDeleteSubjectsList() != null && !request.getDeleteSubjectsList().isEmpty()) {
+            curriculumGroupSubjectRepository.deleteByCurriculumIdAndSubjectIds(
+                request.getCurriculumId(),
+                request.getDeleteSubjectsList()
+            );
+        }
 
         List<String> warnings = new ArrayList<>();
         List<BulkSemesterMappingResponse.MappingError> errors = new ArrayList<>();
@@ -529,5 +345,46 @@ public class CurriculumGroupSubjectService {
                 .curriculumId(curriculumUUID)
                 .semesterMappings(semesterMappings)
                 .build();
+    }
+
+    @Transactional(readOnly = true)
+    public List<SubjectSimpleResponse> getSubjectsByCurriculumStatusAndDepartment(
+            String curriculumId,
+            String status,
+            String departmentId
+    ) {
+        UUID curriculumUUID;
+        UUID departmentUUID;
+
+        try {
+            curriculumUUID = UUID.fromString(curriculumId);
+            departmentUUID = UUID.fromString(departmentId);
+        } catch (IllegalArgumentException e) {
+            throw new AppException(ErrorCode.INVALID_KEY);
+        }
+
+        Curriculum curriculum = curriculumRepository.findById(curriculumUUID)
+                .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));
+
+        if (status != null && !status.isBlank() &&
+                (curriculum.getStatus() == null || !curriculum.getStatus().equalsIgnoreCase(status.trim()))) {
+            return Collections.emptyList();
+        }
+
+        List<Curriculum_Group_Subject> mappings =
+                curriculumGroupSubjectRepository.findByCurriculumIdAndDepartmentId(curriculumUUID, departmentUUID);
+
+        return mappings.stream()
+                .map(ccs -> {
+                    Subject subject = ccs.getSubject();
+                    return SubjectSimpleResponse.builder()
+                            .subjectId(subject.getSubjectId())
+                            .subjectCode(subject.getSubjectCode())
+                            .subjectName(subject.getSubjectName())
+                            .status(subject.getStatus())
+                            .semester(ccs.getSemester())
+                            .build();
+                })
+                .toList();
     }
 }
