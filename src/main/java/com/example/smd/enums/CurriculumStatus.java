@@ -9,7 +9,7 @@ public enum CurriculumStatus {
     DRAFT,
 
     @Schema(description = "Structure Reviewed: Approved by Vice President (VP) to continue internal development")
-    STRUCTURE_REVIEWED,
+    STRUCTURE_REVIEW,
 
     @Schema(description = "Syllabus Developing: HoC/FDC and Departments are creating detailed syllabuses")
     SYLLABUS_DEVELOPING,
