@@ -15,6 +15,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.data.domain.Page;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -44,7 +46,7 @@ public class CurriculumController {
             @Parameter(description = "Search by: 'code', 'name', or 'all'")
             @RequestParam(required = false) String searchBy,
 
-            @Parameter(description = "Filter by status: ACTIVE, INACTIVE, DRAFT, ARCHIVED")
+            @Parameter(description = "Filter by status: DRAFT, STRUCTURE_REVIEWED, SYLLABUS_DEVELOPING, FINAL_REVIEW, SIGNED, PUBLISHED, ARCHIVED")
             @RequestParam(required = false) String status,
 
             @Parameter(description = "Page number (0-based)")
@@ -54,10 +56,13 @@ public class CurriculumController {
             @RequestParam(defaultValue = "10") int size,
 
             @Parameter(description = "Sort field and direction: [field, asc|desc]")
-            @RequestParam(defaultValue = "curriculumCode,asc") String[] sort
+            @RequestParam(defaultValue = "curriculumCode,asc") String[] sort,
+
+            @AuthenticationPrincipal Jwt jwt
     ) {
+        String userId = jwt.getClaimAsString("accountId");
         Page<CurriculumResponse> curriculums = curriculumService.getAllCurriculums(
-                search, searchBy, status, page, size, sort
+                search, searchBy, status, page, size, sort, userId
         );
 
         return ResponseObject.<PagedResponse<CurriculumResponse>>builder()
@@ -96,11 +101,13 @@ public class CurriculumController {
     )
     public ResponseObject<CurriculumResponse> getCurriculumDetail(
             @Parameter(description = "Curriculum ID (UUID)")
-            @PathVariable String id
+            @PathVariable String id,
+            @AuthenticationPrincipal Jwt jwt
     ) {
+        String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<CurriculumResponse>builder()
                 .status(1000)
-                .data(curriculumService.getCurriculumDetail(id))
+                .data(curriculumService.getCurriculumDetail(id, userId))
                 .message("Get curriculum detail successfully")
                 .build();
     }

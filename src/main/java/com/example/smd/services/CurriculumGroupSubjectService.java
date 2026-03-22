@@ -454,7 +454,7 @@ public class CurriculumGroupSubjectService {
 
         if (!entitiesToSave.isEmpty()) {
             curriculumGroupSubjectRepository.saveAll(entitiesToSave);
-g        }
+        }
 
         return BulkSemesterMappingResponse.builder()
                 .success(errors.isEmpty())
