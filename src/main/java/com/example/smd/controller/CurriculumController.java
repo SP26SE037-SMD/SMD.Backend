@@ -46,7 +46,18 @@ public class CurriculumController {
             @Parameter(description = "Search by: 'code', 'name', or 'all'")
             @RequestParam(required = false) String searchBy,
 
-            @Parameter(description = "Filter by status: DRAFT, STRUCTURE_REVIEWED, SYLLABUS_DEVELOPING, FINAL_REVIEW, SIGNED, PUBLISHED, ARCHIVED")
+            @Parameter(
+                    description = "Filter curriculums by their current lifecycle status. Valid values are:\n" +
+                            "| Status | Description |\n" +
+                            "| :--- | :--- |\n" +
+                            "| **DRAFT** | **Biên soạn nháp:** Initial creation by HoC/FDC, not visible to other roles. |\n" +
+                            "| **STRUCTURE_REVIEWED** | **Duyệt cấu trúc:** Approved by VP to continue internal detailed development. |\n" +
+                            "| **SYLLABUS_DEVELOPING**| **Phát triển Syllabus:** HoC and Departments are creating detailed course syllabuses. |\n" +
+                            "| **FINAL_REVIEW** | **Thẩm định cuối:** Overall content review before submitting for official signing. |\n" +
+                            "| **SIGNED** | **Đã ký ban hành:** Officially enacted by the Vice President. |\n" +
+                            "| **PUBLISHED** | **Công bố:** Curriculum and all linked Syllabuses are now public and viewable. |\n" +
+                            "| **ARCHIVED** | **Lưu trữ:** Old version, no longer in use for new student intakes. |"
+            )
             @RequestParam(required = false) String status,
 
             @Parameter(description = "Page number (0-based)")
@@ -122,11 +133,13 @@ public class CurriculumController {
     )
     public ResponseObject<CurriculumResponse> getCurriculumByCode(
             @Parameter(description = "Curriculum code")
-            @PathVariable String code
+            @PathVariable String code,
+            @AuthenticationPrincipal Jwt jwt
     ) {
+        String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<CurriculumResponse>builder()
                 .status(1000)
-                .data(curriculumService.getCurriculumByCode(code))
+                .data(curriculumService.getCurriculumByCode(code, userId))
                 .message("Get curriculum by code successfully")
                 .build();
     }
@@ -202,6 +215,16 @@ public class CurriculumController {
                 .status(1000)
                 .data(curriculumService.updateCurriculumEndYear(id, endYear))
                 .message("Curriculum end-year updated successfully")
+                .build();
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('CURRICULUM_DELETE')")
+    @Operation(summary = "Soft delete curriculum", description = "Sets curriculum status to inactive instead of hard deleting from database")
+    public ResponseObject<Void> delete(@PathVariable UUID id) {
+        curriculumService.delete(id);
+        return ResponseObject.<Void>builder()
+                .message("Curriculum deleted successfully")
                 .build();
     }
 }

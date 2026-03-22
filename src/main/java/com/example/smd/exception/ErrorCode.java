@@ -63,6 +63,7 @@ public enum ErrorCode {
     SUBJECT_CODE_REQUIRED(8004, "Subject code cannot be blank", HttpStatus.BAD_REQUEST),
     SUBJECT_NAME_REQUIRED(8005, "Subject name cannot be blank", HttpStatus.BAD_REQUEST),
     INVALID_SUBJECT_STATUS(8006, "Invalid subject status. Please follow the workflow: DRAFT -> DEFINED -> WAITING_SYLLABUS -> COMPLETED.", HttpStatus.BAD_REQUEST),
+    SUBJECT_NOT_DRAFT(8007, "Subject can only be modified when in DRAFT status", HttpStatus.BAD_REQUEST),
 
     // Gemini
     // AI & External Services (9xxx)
@@ -144,6 +145,7 @@ public enum ErrorCode {
     //SYLLABUS
     SYLLABUS_NOT_FOUND(18001, "The syllabus does not exist on the system.", HttpStatus.NOT_FOUND),
     INVALID_SYLLABUS_STATUS(18002, "The syllabus status is invalid.", HttpStatus.BAD_REQUEST),
+    SYLLABUS_NOT_DRAFT(18003, "syllabus can only be modified when in DRAFT status", HttpStatus.BAD_REQUEST),
 
     //CURRICULUM_GROUP_SUBJECT
     CURRICULUM_GROUP_SUBJECT_ALREADY_EXISTS(20001, "This subject is already added to this curriculum with the same group", HttpStatus.BAD_REQUEST),

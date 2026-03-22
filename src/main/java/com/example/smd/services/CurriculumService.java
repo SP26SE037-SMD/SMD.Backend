@@ -4,8 +4,10 @@ import com.example.smd.dto.request.curriculum.CurriculumCreateRequest;
 import com.example.smd.dto.response.CurriculumResponse;
 import com.example.smd.entities.Curriculum;
 import com.example.smd.entities.Major;
+import com.example.smd.entities.Subject;
 import com.example.smd.enums.CurriculumStatus;
 import com.example.smd.enums.PloStatus;
+import com.example.smd.enums.SubjectStatus;
 import com.example.smd.enums.SyllabusStatus;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
@@ -174,11 +176,25 @@ public class CurriculumService {
      * Lấy chi tiết curriculum theo Code
      */
     @Transactional(readOnly = true)
-    public CurriculumResponse getCurriculumByCode(String code) {
+    public CurriculumResponse getCurriculumByCode(String code, String accountId) {
         log.info("Fetching curriculum by code: {}", code);
         
         Curriculum curriculum = curriculumRepository.findByCurriculumCode(code)
                 .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));
+
+        //Phân quyền ROLE Student + Lecture chỉ xem được PUBLISHED
+        var account = accountService.getAccountById(accountId);
+        if(account.getRole().getRoleName().equals("STUDENT") ||  account.getRole().getRoleName().equals("LECTURER")) {
+            if(!curriculum.getStatus().equals(CurriculumStatus.PUBLISHED.toString())) {
+                new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+            }
+        }
+
+        if(curriculum.getStatus().equals(CurriculumStatus.DRAFT.toString())) {
+            if(!account.getRole().getRoleName().equals("HOCFDC")){
+                new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+            }
+        }
         
         return curriculumMapper.toCurriculumResponse(curriculum);
     }
@@ -258,5 +274,21 @@ public class CurriculumService {
         Curriculum updatedCurriculum = curriculumRepository.save(curriculum);
 
         return curriculumMapper.toCurriculumResponse(updatedCurriculum);
+    }
+
+    public void delete(UUID id) {
+        try {
+            Curriculum curriculum = curriculumRepository.findById(id)
+                    .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));
+
+            if (curriculum.getStatus().equals(CurriculumStatus.DRAFT.toString())) {
+                curriculumRepository.delete(curriculum);
+            } else {
+                curriculum.setStatus(CurriculumStatus.ARCHIVED.toString());
+                curriculumRepository.save(curriculum);
+            }
+        } catch (IllegalArgumentException e) {
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        }
     }
 }
