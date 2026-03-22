@@ -21,6 +21,8 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -48,14 +50,16 @@ public class MajorController {
             @RequestParam(required = false) Boolean updatedYesterday,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "majorCode,asc") String[] sort
+            @RequestParam(defaultValue = "majorCode,asc") String[] sort,
+            @AuthenticationPrincipal Jwt jwt
     ) {
+        String userId = jwt.getClaimAsString("accountId");
         Page<MajorResponse> majors;
         if (Boolean.TRUE.equals(updatedYesterday)) {
             majors = majorService.getMajorsUpdatedInLast24Hours(status, page, size);
         } else {
             // Gọi logic getAll cũ của bạn
-            majors = majorService.getAllMajors(search, "code", null, page, size, new String[]{"majorCode", "asc"});
+            majors = majorService.getAllMajors(userId, search, "code", null, page, size, new String[]{"majorCode", "asc"});
         }
 
         return ResponseObject.<PagedResponse<MajorResponse>>builder()
@@ -110,37 +114,41 @@ public class MajorController {
                 .build();
     }
 
-    // API lấy chi tiết chuyên ngành theo mã chuyên ngành
-    @GetMapping("/{majorCode}")
-    @Operation(
-            summary = "Get major details by major code",
-            description = "Retrieve full information of a major using its unique code (e.g., SE, AI, CS)."
-    )
-    public ResponseObject<MajorResponse> getMajorDetail(
-            @PathVariable String majorCode) {
-
-        return ResponseObject.<MajorResponse>builder()
-                .status(1000)
-                .data(majorService.getMajorDetail(majorCode))
-                .message("Get major details successfully")
-                .build();
-    }
+//    // API lấy chi tiết chuyên ngành theo mã chuyên ngành
+//    @GetMapping("/{majorCode}")
+//    @Operation(
+//            summary = "Get major details by major code",
+//            description = "Retrieve full information of a major using its unique code (e.g., SE, AI, CS)."
+//    )
+//    public ResponseObject<MajorResponse> getMajorDetail(
+//            @PathVariable String majorCode) {
+//
+//        return ResponseObject.<MajorResponse>builder()
+//                .status(1000)
+//                .data(majorService.getMajorDetail(majorCode))
+//                .message("Get major details successfully")
+//                .build();
+//    }
 
     @GetMapping("/{id}")
     @Operation(
             summary = "Get Major details by ID",
             description = "Retrieves comprehensive information about a specific Major using its unique UUID."
     )
-    public ResponseObject<MajorResponse> getDetail(@PathVariable UUID id) {
+    public ResponseObject<MajorResponse> getDetail(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
+
+        System.out.println("User ID thực hiện: " + userId);
+
         return ResponseObject.<MajorResponse>builder()
                 .status(1000)
-                .data(majorService.getMajorById(id))
+                .data(majorService.getMajorById(id, userId))
                 .message("Major details retrieved successfully")
                 .build();
     }
 
     @PatchMapping("/{id}/status")
-//    @PreAuthorize("hasAuthority('MAJOR_UPDATE_STATUS')")
+    @PreAuthorize("hasAuthority('MAJOR_UPDATE_STATUS')")
     @Operation(
             summary = "Update Major status",
             description = "### Lifecycle Management for Academic Majors:\n" +
