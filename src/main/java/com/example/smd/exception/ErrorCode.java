@@ -34,6 +34,8 @@ public enum ErrorCode {
     MAJOR_NAME_REQUIRED(5004, "Major name is required", HttpStatus.BAD_REQUEST),
     MAJOR_CODE_TOO_LONG(5005, "Major code must not exceed 20 characters", HttpStatus.BAD_REQUEST),
     INVALID_MAJOR_STATUS(5006, "Invalid Major status transition", HttpStatus.BAD_REQUEST),
+    MAJOR_NOT_DRAFT(5007, "Major can only be modified when in DRAFT status", HttpStatus.BAD_REQUEST),
+    ACCESS_DENIED_FOR_ROLE(5008, "Your role does not have permission to view this content", HttpStatus.FORBIDDEN),
 
     //PLOs
     PLO_NOT_FOUND(6001, "PLO not found", HttpStatus.NOT_FOUND),
