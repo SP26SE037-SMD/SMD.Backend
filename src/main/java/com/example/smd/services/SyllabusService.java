@@ -4,6 +4,7 @@ import com.example.smd.dto.request.SyllabusRequest;
 import com.example.smd.dto.response.syllabus.SyllabusResponse;
 import com.example.smd.entities.Subject;
 import com.example.smd.entities.Syllabus;
+import com.example.smd.enums.PloStatus;
 import com.example.smd.enums.SyllabusStatus;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
@@ -29,7 +30,7 @@ public class SyllabusService {
     SyllabusRepository syllabusRepository;
     SubjectRepository subjectRepository;
     SyllabusMapper syllabusMapper;
-//    SyllabusActionLog syllabusActionLog;
+    AccountService accountService;
 
     // 1. Tạo mới
     @Transactional
@@ -49,6 +50,10 @@ public class SyllabusService {
     public SyllabusResponse update(UUID id, SyllabusRequest request) {
         Syllabus syllabus = syllabusRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
+
+        if(!syllabus.getStatus().equals("DRAFT")) {
+            throw new AppException(ErrorCode.SYLLABUS_NOT_DRAFT);
+        }
 
         syllabusMapper.updateSyllabus(syllabus, request);
         return syllabusMapper.toResponse(syllabusRepository.save(syllabus));
@@ -97,22 +102,53 @@ public class SyllabusService {
 
     // 5. Get All by Subject
     @Transactional
-    public List<SyllabusResponse> getAllBySubject(UUID subjectId) {
-        // 1. Kiểm tra xem môn học có tồn tại trong hệ thống không
-        if (!subjectRepository.existsById(subjectId)) {
-            throw new AppException(ErrorCode.SUBJECT_NOT_FOUND);
+    public List<SyllabusResponse> getAllBySubject(UUID subjectId, String status, String accountId) {
+        // 1. Lấy thông tin Account & Role
+        var account = accountService.getAccountById(accountId);
+        String roleName = account.getRole().getRoleName();
+
+        // Chuẩn hóa status đầu vào
+        String finalStatus = (status == null || status.trim().isEmpty()) ? null : status.trim();
+
+        // 2. Phân quyền: Student/Lecturer chỉ được xem PUBLISHED
+        if (roleName.equals("STUDENT") || roleName.equals("LECTURER")) {
+            finalStatus = "PUBLISHED";
         }
 
-        // 2. Nếu tồn tại, mới tiến hành lấy danh sách Syllabus
-        return syllabusRepository.findBySubject_SubjectId(subjectId)
-                .stream()
+        List<Syllabus> syllabuses;
+
+        // 3. Truy vấn dựa trên bộ lọc cuối cùng
+        if (finalStatus != null) {
+            // Tìm theo Subject ID và Status (AND)
+            syllabuses = syllabusRepository.findBySubject_SubjectIdAndStatus(subjectId, finalStatus);
+        } else {
+            syllabuses = syllabusRepository.findBySubject_SubjectId(subjectId);
+        }
+
+        return syllabuses.stream()
                 .map(syllabusMapper::toResponse)
                 .toList();
     }
 
     // 6. Get Detail
     @Transactional
-    public SyllabusResponse getDetail(UUID id) {
+    public SyllabusResponse getDetail(UUID id, String accountId) {
+        Syllabus syllabus = syllabusRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
+
+        //Phân quyền ROLE Student + Lecture chỉ xem được PUBLISHED
+        var account = accountService.getAccountById(accountId);
+        if(account.getRole().getRoleName().equals("STUDENT") ||  account.getRole().getRoleName().equals("LECTURER")) {
+            if(!syllabus.getStatus().equals(PloStatus.PUBLISHED.toString())) {
+                new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+            }
+        }
+
+        if(syllabus.getStatus().equals("DRAFT")) {
+            if(!account.getRole().getRoleName().equals("HOPDC")){
+                new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+            }
+        }
         return syllabusRepository.findById(id)
                 .map(syllabusMapper::toResponse)
                 .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));

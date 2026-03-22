@@ -20,6 +20,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -61,6 +63,7 @@ public class SubjectController {
                             "| **DRAFT** | **Biên soạn nháp:** Initial creation. Basic info (code, name) is being entered. Not visible to Curriculum proposals. |\n" +
                             "| **DEFINED** | **Đã xác định nội dung:** Description and credits are finalized. Subject is now eligible to be included in a Curriculum draft for VP approval. |\n" +
                             "| **WAITING_SYLLABUS** | **Chờ Syllabus:** The Curriculum containing this subject is approved. System is waiting for the Department to submit a detailed Syllabus. |\n" +
+                            "| **PENDING_REVIEW** | **Đợi phân công review:** Submitted and awaiting review assignment. |\n"+
                             "| **COMPLETED** | **Hoàn tất:** Detailed Syllabus is approved and linked. The subject is fully validated and ready for teaching/enrollment. |\n" +
                             "| **ARCHIVED** | **Lưu trữ:** Subject is retired from active curricula. Kept as Read-only for historical academic records. |"
             )
@@ -69,13 +72,14 @@ public class SubjectController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "subjectCode") String sortBy,
             @RequestParam(required = false) UUID departmentId,
-            @RequestParam(defaultValue = "asc") String direction) {
-
+            @RequestParam(defaultValue = "asc") String direction,
+            @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
         Sort sort = direction.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
         Pageable pageable = PageRequest.of(page, size, sort);
 
         return ResponseObject.<PagedResponse<SubjectResponse>>builder()
-                .data(PagedResponse.of(subjectService.getAll(search, searchBy,status, departmentId, pageable)))
+                .data(PagedResponse.of(subjectService.getAll(search, searchBy,status, departmentId, pageable, userId)))
                 .message("Subjects retrieved successfully")
                 .build();
     }
@@ -85,10 +89,21 @@ public class SubjectController {
             summary = "Get subject detail by ID",
             description = "Retrieves full subject details including Department and CLOs using JOIN FETCH for optimal performance."
     )
-    public ResponseObject<SubjectResponse> getDetail(@PathVariable UUID id) {
+    public ResponseObject<SubjectResponse> getDetail(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<SubjectResponse>builder()
-                .data(subjectService.getDetail(id))
+                .data(subjectService.getDetail(id, userId))
                 .message("Subject detail retrieved successfully")
+                .build();
+    }
+
+    @GetMapping("/code/{subjectCode}")
+    public ResponseObject<SubjectResponse> getByCode(@PathVariable String subjectCode, @AuthenticationPrincipal Jwt jwt) {
+        String accountId = jwt.getSubject();
+        return ResponseObject.<SubjectResponse>builder()
+                .status(1000)
+                .data(subjectService.getDetailByCode(subjectCode, accountId))
+                .message("Get subject detail by code successfully")
                 .build();
     }
 
@@ -140,6 +155,7 @@ public class SubjectController {
                     "| **DRAFT** | **Biên soạn nháp:** Initial creation. Basic info (code, name) is being entered. Not visible to Curriculum proposals. |\n" +
                     "| **DEFINED** | **Đã xác định nội dung:** Description and credits are finalized. Subject is now eligible to be included in a Curriculum draft for VP approval. |\n" +
                     "| **WAITING_SYLLABUS** | **Chờ Syllabus:** The Curriculum containing this subject is approved. System is waiting for the Department to submit a detailed Syllabus. |\n" +
+                    "| **PENDING_REVIEW** | **Đợi phân công review:** Submitted and awaiting review assignment. |\n"+
                     "| **COMPLETED** | **Hoàn tất:** Detailed Syllabus is approved and linked. The subject is fully validated and ready for teaching/enrollment. |\n" +
                     "| **ARCHIVED** | **Lưu trữ:** Subject is retired from active curricula. Kept as Read-only for historical academic records. |"
     )
@@ -167,14 +183,21 @@ public class SubjectController {
 
     @GetMapping("/department/{departmentId}")
     @Operation(
-            summary = "Get subjects by department",
-            description = "Returns a list of all subjects belonging to a specific department ID."
+            summary = "Get subjects by Department ID",
+            description = "Retrieve a list of subjects belonging to a specific department. \n\n" +
+                    "### 🔒 Access Control Policy:\n" +
+                    "* **STUDENT / LECTURER**: Can **ONLY** view subjects with **COMPLETED** status.\n"+
+                    "* ** Other Actors **: Can view subjects in **ALL** statuses.\n"
     )
-    public ResponseObject<List<SubjectResponse>> getByDepartment(@PathVariable UUID departmentId) {
+    public ResponseObject<List<SubjectResponse>> getByDepartment(
+            @PathVariable UUID departmentId,
+            @AuthenticationPrincipal Jwt jwt) {
+
+        String accountId = jwt.getSubject();
         return ResponseObject.<List<SubjectResponse>>builder()
                 .status(1000)
-                .data(subjectService.getSubjectsByDepartment(departmentId))
-                .message("Subjects retrieved successfully for department: " + departmentId)
+                .data(subjectService.getSubjectsByDepartment(departmentId, accountId))
+                .message("Get subjects by department successfully")
                 .build();
     }
 }

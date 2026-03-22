@@ -8,6 +8,7 @@ import com.example.smd.dto.response.subject.ImportSubjectResponse;
 import com.example.smd.dto.response.subject.ImportSubjectResult;
 import com.example.smd.entities.Department;
 import com.example.smd.entities.Subject;
+import com.example.smd.enums.PloStatus;
 import com.example.smd.enums.SubjectStatus;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
@@ -43,7 +44,7 @@ public class SubjectService {
     SubjectRepository subjectRepository;
     DepartmentRepository departmentRepository;
     PrerequisiteRepository prerequisiteRepository;
-
+    AccountService accountService;
     SubjectMapper subjectMapper;
     PrerequisiteMapper prerequisiteMapper;
 
@@ -67,38 +68,61 @@ public class SubjectService {
         return response;
     }
 
-    public Page<SubjectResponse> getAll(String search, String searchBy, String status, UUID departmentId, Pageable pageable) {
+    public Page<SubjectResponse> getAll(String search, String searchBy, String status, UUID departmentId, Pageable pageable, String accountId) {
+
+        // 1. Lấy Account và xử lý phân quyền NGAY TẠI ĐẦU HÀM (Ngoài Specification)
+        var account = accountService.getAccountById(accountId);
+        String roleName = account.getRole().getRoleName();
+
+        // Chuẩn hóa status
+        String finalStatus = (status == null || status.trim().isEmpty() || status.equalsIgnoreCase("all"))
+                ? null : status.trim().toUpperCase();
+
+        // Ép buộc Role thấp chỉ được xem PUBLISHED
+        if (roleName.equals("STUDENT") || roleName.equals("LECTURER")) {
+            finalStatus = "COMPLETED";
+        }
+
+        // Biến finalStatus này sẽ được dùng trong closure của Specification
+        final String effectiveStatus = finalStatus;
+
         Specification<Subject> spec = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
-            // 1. Search Logic (Name or Code)
-            if (search != null && !search.isEmpty()) {
-                String searchPattern = "%" + search.toLowerCase() + "%";
+            // A. Search Logic (Code hoặc Name)
+            if (search != null && !search.trim().isEmpty()) {
+                String searchPattern = "%" + search.trim().toLowerCase() + "%";
                 if ("name".equalsIgnoreCase(searchBy)) {
                     predicates.add(cb.like(cb.lower(root.get("subjectName")), searchPattern));
-                } else {
+                } else if ("code".equalsIgnoreCase(searchBy)) {
                     predicates.add(cb.like(cb.lower(root.get("subjectCode")), searchPattern));
+                } else {
+                    // Mặc định search cả 2 nếu searchBy không xác định
+                    predicates.add(cb.or(
+                            cb.like(cb.lower(root.get("subjectName")), searchPattern),
+                            cb.like(cb.lower(root.get("subjectCode")), searchPattern)
+                    ));
                 }
             }
 
-            // 2. Filter by Status
-            if (status != null && !status.isEmpty()) {
-                predicates.add(cb.equal(root.get("status"), status.toUpperCase()));
+            // B. Filter by Status (Sử dụng biến effectiveStatus đã xử lý phân quyền)
+            if (effectiveStatus != null) {
+                predicates.add(cb.equal(root.get("status"), effectiveStatus));
             }
 
-            // 3. Filter by Department ID (New)
+            // C. Filter by Department ID
             if (departmentId != null) {
-                // Join với bảng Department và so khớp ID
                 predicates.add(cb.equal(root.get("department").get("departmentId"), departmentId));
             }
 
             return cb.and(predicates.toArray(new Predicate[0]));
         };
 
+        // 2. Query và Map sang Response
         return subjectRepository.findAll(spec, pageable).map(subject -> {
             SubjectResponse response = subjectMapper.toSubjectResponse(subject);
 
-            // Bổ sung Prerequisites (Nên cân nhắc tối ưu N+1 ở đây sau này)
+            // 3. Xử lý Prerequisites (Vẫn dùng repository hiện tại của bạn)
             List<PrerequisiteResponse> prerequisites = prerequisiteRepository.findBySubject_SubjectId(subject.getSubjectId())
                     .stream()
                     .map(prerequisiteMapper::toResponse)
@@ -111,34 +135,99 @@ public class SubjectService {
 
     @Transactional
     public SubjectResponse update(UUID id, SubjectRequest request) {
-        Subject subject = subjectRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.SUBJECT_NOT_FOUND));
-        subjectMapper.updateSubject(subject, request);
-
         //Check Department có tồn tại hay không
         Department department = departmentRepository.findById(request.getDepartmentId())
                 .orElseThrow(() -> new AppException(ErrorCode.DEPARTMENT_NOT_FOUND));
-        subject.setDepartment(department);
 
+        Subject subject = subjectRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.SUBJECT_NOT_FOUND));
+
+        if (!subject.getStatus().equals(SubjectStatus.DRAFT.toString())) {
+            throw new AppException(ErrorCode.SUBJECT_NOT_DRAFT);
+        }
+
+        subject.setDepartment(department);
+        subjectMapper.updateSubject(subject, request);
         return subjectMapper.toSubjectResponse(subjectRepository.save(subject));
     }
 
     public void delete(UUID id) {
-        Subject subject = subjectRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.SUBJECT_NOT_FOUND));
-        subject.setStatus(SubjectStatus.ARCHIVED.toString()); // Soft delete
-        subjectRepository.save(subject);
+        try {
+            Subject subject = subjectRepository.findById(id)
+                    .orElseThrow(() -> new AppException(ErrorCode.SUBJECT_NOT_FOUND));
+
+            if (subject.getStatus().equals(SubjectStatus.DRAFT.toString())) {
+                subjectRepository.delete(subject);
+            } else {
+                subject.setStatus(SubjectStatus.ARCHIVED.toString());
+                subjectRepository.save(subject);
+            }
+        } catch (IllegalArgumentException e) {
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        }
     }
 
     @Transactional
-    public SubjectResponse getDetail(UUID id) {
+    public SubjectResponse getDetail(UUID id, String accountId) {
         // Sử dụng method findDetailById đã có JOIN FETCH
         Subject subject = subjectRepository.findDetailById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.SUBJECT_NOT_FOUND));
 
+        //Phân quyền ROLE Student + Lecture chỉ xem được PUBLISHED
+        var account = accountService.getAccountById(accountId);
+        if (account.getRole().getRoleName().equals("STUDENT") || account.getRole().getRoleName().equals("LECTURER")) {
+            if (!subject.getStatus().equals(SubjectStatus.COMPLETED.toString())) {
+                new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+            }
+        }
+
+        if (subject.getStatus().equals(SubjectStatus.DRAFT.toString())) {
+            if (!account.getRole().getRoleName().equals("HOCFDC")) {
+                new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+            }
+        }
+
         SubjectResponse response = subjectMapper.toSubjectResponse(subject);
 
         List<PrerequisiteResponse> prerequisites = prerequisiteRepository.findBySubject_SubjectId(id)
+                .stream()
+                .map(prerequisiteMapper::toResponse)
+                .toList();
+        response.setPreRequisite(prerequisites);
+
+        return response;
+    }
+
+    @Transactional
+    public SubjectResponse getDetailByCode(String code, String accountId) {
+        // 1. Tìm subject theo Code
+        Subject subject = subjectRepository.findBySubjectCode(code)
+                .orElseThrow(() -> new AppException(ErrorCode.SUBJECT_NOT_FOUND));
+
+        // 2. Lấy thông tin Account để phân quyền
+        var account = accountService.getAccountById(accountId);
+        String roleName = account.getRole().getRoleName();
+        String status = subject.getStatus();
+
+        // Phân quyền: Student + Lecturer chỉ xem được COMPLETED
+        if (roleName.equals("STUDENT") || roleName.equals("LECTURER")) {
+            if (!status.equals(SubjectStatus.COMPLETED.toString())) {
+                throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+            }
+        }
+
+        // Phân quyền: DRAFT chỉ dành cho HOCFDC
+        if (status.equals(SubjectStatus.DRAFT.toString())) {
+            if (!roleName.equals("HOCFDC")) {
+                throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+            }
+        }
+
+        // 3. Map sang Response DTO
+        SubjectResponse response = subjectMapper.toSubjectResponse(subject);
+
+        // 4. Lấy danh sách môn tiên quyết (Prerequisites)
+        List<PrerequisiteResponse> prerequisites = prerequisiteRepository.findBySubject_SubjectId(subject.getSubjectId())
                 .stream()
                 .map(prerequisiteMapper::toResponse)
                 .toList();
@@ -334,16 +423,28 @@ public class SubjectService {
     }
 
     @Transactional
-    public List<SubjectResponse> getSubjectsByDepartment(UUID departmentId) {
-        // Fetch entities from DB
-        List<Subject> subjects = subjectRepository.findAllByDepartmentId(departmentId);
+    public List<SubjectResponse> getSubjectsByDepartment(UUID departmentId, String accountId) {
+        // 1. Lấy thông tin Account và Role
+        var account = accountService.getAccountById(accountId);
+        String roleName = account.getRole().getRoleName();
 
-        // Map to Response DTOs
+        List<Subject> subjects;
+
+        // 2. Phân quyền truy vấn
+        if (roleName.equals("STUDENT") || roleName.equals("LECTURER")) {
+            // Chỉ lấy những môn đã COMPLETED cho học sinh/giáo viên
+            subjects = subjectRepository.findAllByDepartment_DepartmentIdAndStatus(departmentId, SubjectStatus.COMPLETED.toString());
+        } else {
+            // Các Role khác (HOCFDC, VP, ADMIN) lấy toàn bộ môn của phòng ban đó
+            subjects = subjectRepository.findAllByDepartment_DepartmentId(departmentId);
+        }
+
+        // 3. Map to Response DTOs và bổ sung Prerequisites
         return subjects.stream()
                 .map(subject -> {
                     SubjectResponse response = subjectMapper.toSubjectResponse(subject);
 
-                    // 1. Bổ sung Prerequisites
+                    // Lấy môn tiên quyết
                     List<PrerequisiteResponse> prerequisites = prerequisiteRepository.findBySubject_SubjectId(subject.getSubjectId())
                             .stream()
                             .map(prerequisiteMapper::toResponse)
