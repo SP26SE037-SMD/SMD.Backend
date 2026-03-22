@@ -134,4 +134,29 @@ public class CurriculumGroupSubjectController {
                              "Bulk mapping failed - validation errors found")
                     .build();
         }
+
+                /**
+                 * API bulk configure semester-group-subject mappings (PUT mode)
+                 */
+                @PutMapping("/bulk-configure")
+                @PreAuthorize("hasAnyAuthority('CURRICULUM_UPDATE', 'SUBJECT_UPDATE', 'GROUP_UPDATE')")
+                @Operation(
+                    summary = "Bulk configure semester-subject-group mappings (PUT mode)",
+                    description = "Behavior like POST bulk-configure, but when a duplicate subject exists in the same curriculum: " +
+                              "if groupId is not null then add; if groupId is null then skip that item and continue processing others."
+                )
+                public ResponseObject<BulkSemesterMappingResponse> bulkConfigureSemesterMappingsPut(
+                    @Valid @RequestBody BulkSemesterMappingRequest request
+                ) {
+                    BulkSemesterMappingResponse response =
+                        curriculumGroupSubjectService.bulkConfigureSemesterMappingsPut(request);
+
+                    return ResponseObject.<BulkSemesterMappingResponse>builder()
+                        .status(response.isSuccess() ? 1000 : 400)
+                        .data(response)
+                        .message(response.isSuccess() ?
+                            "Bulk PUT mapping completed successfully" :
+                            "Bulk PUT mapping completed with validation issues")
+                        .build();
+                }
 }

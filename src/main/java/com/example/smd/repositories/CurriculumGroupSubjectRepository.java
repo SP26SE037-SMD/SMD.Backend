@@ -15,6 +15,15 @@ import java.util.UUID;
 @Repository
 public interface CurriculumGroupSubjectRepository extends JpaRepository<Curriculum_Group_Subject, UUID> {
 
+    @Query("SELECT CASE WHEN COUNT(ccs) > 0 THEN true ELSE false END " +
+           "FROM Curriculum_Group_Subject ccs " +
+           "WHERE ccs.curriculum.curriculumId = :curriculumId " +
+           "AND ccs.subject.subjectId = :subjectId")
+    boolean existsByCurriculumAndSubject(
+        @Param("curriculumId") UUID curriculumId,
+        @Param("subjectId") UUID subjectId
+    );
+
     // Kiểm tra xem đã tồn tại mapping chưa
     @Query("SELECT CASE WHEN COUNT(ccs) > 0 THEN true ELSE false END " +
            "FROM Curriculum_Group_Subject ccs " +
