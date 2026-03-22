@@ -5,6 +5,8 @@ import com.example.smd.dto.response.MaterialResponse;
 import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.services.MaterialService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -12,6 +14,8 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,7 +31,7 @@ public class MaterialController {
     MaterialService materialService;
 
     @PostMapping
-//    @PreAuthorize("hasAuthority('MATERIAL_CREATE')")
+    @PreAuthorize("hasAuthority('MATERIAL_CREATE')")
     @Operation(summary = "Create new material for a syllabus")
     public ResponseObject<MaterialResponse> create(@RequestBody @Valid MaterialRequest request) {
         return ResponseObject.<MaterialResponse>builder()
@@ -36,9 +40,17 @@ public class MaterialController {
 
     @GetMapping("/syllabus/{syllabusId}")
     @Operation(summary = "Get all materials by Syllabus ID")
-    public ResponseObject<List<MaterialResponse>> getBySyllabus(@PathVariable UUID syllabusId) {
+    public ResponseObject<List<MaterialResponse>> getAllBySyllabus(
+            @PathVariable UUID syllabusId,
+            @Parameter(description = "Filter by status (DRAFT, DEFINED, PUBLISHED, WAITING_SYLLABUS, PENDING_REVIEW, ARCHIVED)")
+            @RequestParam(required = false) String status,
+            @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<List<MaterialResponse>>builder()
-                .status(1000).data(materialService.getAllBySyllabus(syllabusId)).build();
+                .status(1000)
+                .data(materialService.getAllBySyllabus(syllabusId, status, userId))
+                .message("Materials retrieved successfully")
+                .build();
     }
 
     @PutMapping("/{id}")
@@ -49,7 +61,7 @@ public class MaterialController {
                 .status(1000).data(materialService.update(id, request)).build();
     }
 
-    @PatchMapping("/{id}/status")
+    @PatchMapping("/syllabus/{syllabusId}/status")
     @PreAuthorize("hasAuthority('MATERIAL_UPDATE_STATUS')")
     @Operation(
             summary = "Update Material Lifecycle Status",
@@ -64,9 +76,19 @@ public class MaterialController {
                     "| **PUBLISHED** | **Đã ban hành:** Tài liệu chính thức hiển thị cho sinh viên xem và tải về trên Portal. |\n" +
                     "| **ARCHIVED** | **Lưu trữ:** Tài liệu của các học kỳ cũ, không còn áp dụng nhưng được giữ lại để đối soát lịch sử. |"
     )
-    public ResponseObject<MaterialResponse> updateStatus(@PathVariable UUID id, @RequestParam String status) {
-        return ResponseObject.<MaterialResponse>builder()
-                .status(1000).data(materialService.updateStatus(id, status)).build();
+    public ResponseObject<Void> updateStatusBySyllabus(
+            @Parameter(description = "ID of the Syllabus")
+            @PathVariable String syllabusId,
+
+            @Parameter(description = "New status to apply (e.g., PUBLISHED)")
+            @RequestParam String newStatus) {
+
+        materialService.updateMaterialStatusBySyllabus(syllabusId, newStatus);
+
+        return ResponseObject.<Void>builder()
+                .status(1000)
+                .message("All materials in syllabus " + syllabusId + " updated to " + newStatus)
+                .build();
     }
 
     @DeleteMapping("/{id}")
@@ -75,5 +97,25 @@ public class MaterialController {
     public ResponseObject<Void> delete(@PathVariable UUID id) {
         materialService.delete(id);
         return ResponseObject.<Void>builder().status(1000).message("Deleted successfully").build();
+    }
+
+    @GetMapping("/{materialId}")
+    @Operation(
+            summary = "Get detailed information of a Material",
+            description = "Retrieves full details of a specific material by its UUID. \n\n" +
+                    "### 🔒 Security Note:\n" +
+                    "* Public roles (Student/Lecturer) can only access **PUBLISHED** materials.\n" +
+                    "* Unauthorized access to DRAFT/ARCHIVED materials will return 403 Forbidden."
+    )
+    public ResponseObject<MaterialResponse> getDetail(
+            @Parameter(description = "UUID of the material to retrieve")
+            @PathVariable UUID materialId,
+            @AuthenticationPrincipal Jwt jwt) {
+        String accountId = jwt.getSubject();
+        return ResponseObject.<MaterialResponse>builder()
+                .status(1000)
+                .data(materialService.getDetail(materialId, accountId))
+                .message("Material details retrieved successfully")
+                .build();
     }
 }

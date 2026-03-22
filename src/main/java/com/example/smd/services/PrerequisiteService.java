@@ -7,6 +7,7 @@ import com.example.smd.dto.response.prerequisite.ImportPrerequisiteResponse;
 import com.example.smd.dto.response.prerequisite.ImportPrerequisiteResult;
 import com.example.smd.entities.Subject;
 import com.example.smd.entities.Subject_Prerequisite;
+import com.example.smd.enums.SubjectStatus;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.PrerequisiteMapper;
@@ -51,6 +52,11 @@ public class PrerequisiteService {
         Subject preSubject = subjectRepository.findById(pId)
                 .orElseThrow(() -> new AppException(ErrorCode.SUBJECT_NOT_FOUND));
 
+        if(!(subject.getStatus().equals(SubjectStatus.DEFINED.toString())
+        && preSubject.getStatus().equals(SubjectStatus.DEFINED.toString()))){
+            throw new AppException(ErrorCode.PREREQUISITE_NOT_DEFINED);
+        }
+
         Subject_Prerequisite entity = Subject_Prerequisite.builder()
                 .subject(subject)
                 .prerequisiteSubject(preSubject)
@@ -80,6 +86,12 @@ public class PrerequisiteService {
     public void delete(String id) {
         if (!prerequisiteRepository.existsById(id))
             throw new AppException(ErrorCode.PREREQUISITE_NOT_FOUND);
+
+        var prerequisite = prerequisiteRepository.findById(id);
+        if(!(prerequisite.get().getSubject().getStatus().equals(SubjectStatus.DEFINED.toString()))){
+            throw new AppException(ErrorCode.PREREQUISITE_NOT_DEFINED);
+        }
+
         prerequisiteRepository.deleteById(id);
     }
 

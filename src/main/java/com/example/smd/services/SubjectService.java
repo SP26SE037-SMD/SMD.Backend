@@ -177,13 +177,13 @@ public class SubjectService {
         var account = accountService.getAccountById(accountId);
         if (account.getRole().getRoleName().equals("STUDENT") || account.getRole().getRoleName().equals("LECTURER")) {
             if (!subject.getStatus().equals(SubjectStatus.COMPLETED.toString())) {
-                new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+                throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
 
         if (subject.getStatus().equals(SubjectStatus.DRAFT.toString())) {
             if (!account.getRole().getRoleName().equals("HOCFDC")) {
-                new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+                throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
 

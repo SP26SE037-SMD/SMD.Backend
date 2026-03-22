@@ -107,15 +107,16 @@ public class PLOsService {
             var account = accountService.getAccountById(accountId);
             if(account.getRole().getRoleName().equals("STUDENT") ||  account.getRole().getRoleName().equals("LECTURER")) {
                 if(!plo.getStatus().equals(PloStatus.PUBLISHED.toString())) {
-                    new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+                    throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
                 }
             }
 
             if(plo.getStatus().equals(PloStatus.DRAFT.toString())) {
                 if(!account.getRole().getRoleName().equals("HOCFDC")){
-                    new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+                    throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
                 }
             }
+
             return plOsRepository.findById(plOsId)
                     .map(plOsMapper::toPloResponse)
                     .orElseThrow(() -> new AppException(ErrorCode.PLO_NOT_FOUND));

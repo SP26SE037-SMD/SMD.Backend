@@ -160,13 +160,13 @@ public class CurriculumService {
         var account = accountService.getAccountById(accountId);
         if(account.getRole().getRoleName().equals("STUDENT") ||  account.getRole().getRoleName().equals("LECTURER")) {
             if(!curriculum.getStatus().equals(CurriculumStatus.PUBLISHED.toString())) {
-                new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+                throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
 
         if(curriculum.getStatus().equals(CurriculumStatus.DRAFT.toString())) {
             if(!account.getRole().getRoleName().equals("HOCFDC")){
-                new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+                throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
         return curriculumMapper.toCurriculumResponse(curriculum);
@@ -186,13 +186,13 @@ public class CurriculumService {
         var account = accountService.getAccountById(accountId);
         if(account.getRole().getRoleName().equals("STUDENT") ||  account.getRole().getRoleName().equals("LECTURER")) {
             if(!curriculum.getStatus().equals(CurriculumStatus.PUBLISHED.toString())) {
-                new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+                throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
 
         if(curriculum.getStatus().equals(CurriculumStatus.DRAFT.toString())) {
             if(!account.getRole().getRoleName().equals("HOCFDC")){
-                new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+                throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
         
