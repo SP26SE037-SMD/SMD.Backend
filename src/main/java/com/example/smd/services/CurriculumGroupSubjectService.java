@@ -357,9 +357,6 @@ public class CurriculumGroupSubjectService {
      */
     @Transactional
     public BulkSemesterMappingResponse bulkConfigureSemesterMappingsPut(BulkSemesterMappingRequest request) {
-        log.info("Starting PUT-like bulk semester mapping configuration for curriculum: {}",
-                request.getCurriculumId());
-
         Curriculum curriculum = curriculumRepository.findById(request.getCurriculumId())
                 .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));
 
@@ -457,8 +454,6 @@ public class CurriculumGroupSubjectService {
 
         if (!entitiesToSave.isEmpty()) {
             curriculumGroupSubjectRepository.saveAll(entitiesToSave);
-            log.info("PUT-like bulk mapping created {} entries for curriculum: {}",
-                    totalMappingsCreated, request.getCurriculumId());
         }
 
         return BulkSemesterMappingResponse.builder()

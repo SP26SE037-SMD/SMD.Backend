@@ -53,6 +53,32 @@ public class CurriculumGroupSubjectController {
     }
 
     /**
+     * API bulk configure semester-group-subject mappings (PUT mode)
+     */
+    @PostMapping("/bulk-configure")
+    @PreAuthorize("hasAnyAuthority('CURRICULUM_UPDATE', 'SUBJECT_UPDATE', 'GROUP_UPDATE')")
+    @Operation(
+            summary = "Bulk configure semester-subject-group mappings ",
+            description = "Atomically insert multiple " +
+                    "subject-semester-group mappings for a curriculum. when a duplicate subject exists in the same curriculum: " +
+                    "if groupId is not null then add; if groupId is null then skip that item and continue processing others."
+    )
+    public ResponseObject<BulkSemesterMappingResponse> bulkConfigureSemesterMappings(
+            @Valid @RequestBody BulkSemesterMappingRequest request
+    ) {
+        BulkSemesterMappingResponse response =
+                curriculumGroupSubjectService.bulkConfigureSemesterMappingsPut(request);
+
+        return ResponseObject.<BulkSemesterMappingResponse>builder()
+                .status(response.isSuccess() ? 1000 : 400)
+                .data(response)
+                .message(response.isSuccess() ?
+                        "Bulk mapping completed successfully" :
+                        "Bulk mapping completed with validation issues")
+                .build();
+    }
+
+    /**
      * API lấy danh sách subjects theo curriculum hoặc group với phân trang
      */
     @GetMapping("/subjects")
@@ -110,53 +136,5 @@ public class CurriculumGroupSubjectController {
             .build();
         }
 
-        /**
-         * API bulk configure semester-group-subject mappings
-         */
-        @PostMapping("/bulk-configure")
-        @PreAuthorize("hasAnyAuthority('CURRICULUM_UPDATE', 'SUBJECT_UPDATE', 'GROUP_UPDATE')")
-        @Operation(
-            summary = "Bulk configure semester-subject-group mappings",
-            description = "Atomically insert multiple subject-semester-group mappings for a curriculum. " +
-                          "GroupId can be null for required subjects (not tied to any group)."
-        )
-        public ResponseObject<BulkSemesterMappingResponse> bulkConfigureSemesterMappings(
-                @Valid @RequestBody BulkSemesterMappingRequest request
-        ) {
-            BulkSemesterMappingResponse response =
-                curriculumGroupSubjectService.bulkConfigureSemesterMappings(request);
 
-            return ResponseObject.<BulkSemesterMappingResponse>builder()
-                    .status(response.isSuccess() ? 1000 : 400)
-                    .data(response)
-                    .message(response.isSuccess() ?
-                             "Bulk mapping completed successfully" :
-                             "Bulk mapping failed - validation errors found")
-                    .build();
-        }
-
-                /**
-                 * API bulk configure semester-group-subject mappings (PUT mode)
-                 */
-                @PutMapping("/bulk-configure")
-                @PreAuthorize("hasAnyAuthority('CURRICULUM_UPDATE', 'SUBJECT_UPDATE', 'GROUP_UPDATE')")
-                @Operation(
-                    summary = "Bulk configure semester-subject-group mappings (PUT mode)",
-                    description = "Behavior like POST bulk-configure, but when a duplicate subject exists in the same curriculum: " +
-                              "if groupId is not null then add; if groupId is null then skip that item and continue processing others."
-                )
-                public ResponseObject<BulkSemesterMappingResponse> bulkConfigureSemesterMappingsPut(
-                    @Valid @RequestBody BulkSemesterMappingRequest request
-                ) {
-                    BulkSemesterMappingResponse response =
-                        curriculumGroupSubjectService.bulkConfigureSemesterMappingsPut(request);
-
-                    return ResponseObject.<BulkSemesterMappingResponse>builder()
-                        .status(response.isSuccess() ? 1000 : 400)
-                        .data(response)
-                        .message(response.isSuccess() ?
-                            "Bulk PUT mapping completed successfully" :
-                            "Bulk PUT mapping completed with validation issues")
-                        .build();
-                }
 }
