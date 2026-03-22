@@ -19,6 +19,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @Tag(name = "Curriculum Group Subject", description = "Curriculum" +
         "-Group-Subject Mapping APIs - Quản lý môn học trong khung " +
         "chương trình")
@@ -53,13 +55,13 @@ public class CurriculumGroupSubjectController {
     }
 
     /**
-     * API bulk configure semester-group-subject mappings (PUT mode)
+     * API bulk configure semester-group-subject mappings
      */
     @PostMapping("/bulk-configure")
     @PreAuthorize("hasAnyAuthority('CURRICULUM_UPDATE', 'SUBJECT_UPDATE', 'GROUP_UPDATE')")
     @Operation(
             summary = "Bulk configure semester-subject-group mappings ",
-            description = "Atomically insert multiple " +
+            description = "Delete mappings by deleteSubjectsList (if provided) before processing insert. Then atomically insert multiple " +
                     "subject-semester-group mappings for a curriculum. when a duplicate subject exists in the same curriculum: " +
                     "if groupId is not null then add; if groupId is null then skip that item and continue processing others."
     )
@@ -112,6 +114,37 @@ public class CurriculumGroupSubjectController {
         return ResponseObject.<PagedResponse<SubjectSimpleResponse>>builder()
                 .status(1000)
                 .data(PagedResponse.of(subjects))
+                .message("Get subjects successfully")
+                .build();
+    }
+
+    @GetMapping("/subjects/by-curriculum")
+    @Operation(
+            summary = "Get subjects by curriculum and department",
+            description = "Get subjects by curriculumId and departmentId. " +
+                    "Optional curriculum status filter: if provided and curriculum status mismatches, return an empty list. " +
+                    "Response includes subjectId, subjectCode, subjectName, subject status, and semester."
+    )
+    public ResponseObject<List<SubjectSimpleResponse>> getSubjectsByCurriculumAndDepartment(
+            @Parameter(description = "Curriculum ID (UUID, required)", required = true)
+            @RequestParam(name = "curriculumId") String curriculumId,
+
+            @Parameter(description = "Department ID (UUID, required)", required = true)
+            @RequestParam(name = "departmentId") String departmentId,
+
+            @Parameter(description = "Curriculum status filter (optional)")
+            @RequestParam(name = "status", required = false) String status
+    ) {
+        List<SubjectSimpleResponse> subjects =
+                curriculumGroupSubjectService.getSubjectsByCurriculumStatusAndDepartment(
+                        curriculumId,
+                        status,
+                        departmentId
+                );
+
+        return ResponseObject.<List<SubjectSimpleResponse>>builder()
+                .status(1000)
+                .data(subjects)
                 .message("Get subjects successfully")
                 .build();
     }

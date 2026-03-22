@@ -63,7 +63,7 @@ spring:
 # ==========================================
 jwt:
   signer-key: ${JWT_SIGNER_KEY}
-  valid-duration: 3600 # in seconds (1 hour)
+  valid-duration: 360000 # in seconds (1 hour)
   refreshable-duration: 604800 # in seconds (7 days)
 
 # ==========================================

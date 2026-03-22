@@ -25,6 +25,9 @@ public class BulkSemesterMappingRequest {
     @NotNull(message = "CURRICULUM_ID_REQUIRED")
     UUID curriculumId;
 
+    @Valid
+    List<UUID> deleteSubjectsList;
+
     @NotEmpty(message = "SEMESTER_MAPPINGS_REQUIRED")
     @Valid
     List<SemesterMappingDTO> semesterMappings;

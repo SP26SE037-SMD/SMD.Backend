@@ -4,6 +4,7 @@ import com.example.smd.entities.Curriculum_Group_Subject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -85,5 +86,24 @@ public interface CurriculumGroupSubjectRepository extends JpaRepository<Curricul
            "ORDER BY ccs.semester ASC, s.subjectCode ASC")
     List<Curriculum_Group_Subject> findAllByCurriculumIdOrderBySemester(
         @Param("curriculumId") UUID curriculumId
+    );
+
+    @Query("SELECT ccs FROM Curriculum_Group_Subject ccs " +
+           "JOIN FETCH ccs.subject s " +
+           "WHERE ccs.curriculum.curriculumId = :curriculumId " +
+           "AND s.department.departmentId = :departmentId " +
+           "ORDER BY ccs.semester ASC, s.subjectCode ASC")
+    List<Curriculum_Group_Subject> findByCurriculumIdAndDepartmentId(
+        @Param("curriculumId") UUID curriculumId,
+        @Param("departmentId") UUID departmentId
+    );
+
+    @Modifying
+    @Query("DELETE FROM Curriculum_Group_Subject ccs " +
+           "WHERE ccs.curriculum.curriculumId = :curriculumId " +
+           "AND ccs.subject.subjectId IN :subjectIds")
+    int deleteByCurriculumIdAndSubjectIds(
+        @Param("curriculumId") UUID curriculumId,
+        @Param("subjectIds") List<UUID> subjectIds
     );
 }
