@@ -6,7 +6,7 @@ import jakarta.validation.constraints.Size;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import java.time.Instant;
+import java.time.LocalDate;
 import java.util.UUID;
 
 @Data
@@ -16,12 +16,13 @@ import java.util.UUID;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class TaskRequest {
 
-    @NotNull(message = "SPRINT_ID_REQUIRED")
-    UUID sprintId;
 
+    @NotNull(message = "ACCOUNT_ID_REQUIRED")
     UUID accountId;
 
     UUID syllabusId;
+
+    UUID curriculumId;
 
     @NotBlank(message = "TASK_NAME_REQUIRED")
     @Size(max = 150, message = "TASK_NAME_TOO_LONG")
@@ -35,5 +36,12 @@ public class TaskRequest {
     @Size(max = 20, message = "PRIORITY_TOO_LONG")
     String priority;
 
-    Instant deadline;
+    UUID sprintId;
+
+    LocalDate deadline;
+
+    @Size(max = 50, message = "TASK_TYPE_TOO_LONG")
+    String type;
+
+    LocalDate createdAt;
 }

@@ -15,22 +15,26 @@ public interface TaskMapper {
     @Mapping(target = "sprint", ignore = true)
     @Mapping(target = "account", ignore = true)
     @Mapping(target = "syllabus", ignore = true)
+    @Mapping(target = "curriculum", ignore = true)
     Task toTask(TaskRequest request);
 
     @Mapping(target = "sprintId", source = "sprint.sprintId")
     @Mapping(target = "accountId", source = "account.accountId")
     @Mapping(target = "syllabusId", source = "syllabus.syllabusId")
+    @Mapping(target = "curriculumId", source = "curriculum.curriculumId")
     TaskResponse toTaskResponse(Task task);
 
     @Mapping(target = "taskId", ignore = true)
     @Mapping(target = "sprint", ignore = true)
     @Mapping(target = "account", ignore = true)
     @Mapping(target = "syllabus", ignore = true)
+    @Mapping(target = "curriculum", ignore = true)
     Task toTask(TaskItemRequest request);
 
     @Mapping(target = "taskId", ignore = true)
     @Mapping(target = "sprint", ignore = true)
     @Mapping(target = "account", ignore = true)
     @Mapping(target = "syllabus", ignore = true)
+    @Mapping(target = "curriculum", ignore = true)
     void updateTask(@MappingTarget Task task, TaskRequest request);
 }
