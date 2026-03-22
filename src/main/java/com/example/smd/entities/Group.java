@@ -14,7 +14,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
-@Table(name = "group")
+@Table(name = "\"group\"")
 public class Group {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
