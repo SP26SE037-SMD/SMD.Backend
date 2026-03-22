@@ -34,7 +34,7 @@ public class CurriculumService {
     CurriculumRepository curriculumRepository;
     MajorRepository majorRepository;
     CurriculumMapper curriculumMapper;
-
+    AccountService accountService;
     
     /**
      * Lấy danh sách curriculum với phân trang và bộ lọc
@@ -48,34 +48,65 @@ public class CurriculumService {
      */
     @Transactional(readOnly = true)
     public Page<CurriculumResponse> getAllCurriculums(
-            String search, 
-            String searchBy, 
+            String search,
+            String searchBy,
             String status,
-            int page, 
-            int size, 
-            String[] sort) {
-        
-        // 1. Xử lý sorting
+            int page,
+            int size,
+            String[] sort,
+            String accountId) {
+
+        // 1. Khởi tạo Pageable
         Sort.Direction direction = sort.length > 1 && sort[1].equalsIgnoreCase("desc")
                 ? Sort.Direction.DESC : Sort.Direction.ASC;
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sort[0]));
-        
-        Page<Curriculum> curriculumPage;
-        
-        // 2. Query dựa trên filter
-        if ( status != null || (search != null && !search.trim().isEmpty())) {
-            // Sử dụng query tổng hợp với filters
-            curriculumPage = curriculumRepository.findWithFilters(
-                    search != null && !search.trim().isEmpty() ? search : null,
-                    status,
-                    pageable
-            );
-        } else {
-            // Không có filter, lấy tất cả
-            curriculumPage = curriculumRepository.findAll(pageable);
+
+        // 2. Chuẩn hóa Status & Phân quyền (Giống hệt Major)
+        // Xử lý trường hợp chuỗi rỗng hoặc "all" từ Frontend
+        String finalStatus = (status == null || status.trim().isEmpty() || status.equalsIgnoreCase("all"))
+                ? null : status.trim();
+
+        var account = accountService.getAccountById(accountId);
+        String roleName = account.getRole().getRoleName();
+
+        if (roleName.equals("STUDENT") || roleName.equals("LECTURER")) {
+            finalStatus = "PUBLISHED"; // Role thấp luôn bị ép về PUBLISHED
         }
-        
-        // 3. Map sang DTO
+
+        Page<Curriculum> curriculumPage;
+        boolean hasStatus = finalStatus != null;
+        boolean hasSearch = search != null && !search.trim().isEmpty();
+        String type = (searchBy != null && !searchBy.trim().isEmpty()) ? searchBy.toLowerCase() : "all";
+
+        // 3. Logic QUYẾT ĐỊNH (Điểm mấu chốt để không bị GetAll)
+        if (!hasSearch) {
+            // TRƯỜNG HỢP 1: Không có search -> Kiểm tra status để gọi đúng hàm Repo
+            if (hasStatus) {
+                curriculumPage = curriculumRepository.findByStatus(finalStatus, pageable);
+            } else {
+                // Chỉ Admin/VP mới có thể vào đây nếu không truyền status
+                curriculumPage = curriculumRepository.findAll(pageable);
+            }
+        } else {
+            String searchLower = search.trim();
+
+            if (hasStatus) {
+                // TRƯỜNG HỢP 2: Có Search + Có Status (Dùng AND trong SQL)
+                curriculumPage = switch (type) {
+                    case "code" -> curriculumRepository.findByCurriculumCodeContainingIgnoreCaseAndStatus(searchLower, finalStatus, pageable);
+                    case "name" -> curriculumRepository.findByCurriculumNameContainingIgnoreCaseAndStatus(searchLower, finalStatus, pageable);
+                    default -> curriculumRepository.searchAllFieldsWithStatus(searchLower, finalStatus, pageable);
+                };
+            } else {
+                // TRƯỜNG HỢP 3: Có Search nhưng không có Status (Chỉ dành cho Admin/VP)
+                curriculumPage = switch (type) {
+                    case "code" -> curriculumRepository.findByCurriculumCodeContainingIgnoreCase(searchLower, pageable);
+                    case "name" -> curriculumRepository.findByCurriculumNameContainingIgnoreCase(searchLower, pageable);
+                    default -> curriculumRepository.findByCurriculumNameContainingIgnoreCaseOrCurriculumCodeContainingIgnoreCase(searchLower, searchLower, pageable);
+                };
+            }
+        }
+
         return curriculumPage.map(curriculumMapper::toCurriculumResponse);
     }
     
@@ -116,13 +147,26 @@ public class CurriculumService {
      * Lấy chi tiết curriculum theo ID
      */
     @Transactional(readOnly = true)
-    public CurriculumResponse getCurriculumDetail(String id) {
+    public CurriculumResponse getCurriculumDetail(String id, String accountId) {
         log.info("Fetching curriculum detail for ID: {}", id);
 
         Curriculum curriculum =
                 curriculumRepository.findById(UUID.fromString(id))
                 .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));
-        
+
+        //Phân quyền ROLE Student + Lecture chỉ xem được PUBLISHED
+        var account = accountService.getAccountById(accountId);
+        if(account.getRole().getRoleName().equals("STUDENT") ||  account.getRole().getRoleName().equals("LECTURER")) {
+            if(!curriculum.getStatus().equals(CurriculumStatus.PUBLISHED.toString())) {
+                new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+            }
+        }
+
+        if(curriculum.getStatus().equals(CurriculumStatus.DRAFT.toString())) {
+            if(!account.getRole().getRoleName().equals("HOCFDC")){
+                new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+            }
+        }
         return curriculumMapper.toCurriculumResponse(curriculum);
     }
     
@@ -157,6 +201,10 @@ public class CurriculumService {
             if (curriculumRepository.existsByCurriculumCode(request.getCurriculumCode())) {
                 throw new AppException(ErrorCode.CURRICULUM_CODE_EXISTS);
             }
+        }
+
+        if(!curriculum.getStatus().equals(CurriculumStatus.DRAFT.toString())) {
+            throw new AppException(ErrorCode.CURRICULUM_NOT_DRAFT);
         }
         
         // 5. Cập nhật các trường

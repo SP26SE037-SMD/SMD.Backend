@@ -44,4 +44,17 @@ public interface CurriculumRepository extends JpaRepository<Curriculum, UUID> {
             @Param("status") String status,
             Pageable pageable);
 
+    // Tìm theo mã + status
+    Page<Curriculum> findByCurriculumCodeContainingIgnoreCaseAndStatus(String code, String status, Pageable pageable);
+
+    // Tìm theo tên + status
+    Page<Curriculum> findByCurriculumNameContainingIgnoreCaseAndStatus(String name, String status, Pageable pageable);
+
+    // Tìm tổng hợp (Bạn có thể dùng Native Query hoặc JPQL)
+    @Query("SELECT c FROM Curriculum c WHERE " +
+            "(LOWER(c.curriculumCode) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+            "LOWER(c.curriculumName) LIKE LOWER(CONCAT('%', :search, '%'))) AND " +
+            "(:status IS NULL OR c.status = :status)")
+    Page<Curriculum> searchAllFieldsWithStatus(String search, String status, Pageable pageable);
+
 }

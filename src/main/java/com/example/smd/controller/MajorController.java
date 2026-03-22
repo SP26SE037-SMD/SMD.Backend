@@ -53,13 +53,14 @@ public class MajorController {
             @RequestParam(defaultValue = "majorCode,asc") String[] sort,
             @AuthenticationPrincipal Jwt jwt
     ) {
+        System.out.println("Status:" + status);
         String userId = jwt.getClaimAsString("accountId");
         Page<MajorResponse> majors;
         if (Boolean.TRUE.equals(updatedYesterday)) {
             majors = majorService.getMajorsUpdatedInLast24Hours(status, page, size);
         } else {
             // Gọi logic getAll cũ của bạn
-            majors = majorService.getAllMajors(userId, search, "code", null, page, size, new String[]{"majorCode", "asc"});
+            majors = majorService.getAllMajors(userId, search, "code", status, page, size, new String[]{"majorCode", "asc"});
         }
 
         return ResponseObject.<PagedResponse<MajorResponse>>builder()
@@ -114,21 +115,22 @@ public class MajorController {
                 .build();
     }
 
-//    // API lấy chi tiết chuyên ngành theo mã chuyên ngành
-//    @GetMapping("/{majorCode}")
-//    @Operation(
-//            summary = "Get major details by major code",
-//            description = "Retrieve full information of a major using its unique code (e.g., SE, AI, CS)."
-//    )
-//    public ResponseObject<MajorResponse> getMajorDetail(
-//            @PathVariable String majorCode) {
-//
-//        return ResponseObject.<MajorResponse>builder()
-//                .status(1000)
-//                .data(majorService.getMajorDetail(majorCode))
-//                .message("Get major details successfully")
-//                .build();
-//    }
+    // API lấy chi tiết chuyên ngành theo mã chuyên ngành
+    @GetMapping("/code/{majorCode}")
+    @Operation(
+            summary = "Get major details by major code",
+            description = "Retrieve full information of a major using its unique code (e.g., SE, AI, CS)."
+    )
+    public ResponseObject<MajorResponse> getMajorDetail(
+            @PathVariable String majorCode,
+            @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
+        return ResponseObject.<MajorResponse>builder()
+                .status(1000)
+                .data(majorService.getMajorDetail(majorCode, userId))
+                .message("Get major details successfully")
+                .build();
+    }
 
     @GetMapping("/{id}")
     @Operation(
@@ -137,8 +139,6 @@ public class MajorController {
     )
     public ResponseObject<MajorResponse> getDetail(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
         String userId = jwt.getClaimAsString("accountId");
-
-        System.out.println("User ID thực hiện: " + userId);
 
         return ResponseObject.<MajorResponse>builder()
                 .status(1000)

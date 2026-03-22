@@ -30,17 +30,6 @@ public interface MajorRepository extends JpaRepository<Major, UUID> {
     // Tìm Major theo mã chuyên ngành chính xác
     Optional<Major> findByMajorCode(String majorCode);
 
-    Page<Major> findByStatus(String status, Pageable pageable);
-
-    Page<Major> findByMajorNameContainingIgnoreCaseAndStatus(String name, String status, Pageable pageable);
-
-    Page<Major> findByMajorCodeContainingIgnoreCaseAndStatus(String code, String status, Pageable pageable);
-
-    // Trường hợp search cả name và code kèm status
-    @Query("SELECT m FROM Major m WHERE (LOWER(m.majorName) LIKE LOWER(CONCAT('%', :search, '%')) " +
-            "OR LOWER(m.majorCode) LIKE LOWER(CONCAT('%', :search, '%'))) AND m.status = :status")
-    Page<Major> searchAllFieldsWithStatus(@Param("search") String search, @Param("status") String status, Pageable pageable);
-
     @Query("SELECT m FROM Major m WHERE " +
             "(:status IS NULL OR CAST(m.status AS string) = :status) AND " +
             "m.updatedAt >= :startTime AND " +
@@ -53,4 +42,21 @@ public interface MajorRepository extends JpaRepository<Major, UUID> {
 
     @Query("SELECT m FROM Major m LEFT JOIN FETCH m.curriculums WHERE m.majorId = :id")
     Optional<Major> findByIdWithCurriculums(@Param("id") UUID id);
+
+    // 1. Chỉ lọc Status
+    @Query("SELECT m FROM Major m WHERE m.status = :status")
+    Page<Major> findByStatus(@Param("status") String status, Pageable pageable);
+
+    // 2. Search Code + Status (AND)
+    @Query("SELECT m FROM Major m WHERE LOWER(m.majorCode) LIKE LOWER(CONCAT('%', :search, '%')) AND m.status = :status")
+    Page<Major> findByMajorCodeContainingIgnoreCaseAndStatus(String search, String status, Pageable pageable);
+
+    // 3. Search Name + Status (AND)
+    @Query("SELECT m FROM Major m WHERE LOWER(m.majorName) LIKE LOWER(CONCAT('%', :search, '%')) AND m.status = :status")
+    Page<Major> findByMajorNameContainingIgnoreCaseAndStatus(String search, String status, Pageable pageable);
+
+    // 4. Search All Fields + Status (Sử dụng OR cho Search, nhưng AND cho Status)
+    @Query("SELECT m FROM Major m WHERE (LOWER(m.majorName) LIKE LOWER(CONCAT('%', :search, '%')) " +
+            "OR LOWER(m.majorCode) LIKE LOWER(CONCAT('%', :search, '%'))) AND m.status = :status")
+    Page<Major> searchAllFieldsWithStatus(String search, String status, Pageable pageable);
 }
