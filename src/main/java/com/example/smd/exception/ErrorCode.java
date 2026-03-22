@@ -144,7 +144,7 @@ public enum ErrorCode {
     INVALID_SYLLABUS_STATUS(18002, "The syllabus status is invalid.", HttpStatus.BAD_REQUEST),
 
     //CURRICULUM_GROUP_SUBJECT
-    CURRICULUM_GROUP_SUBJECT_ALREADY_EXISTS(20001, "This subject is already added to this curriculum with the same group", HttpStatus.BAD_REQUEST),
+    CURRICULUM_GROUP_SUBJECT_ALREADY_EXISTS(20001, "This subject is already added to this curriculum", HttpStatus.BAD_REQUEST),
     CURRICULUM_GROUP_SUBJECT_NOT_FOUND(20002, "Curriculum-Group-Subject mapping not found", HttpStatus.NOT_FOUND),
 
     //POs
