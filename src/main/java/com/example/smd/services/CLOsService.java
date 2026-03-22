@@ -6,6 +6,7 @@ import com.example.smd.dto.response.clo.CLOsResponse;
 import com.example.smd.entities.CLOs;
 import com.example.smd.entities.Subject;
 import com.example.smd.enums.PloStatus;
+import com.example.smd.enums.SubjectStatus;
 import com.example.smd.enums.SyllabusStatus;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
@@ -33,7 +34,7 @@ public class CLOsService {
 
     CLOsRepository closRepository;
     SubjectRepository subjectRepository;
-
+    AccountService accountService;
     CLOsMapper closMapper;
 
     @Transactional
@@ -46,6 +47,10 @@ public class CLOsService {
         UUID uuidSubjectId = UUID.fromString(subjectId);
         Subject subject = subjectRepository.findById(uuidSubjectId)
                 .orElseThrow(() -> new AppException(ErrorCode.SUBJECT_NOT_FOUND));
+
+        if (!subject.getStatus().equals(SubjectStatus.DEFINED.toString())){
+            throw new AppException(ErrorCode.CLO_SUBJECT_NOT_EDITABLE);
+        }
 
         // 2. Check trùng mã CLO ngay trong danh sách gửi lên (Local Check)
         Set<String> uniqueCodes = new HashSet<>();
@@ -76,7 +81,7 @@ public class CLOsService {
     }
 
 
-    public Page<CLOsResponse> getClosBySubject(String subjectId, int page, int size) {
+    public Page<CLOsResponse> getClosBySubject(String subjectId, int page, int size, String accountId) {
         try {
             // 1. Kiểm tra định dạng UUID và sự tồn tại của Subject
             UUID id = UUID.fromString(subjectId);
@@ -84,12 +89,35 @@ public class CLOsService {
                 throw new AppException(ErrorCode.SUBJECT_NOT_FOUND);
             }
 
-            // 2. Thiết lập phân trang và sắp xếp theo cloCode
+            // 3. Lấy thông tin Account và xác định Filter Status
+            var account = accountService.getAccountById(accountId);
+            String roleName = account.getRole().getRoleName();
+
+            // Mặc định null để Admin/VP/HOCFDC xem được tất cả các trạng thái
+            String finalStatus = null;
+
+            // Phân quyền: Học sinh và Giảng viên chỉ được xem CLO đã PUBLISHED
+            if (roleName.equals("STUDENT") || roleName.equals("LECTURER")) {
+                finalStatus = "PUBLISHED"; // Hoặc CloStatus.PUBLISHED.toString() nếu bạn có Enum
+            }
+
+            // 4. Thiết lập phân trang
             Pageable pageable = PageRequest.of(page, size, Sort.by("cloCode").ascending());
 
-            // 3. Truy vấn dữ liệu và chuyển đổi sang Response DTO
-            return closRepository.findBySubject_SubjectId(id, pageable)
-                    .map(closMapper::toCloResponse);
+            Page<CLOs> cloPage;
+            if (finalStatus != null) {
+                // Nhánh lọc theo PUBLISHED cho Student/Lecturer
+                cloPage = closRepository.findBySubject_SubjectIdAndStatus(id, finalStatus, pageable);
+            } else {
+                // Nhánh lấy tất cả cho Role quản lý (Security Check)
+                List<String> managerRoles = List.of("VP", "ADMIN", "HOCFDC", "HOPDC");
+                if (!managerRoles.contains(roleName)) {
+                    throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+                }
+                cloPage = closRepository.findBySubject_SubjectId(id, pageable);
+            }
+
+            return cloPage.map(closMapper::toCloResponse);
 
         } catch (IllegalArgumentException e) {
             // Ném lỗi nếu định dạng ID không hợp lệ
@@ -101,6 +129,10 @@ public class CLOsService {
     public CLOsResponse updateClo(String id, CLOsRequest request) {
         CLOs clo = closRepository.findById(UUID.fromString(id))
                 .orElseThrow(() -> new AppException(ErrorCode.CLO_NOT_FOUND));
+
+        if(!clo.getStatus().equals(PloStatus.DRAFT.toString())){
+            throw new AppException(ErrorCode.CLO_NOT_EDITABLE);
+        }
 
         // Cập nhật các trường thông tin
         clo.setCloCode(request.getCloCode());
@@ -130,16 +162,37 @@ public class CLOsService {
         }
     }
 
-    public CLOsResponse getCloDetail(String id) {
+    public CLOsResponse getCloDetail(String id, String accountId) {
         try {
             UUID cloId = UUID.fromString(id);
 
-            // Sử dụng hàm có Join Fetch/EntityGraph để lấy luôn thông tin Subject
-            return closRepository.findById(cloId)
-                    .map(closMapper::toCloResponse)
+            // 1. Tìm CLO (Nên dùng EntityGraph hoặc Fetch Join trong Repo để lấy luôn Subject nếu cần)
+            CLOs clo = closRepository.findById(cloId)
                     .orElseThrow(() -> new AppException(ErrorCode.CLO_NOT_FOUND));
 
+            // 2. Lấy thông tin Account để phân quyền
+            var account = accountService.getAccountById(accountId);
+            String roleName = account.getRole().getRoleName();
+
+            // 3. Phân quyền: STUDENT + LECTURER chỉ xem được bản PUBLISHED
+            if (roleName.equals("STUDENT") || roleName.equals("LECTURER")) {
+                if (!"PUBLISHED".equalsIgnoreCase(clo.getStatus())) {
+                    throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+                }
+            }
+
+            // 4. Phân quyền: Bản DRAFT chỉ dành cho HOCFDC (Người soạn thảo chính)
+            if ("DRAFT".equalsIgnoreCase(clo.getStatus())) {
+                if (!roleName.equals("HOCFDC")) {
+                    throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+                }
+            }
+
+            // 5. Trả về kết quả sau khi đã qua các bước check
+            return closMapper.toCloResponse(clo);
+
         } catch (IllegalArgumentException e) {
+            // Trả về lỗi định dạng ID thay vì lỗi chung chung
             throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
         }
     }

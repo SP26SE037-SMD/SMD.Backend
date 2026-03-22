@@ -31,4 +31,7 @@ public interface CLOsRepository extends JpaRepository<CLOs, UUID> {
     @Modifying(clearAutomatically = true)
     @Query("UPDATE CLOs c SET c.status = :status WHERE c.subject.subjectId = :subjectId")
     int updateStatusBySubjectId(@Param("status") String status, @Param("subjectId") UUID subjectId);
+
+    // Thêm hàm này để lọc theo status cho Role thấp
+    Page<CLOs> findBySubject_SubjectIdAndStatus(UUID subjectId, String status, Pageable pageable);
 }

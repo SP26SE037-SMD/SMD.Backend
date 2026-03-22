@@ -141,13 +141,13 @@ public class MajorService {
         var account = accountService.getAccountById(accountId);
         if(account.getRole().getRoleName().equals("STUDENT") ||  account.getRole().getRoleName().equals("LECTURER")) {
             if(!major.getStatus().equals(PloStatus.PUBLISHED.toString())) {
-                new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+                throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
 
         if(major.getStatus().equals(PloStatus.DRAFT.toString())) {
             if(!account.getRole().getRoleName().equals("VP")){
-                new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+                throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
         return majorMapper.toMajorResponse(major);
@@ -161,13 +161,13 @@ public class MajorService {
         var account = accountService.getAccountById(accountId);
         if(account.getRole().getRoleName().equals("STUDENT") ||  account.getRole().getRoleName().equals("LECTURER")) {
             if(!major.getStatus().equals(PloStatus.PUBLISHED.toString())) {
-                new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+                throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
 
         if(major.getStatus().equals(PloStatus.DRAFT.toString())) {
             if(!account.getRole().getRoleName().equals("VP")){
-                new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+                throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
 

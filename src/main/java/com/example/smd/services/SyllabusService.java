@@ -51,8 +51,8 @@ public class SyllabusService {
         Syllabus syllabus = syllabusRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
 
-        if(!syllabus.getStatus().equals("DRAFT")) {
-            throw new AppException(ErrorCode.SYLLABUS_NOT_DRAFT);
+        if(!(syllabus.getStatus().equals("DRAFT") && syllabus.getStatus().equals(SyllabusStatus.REVISION_REQUESTED.toString()))) {
+            throw new AppException(ErrorCode.SYLLABUS_NOT_EDITABLE);
         }
 
         syllabusMapper.updateSyllabus(syllabus, request);
@@ -140,13 +140,13 @@ public class SyllabusService {
         var account = accountService.getAccountById(accountId);
         if(account.getRole().getRoleName().equals("STUDENT") ||  account.getRole().getRoleName().equals("LECTURER")) {
             if(!syllabus.getStatus().equals(PloStatus.PUBLISHED.toString())) {
-                new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+                throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
 
         if(syllabus.getStatus().equals("DRAFT")) {
             if(!account.getRole().getRoleName().equals("HOPDC")){
-                new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+                throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
         return syllabusRepository.findById(id)
