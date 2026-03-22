@@ -23,6 +23,9 @@ public interface POsRepository extends JpaRepository<PO, UUID> {
 
     List<PO> findByMajor_MajorId(UUID majorId);
 
+    // Tìm PO của Major theo Status (Để phục vụ phân quyền Role)
+    Page<PO> findByMajor_MajorIdAndStatus(UUID majorId, String status, Pageable pageable);
+
     @Modifying(clearAutomatically = true)
     @Query("UPDATE PO p SET p.status = :status WHERE p.major.majorId = :majorId")
     int updateStatusByMajorId(@Param("status") String status, @Param("majorId") UUID majorId);

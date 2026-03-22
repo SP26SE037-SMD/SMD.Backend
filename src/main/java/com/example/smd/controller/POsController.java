@@ -14,6 +14,8 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -28,7 +30,7 @@ public class POsController {
     POsService poService;
 
     @PostMapping("/major/{majorId}")
-//    @PreAuthorize("hasAuthority('POS_CREATE')")
+    @PreAuthorize("hasAuthority('POS_CREATE')")
     @Operation(summary = "Create multiple POs", description = "Create POs linked to a specific Major via PathVariable.")
     public ResponseObject<List<POsResponse>> createBulk(
             @PathVariable String majorId,
@@ -41,7 +43,7 @@ public class POsController {
     }
 
     @PutMapping("/{id}")
-//    @PreAuthorize("hasAuthority('POS_UPDATE')")
+    @PreAuthorize("hasAuthority('POS_UPDATE')")
     @Operation(summary = "Update PO", description = "Update po_code and description for a specific PO.")
     public ResponseObject<POsResponse> update(@PathVariable String id, @RequestBody @Valid POsRequest request) {
         return ResponseObject.<POsResponse>builder()
@@ -53,10 +55,11 @@ public class POsController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Get PO Detail", description = "Retrieve detailed information of a specific PO by its ID.")
-    public ResponseObject<POsResponse> getDetail(@PathVariable String id) {
+    public ResponseObject<POsResponse> getDetail(@PathVariable String id, @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<POsResponse>builder()
                 .status(1000)
-                .data(poService.getPoDetail(id))
+                .data(poService.getPoDetail(id, userId))
                 .message("Get PO detail successfully")
                 .build();
     }
@@ -66,16 +69,19 @@ public class POsController {
     public ResponseObject<PagedResponse<POsResponse>> getByMajor(
             @PathVariable String majorId,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "10") int size,
+            @AuthenticationPrincipal Jwt jwt
+            ) {
+        String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<PagedResponse<POsResponse>>builder()
                 .status(1000)
-                .data(PagedResponse.of(poService.getPosByMajor(majorId, page, size)))
+                .data(PagedResponse.of(poService.getPosByMajor(majorId, page, size, userId)))
                 .message("Get POs by major successfully")
                 .build();
     }
 
     @DeleteMapping("/{id}")
-//    @PreAuthorize("hasAuthority('POS_DELETE')")
+    @PreAuthorize("hasAuthority('POS_DELETE')")
     @Operation(summary = "Delete PO", description = "Soft delete a PO by moving its status to ARCHIVED.")
     public ResponseObject<Void> delete(@PathVariable String id) {
         poService.deletePo(id);
@@ -86,7 +92,7 @@ public class POsController {
     }
 
     @PatchMapping("/major/{majorId}/status")
-//    @PreAuthorize("hasAuthority('POS_UPDATE_STATUS')")
+    @PreAuthorize("hasAuthority('POS_UPDATE_STATUS')")
     @Operation(
             summary = "Update POs status by Major",
             description = "### Quy trình cập nhật trạng thái của Chuẩn đầu ra (PO):\n" +
