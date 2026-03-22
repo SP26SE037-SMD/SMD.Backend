@@ -5,6 +5,7 @@ import com.example.smd.dto.request.plo.PLOsRequest;
 import com.example.smd.dto.response.PLOsResponse;
 import com.example.smd.entities.Curriculum;
 import com.example.smd.entities.PLOs;
+import com.example.smd.entities.PO;
 import com.example.smd.enums.PloStatus;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
@@ -29,7 +30,7 @@ import java.util.*;
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class PLOsService {
-
+    AccountService accountService;
     PLOsRepository plOsRepository;
     CurriculumRepository curriculumRepository;
     PLOsMapper plOsMapper;
@@ -83,6 +84,10 @@ public class PLOsService {
                 throw new AppException(ErrorCode.PLO_CODE_EXISTS);
             }
 
+            if(!plo.getStatus().equals(PloStatus.DRAFT.toString())) {
+                throw new AppException(ErrorCode.PLO_NOT_DRAFT);
+            }
+
             plo.setPloCode(request.getPloCode());
             plo.setDescription(request.getDescription());
 
@@ -92,9 +97,25 @@ public class PLOsService {
         }
     }
 
-    public PLOsResponse getPloDetail(String id) {
+    public PLOsResponse getPloDetail(String id, String accountId) {
         try {
             UUID plOsId = UUID.fromString(id);
+            PLOs plo = plOsRepository.findById(plOsId)
+                    .orElseThrow(() -> new AppException(ErrorCode.PO_NOT_FOUND));
+
+            //Phân quyền ROLE Student + Lecture chỉ xem được PUBLISHED
+            var account = accountService.getAccountById(accountId);
+            if(account.getRole().getRoleName().equals("STUDENT") ||  account.getRole().getRoleName().equals("LECTURER")) {
+                if(!plo.getStatus().equals(PloStatus.PUBLISHED.toString())) {
+                    new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+                }
+            }
+
+            if(plo.getStatus().equals(PloStatus.DRAFT.toString())) {
+                if(!account.getRole().getRoleName().equals("HOCFDC")){
+                    new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+                }
+            }
             return plOsRepository.findById(plOsId)
                     .map(plOsMapper::toPloResponse)
                     .orElseThrow(() -> new AppException(ErrorCode.PLO_NOT_FOUND));
@@ -103,20 +124,42 @@ public class PLOsService {
         }
     }
 
-    public Page<PLOsResponse> getPlosByCurriculum(String curriculumId, int page, int size) {
-        try {
-            // Check majorId trước khi tìm kiếm
-            UUID id = UUID.fromString(curriculumId);
-            if (!curriculumRepository.existsById(id)) {
-                throw new AppException(ErrorCode.CURRICULUM_NOT_FOUND);
-            }
+    public Page<PLOsResponse> getPlosByCurriculum(String curriculumId, int page, int size, String accountId) {
 
-            Pageable pageable = PageRequest.of(page, size, Sort.by("ploCode").ascending());
-            return plOsRepository.findByCurriculum_CurriculumId(id, pageable)
-                    .map(plOsMapper::toPloResponse);
-        } catch (IllegalArgumentException e) {
-            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION); // Hoặc một mã lỗi định dạng ID không hợp lệ
+        UUID id = UUID.fromString(curriculumId);
+
+        // 1. Kiểm tra Curriculum tồn tại
+        if (!curriculumRepository.existsById(id)) {
+            throw new AppException(ErrorCode.CURRICULUM_NOT_FOUND);
         }
+
+        // 2. Lấy thông tin Account và xác định Filter Status
+        var account = accountService.getAccountById(accountId);
+        String roleName = account.getRole().getRoleName();
+
+        // Mặc định null để Admin/VP xem được tất cả (Draft, Published,...)
+        String finalStatus = null;
+
+        if (roleName.equals("STUDENT") || roleName.equals("LECTURER")) {
+            finalStatus = PloStatus.PUBLISHED.toString();
+        }
+
+        // 3. Khởi tạo Pageable
+        Pageable pageable = PageRequest.of(page, size, Sort.by("ploCode").ascending());
+
+        Page<PLOs> ploPage;
+        if (finalStatus != null) {
+            // Nhánh lọc theo PUBLISHED cho Student/Lecturer
+            ploPage = plOsRepository.findByCurriculum_CurriculumIdAndStatus(id, finalStatus, pageable);
+        } else {
+            // Nhánh lấy tất cả cho VP/Admin (phải check role để bảo mật)
+            if (!roleName.equals("VP") && !roleName.equals("ADMIN") && !roleName.equals("HOCFDC") && !roleName.equals("HOPDC")) {
+                throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+            }
+            ploPage = plOsRepository.findByCurriculum_CurriculumId(id, pageable);
+        }
+
+        return ploPage.map(plOsMapper::toPloResponse);
     }
 
     @Transactional
@@ -128,15 +171,8 @@ public class PLOsService {
             PLOs plo = plOsRepository.findById(ploId)
                     .orElseThrow(() -> new AppException(ErrorCode.PLO_NOT_FOUND));
 
-            // 2. Kiểm tra ràng buộc dữ liệu (Logic nghiệp vụ cho đồ án Capstone)
-            // Nếu PLO đã được ánh xạ vào Course (môn học) thì không được xóa
-//            if (plo.getCurriculum() != null) {
-//                throw new AppException(ErrorCode.PLO_IN_USE);
-//                // Bạn cần định nghĩa thêm ErrorCode này: "PLO đang được sử dụng, không thể xóa"
-//            }
-
-            // 3. Thực hiện xóa
-            if(plo.getStatus().equals(PloStatus.DRAFT.toString())) {
+            // 2. Thực hiện xóa
+            if (plo.getStatus().equals(PloStatus.DRAFT.toString())) {
                 plOsRepository.delete(plo);
             } else {
                 plo.setStatus(PloStatus.ARCHIVED.toString());

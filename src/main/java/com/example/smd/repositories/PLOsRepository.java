@@ -33,4 +33,7 @@ public interface PLOsRepository extends JpaRepository<PLOs, UUID> {
     @Modifying(clearAutomatically = true)
     @Query("UPDATE PLOs p SET p.status = :status WHERE p.curriculum.curriculumId = :curriculumId")
     int updateStatusByCurriculumId(@Param("status") String status, @Param("curriculumId") UUID curriculumId);
+
+    // Lấy PLO của Curriculum theo Status (Dành cho Student/Lecturer)
+    Page<PLOs> findByCurriculum_CurriculumIdAndStatus(UUID curriculumId, String status, Pageable pageable);
 }

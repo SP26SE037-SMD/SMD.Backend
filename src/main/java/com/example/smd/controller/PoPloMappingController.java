@@ -27,7 +27,7 @@ public class PoPloMappingController {
     PoPloMappingService service;
 
     @PostMapping
-//    @PreAuthorize("hasAuthority('MAPPING_CREATE')")
+    @PreAuthorize("hasAuthority('MAPPING_CREATE')")
     @Operation(
             summary = "Create PO-PLO Mapping",
             description = "Establish a connection between a Program Outcome and a Program Learning Outcome."
@@ -74,7 +74,7 @@ public class PoPloMappingController {
     }
 
     @DeleteMapping("/{id}")
-//    @PreAuthorize("hasAuthority('MAPPING_DELETE')")
+    @PreAuthorize("hasAuthority('MAPPING_DELETE')")
     @Operation(summary = "Remove a PO-PLO Mapping")
     public ResponseObject<Void> delete(@PathVariable String id) {
         service.deleteMapping(id);
