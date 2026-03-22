@@ -37,39 +37,46 @@ public class MajorService {
     MajorRepository majorRepository;
     MajorMapper majorMapper;
 
-    // GetAll có phân trang
-    public Page<MajorResponse> getAllMajors(String accountId,String search, String searchBy, String status, int page, int size, String[] sort) {
+    public Page<MajorResponse> getAllMajors(String accountId, String search, String searchBy, String status, int page, int size, String[] sort) {
+        // 1. Khởi tạo Pageable
         Sort.Direction direction = sort.length > 1 && sort[1].equalsIgnoreCase("desc")
                 ? Sort.Direction.DESC : Sort.Direction.ASC;
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sort[0]));
 
-        Page<Major> majorPage;
-
-        //Phân quyền ROLE Student + Lecture chỉ xem được PUBLISHED
+        // 2. Chuẩn hóa Status & Phân quyền
         var account = accountService.getAccountById(accountId);
-        if(account.getRole().getRoleName().equals("STUDENT") ||  account.getRole().getRoleName().equals("LECTURER")) {
-            status = "PUBLISHED";
+        String roleName = account.getRole().getRoleName();
+        String finalStatus = (status == null || status.trim().isEmpty() || status.equalsIgnoreCase("all")) ? null : status.trim();
+
+        if (roleName.equals("STUDENT") || roleName.equals("LECTURER")) {
+            finalStatus = "PUBLISHED";
         }
 
-        // Kiểm tra nếu có filter theo status
-        boolean hasStatus = status != null && !status.trim().isEmpty();
+        Page<Major> majorPage;
+        boolean hasStatus = finalStatus != null;
         boolean hasSearch = search != null && !search.trim().isEmpty();
+        // Quy định search theo code hay theo name, mặc định là "all"
+        String type = (searchBy != null && !searchBy.trim().isEmpty()) ? searchBy.toLowerCase() : "all";
 
+        // 3. Logic Rẽ Nhánh Tối Ưu
         if (!hasSearch) {
-            majorPage = hasStatus ? majorRepository.findByStatus(status, pageable)
+            // TRƯỜNG HỢP 1: Không truyền search -> Chỉ filter theo Status (nếu có)
+            majorPage = hasStatus ? majorRepository.findByStatus(finalStatus, pageable)
                     : majorRepository.findAll(pageable);
         } else {
             String searchLower = search.trim();
+
             if (hasStatus) {
-                // Logic Search + Status
-                majorPage = switch (searchBy.toLowerCase()) {
-                    case "code" -> majorRepository.findByMajorCodeContainingIgnoreCaseAndStatus(searchLower, status, pageable);
-                    case "name" -> majorRepository.findByMajorNameContainingIgnoreCaseAndStatus(searchLower, status, pageable);
-                    default -> majorRepository.searchAllFieldsWithStatus(searchLower, status, pageable);
+                // TRƯỜNG HỢP 2: Có cả Search và Status (Dùng toán tử AND trong SQL)
+                majorPage = switch (type) {
+                    case "code" -> majorRepository.findByMajorCodeContainingIgnoreCaseAndStatus(searchLower, finalStatus, pageable);
+                    case "name" -> majorRepository.findByMajorNameContainingIgnoreCaseAndStatus(searchLower, finalStatus, pageable);
+                    // Nếu type là "all" hoặc cái khác -> Search cả 2 field VÀ phải đúng Status
+                    default -> majorRepository.searchAllFieldsWithStatus(searchLower, finalStatus, pageable);
                 };
             } else {
-                // Logic Search cũ (không có status)
-                majorPage = switch (searchBy.toLowerCase()) {
+                // TRƯỜNG HỢP 3: Có Search nhưng Status rỗng -> Filter theo search (Code OR Name)
+                majorPage = switch (type) {
                     case "code" -> majorRepository.findByMajorCodeContainingIgnoreCase(searchLower, pageable);
                     case "name" -> majorRepository.findByMajorNameContainingIgnoreCase(searchLower, pageable);
                     default -> majorRepository.findByMajorNameContainingIgnoreCaseOrMajorCodeContainingIgnoreCase(searchLower, searchLower, pageable);
@@ -126,10 +133,23 @@ public class MajorService {
         }
     }
 
-    public MajorResponse getMajorDetail(String majorCode) {
+    public MajorResponse getMajorDetail(String majorCode, String accountId) {
         Major major = majorRepository.findByMajorCode(majorCode)
                 .orElseThrow(() -> new AppException(ErrorCode.MAJOR_NOT_FOUND));
 
+        //Phân quyền ROLE Student + Lecture chỉ xem được PUBLISHED
+        var account = accountService.getAccountById(accountId);
+        if(account.getRole().getRoleName().equals("STUDENT") ||  account.getRole().getRoleName().equals("LECTURER")) {
+            if(!major.getStatus().equals(PloStatus.PUBLISHED.toString())) {
+                new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+            }
+        }
+
+        if(major.getStatus().equals(PloStatus.DRAFT.toString())) {
+            if(!account.getRole().getRoleName().equals("VP")){
+                new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+            }
+        }
         return majorMapper.toMajorResponse(major);
     }
 
