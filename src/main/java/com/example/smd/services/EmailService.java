@@ -1,4 +1,3 @@
-
 package com.example.smd.services;
 
 import com.google.api.services.gmail.Gmail;
@@ -7,16 +6,25 @@ import jakarta.mail.MessagingException;
 import jakarta.mail.Session;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
+import jakarta.mail.internet.MimeBodyPart;
+import jakarta.mail.internet.MimeMultipart;
+import jakarta.activation.DataHandler;
+import jakarta.activation.DataSource;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 @RequiredArgsConstructor
@@ -27,8 +35,12 @@ public class EmailService {
     private final EmailTemplateService emailTemplateService;
 
     @Value("${spring.gmail.sender}")
-    private  String sender_Email;
+    private String sender_Email;
     private static final String SENDER_NAME = "SMD System";
+    private static final String LOGO_CID = "smd-logo";
+    private static final String LOGO_PATH = "static/smd-logo.png";
+
+    public record AccountCreatedEmail(String email, String fullName) {}
 
     /**
      * Gửi email chào mừng user mới
@@ -70,6 +82,48 @@ public class EmailService {
     }
 
     /**
+     * Gửi email thông báo tạo account hàng loạt theo cơ chế chạy song song.
+     */
+    public void sendAccountCreatedEmailsBatch(List<AccountCreatedEmail> emailList) {
+        if (emailList == null || emailList.isEmpty()) {
+            return;
+        }
+
+        List<CompletableFuture<Void>> tasks = new ArrayList<>();
+
+        for (AccountCreatedEmail item : emailList) {
+            tasks.add(CompletableFuture.runAsync(() -> {
+                try {
+                    String displayName = (item.fullName() == null || item.fullName().isBlank())
+                            ? item.email()
+                            : item.fullName();
+
+                    String loginHint = "Your account has been created successfully. " +
+                            "Please use your registered email to log in and update your profile information.";
+                    String htmlBody = emailTemplateService.buildAccountCreatedEmail(
+                            displayName,
+                            item.email(),
+                            loginHint
+                    );
+
+                    MimeMessage mimeMessage = buildMimeMessageWithAttachment(
+                            item.email(),
+                            "SMD Account Created",
+                            htmlBody
+                    );
+
+                    sendMessage(mimeMessage);
+                    log.info("Account created email sent to: {}", item.email());
+                } catch (Exception ex) {
+                    log.error("Failed to send account created email to {}: {}", item.email(), ex.getMessage());
+                }
+            }));
+        }
+
+        CompletableFuture.allOf(tasks.toArray(new CompletableFuture[0])).join();
+    }
+
+    /**
      * Tạo MimeMessage HTML
      */
     private MimeMessage buildMimeMessage(String to,
@@ -87,6 +141,85 @@ public class EmailService {
         email.setContent(htmlBody, "text/html; charset=UTF-8");
 
         return email;
+    }
+
+    /**
+     * Tạo MimeMessage HTML với logo attachment
+     */
+    private MimeMessage buildMimeMessageWithAttachment(String to,
+                                                       String subject,
+                                                       String htmlBody)
+            throws MessagingException, UnsupportedEncodingException, IOException {
+
+        Session session = Session.getDefaultInstance(new Properties(), null);
+        MimeMessage email = new MimeMessage(session);
+
+        email.setFrom(new InternetAddress(sender_Email, SENDER_NAME));
+        email.addRecipient(jakarta.mail.Message.RecipientType.TO,
+                new InternetAddress(to));
+        email.setSubject(subject, "UTF-8");
+
+        // Create multipart message with related type for inline images
+        MimeMultipart multipart = new MimeMultipart("related");
+
+        // HTML body part
+        MimeBodyPart htmlPart = new MimeBodyPart();
+        htmlPart.setContent(htmlBody, "text/html; charset=UTF-8");
+        multipart.addBodyPart(htmlPart);
+
+        // Logo attachment part
+        MimeBodyPart logoPart = new MimeBodyPart();
+        try {
+            ClassPathResource logoResource = new ClassPathResource(LOGO_PATH);
+            InputStream logoStream = logoResource.getInputStream();
+            byte[] logoBytes = logoStream.readAllBytes();
+            logoStream.close();
+
+            logoPart.setDataHandler(new DataHandler(
+                    new ByteArrayDataSource(logoBytes, "image/png")
+            ));
+            logoPart.setHeader("Content-ID", "<" + LOGO_CID + ">");
+            logoPart.setHeader("Content-Disposition", "inline; filename=\"logo.png\"");
+            multipart.addBodyPart(logoPart);
+        } catch (IOException ex) {
+            log.warn("Failed to load logo image, email will be sent without logo: {}", ex.getMessage());
+        }
+
+        email.setContent(multipart);
+        return email;
+    }
+
+    /**
+     * Custom DataSource để embed binary data
+     */
+    private static class ByteArrayDataSource implements DataSource {
+        private final byte[] data;
+        private final String contentType;
+
+        public ByteArrayDataSource(byte[] data, String contentType) {
+            this.data = data;
+            this.contentType = contentType;
+        }
+
+        @Override
+        public InputStream getInputStream() {
+            return new java.io.ByteArrayInputStream(data);
+        }
+
+        @Override
+        public java.io.OutputStream getOutputStream() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public String getContentType() {
+            return contentType;
+        }
+
+        @Override
+        public String getName() {
+            return "logo.png";
+        }
     }
 
     /**

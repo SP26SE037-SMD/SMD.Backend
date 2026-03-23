@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SMD Account Created</title>
+  </head>
+  <body
+    style="
+      margin: 0;
+      padding: 0;
+      background: #f4f6f8;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #1f2937;
+    "
+  >
+    <table
+      role="presentation"
+      width="100%"
+      cellspacing="0"
+      cellpadding="0"
+      style="background: #f4f6f8; padding: 24px 12px"
+    >
+      <tr>
+        <td align="center">
+          <table
+            role="presentation"
+            width="640"
+            cellspacing="0"
+            cellpadding="0"
+            style="
+              max-width: 640px;
+              background: #ffffff;
+              border-radius: 14px;
+              overflow: hidden;
+              border: 1px solid #e5e7eb;
+            "
+          >
+            <tr>
+              <td
+                style="
+                  background: linear-gradient(135deg, #0a7c2f, #16a34a);
+                  padding: 20px 24px;
+                "
+              >
+                <table
+                  role="presentation"
+                  width="100%"
+                  cellspacing="0"
+                  cellpadding="0"
+                >
+                  <tr>
+                    <td style="vertical-align: middle; width: 200px">
+                      <img
+                        src="cid:smd-logo"
+                        alt="SMD Logo"
+                        style="width: 200px; height: auto; display: block"
+                      />
+                    </td>
+                    <td style="vertical-align: middle; color: #ffffff">
+                      <div
+                        style="
+                          font-size: 22px;
+                          font-weight: 700;
+                          letter-spacing: 0.3px;
+                        "
+                      >
+                        SMD System
+                      </div>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 28px 28px 20px">
+                <p style="margin: 0 0 12px; font-size: 16px">
+                  Dear <strong>{{recipientName}}</strong>,
+                </p>
+                <p style="margin: 0 0 14px; line-height: 1.65">
+                  Your SMD account has been created successfully.
+                </p>
+                <p style="margin: 0 0 14px; line-height: 1.65">
+                  You can now sign in using your registered email address:
+                </p>
+                <p style="margin: 0 0 18px; line-height: 1.65">
+                  <strong>{{email}}</strong>
+                </p>
+                <div
+                  style="
+                    background: #f0fdf4;
+                    border: 1px solid #bbf7d0;
+                    border-radius: 10px;
+                    padding: 14px 16px;
+                    margin: 0 0 18px;
+                    line-height: 1.6;
+                  "
+                >
+                  {{message}}
+                </div>
+                <p style="margin: 0; line-height: 1.65">
+                  Best regards,<br /><strong>SMD Support Team</strong>
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td
+                style="
+                  border-top: 1px solid #e5e7eb;
+                  padding: 14px 28px;
+                  color: #6b7280;
+                  font-size: 12px;
+                  line-height: 1.6;
+                "
+              >
+                This is an automated message, please do not reply directly.<br />
+                &copy; {{year}} SMD. All rights reserved.
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

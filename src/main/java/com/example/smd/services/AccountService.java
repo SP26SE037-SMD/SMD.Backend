@@ -48,6 +48,7 @@ public class AccountService {
     private final AccountMapper accountMapper;
     private final PasswordEncoder passwordEncoder;
     private final DepartmentRepository departmentRepository;
+    private final EmailService emailService;
 
     // GetAll tài khoản có phân trang và tìm kiếm theo role name hoặc full name
     @Transactional(readOnly = true)
@@ -177,6 +178,14 @@ public class AccountService {
         log.info("Created new account with ID: {}, {}",
                 account.getAccountId(), account.getDepartment().getDepartmentCode());
 
+        // Send notification email after successful account creation.
+        emailService.sendAccountCreatedEmailsBatch(List.of(
+            new EmailService.AccountCreatedEmail(
+                account.getEmail(),
+                account.getFullName()
+            )
+        ));
+
         return accountMapper.toResponse(account);
     }
 
@@ -240,8 +249,6 @@ public class AccountService {
         List<Account> accounts = new ArrayList<>();
         List<ImportAccountResult> results = new ArrayList<>();
 
-        String randomPassword = generateRandomPassword();
-
         for (AccountImportDTO dto : rows) {
 
             try {
@@ -298,6 +305,7 @@ public class AccountService {
                 }
 
                 Account account = new Account();
+                String randomPassword = generateRandomPassword();
                 account.setEmail(email);
                 account.setFullName(fullName);
                 account.setPhoneNumber(phoneNumber);
@@ -351,7 +359,18 @@ public class AccountService {
             }
         }
 
-        accountRepository.saveAll(accountsToSave);
+        List<Account> savedAccounts = accountRepository.saveAll(accountsToSave);
+
+        if (!savedAccounts.isEmpty()) {
+            List<EmailService.AccountCreatedEmail> emailPayloads = savedAccounts.stream()
+                .map(account -> new EmailService.AccountCreatedEmail(
+                    account.getEmail(),
+                    account.getFullName()
+                ))
+                .toList();
+
+            emailService.sendAccountCreatedEmailsBatch(emailPayloads);
+        }
 
         long success = results.stream()
                 .filter(r -> r.getStatus().equals("SUCCESS"))
