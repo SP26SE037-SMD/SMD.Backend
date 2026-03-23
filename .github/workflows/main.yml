@@ -41,9 +41,9 @@ jobs:
             # Pull image mới
             sudo docker pull taikt2004/smd:latest
 
-            # Stop & remove container cũ (nếu có)
-            sudo docker stop smd || true
-            sudo docker rm smd || true
+            # Stop tất cả container đang dùng port 8080
+            sudo docker ps -q --filter "publish=8080" | xargs -r sudo docker stop
+            sudo docker ps -aq --filter "publish=8080" | xargs -r sudo docker rm
 
             # Run container mới
             sudo docker run -d \
