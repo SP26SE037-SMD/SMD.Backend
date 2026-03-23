@@ -22,11 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -64,28 +60,79 @@ public class PrerequisiteService {
     @Transactional
     public List<PrerequisiteResponse> getDependents(String subjectId) {
         // Tìm các môn học phụ thuộc vào môn này (Môn này là tiên quyết của chúng)
-        return prerequisiteRepository.findByPrerequisiteSubject_SubjectId(UUID.fromString(subjectId))
-                .stream().map(prerequisiteMapper::toResponse).toList();
+        List<PrerequisiteResponse> flatList = new ArrayList<>();
+        Set<UUID> visitedSubjectIds = new HashSet<>();
+
+        // Queue để duyệt các môn học phụ thuộc theo từng cấp
+        Queue<UUID> queue = new LinkedList<>();
+
+        UUID startId = UUID.fromString(subjectId);
+        queue.add(startId);
+        visitedSubjectIds.add(startId);
+
+        while (!queue.isEmpty()) {
+            UUID currentId = queue.poll();
+
+            // Tìm các môn mà 'currentId' đang đóng vai trò là môn TIÊN QUYẾT của chúng
+            List<Subject_Prerequisite> dependents =
+                    prerequisiteRepository.findByPrerequisiteSubject_SubjectId(currentId);
+
+            for (Subject_Prerequisite entity : dependents) {
+                // Lấy môn học phụ thuộc (môn đứng sau)
+                UUID dependentId = entity.getSubject().getSubjectId();
+
+                // Nếu môn này chưa được duyệt (tránh vòng lặp vô tận)
+                if (!visitedSubjectIds.contains(dependentId)) {
+                    // 1. Thêm vào danh sách phẳng trả về
+                    flatList.add(prerequisiteMapper.toResponse(entity));
+
+                    // 2. Đánh dấu đã xem và đưa vào hàng đợi để tìm tiếp các môn phụ thuộc của nó
+                    visitedSubjectIds.add(dependentId);
+                    queue.add(dependentId);
+                }
+            }
+        }
+
+        return flatList;
     }
 
     @Transactional
     public List<PrerequisiteResponse> getPrerequisites(String subjectId) {
-        // Tìm các bản ghi mà 'subjectId' này đóng vai trò là môn chính (môn sau)
-        // Kết quả sẽ trả về các môn học trước (prerequisite_subject_id)
-        return prerequisiteRepository.findBySubject_SubjectId(UUID.fromString(subjectId))
-                .stream()
-                .map(prerequisiteMapper::toResponse)
-                .toList();
+        List<PrerequisiteResponse> flatList = new ArrayList<>();
+        Set<UUID> visitedSubjectIds = new HashSet<>();
+
+        // Bắt đầu khử đệ quy bằng Queue (BFS)
+        Queue<UUID> queue = new LinkedList<>();
+        queue.add(UUID.fromString(subjectId));
+        visitedSubjectIds.add(UUID.fromString(subjectId));
+
+        while (!queue.isEmpty()) {
+            UUID currentId = queue.poll();
+
+            // Tìm các môn tiên quyết trực tiếp của môn hiện tại
+            List<Subject_Prerequisite> dependencies = prerequisiteRepository.findBySubject_SubjectId(currentId);
+
+            for (Subject_Prerequisite entity : dependencies) {
+                UUID preId = entity.getPrerequisiteSubject().getSubjectId();
+
+                // Nếu môn tiên quyết này chưa được xử lý
+                if (!visitedSubjectIds.contains(preId)) {
+                    // 1. Map sang Response và add vào list phẳng
+                    flatList.add(prerequisiteMapper.toResponse(entity));
+
+                    // 2. Đánh dấu đã xem và cho vào queue để tìm tiếp "ông nội" của nó
+                    visitedSubjectIds.add(preId);
+                    queue.add(preId);
+                }
+            }
+        }
+
+        return flatList;
     }
 
-    public void delete(String id) {
+    public void delete(UUID id) {
         if (!prerequisiteRepository.existsById(id))
             throw new AppException(ErrorCode.PREREQUISITE_NOT_FOUND);
-
-        var prerequisite = prerequisiteRepository.findById(id);
-        if(!(prerequisite.get().getSubject().getStatus().equals(SubjectStatus.DEFINED.toString()))){
-            throw new AppException(ErrorCode.PREREQUISITE_NOT_DEFINED);
-        }
 
         prerequisiteRepository.deleteById(id);
     }

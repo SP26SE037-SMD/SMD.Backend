@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/prerequisites")
@@ -63,7 +64,7 @@ public class PrerequisiteController {
     @DeleteMapping("/{id}")
     @Operation(summary = "Remove a prerequisite relationship")
     @PreAuthorize("hasAuthority('PREREQUISITE_MANAGE_SUBJECTS')")
-    public ResponseObject<Void> delete(@PathVariable String id) {
+    public ResponseObject<Void> delete(@PathVariable UUID id) {
         prerequisiteService.delete(id);
         return ResponseObject.<Void>builder()
                 .status(1000)
