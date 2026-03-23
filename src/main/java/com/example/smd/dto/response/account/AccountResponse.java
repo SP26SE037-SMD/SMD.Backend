@@ -35,4 +35,7 @@ public class AccountResponse {
 
     @JsonInclude
     String departmentName;
+
+    @JsonInclude
+    String departmentId;
 }
