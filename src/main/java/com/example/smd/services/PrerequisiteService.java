@@ -52,11 +52,6 @@ public class PrerequisiteService {
         Subject preSubject = subjectRepository.findById(pId)
                 .orElseThrow(() -> new AppException(ErrorCode.SUBJECT_NOT_FOUND));
 
-        if(!(subject.getStatus().equals(SubjectStatus.DEFINED.toString())
-        && preSubject.getStatus().equals(SubjectStatus.DEFINED.toString()))){
-            throw new AppException(ErrorCode.PREREQUISITE_NOT_DEFINED);
-        }
-
         Subject_Prerequisite entity = Subject_Prerequisite.builder()
                 .subject(subject)
                 .prerequisiteSubject(preSubject)
