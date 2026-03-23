@@ -47,13 +47,13 @@ jobs:
           port: 22
           script: |
             # Pull image mới
-            docker pull taikt2004/smd:${IMAGE_TAG}
+            sudo docker pull taikt2004/smd:${IMAGE_TAG}
 
             # Stop container cũ
             sudo docker ps -q --filter "publish=8080" | xargs -r sudo docker stop            
             sudo docker ps -aq --filter "publish=8080" | xargs -r sudo docker rm
             # Run container mới
-            docker run -d \
+            sudo docker run -d \
               --name smd \
               -p 8080:8080 \
               -env DB_URL="${{ secrets.DB_URL }}" \
@@ -69,4 +69,4 @@ jobs:
               taikt2004/smd:${IMAGE_TAG}
 
             # Cleanup image cũ
-            docker image prune -af
+            sudo docker image prune -af
