@@ -1,88 +1,65 @@
 package com.example.smd.services;
 
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StreamUtils;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.time.Year;
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 public class EmailTemplateService {
 
-//
-    /**
-     * Tạo HTML template cho welcome email
-     */
+    private static final String TEMPLATE_FOLDER = "templeteEmail/";
+
     public String buildWelcomeEmail(String userName) {
-        return """
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <title>Welcome to SMD</title>
-                <style>
-                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                    .header { background-color: #007bff; color: white; padding: 20px; text-align: center; }
-                    .content { padding: 20px; background-color: #f9f9f9; }
-                    .footer { text-align: center; padding: 20px; font-size: 12px; color: #666; }
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <div class="header">
-                        <h1>Welcome to SMD!</h1>
-                    </div>
-                    <div class="content">
-                        <h2>Welcome aboard, %s!</h2>
-                        <p>Thank you for joining SMD System. We're excited to have you on board!</p>
-                        <p>You can now start using our platform to manage your syllabus and learning materials.</p>
-                        <p>If you have any questions, feel free to contact our support team.</p>
-                        <p>Best regards,<br>The SMD Team</p>
-                    </div>
-                    <div class="footer">
-                        <p>© 2026 SMD. All rights reserved.</p>
-                    </div>
-                </div>
-            </body>
-            </html>
-            """.formatted(userName);
+        Map<String, String> variables = defaultVariables();
+        variables.put("userName", safe(userName));
+        return renderTemplate("welcome.html", variables);
     }
 
-    /**
-     * Tạo HTML template cho test email
-     */
     public String buildTestEmail(String recipientName, String message) {
-        return """
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <title>Test Email</title>
-                <style>
-                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                    .header { background-color: #17a2b8; color: white; padding: 20px; text-align: center; }
-                    .content { padding: 20px; background-color: #f9f9f9; }
-                    .footer { text-align: center; padding: 20px; font-size: 12px; color: #666; }
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <div class="header">
-                        <h1>SMD Test Email</h1>
-                    </div>
-                    <div class="content">
-                        <h2>Hello %s!</h2>
-                        <p>This is a test email from SMD System.</p>
-                        <p><strong>Message:</strong></p>
-                        <p>%s</p>
-                        <p>If you received this email, the email service is working correctly!</p>
-                        <p>Best regards,<br>The SMD Team</p>
-                    </div>
-                    <div class="footer">
-                        <p>© 2026 SMD. All rights reserved.</p>
-                    </div>
-                </div>
-            </body>
-            </html>
-            """.formatted(recipientName, message);
+        Map<String, String> variables = defaultVariables();
+        variables.put("recipientName", safe(recipientName));
+        variables.put("message", safe(message));
+        return renderTemplate("test.html", variables);
+    }
+
+    public String buildAccountCreatedEmail(String recipientName, String email, String message) {
+        Map<String, String> variables = defaultVariables();
+        variables.put("recipientName", safe(recipientName));
+        variables.put("email", safe(email));
+        variables.put("message", safe(message));
+        return renderTemplate("account-created.html", variables);
+    }
+
+    private Map<String, String> defaultVariables() {
+        Map<String, String> vars = new HashMap<>();
+        vars.put("year", String.valueOf(Year.now().getValue()));
+        return vars;
+    }
+
+    private String renderTemplate(String templateName, Map<String, String> variables) {
+        String html = loadTemplate(templateName);
+        for (Map.Entry<String, String> entry : variables.entrySet()) {
+            html = html.replace("{{" + entry.getKey() + "}}", safe(entry.getValue()));
+        }
+        return html;
+    }
+
+    private String loadTemplate(String templateName) {
+        try {
+            ClassPathResource resource = new ClassPathResource(TEMPLATE_FOLDER + templateName);
+            return StreamUtils.copyToString(resource.getInputStream(), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new IllegalStateException("Cannot load email template: " + templateName, e);
+        }
+    }
+
+    private String safe(String value) {
+        return value == null ? "" : value;
     }
 }

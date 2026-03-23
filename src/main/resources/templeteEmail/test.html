@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SMD Test Email</title>
+  </head>
+  <body
+    style="
+      margin: 0;
+      padding: 0;
+      background: #f4f6f8;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #1f2937;
+    "
+  >
+    <table
+      role="presentation"
+      width="100%"
+      cellspacing="0"
+      cellpadding="0"
+      style="background: #f4f6f8; padding: 24px 12px"
+    >
+      <tr>
+        <td align="center">
+          <table
+            role="presentation"
+            width="640"
+            cellspacing="0"
+            cellpadding="0"
+            style="
+              max-width: 640px;
+              background: #ffffff;
+              border-radius: 14px;
+              overflow: hidden;
+              border: 1px solid #e5e7eb;
+            "
+          >
+            <tr>
+              <td style="background: #0ea5e9; padding: 20px 24px; color: #fff">
+                <div style="font-size: 22px; font-weight: 700">
+                  SMD Test Email
+                </div>
+                <div style="font-size: 13px; opacity: 0.95">
+                  Email service validation
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 28px; line-height: 1.65">
+                <p style="margin: 0 0 12px">
+                  Hello <strong>{{recipientName}}</strong>,
+                </p>
+                <p style="margin: 0 0 12px">This is a test message from SMD.</p>
+                <div
+                  style="
+                    background: #f8fafc;
+                    border: 1px solid #e2e8f0;
+                    border-radius: 10px;
+                    padding: 14px 16px;
+                  "
+                >
+                  {{message}}
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td
+                style="
+                  border-top: 1px solid #e5e7eb;
+                  padding: 14px 28px;
+                  color: #6b7280;
+                  font-size: 12px;
+                "
+              >
+                &copy; {{year}} SMD. All rights reserved.
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
