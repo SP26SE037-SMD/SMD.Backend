@@ -99,10 +99,10 @@ public class SubjectController {
 
     @GetMapping("/code/{subjectCode}")
     public ResponseObject<SubjectResponse> getByCode(@PathVariable String subjectCode, @AuthenticationPrincipal Jwt jwt) {
-        String accountId = jwt.getSubject();
+        String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<SubjectResponse>builder()
                 .status(1000)
-                .data(subjectService.getDetailByCode(subjectCode, accountId))
+                .data(subjectService.getDetailByCode(subjectCode, userId))
                 .message("Get subject detail by code successfully")
                 .build();
     }
@@ -193,10 +193,10 @@ public class SubjectController {
             @PathVariable UUID departmentId,
             @AuthenticationPrincipal Jwt jwt) {
 
-        String accountId = jwt.getSubject();
+        String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<List<SubjectResponse>>builder()
                 .status(1000)
-                .data(subjectService.getSubjectsByDepartment(departmentId, accountId))
+                .data(subjectService.getSubjectsByDepartment(departmentId, userId))
                 .message("Get subjects by department successfully")
                 .build();
     }

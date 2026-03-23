@@ -27,7 +27,7 @@ public class BlockController {
     BlockService blockService;
 
     @PostMapping("/material/{materialId}")
-//    @PreAuthorize("hasAuthority('BLOCK_CREATE')")
+    @PreAuthorize("hasAuthority('BLOCK_CREATE')")
     @Operation(
             summary = "Tạo danh sách các khối nội dung (Bulk Create Blocks)",
             description = "### Quy trình khởi tạo nội dung tài liệu:\n" +
