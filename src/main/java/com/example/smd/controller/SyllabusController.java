@@ -81,10 +81,10 @@ public class SyllabusController {
             @RequestParam(required = false) String status,
             @AuthenticationPrincipal Jwt jwt) {
 
-        String accountId = jwt.getSubject();
+        String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<List<SyllabusResponse>>builder()
                 .status(1000)
-                .data(syllabusService.getAllBySubject(subjectId, status, accountId))
+                .data(syllabusService.getAllBySubject(subjectId, status, userId))
                 .message("Syllabuses retrieved successfully for subject: " + subjectId)
                 .build();
     }
@@ -92,9 +92,9 @@ public class SyllabusController {
     @GetMapping("/{id}")
     @Operation(summary = "Get syllabus detail", description = "Retrieves full details of a syllabus including sessions and assessments")
     public ResponseObject<SyllabusResponse> getDetail(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
-        String accountId = jwt.getSubject();
+        String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<SyllabusResponse>builder()
-                .data(syllabusService.getDetail(id, accountId))
+                .data(syllabusService.getDetail(id, userId))
                 .message("Syllabus detail retrieved successfully")
                 .build();
     }

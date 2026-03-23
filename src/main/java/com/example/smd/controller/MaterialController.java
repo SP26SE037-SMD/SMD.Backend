@@ -111,10 +111,10 @@ public class MaterialController {
             @Parameter(description = "UUID of the material to retrieve")
             @PathVariable UUID materialId,
             @AuthenticationPrincipal Jwt jwt) {
-        String accountId = jwt.getSubject();
+        String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<MaterialResponse>builder()
                 .status(1000)
-                .data(materialService.getDetail(materialId, accountId))
+                .data(materialService.getDetail(materialId, userId))
                 .message("Material details retrieved successfully")
                 .build();
     }
