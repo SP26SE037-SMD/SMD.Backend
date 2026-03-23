@@ -1,0 +1,65 @@
+name: Deploy to EC2 with Docker
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout source
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Login Docker Hub (dùng token)
+      - name: Login Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # 3. Build Docker image
+      - name: Build Docker image
+        run: |
+          docker build -t taikt2004/smd:latest .
+
+      # 4. Push image lên Docker Hub
+      - name: Push Docker image
+        run: |
+          docker push taikt2004/smd:latest
+
+      # 5. SSH vào EC2 để deploy
+      - name: SSH and Deploy on EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            # Pull image mới
+            sudo docker pull taikt2004/smd:latest
+
+            # Stop tất cả container đang dùng port 8080
+            sudo docker ps -q --filter "publish=8080" | xargs -r sudo docker stop
+            sudo docker ps -aq --filter "publish=8080" | xargs -r sudo docker rm
+
+            # Run container mới
+            sudo docker run -d \
+              --name smd \
+              -p 8080:8080 \
+              -e DB_URL="${{ secrets.DB_URL }}" \
+              -e DB_USERNAME="${{ secrets.DB_USERNAME }}" \
+              -e DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
+              -e JWT_SIGNER_KEY="${{ secrets.JWT_SIGNER_KEY }}" \
+              -e CLIENT_ID="${{ secrets.CLIENT_ID }}" \
+              -e CLIENT_SECRET="${{ secrets.CLIENT_SECRET }}" \
+              -e REFRESH_TOKEN="${{ secrets.REFRESH_TOKEN }}" \
+              -e SENDER_EMAIL="${{ secrets.SENDER_EMAIL }}" \
+              -e GEMINI_API_KEY="${{ secrets.GEMINI_API_KEY }}" \
+              --restart unless-stopped \
+              taikt2004/smd:latest
+
+            # (Optional) dọn image cũ
+            sudo docker image prune -f
