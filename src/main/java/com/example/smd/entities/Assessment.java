@@ -5,6 +5,7 @@ import lombok.experimental.FieldDefaults;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -17,7 +18,7 @@ import java.util.List;
 public class Assessment {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    String assessmentId;
+    UUID assessmentId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
@@ -39,10 +40,10 @@ public class Assessment {
     @Column(name = "duration")
     Integer duration;
 
-    @Column(name = "question_type", length = 50)
+    @Column(name = "question_type", length = 150)
     String questionType;
 
-    @Column(name = "knowledge_skill", length = 50)
+    @Column(name = "knowledge_skill", length = 150)
     String knowledgeSkill;
 
     @Column(name = "grading_guide", columnDefinition = "TEXT")

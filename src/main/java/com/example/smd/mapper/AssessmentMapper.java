@@ -19,7 +19,7 @@ public class AssessmentMapper {
                 .categoryName(assessment.getAssessmentCategory() != null ? assessment.getAssessmentCategory().getCategoryName() : null)
                 .typeId(assessment.getAssessmentType() != null ? assessment.getAssessmentType().getTypeId() : null)
                 .typeName(assessment.getAssessmentType() != null ? assessment.getAssessmentType().getTypeName() : null)
-                .syllabusId(assessment.getSyllabus() != null ? String.valueOf(assessment.getSyllabus().getSyllabusId()) : null)
+                .syllabusId(assessment.getSyllabus() != null ? assessment.getSyllabus().getSyllabusId() : null)
                 .part(assessment.getPart())
                 .weight(assessment.getWeight())
                 .completionCriteria(assessment.getCompletionCriteria())

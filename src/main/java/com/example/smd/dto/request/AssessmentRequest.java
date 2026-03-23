@@ -4,6 +4,8 @@ import jakarta.validation.constraints.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.util.UUID;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -11,14 +13,14 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class AssessmentRequest {
 
-    @NotBlank(message = "ASSESSMENT_CATEGORY_ID_REQUIRED")
-    String categoryId;
+    @NotNull(message = "ASSESSMENT_CATEGORY_ID_REQUIRED")
+    UUID categoryId;
 
-    @NotBlank(message = "ASSESSMENT_TYPE_ID_REQUIRED")
-    String typeId;
+    @NotNull(message = "ASSESSMENT_TYPE_ID_REQUIRED")
+    UUID typeId;
 
-    @NotBlank(message = "SYLLABUS_ID_REQUIRED")
-    String syllabusId;
+    @NotNull(message = "SYLLABUS_ID_REQUIRED")
+    UUID syllabusId;
 
     @NotNull(message = "ASSESSMENT_PART_REQUIRED")
     @Min(value = 1, message = "ASSESSMENT_PART_INVALID")

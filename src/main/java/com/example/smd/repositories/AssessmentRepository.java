@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Repository
-public interface AssessmentRepository extends JpaRepository<Assessment, String>, JpaSpecificationExecutor<Assessment> {
+public interface AssessmentRepository extends JpaRepository<Assessment, UUID>, JpaSpecificationExecutor<Assessment> {
 
     List<Assessment> findBySyllabus_SyllabusIdOrderByPartAsc(UUID syllabusId);
 
@@ -20,5 +20,6 @@ public interface AssessmentRepository extends JpaRepository<Assessment, String>,
 
     @Query("SELECT COALESCE(SUM(a.weight), 0) FROM Assessment a WHERE a.syllabus.syllabusId = :syllabusId AND a.assessmentId <> :assessmentId AND UPPER(COALESCE(a.status, '')) <> 'ARCHIVED'")
     Double sumWeightBySyllabusIdAndAssessmentIdNot(@Param("syllabusId") UUID syllabusId,
-                                                   @Param("assessmentId") String assessmentId);
+                                                   @Param(
+                                                           "assessmentId") UUID assessmentId);
 }

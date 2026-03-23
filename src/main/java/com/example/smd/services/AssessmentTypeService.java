@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -53,8 +54,9 @@ public class AssessmentTypeService {
     }
 
     @Transactional(readOnly = true)
-    public AssessmentTypeResponse getTypeById(String id) {
-        Assessment_Type entity = assessmentTypeRepository.findById(id)
+    public AssessmentTypeResponse getTypeById(UUID id) {
+        Assessment_Type entity =
+                assessmentTypeRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.ASSESSMENT_TYPE_NOT_FOUND));
         return assessmentTypeMapper.toResponse(entity);
     }
@@ -71,8 +73,9 @@ public class AssessmentTypeService {
     }
 
     @Transactional
-    public AssessmentTypeResponse updateType(String id, AssessmentTypeRequest request) {
-        Assessment_Type entity = assessmentTypeRepository.findById(id)
+    public AssessmentTypeResponse updateType(UUID id, AssessmentTypeRequest request) {
+        Assessment_Type entity =
+                assessmentTypeRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.ASSESSMENT_TYPE_NOT_FOUND));
 
         if (request.getTypeName() != null
@@ -87,7 +90,7 @@ public class AssessmentTypeService {
     }
 
     @Transactional
-    public boolean deleteType(String id) {
+    public boolean deleteType(UUID id) {
         Assessment_Type entity = assessmentTypeRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.ASSESSMENT_TYPE_NOT_FOUND));
         assessmentTypeRepository.delete(entity);

@@ -165,6 +165,7 @@ public enum ErrorCode {
     // PO_PLO_MAPPING
     PO_PLO_MAPPING_NOT_FOUND(22001, "PO-PLO mapping not found", HttpStatus.NOT_FOUND),
     PO_PLO_MAPPING_EXISTS(22002, "This PLO is already mapped to this PO", HttpStatus.BAD_REQUEST),
+    MAPPING_LIST_REQUIRED(22003, "Mapping list is required", HttpStatus.BAD_REQUEST),
 
     // SPRINT
     SPRINT_NOT_FOUND(23001, "Sprint not found", HttpStatus.NOT_FOUND),
@@ -221,6 +222,19 @@ public enum ErrorCode {
     BLOCK_NOT_FOUND(27001, "Block content could not be located", HttpStatus.NOT_FOUND),
     BLOCK_LIST_EMPTY(27002, "Block list cannot be empty for bulk creation", HttpStatus.BAD_REQUEST),
     INVALID_BLOCK_STYLE(27003, "The provided block style is not supported", HttpStatus.BAD_REQUEST),
+
+    // SESSION
+    SESSION_NOT_FOUND(28001, "Session not found", HttpStatus.NOT_FOUND),
+    SESSION_NUMBER_REQUIRED(28002, "Session number is required", HttpStatus.BAD_REQUEST),
+    SESSION_NUMBER_INVALID(28003, "Session number must be greater than or equal to 1", HttpStatus.BAD_REQUEST),
+    SESSION_TITLE_REQUIRED(28004, "Session title is required", HttpStatus.BAD_REQUEST),
+    SESSION_TITLE_INVALID(28005, "Session title must not exceed 200 characters", HttpStatus.BAD_REQUEST),
+    SESSION_DURATION_INVALID(28006, "Session duration must be greater than or equal to 0", HttpStatus.BAD_REQUEST),
+    SESSION_STATUS_REQUIRED(28007, "Session status is required", HttpStatus.BAD_REQUEST),
+    SESSION_NUMBER_EXISTS(28008, "Session number already exists in this syllabus", HttpStatus.BAD_REQUEST),
+    SESSION_LIST_REQUIRED(28009, "Session list is required", HttpStatus.BAD_REQUEST),
+    SESSION_NOT_DRAFT(28010, "Session can only be overwritten when status is Draft", HttpStatus.BAD_REQUEST),
+    SESSION_NUMBER_LIST_REQUIRED(28011, "Session number list is required", HttpStatus.BAD_REQUEST),
 
     // General
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),
