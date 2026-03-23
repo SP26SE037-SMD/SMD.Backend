@@ -165,6 +165,7 @@ public enum ErrorCode {
     // PO_PLO_MAPPING
     PO_PLO_MAPPING_NOT_FOUND(22001, "PO-PLO mapping not found", HttpStatus.NOT_FOUND),
     PO_PLO_MAPPING_EXISTS(22002, "This PLO is already mapped to this PO", HttpStatus.BAD_REQUEST),
+    MAPPING_LIST_REQUIRED(22003, "Mapping list is required", HttpStatus.BAD_REQUEST),
 
     // SPRINT
     SPRINT_NOT_FOUND(23001, "Sprint not found", HttpStatus.NOT_FOUND),
