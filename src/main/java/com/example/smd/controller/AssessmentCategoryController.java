@@ -13,6 +13,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 @Tag(name = "Assessment Category", description = "Assessment Category Management APIs")
 @RestController
 @RequestMapping("/api/assessment-categories")
@@ -39,7 +41,7 @@ public class AssessmentCategoryController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Get assessment category by ID")
-    public ResponseObject<AssessmentCategoryResponse> getCategoryById(@PathVariable String id) {
+        public ResponseObject<AssessmentCategoryResponse> getCategoryById(@PathVariable UUID id) {
         return ResponseObject.<AssessmentCategoryResponse>builder()
                 .status(1000)
                 .data(assessmentCategoryService.getCategoryById(id))
@@ -62,7 +64,7 @@ public class AssessmentCategoryController {
     @PreAuthorize("hasAuthority('SYLLABUS_UPDATE')")
     @Operation(summary = "Update assessment category")
     public ResponseObject<AssessmentCategoryResponse> updateCategory(
-            @PathVariable String id,
+            @PathVariable UUID id,
             @Valid @RequestBody AssessmentCategoryRequest request
     ) {
         return ResponseObject.<AssessmentCategoryResponse>builder()
@@ -75,7 +77,7 @@ public class AssessmentCategoryController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('SYLLABUS_UPDATE')")
     @Operation(summary = "Delete assessment category")
-    public ResponseObject<Boolean> deleteCategory(@PathVariable String id) {
+        public ResponseObject<Boolean> deleteCategory(@PathVariable UUID id) {
         return ResponseObject.<Boolean>builder()
                 .status(1000)
                 .data(assessmentCategoryService.deleteCategory(id))

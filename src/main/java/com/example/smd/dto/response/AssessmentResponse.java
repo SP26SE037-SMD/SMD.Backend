@@ -5,6 +5,7 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @Data
 @Builder
@@ -13,12 +14,12 @@ import java.time.Instant;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class AssessmentResponse {
-    String assessmentId;
-    String categoryId;
+    UUID assessmentId;
+    UUID categoryId;
     String categoryName;
-    String typeId;
+    UUID typeId;
     String typeName;
-    String syllabusId;
+    UUID syllabusId;
     Integer part;
     Double weight;
     String completionCriteria;

@@ -3,6 +3,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import java.util.List;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -15,7 +16,7 @@ import java.util.List;
 public class Assessment_Type {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    String typeId;
+    UUID typeId;
 
     @Column(name = "type_name", nullable = false, length = 50)
     String typeName;

@@ -13,6 +13,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 @Tag(name = "Assessment Type", description = "Assessment Type Management APIs")
 @RestController
 @RequestMapping("/api/assessment-types")
@@ -39,7 +41,7 @@ public class AssessmentTypeController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Get assessment type by ID")
-    public ResponseObject<AssessmentTypeResponse> getTypeById(@PathVariable String id) {
+        public ResponseObject<AssessmentTypeResponse> getTypeById(@PathVariable UUID id) {
         return ResponseObject.<AssessmentTypeResponse>builder()
                 .status(1000)
                 .data(assessmentTypeService.getTypeById(id))
@@ -62,7 +64,7 @@ public class AssessmentTypeController {
     @PreAuthorize("hasAuthority('SYLLABUS_UPDATE')")
     @Operation(summary = "Update assessment type")
     public ResponseObject<AssessmentTypeResponse> updateType(
-            @PathVariable String id,
+            @PathVariable UUID id,
             @Valid @RequestBody AssessmentTypeRequest request
     ) {
         return ResponseObject.<AssessmentTypeResponse>builder()
@@ -75,7 +77,7 @@ public class AssessmentTypeController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('SYLLABUS_UPDATE')")
     @Operation(summary = "Delete assessment type")
-    public ResponseObject<Boolean> deleteType(@PathVariable String id) {
+        public ResponseObject<Boolean> deleteType(@PathVariable UUID id) {
         return ResponseObject.<Boolean>builder()
                 .status(1000)
                 .data(assessmentTypeService.deleteType(id))

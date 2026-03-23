@@ -86,8 +86,9 @@ public class AssessmentService {
     }
 
     @Transactional(readOnly = true)
-    public AssessmentResponse getAssessmentById(String assessmentId) {
-        Assessment assessment = assessmentRepository.findById(assessmentId)
+    public AssessmentResponse getAssessmentById(UUID assessmentId) {
+        Assessment assessment =
+                assessmentRepository.findById(assessmentId)
                 .orElseThrow(() -> new AppException(ErrorCode.ASSESSMENT_NOT_FOUND));
         return assessmentMapper.toResponse(assessment);
     }
@@ -102,12 +103,14 @@ public class AssessmentService {
 
     @Transactional
     public AssessmentResponse createAssessment(AssessmentRequest request) {
-        Assessment_Category category = assessmentCategoryRepository.findById(request.getCategoryId())
+        Assessment_Category category =
+            assessmentCategoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() -> new AppException(ErrorCode.ASSESSMENT_CATEGORY_NOT_FOUND));
-        Assessment_Type type = assessmentTypeRepository.findById(request.getTypeId())
+        Assessment_Type type =
+            assessmentTypeRepository.findById(request.getTypeId())
                 .orElseThrow(() -> new AppException(ErrorCode.ASSESSMENT_TYPE_NOT_FOUND));
 
-        UUID syllabusId = UUID.fromString(request.getSyllabusId());
+        UUID syllabusId = request.getSyllabusId();
         Syllabus syllabus = syllabusRepository.findById(syllabusId)
                 .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
 
@@ -125,16 +128,19 @@ public class AssessmentService {
     }
 
     @Transactional
-    public AssessmentResponse updateAssessment(String assessmentId, AssessmentRequest request) {
+    public AssessmentResponse updateAssessment(UUID assessmentId,
+                                               AssessmentRequest request) {
         Assessment assessment = assessmentRepository.findById(assessmentId)
                 .orElseThrow(() -> new AppException(ErrorCode.ASSESSMENT_NOT_FOUND));
 
-        Assessment_Category category = assessmentCategoryRepository.findById(request.getCategoryId())
+        Assessment_Category category =
+            assessmentCategoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() -> new AppException(ErrorCode.ASSESSMENT_CATEGORY_NOT_FOUND));
-        Assessment_Type type = assessmentTypeRepository.findById(request.getTypeId())
+        Assessment_Type type =
+            assessmentTypeRepository.findById(request.getTypeId())
                 .orElseThrow(() -> new AppException(ErrorCode.ASSESSMENT_TYPE_NOT_FOUND));
 
-        UUID syllabusId = UUID.fromString(request.getSyllabusId());
+        UUID syllabusId = request.getSyllabusId();
         Syllabus syllabus = syllabusRepository.findById(syllabusId)
                 .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
 
@@ -152,7 +158,7 @@ public class AssessmentService {
     }
 
     @Transactional
-    public AssessmentResponse updateAssessmentStatus(String assessmentId, String status) {
+    public AssessmentResponse updateAssessmentStatus(UUID assessmentId, String status) {
         Assessment assessment = assessmentRepository.findById(assessmentId)
                 .orElseThrow(() -> new AppException(ErrorCode.ASSESSMENT_NOT_FOUND));
 
@@ -166,10 +172,13 @@ public class AssessmentService {
     }
 
     @Transactional
-    public boolean deleteAssessment(String assessmentId) {
+    public boolean deleteAssessment(UUID assessmentId) {
         Assessment assessment = assessmentRepository.findById(assessmentId)
                 .orElseThrow(() -> new AppException(ErrorCode.ASSESSMENT_NOT_FOUND));
-
+        if(assessment.getStatus().equals("DRAFT")){
+            assessmentRepository.delete(assessment);
+            return true;
+        }
         assessment.setStatus("ARCHIVED");
         assessmentRepository.save(assessment);
         return true;
@@ -181,7 +190,9 @@ public class AssessmentService {
         }
     }
 
-    private void validateSyllabusWeightLimit(UUID syllabusId, Double incomingWeight, String assessmentId) {
+    private void validateSyllabusWeightLimit(UUID syllabusId,
+                                             Double incomingWeight,
+                                             UUID assessmentId) {
         Double currentTotal = assessmentId == null
                 ? assessmentRepository.sumWeightBySyllabusId(syllabusId)
                 : assessmentRepository.sumWeightBySyllabusIdAndAssessmentIdNot(syllabusId, assessmentId);

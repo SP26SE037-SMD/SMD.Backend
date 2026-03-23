@@ -44,7 +44,7 @@ public class AssessmentController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Get assessment by ID")
-    public ResponseObject<AssessmentResponse> getAssessmentById(@PathVariable String id) {
+        public ResponseObject<AssessmentResponse> getAssessmentById(@PathVariable UUID id) {
         return ResponseObject.<AssessmentResponse>builder()
                 .status(1000)
                 .data(assessmentService.getAssessmentById(id))
@@ -77,7 +77,7 @@ public class AssessmentController {
     @PreAuthorize("hasAuthority('SYLLABUS_UPDATE')")
     @Operation(summary = "Update assessment by ID")
     public ResponseObject<AssessmentResponse> updateAssessment(
-            @PathVariable String id,
+            @PathVariable UUID id,
             @Valid @RequestBody AssessmentRequest request
     ) {
         return ResponseObject.<AssessmentResponse>builder()
@@ -91,7 +91,7 @@ public class AssessmentController {
     @PreAuthorize("hasAuthority('SYLLABUS_UPDATE')")
     @Operation(summary = "Update assessment status")
     public ResponseObject<AssessmentResponse> updateAssessmentStatus(
-            @PathVariable String id,
+            @PathVariable UUID id,
             @RequestParam String status
     ) {
         return ResponseObject.<AssessmentResponse>builder()
@@ -104,7 +104,7 @@ public class AssessmentController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('SYLLABUS_UPDATE')")
     @Operation(summary = "Soft delete assessment")
-    public ResponseObject<Boolean> deleteAssessment(@PathVariable String id) {
+        public ResponseObject<Boolean> deleteAssessment(@PathVariable UUID id) {
         return ResponseObject.<Boolean>builder()
                 .status(1000)
                 .data(assessmentService.deleteAssessment(id))

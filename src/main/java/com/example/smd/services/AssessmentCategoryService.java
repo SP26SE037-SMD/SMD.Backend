@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -56,8 +57,9 @@ public class AssessmentCategoryService {
     }
 
     @Transactional(readOnly = true)
-    public AssessmentCategoryResponse getCategoryById(String id) {
-        Assessment_Category entity = assessmentCategoryRepository.findById(id)
+    public AssessmentCategoryResponse getCategoryById(UUID id) {
+        Assessment_Category entity =
+                assessmentCategoryRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.ASSESSMENT_CATEGORY_NOT_FOUND));
         return assessmentCategoryMapper.toResponse(entity);
     }
@@ -74,7 +76,7 @@ public class AssessmentCategoryService {
     }
 
     @Transactional
-    public AssessmentCategoryResponse updateCategory(String id, AssessmentCategoryRequest request) {
+    public AssessmentCategoryResponse updateCategory(UUID id, AssessmentCategoryRequest request) {
         Assessment_Category entity = assessmentCategoryRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.ASSESSMENT_CATEGORY_NOT_FOUND));
 
@@ -90,7 +92,7 @@ public class AssessmentCategoryService {
     }
 
     @Transactional
-    public boolean deleteCategory(String id) {
+    public boolean deleteCategory(UUID id) {
         Assessment_Category entity = assessmentCategoryRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.ASSESSMENT_CATEGORY_NOT_FOUND));
         assessmentCategoryRepository.delete(entity);
