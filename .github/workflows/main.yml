@@ -39,14 +39,14 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             # Pull image mới
-            docker pull taikt2004/smd:latest
+            sudo docker pull taikt2004/smd:latest
 
             # Stop & remove container cũ (nếu có)
-            docker stop smd || true
-            docker rm smd || true
+            sudo docker stop smd || true
+            sudo docker rm smd || true
 
             # Run container mới
-            docker run -d \
+            sudo docker run -d \
               --name smd \
               -p 8080:8080 \
               -e DB_URL="${{ secrets.DB_URL }}" \
@@ -62,4 +62,4 @@ jobs:
               taikt2004/smd:latest
 
             # (Optional) dọn image cũ
-            docker image prune -f
+            sudo docker image prune -f
