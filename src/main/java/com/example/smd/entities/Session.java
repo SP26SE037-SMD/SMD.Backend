@@ -4,6 +4,7 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -17,7 +18,7 @@ public class Session {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "session_id")
-    String sessionId;
+    UUID sessionId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "syllabus_id", nullable = false)
@@ -26,11 +27,8 @@ public class Session {
     @Column(name = "session_number", nullable = false)
     Integer sessionNumber;
 
-    @Column(name = "session_title", nullable = false, length = 200)
+    @Column(name = "chapter_title", nullable = false, length = 200)
     String sessionTitle;
-
-    @Column(name = "learning_objectives", columnDefinition = "TEXT")
-    String learningObjectives;
 
     @Column(columnDefinition = "TEXT")
     String content;

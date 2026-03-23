@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import java.time.Instant;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -17,7 +18,7 @@ import java.time.Instant;
 public class CLO_Session {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    String id;
+    UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "clo_id", nullable = false)
@@ -26,9 +27,6 @@ public class CLO_Session {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "session_id", nullable = false)
     Session session;
-
-    @Column(name = "coverage_level", length = 20)
-    String coverageLevel; // 'Introduced', 'Reinforced', 'Mastered'
 
     @Column(name = "created_at")
     Instant createdAt;
