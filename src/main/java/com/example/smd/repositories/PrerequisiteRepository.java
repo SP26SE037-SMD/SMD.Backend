@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Repository
-public interface PrerequisiteRepository extends JpaRepository<Subject_Prerequisite, String> {
+public interface PrerequisiteRepository extends JpaRepository<Subject_Prerequisite, UUID> {
     // Tìm các môn tiên quyết của môn X
     @EntityGraph(attributePaths = {"subject", "prerequisiteSubject"})
     List<Subject_Prerequisite> findBySubject_SubjectId(UUID subjectId);

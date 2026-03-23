@@ -101,7 +101,7 @@ public enum ErrorCode {
     SUBJECT_ID_REQUIRED(13004, "Subject ID is required", HttpStatus.BAD_REQUEST),
     PREREQUISITE_ID_REQUIRED(13005, "Prerequisite subject ID is required", HttpStatus.BAD_REQUEST),
     PREREQUISITE_CYCLE_DETECTED(13006, "Circular dependency detected: These subjects cannot be prerequisites of each other", HttpStatus.BAD_REQUEST),
-    PREREQUISITE_NOT_DEFINED(13007, "Subject must be in DEFINED status to update prerequisites", HttpStatus.BAD_REQUEST),
+    PREREQUISITE_NOT_DEFINED(13007, "Subject must not be in DRAFT status to update prerequisites", HttpStatus.BAD_REQUEST),
 
     //CURRICULUM
     CURRICULUM_NOT_FOUND(10001, "Curriculum not found", HttpStatus.NOT_FOUND),
