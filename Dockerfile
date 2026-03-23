@@ -9,6 +9,7 @@ WORKDIR /app
 
 # Copy file pom.xml trước để tận dụng Docker layer caching
 COPY pom.xml .
+RUN mvn dependency:go-offline
 
 # Copy toàn bộ source code
 COPY src src
@@ -23,7 +24,7 @@ RUN ls -l /app/target
 # Stage 2: Runtime Stage
 # ========================================
 # Sử dụng JDK 21 runtime image nhẹ hơn
-FROM eclipse-temurin:21-jdk-jammy
+FROM eclipse-temurin:21-jre-jammy
 
 # Đặt working directory
 WORKDIR /app
