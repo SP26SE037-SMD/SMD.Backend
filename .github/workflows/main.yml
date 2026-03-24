@@ -40,11 +40,23 @@ jobs:
       # 6. Deploy to EC2 via SSH
       - name: Deploy to server
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          DB_URL: ${{ secrets.DB_URL }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          JWT_SIGNER_KEY: ${{ secrets.JWT_SIGNER_KEY }}
+          CLIENT_ID: ${{ secrets.CLIEND_ID }} # Đã sửa chính tả
+          CLIENT_SECRET: ${{ secrets.CLIEND_SECRET }} # Đã sửa chính tả
+          REFRESH_TOKEN: ${{ secrets.REFRESH_TOKEN }}
+          SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           port: 22
+          # 2. Đẩy các biến này từ Runner sang máy chủ EC2 thông qua kết nối SSH
+          envs: DB_URL, DB_USERNAME, DB_PASSWORD, JWT_SIGNER_KEY, CLIEND_ID, CLIEND_SECRET, REFRESH_TOKEN, SENDER_EMAIL, GEMINI_API_KEY
           script: |
             # nhận biến từ GitHub
             IMAGE_TAG=${{ env.IMAGE_TAG }}
@@ -62,15 +74,15 @@ jobs:
             sudo docker run -d \
               --name smd \
               -p 8080:8080 \
-              -e DB_URL="${{ secrets.DB_URL }}" \
-              -e DB_USERNAME="${{ secrets.DB_USERNAME }}" \
-              -e DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
-              -e JWT_SIGNER_KEY="${{ secrets.JWT_SIGNER_KEY }}" \
-              -e CLIENT_ID="${{ secrets.CLIEND_ID }}" \
-              -e CLIENT_SECRET="${{ secrets.CLIEND_SECRET }}" \
-              -e REFRESH_TOKEN="${{ secrets.REFRESH_TOKEN }}" \
-              -e SENDER_EMAIL="${{ secrets.SENDER_EMAIL }}" \
-              -e GEMINI_API_KEY="${{ secrets.GEMINI_API_KEY }}" \
+              -e DB_URL="$DB_URL" \
+              -e DB_USERNAME="$DB_USERNAME" \
+              -e DB_PASSWORD="$DB_PASSWORD" \
+              -e JWT_SIGNER_KEY="$JWT_SIGNER_KEY" \
+              -e CLIENT_ID="$CLIEND_ID" \
+              -e CLIENT_SECRET="$CLIEND_SECRET" \
+              -e REFRESH_TOKEN="$REFRESH_TOKEN" \
+              -e SENDER_EMAIL="$SENDER_EMAIL" \
+              -e GEMINI_API_KEY="$GEMINI_API_KEY" \
               --restart unless-stopped \
               taikt2004/smd:$IMAGE_TAG
 
