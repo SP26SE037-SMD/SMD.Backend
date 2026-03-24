@@ -200,9 +200,9 @@ public class CLOsService {
     @Transactional
     public void updateStatusBySubject(String subjectId, String newStatus) {
         // 1. Kiểm tra trạng thái hợp lệ (Sử dụng SubjectStatus cho đồng bộ)
-        SyllabusStatus status;
+        PloStatus status;
         try {
-            status = SyllabusStatus.valueOf(newStatus.toUpperCase());
+            status = PloStatus.valueOf(newStatus.toUpperCase());
         } catch (IllegalArgumentException | NullPointerException e) {
             throw new AppException(ErrorCode.INVALID_CLO_STATUS);
         }

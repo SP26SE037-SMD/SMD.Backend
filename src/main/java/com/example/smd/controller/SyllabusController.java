@@ -65,15 +65,18 @@ public class SyllabusController {
 
     @GetMapping("/subject/{subjectId}")
     @Operation(
-            summary = "Get all syllabuses by Subject ID",
-            description =
-                    "### 🏷️ Syllabus Lifecycle Statuses:\n" +
-                    "| Status | Business Description |\n" +
-                    "| :--- | :--- |\n" +
-                    "| **DRAFT** | **Bản nháp:** Initial syllabus draft created by Department/HoC. |\n" +
-                    "| **INTERNAL_REVIEW** | **Kiểm duyệt nội bộ:** Being reviewed by Academic Committee. |\n" +
-                    "| **PUBLISHED** | **Công bố:** Approved and active syllabus for teaching. |\n" +
-                    "| **ARCHIVED** | **Lưu trữ:** Old version, replaced by a newer syllabus. |"
+            summary = "Change Syllabus Status (Cập nhật trạng thái quy trình Đề cương)",
+            description = "### 🔄 Quy trình vòng đời của Đề cương môn học (Syllabus Workflow):\n" +
+                    "Trạng thái này điều khiển quyền chỉnh sửa và khả năng hiển thị của toàn bộ học liệu, tài liệu tham khảo và CLO.\n\n" +
+                    "| Status | Ý nghĩa nghiệp vụ (Chi tiết) | Quyền hạn & Ràng buộc |\n" +
+                    "| :--- | :--- | :--- |\n" +
+                    "| **UNDER_DEVELOPMENT** | **Đang biên soạn:** Giai đoạn tập trung xây dựng nội dung chi tiết, chọn lọc tài liệu học tập (Textbook/Reference) và Slides. | Cho phép sửa nội dung. |\n" +
+                    "| **PENDING_REVIEW** | **Chờ duyệt:** Đề cương đã hoàn thiện và đang nằm trong danh sách chờ Hội đồng/HoD phân công Reviewer. | Khóa chỉnh sửa tạm thời. |\n" +
+                    "| **REVISION_REQ** | **Yêu cầu chỉnh sửa:** Reviewer đã gửi Feedback. Giảng viên cần cập nhật lại nội dung theo yêu cầu. | Mở lại quyền chỉnh sửa. |\n" +
+                    "| **APPROVED** | **Đã duyệt:** Nội dung đã thông qua về mặt chuyên môn, sẵn sàng để đóng gói ban hành. | Khóa nội dung. |\n" +
+                    "| **REJECTED** | **Từ chối:** Đề cương không đạt yêu cầu hệ thống hoặc bị loại bỏ khỏi kế hoạch đào tạo. | Ngừng quy trình. |\n" +
+                    "| **PUBLISHED** | **Ban hành:** Đề cương chính thức có hiệu lực. Sinh viên có thể xem tài liệu và CLO bắt đầu được dùng để mapping PLO. | Khóa vĩnh viễn (Read-only). |\n" +
+                    "| **ARCHIVED** | **Lưu trữ:** Đề cương hết hiệu lực (do đổi phiên bản hoặc đổi chương trình), giữ lại để tra cứu lịch sử. | Ẩn khỏi danh sách hiện hành. |\n\n"
     )
     public ResponseObject<List<SyllabusResponse>> getAllBySubject(
             @PathVariable UUID subjectId,
@@ -114,16 +117,21 @@ public class SyllabusController {
     @PatchMapping("/{id}/account/{accountId}/status")
     @PreAuthorize("hasAuthority('SYLLABUS_UPDATE_STATUS')")
     @Operation(
-            summary = "Change Syllabus Status",
-            description = "### Quy trình cập nhật trạng thái của CLO:\n" +
-                    "Chọn một trong các giá trị sau từ danh sách thả xuống:\n\n" +
-                    "| Status | Mô tả chi tiết (Nghiệp vụ) |\n" +
-                    "| :--- | :--- |\n" +
-                    "| **PENDING_REVIEW** | Chờ duyệt: Đã gửi yêu cầu và đợi HoD phê duyệt. |\n" +
-                    "| **REVISION_REQUESTED** | Yêu cầu chỉnh sửa: Cần sửa lại theo feedback của người duyệt. |\n" +
-                    "| **APPROVED** | Đã duyệt: Nội dung đạt yêu cầu, sẵn sàng để xuất bản. |\n" +
-                    "| **REJECTED** | Bị từ chối: Nội dung không đạt yêu cầu hệ thống. |\n" +
-                    "| **PUBLISHED** | Đã xuất bản: CLO chính thức có hiệu lực cho môn học. |\n"
+            summary = "Change Syllabus Status (Cập nhật trạng thái quy trình Đề cương)",
+            description = "### 🔄 Quy trình vòng đời của Đề cương môn học (Syllabus Workflow):\n" +
+                    "Trạng thái này điều khiển quyền chỉnh sửa và khả năng hiển thị của toàn bộ học liệu, tài liệu tham khảo và CLO.\n\n" +
+                    "| Status | Ý nghĩa nghiệp vụ (Chi tiết) | Quyền hạn & Ràng buộc |\n" +
+                    "| :--- | :--- | :--- |\n" +
+                    "| **UNDER_DEVELOPMENT** | **Đang biên soạn:** Giai đoạn tập trung xây dựng nội dung chi tiết, chọn lọc tài liệu học tập (Textbook/Reference) và Slides. | Cho phép sửa nội dung. |\n" +
+                    "| **PENDING_REVIEW** | **Chờ duyệt:** Đề cương đã hoàn thiện và đang nằm trong danh sách chờ Hội đồng/HoD phân công Reviewer. | Khóa chỉnh sửa tạm thời. |\n" +
+                    "| **REVISION_REQ** | **Yêu cầu chỉnh sửa:** Reviewer đã gửi Feedback. Giảng viên cần cập nhật lại nội dung theo yêu cầu. | Mở lại quyền chỉnh sửa. |\n" +
+                    "| **APPROVED** | **Đã duyệt:** Nội dung đã thông qua về mặt chuyên môn, sẵn sàng để đóng gói ban hành. | Khóa nội dung. |\n" +
+                    "| **REJECTED** | **Từ chối:** Đề cương không đạt yêu cầu hệ thống hoặc bị loại bỏ khỏi kế hoạch đào tạo. | Ngừng quy trình. |\n" +
+                    "| **PUBLISHED** | **Ban hành:** Đề cương chính thức có hiệu lực. Sinh viên có thể xem tài liệu và CLO bắt đầu được dùng để mapping PLO. | Khóa vĩnh viễn (Read-only). |\n" +
+                    "| **ARCHIVED** | **Lưu trữ:** Đề cương hết hiệu lực (do đổi phiên bản hoặc đổi chương trình), giữ lại để tra cứu lịch sử. | Ẩn khỏi danh sách hiện hành. |\n\n" +
+                    "### ⚠️ Lưu ý quan trọng:\n" +
+                    "1. **Đồng bộ CLO:** Khi Syllabus chuyển sang `PUBLISHED`, hệ thống sẽ tự động khóa tất cả CLO liên quan để đảm bảo tính toàn vẹn dữ liệu.\n" +
+                    "2. **Hành động biên soạn:** Các tác vụ thêm/xóa Tài liệu (Material/Source) chỉ được thực hiện khi trạng thái là **UNDER_DEVELOPMENT** hoặc **REVISION_REQUESTED**."
     )
     public ResponseObject<SyllabusResponse> updateStatus(
             @PathVariable UUID id,
