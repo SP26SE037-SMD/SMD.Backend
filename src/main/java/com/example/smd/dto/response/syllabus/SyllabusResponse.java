@@ -23,4 +23,5 @@ public class SyllabusResponse {
     UUID subjectId;
     String subjectCode;
     String subjectName;
+    Integer credit;
 }
