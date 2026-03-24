@@ -76,6 +76,7 @@ public interface AccountRepository extends JpaRepository<Account, java.util.UUID
 
     @Query("SELECT a FROM Account a " +
             "JOIN FETCH a.role " +
+            "JOIN FETCH a.department "+
             "WHERE a.department.departmentId = :deptId")
     List<Account> findAllByDepartmentId(@Param("deptId") UUID deptId);
 
