@@ -96,6 +96,7 @@ public class SyllabusActionLogService {
         SyllabusStatus syllabusStatus = SyllabusStatus.valueOf(status.toUpperCase());
 
         return switch (syllabusStatus) {
+            case DEFINE ->
             case PENDING_REVIEW -> SyllabusActionType.SUBMIT;
             case REVISION_REQUESTED -> SyllabusActionType.REQUEST_REVISION;
             case APPROVED -> SyllabusActionType.APPROVE;
