@@ -1,59 +1,41 @@
 # Maven
-
 target/
 !.mvn/wrapper/maven-wrapper.jar
-!**/src/main/**/target/
-!**/src/test/**/target/
 
 # Gradle
-
 .gradle
 build/
-!gradle/wrapper/gradle-wrapper.jar
-!**/src/main/**/build/
-!**/src/test/**/build/
 
 # IDE
-
 .idea/
 .vscode/
-_.iml
-_.ipr
-_.iws
+*.iml
+*.ipr
+*.iws
 .project
 .classpath
 .settings/
-_.swp
-_.swo
-_~
+*.swp
+*.swo
+*~
 
 # Git
-
-.git/
+.git
 .gitignore
 .gitattributes
 
 # Logs
-
-\*.log
+*.log
 logs/
 
 # OS
-
 .DS_Store
 Thumbs.db
 
-# Documentation
+# Docs
+*.md
 
-\*.md
-HELP.md
-README.md
-AUTHENTICATION_README.md
-FLYWAY_CODE_FIRST_GUIDE.md
-QUICK_START.md
-
-# Docker
-
-Dockerfile
-docker-compose.yml
-.dockerignore
+# Optional (nếu có frontend/test)
+node_modules/
+dist/
+coverage/
