@@ -55,7 +55,7 @@ public enum ErrorCode {
     INVALID_STATUS_INPUT(7007, "Invalid status provided. Please check the allowed list.", HttpStatus.BAD_REQUEST),
     INVALID_CLO_STATUS(7008, "Invalid CLO status transition",
             HttpStatus.BAD_REQUEST),
-    CLO_SUBJECT_NOT_EDITABLE(7009, "CLO can edit when subject status in DRAFT or REVISION_REQUESTED status", HttpStatus.BAD_REQUEST),
+    CLO_SUBJECT_NOT_EDITABLE(7009, "CLO can edit when subject status in WAITING_SYLLABUS  status", HttpStatus.BAD_REQUEST),
     CLO_NOT_EDITABLE(7010, "CLO can only be modified when the subject is in DRAFT status", HttpStatus.BAD_REQUEST),
 
     // Subject

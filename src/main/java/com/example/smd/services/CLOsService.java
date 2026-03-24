@@ -48,7 +48,7 @@ public class CLOsService {
         Subject subject = subjectRepository.findById(uuidSubjectId)
                 .orElseThrow(() -> new AppException(ErrorCode.SUBJECT_NOT_FOUND));
 
-        if (!subject.getStatus().equals(SubjectStatus.DEFINED.toString())){
+        if (!subject.getStatus().equals(SubjectStatus.WAITING_SYLLABUS.toString())){
             throw new AppException(ErrorCode.CLO_SUBJECT_NOT_EDITABLE);
         }
 

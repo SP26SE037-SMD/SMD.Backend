@@ -45,7 +45,7 @@ public class SyllabusController {
     @PostMapping("/account/{email}")
     @Operation(summary = "Create a new syllabus", description = "Initializes a syllabus for a specific subject with status 'DRAFT'")
     @PreAuthorize("hasAuthority('SYLLABUS_CREATE')")
-    public ResponseObject<SyllabusResponse> create(@RequestBody @Valid SyllabusRequest request, @PathVariable String email) {
+        public ResponseObject<SyllabusResponse> create(@RequestBody @Valid SyllabusRequest request, @PathVariable String email) {
         SyllabusResponse response = syllabusService.create(request);
 
         SyllabusActionLogRequest logRequest = new SyllabusActionLogRequest();
