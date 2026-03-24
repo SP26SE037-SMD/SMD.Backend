@@ -51,7 +51,7 @@ public class SyllabusService {
         Syllabus syllabus = syllabusRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
 
-        if(!(syllabus.getStatus().equals("DRAFT") && syllabus.getStatus().equals(SyllabusStatus.REVISION_REQUESTED.toString()))) {
+        if(!(syllabus.getStatus().equals("DRAFT") || syllabus.getStatus().equals(SyllabusStatus.REVISION_REQUESTED.toString()))) {
             throw new AppException(ErrorCode.SYLLABUS_NOT_EDITABLE);
         }
 
