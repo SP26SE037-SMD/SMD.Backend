@@ -66,8 +66,8 @@ jobs:
               -e DB_USERNAME="${{ secrets.DB_USERNAME }}" \
               -e DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
               -e JWT_SIGNER_KEY="${{ secrets.JWT_SIGNER_KEY }}" \
-              -e CLIENT_ID="${{ secrets.CLIENT_ID }}" \
-              -e CLIENT_SECRET="${{ secrets.CLIENT_SECRET }}" \
+              -e CLIENT_ID="${{ secrets.CLIEND_ID }}" \
+              -e CLIENT_SECRET="${{ secrets.CLIEND_SECRET }}" \
               -e REFRESH_TOKEN="${{ secrets.REFRESH_TOKEN }}" \
               -e SENDER_EMAIL="${{ secrets.SENDER_EMAIL }}" \
               -e GEMINI_API_KEY="${{ secrets.GEMINI_API_KEY }}" \
