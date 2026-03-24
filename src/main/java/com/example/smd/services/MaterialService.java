@@ -37,7 +37,7 @@ public class MaterialService {
         Syllabus syllabus = syllabusRepository.findById(request.getSyllabusId())
                 .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
 
-        if(!(syllabus.getStatus().equals("DRAFT") && syllabus.getStatus().equals(SyllabusStatus.REVISION_REQUESTED.toString()))) {
+        if(!(syllabus.getStatus().equals("DRAFT") || syllabus.getStatus().equals(SyllabusStatus.REVISION_REQUESTED.toString()))) {
             throw new AppException(ErrorCode.SYLLABUS_NOT_EDITABLE);
         }
 
@@ -55,7 +55,7 @@ public class MaterialService {
         Material material = materialRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.MATERIAL_NOT_FOUND));
 
-        if(!(material.getStatus().equals("DRAFT") && material.getStatus().equals(SyllabusStatus.REVISION_REQUESTED.toString()))) {
+        if(!(material.getStatus().equals("DRAFT") || material.getStatus().equals(SyllabusStatus.REVISION_REQUESTED.toString()))) {
             throw new AppException(ErrorCode.MATERIAL_NOT_EDITABLE);
         }
 
@@ -89,7 +89,7 @@ public class MaterialService {
             Material material = materialRepository.findById(id)
                     .orElseThrow(() -> new AppException(ErrorCode.MATERIAL_NOT_FOUND));
 
-            if(!(material.getSyllabus().getStatus().equals("DRAFT") && material.getSyllabus().getStatus().equals(SyllabusStatus.REVISION_REQUESTED.toString()))) {
+            if(!(material.getSyllabus().getStatus().equals("DRAFT") || material.getSyllabus().getStatus().equals(SyllabusStatus.REVISION_REQUESTED.toString()))) {
                 throw new AppException(ErrorCode.SYLLABUS_NOT_EDITABLE);
             }
 
