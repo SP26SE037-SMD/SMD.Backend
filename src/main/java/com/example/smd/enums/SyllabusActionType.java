@@ -13,6 +13,9 @@ public enum SyllabusActionType {
     @Schema(description = "Cập nhật nội dung (CLOs, Sessions, Assessments,...)")
     UPDATE("Cập nhật"),
 
+    @Schema(description = "Bắt đầu biên soạn chi tiết nội dung, học liệu và tài liệu")
+    DEVELOPING("Biên soạn"),
+
     @Schema(description = "Gửi đề cương đi để chờ phê duyệt")
     SUBMIT("Gửi duyệt"),
 

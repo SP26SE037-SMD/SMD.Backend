@@ -118,18 +118,15 @@ public class CLOsController {
     @PatchMapping("/subject/{subjectId}/status")
     @PreAuthorize("hasAuthority('CLOS_UPDATE_STATUS')")
     @Operation(
-            summary = "Change CLO Status",
-            description = "### Quy trình cập nhật trạng thái của CLO:\n" +
-                    "Chọn một trong các giá trị sau từ danh sách thả xuống:\n\n" +
-                    "| Status | Mô tả chi tiết (Nghiệp vụ) |\n" +
-                    "| :--- | :--- |\n" +
-                    "| **PENDING_REVIEW** | Chờ duyệt: Đã gửi yêu cầu và đợi HoD phê duyệt. |\n" +
-                    "| **IN_REVIEW** | Đang đánh giá: Chuyên gia đang xem xét nội dung. |\n" +
-                    "| **REVISION_REQUESTED** | Yêu cầu chỉnh sửa: Cần sửa lại theo feedback của người duyệt. |\n" +
-                    "| **APPROVED** | Đã duyệt: Nội dung đạt yêu cầu, sẵn sàng để xuất bản. |\n" +
-                    "| **REJECTED** | Bị từ chối: Nội dung không đạt yêu cầu hệ thống. |\n" +
-                    "| **PUBLISHED** | Đã xuất bản: CLO chính thức có hiệu lực cho môn học. |\n" +
-                    "| **ARCHIVED** | **Lưu trữ:** CLO đã hết hiệu lực hoặc bị thay thế bởi phiên bản mới, chỉ dùng để tra cứu dữ liệu lịch sử. |"
+            summary = "Update CLOs Status (Cập nhật trạng thái Chuẩn đầu ra môn học)",
+            description = "### 🔄 Quy trình điều phối và ánh xạ CLO (Mapping Workflow):\n" +
+                    "Trạng thái của CLO quyết định khả năng hiển thị và quyền được 'khớp' (map) vào PLO của ngành:\n\n" +
+                    "| Status | Mô tả chi tiết (Nghiệp vụ) | Khả năng Mapping |\n" +
+                    "| :--- | :--- | :--- |\n" +
+                    "| **DRAFT** | **Bản thảo:** CLO đang trong giai đoạn biên soạn nội dung hoặc chỉnh sửa động từ (Bloom). | ❌ Không được phép |\n" +
+                    "| **INTERNAL_REVIEW** | **Công khai nội bộ:** Đã hoàn thiện nội dung, mở quyền cho Trưởng bộ môn/Hội đồng rà soát tính tương thích với PLO. | ⚠️ Chỉ xem (Read-only) |\n" +
+                    "| **PUBLISHED** | **Đã ban hành:** CLO chính thức có hiệu lực, được dùng làm căn cứ để thiết kế Syllabus và tính toán ma trận kỹ năng. | ✅ Chính thức |\n" +
+                    "| **ARCHIVED** | **Lưu trữ:** CLO không còn phù hợp với bộ chuẩn mới, giữ lại để đối chiếu các khóa cũ hoặc phiên bản Syllabus cũ. | 🔒 Khóa vĩnh viễn |\n\n"
     )
     public ResponseObject<CLOsResponse> changeStatus(
             @PathVariable String subjectId,
