@@ -13,6 +13,7 @@ public interface SyllabusMapper {
     @Mapping(target = "subjectId", source = "subject.subjectId")
     @Mapping(target = "subjectName", source = "subject.subjectName")
     @Mapping(target = "subjectCode", source = "subject.subjectCode")
+    @Mapping(target = "credit", source = "subject.credits")
     SyllabusResponse toResponse(Syllabus syllabus);
 
     @Mapping(target = "subject", ignore = true) // Sẽ set thủ công trong Service
