@@ -52,7 +52,14 @@ public class AccountService {
 
     // GetAll tài khoản có phân trang và tìm kiếm theo role name hoặc full name
     @Transactional(readOnly = true)
-    public Page<AccountResponse> getAllAccounts(String search, String searchBy, int page, int size, String[] sort) {
+    public Page<AccountResponse> getAllAccounts(String search, String searchBy, int page, int size, String[] sort, String accountId) {
+
+        var account = getAccountById(accountId);
+        String roleName = account.getRole().getRoleName();
+        if (!(roleName.equals("ADMIN"))) {
+            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+        }
+
         // 1. Xử lý sắp xếp (Sắp xếp theo field CamelCase của Java)
         List<Sort.Order> orders = new ArrayList<>();
         if (sort[0].contains(",")) {
@@ -101,8 +108,13 @@ public class AccountService {
             java.time.Instant toDate,
             int page,
             int size,
-            String[] sort) {
-
+            String[] sort,
+            String accountId) {
+        var account = getAccountById(accountId);
+        String roleName = account.getRole().getRoleName();
+        if (!(roleName.equals("ADMIN"))) {
+            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+        }
         // 1. Xử lý sắp xếp
         List<Sort.Order> orders = new ArrayList<>();
         if (sort[0].contains(",")) {
@@ -147,7 +159,13 @@ public class AccountService {
 
     // Tạo tài khoản mới
     @Transactional
-    public AccountResponse createAccount(AccountRequest request) {
+    public AccountResponse createAccount(AccountRequest request, String accountId) {
+        var checkRole = getAccountById(accountId);
+        String roleName = checkRole.getRole().getRoleName();
+        if (!(roleName.equals("ADMIN"))) {
+            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+        }
+
         // 1. Kiểm tra email đã tồn tại chưa
         if (accountRepository.existsByEmail(request.getEmail())) {
             throw new AppException(ErrorCode.EMAIL_EXISTS);
@@ -218,7 +236,14 @@ public class AccountService {
 
     @Transactional
     public boolean changeDepartment(String accountId,
-                                    String departmentCode) {
+                                    String departmentCode, String adminId) {
+
+        var checkRole = getAccountById(adminId);
+        String roleName = checkRole.getRole().getRoleName();
+        if (!(roleName.equals("ADMIN"))) {
+            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+        }
+
         var convert = UUID.fromString(accountId);
         Account account = accountRepository.findById(convert)
                 .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND));

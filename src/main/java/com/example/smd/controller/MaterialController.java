@@ -31,11 +31,14 @@ public class MaterialController {
     MaterialService materialService;
 
     @PostMapping
-//    @PreAuthorize("hasAuthority('MATERIAL_CREATE')")
+    @PreAuthorize("hasAuthority('MATERIAL_CREATE')")
     @Operation(summary = "Create new material for a syllabus")
-    public ResponseObject<MaterialResponse> create(@RequestBody @Valid MaterialRequest request) {
+    public ResponseObject<MaterialResponse> create(
+            @RequestBody @Valid MaterialRequest request,
+            @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<MaterialResponse>builder()
-                .status(1000).data(materialService.create(request)).build();
+                .status(1000).data(materialService.create(request, userId)).build();
     }
 
     @GetMapping("/syllabus/{syllabusId}")
@@ -56,9 +59,13 @@ public class MaterialController {
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('MATERIAL_UPDATE')")
     @Operation(summary = "Update material details")
-    public ResponseObject<MaterialResponse> update(@PathVariable UUID id, @RequestBody MaterialRequest request) {
+    public ResponseObject<MaterialResponse> update(
+            @PathVariable UUID id,
+            @RequestBody MaterialRequest request,
+            @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<MaterialResponse>builder()
-                .status(1000).data(materialService.update(id, request)).build();
+                .status(1000).data(materialService.update(id, request, userId)).build();
     }
 
     @PatchMapping("/syllabus/{syllabusId}/status")
@@ -94,8 +101,9 @@ public class MaterialController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('MATERIAL_DELETE')")
     @Operation(summary = "Delete a material")
-    public ResponseObject<Void> delete(@PathVariable UUID id) {
-        materialService.delete(id);
+    public ResponseObject<Void> delete(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
+        materialService.delete(id, userId);
         return ResponseObject.<Void>builder().status(1000).message("Deleted successfully").build();
     }
 

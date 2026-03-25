@@ -6,6 +6,8 @@ import com.example.smd.entities.Assessment;
 import com.example.smd.entities.Assessment_Category;
 import com.example.smd.entities.Assessment_Type;
 import com.example.smd.entities.Syllabus;
+import com.example.smd.enums.PloStatus;
+import com.example.smd.enums.SyllabusStatus;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.AssessmentMapper;
@@ -32,7 +34,7 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class AssessmentService {
-
+    private final AccountService accountService;
     private final AssessmentRepository assessmentRepository;
     private final AssessmentCategoryRepository assessmentCategoryRepository;
     private final AssessmentTypeRepository assessmentTypeRepository;
@@ -47,6 +49,20 @@ public class AssessmentService {
                                                       int size,
                                                       String[] sort,
                                                       String accountId) {
+        var account = accountService.getAccountById(accountId);
+        String roleName = account.getRole().getRoleName();
+        if (roleName.equals("STUDENT") || roleName.equals("LECTURER")) {
+            if (!status.equals(SyllabusStatus.PUBLISHED.toString())) {
+                throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+            }
+        }
+
+        if (status.equals(PloStatus.DRAFT.toString())) {
+            if (!(account.getRole().getRoleName().equals("PDCM") || account.getRole().getRoleName().equals("COLLABORATOR"))) {
+                throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+            }
+        }
+
         List<Sort.Order> orders = new ArrayList<>();
         if (sort[0].contains(",")) {
             for (String sortOrder : sort) {
@@ -87,10 +103,28 @@ public class AssessmentService {
     }
 
     @Transactional(readOnly = true)
-    public AssessmentResponse getAssessmentById(UUID assessmentId) {
+    public AssessmentResponse getAssessmentById(UUID assessmentId, String accountId) {
         Assessment assessment =
                 assessmentRepository.findById(assessmentId)
                 .orElseThrow(() -> new AppException(ErrorCode.ASSESSMENT_NOT_FOUND));
+
+        var account = accountService.getAccountById(accountId);
+        String roleName = account.getRole().getRoleName();
+
+        // 3. Logic Phân quyền:
+        // Nếu là STUDENT hoặc LECTURER, chỉ cho phép xem nếu status là PUBLISHED
+        if (roleName.equals("STUDENT") || roleName.equals("LECTURER")) {
+            if (!"PUBLISHED".equalsIgnoreCase(assessment.getStatus())) {
+                throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+            }
+        }
+
+        if (assessment.getStatus().equals("DRAFT")|| assessment.getStatus().equals(SyllabusStatus.REVISION_REQUESTED.toString())) {
+            if (!(account.getRole().getRoleName().equals("PDCM") || account.getRole().getRoleName().equals("COLLABORATOR"))) {
+                throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+            }
+        }
+
         return assessmentMapper.toResponse(assessment);
     }
 
@@ -103,17 +137,27 @@ public class AssessmentService {
     }
 
     @Transactional
-    public AssessmentResponse createAssessment(AssessmentRequest request) {
+    public AssessmentResponse createAssessment(AssessmentRequest request, String accountId) {
+        var account = accountService.getAccountById(accountId);
+        String roleName = account.getRole().getRoleName();
+        if (!(roleName.equals("COLLABORATOR") || roleName.equals("PDCM"))) {
+            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+        }
+
+        UUID syllabusId = request.getSyllabusId();
+        Syllabus syllabus = syllabusRepository.findById(syllabusId)
+                .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
+
+        if (!(syllabus.getStatus().equals("DRAFT") || syllabus.getStatus().equals(SyllabusStatus.REVISION_REQUESTED.toString()))) {
+            throw new AppException(ErrorCode.ASSESSMENT_CANNOT_CREATE);
+        }
+
         Assessment_Category category =
             assessmentCategoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() -> new AppException(ErrorCode.ASSESSMENT_CATEGORY_NOT_FOUND));
         Assessment_Type type =
             assessmentTypeRepository.findById(request.getTypeId())
                 .orElseThrow(() -> new AppException(ErrorCode.ASSESSMENT_TYPE_NOT_FOUND));
-
-        UUID syllabusId = request.getSyllabusId();
-        Syllabus syllabus = syllabusRepository.findById(syllabusId)
-                .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
 
         validateWeightInput(request.getWeight());
         validateSyllabusWeightLimit(syllabusId, request.getWeight(), null);
@@ -130,7 +174,13 @@ public class AssessmentService {
 
     @Transactional
     public AssessmentResponse updateAssessment(UUID assessmentId,
-                                               AssessmentRequest request) {
+                                               AssessmentRequest request, String accountId) {
+        var account = accountService.getAccountById(accountId);
+        String roleName = account.getRole().getRoleName();
+        if (!(roleName.equals("COLLABORATOR") || roleName.equals("PDCM"))) {
+            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+        }
+
         Assessment assessment = assessmentRepository.findById(assessmentId)
                 .orElseThrow(() -> new AppException(ErrorCode.ASSESSMENT_NOT_FOUND));
 
@@ -140,6 +190,10 @@ public class AssessmentService {
         Assessment_Type type =
             assessmentTypeRepository.findById(request.getTypeId())
                 .orElseThrow(() -> new AppException(ErrorCode.ASSESSMENT_TYPE_NOT_FOUND));
+
+        if (!(assessment.getStatus().equals("DRAFT") || assessment.getStatus().equals(SyllabusStatus.REVISION_REQUESTED.toString()))) {
+            throw new AppException(ErrorCode.ASSESSMENT_NOT_EDITABLE);
+        }
 
         UUID syllabusId = request.getSyllabusId();
         Syllabus syllabus = syllabusRepository.findById(syllabusId)
@@ -173,9 +227,19 @@ public class AssessmentService {
     }
 
     @Transactional
-    public boolean deleteAssessment(UUID assessmentId) {
+    public boolean deleteAssessment(UUID assessmentId, String accountId) {
         Assessment assessment = assessmentRepository.findById(assessmentId)
                 .orElseThrow(() -> new AppException(ErrorCode.ASSESSMENT_NOT_FOUND));
+        var account = accountService.getAccountById(accountId);
+        String roleName = account.getRole().getRoleName();
+        if (!(roleName.equals("COLLABORATOR") || roleName.equals("PDCM"))) {
+            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+        }
+
+        if (!(assessment.getSyllabus().getStatus().equals("DRAFT") || assessment.getSyllabus().getStatus().equals(SyllabusStatus.REVISION_REQUESTED.toString()))) {
+            throw new AppException(ErrorCode.ASSESSMENT_NOT_EDITABLE);
+        }
+
         if(assessment.getStatus().equals("DRAFT")){
             assessmentRepository.delete(assessment);
             return true;

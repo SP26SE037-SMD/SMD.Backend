@@ -7,7 +7,7 @@ public enum SyllabusStatus {
 //    @Schema(description = "Đang soạn thảo (Chưa gửi duyệt)")
 //    DRAFT,
     @Schema(description = "Đang biên soạn chi tiết nội dung, tài liệu và học liệu")
-    UNDER_DEVELOPMENT,
+    IN_PROGRESS,
 
     @Schema(description = "Đã gửi và đang chờ được phân công review")
     PENDING_REVIEW,

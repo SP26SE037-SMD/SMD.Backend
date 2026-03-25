@@ -13,6 +13,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -35,12 +37,13 @@ public class SessionController {
             @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "sessionNumber,asc") String[] sort
-    ) {
+            @RequestParam(defaultValue = "sessionNumber,asc") String[] sort,
+            @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<PagedResponse<SessionResponse>>builder()
                 .status(1000)
                 .data(PagedResponse.of(sessionService.getAllSessions(
-                        syllabusId, status, search, page, size, sort
+                        syllabusId, status, search, page, size, sort, userId
                 )))
                 .message("Get all sessions successfully")
                 .build();
@@ -48,10 +51,11 @@ public class SessionController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Get session by ID")
-    public ResponseObject<SessionResponse> getSessionById(@PathVariable UUID id) {
+    public ResponseObject<SessionResponse> getSessionById(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<SessionResponse>builder()
                 .status(1000)
-                .data(sessionService.getSessionById(id))
+                .data(sessionService.getSessionById(id, userId))
                 .message("Get session successfully")
                 .build();
     }
@@ -69,10 +73,11 @@ public class SessionController {
     @PostMapping
     @PreAuthorize("hasAuthority('SYLLABUS_UPDATE')")
     @Operation(summary = "Create new session")
-    public ResponseObject<SessionResponse> createSession(@Valid @RequestBody SessionRequest request) {
+    public ResponseObject<SessionResponse> createSession(@Valid @RequestBody SessionRequest request, @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<SessionResponse>builder()
                 .status(1000)
-                .data(sessionService.createSession(request))
+                .data(sessionService.createSession(request, userId))
                 .message("Create session successfully")
                 .build();
     }
@@ -96,18 +101,32 @@ public class SessionController {
     @Operation(summary = "Update session by ID")
     public ResponseObject<SessionResponse> updateSession(
             @PathVariable UUID id,
-            @Valid @RequestBody SessionRequest request
-    ) {
+            @Valid @RequestBody SessionRequest request,
+            @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<SessionResponse>builder()
                 .status(1000)
-                .data(sessionService.updateSession(id, request))
+                .data(sessionService.updateSession(id, request, userId))
                 .message("Update session successfully")
                 .build();
     }
 
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasAuthority('SYLLABUS_UPDATE')")
-    @Operation(summary = "Update session status")
+    @Operation(
+            summary = "Update Session Lifecycle Status (Cập nhật trạng thái buổi học)",
+            description = "### Quy trình điều phối kế hoạch giảng dạy (Session Workflow):\n" +
+                    "Trạng thái của Session kiểm soát việc lập lịch, nội dung giảng dạy và khả năng đồng bộ với thời khóa biểu:\n\n" +
+                    "| Status | Mô tả chi tiết (Nghiệp vụ) | Ràng buộc hệ thống |\n" +
+                    "| :--- | :--- | :--- |\n" +
+                    "| **DRAFT** | **Bản thảo:** Giảng viên đang lên đề cương buổi học, mục tiêu và hoạt động (Activities). | Chỉ giảng viên thấy. |\n" +
+                    "| **UNDER_REVIEW** | **Chờ duyệt:** Nội dung buổi học đã xong, đang đợi HoD kiểm tra tính phù hợp với Syllabus. | Khóa chỉnh sửa nội dung. |\n" +
+                    "| **REVISION_REQ** | **Yêu cầu sửa:** Cần điều chỉnh lại thời lượng hoặc mục tiêu bài học theo feedback. | Mở lại quyền chỉnh sửa. |\n" +
+                    "| **APPROVED** | **Đã duyệt:** Kế hoạch buổi học đạt yêu cầu, sẵn sàng để gán vào lịch trình (Schedule). | Không được sửa nội dung. |\n" +
+                    "| **PUBLISHED** | **Ban hành:** Nội dung buổi học chính thức hiển thị trên Portal cho sinh viên chuẩn bị bài. | Sinh viên bắt đầu thấy. |\n" +
+                    "| **COMPLETED** | **Đã kết thúc:** Buổi học đã diễn ra thực tế trên lớp. | Chuyển sang chế độ Read-only. |\n" +
+                    "| **CANCELLED** | **Hủy bỏ:** Buổi học bị hủy do thay đổi chương trình hoặc gộp bài. | Ẩn khỏi lịch trình chính thức. |\n\n"
+    )
     public ResponseObject<SessionResponse> updateSessionStatus(
             @PathVariable UUID id,
             @RequestParam String status
@@ -122,10 +141,11 @@ public class SessionController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('SYLLABUS_UPDATE')")
     @Operation(summary = "Delete session by status rule")
-    public ResponseObject<Boolean> deleteSession(@PathVariable UUID id) {
+    public ResponseObject<Boolean> deleteSession(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<Boolean>builder()
                 .status(1000)
-                .data(sessionService.deleteSession(id))
+                .data(sessionService.deleteSession(id, userId))
                 .message("Delete session successfully")
                 .build();
     }

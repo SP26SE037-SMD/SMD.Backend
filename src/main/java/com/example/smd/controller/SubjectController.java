@@ -41,9 +41,10 @@ public class SubjectController {
     @PostMapping
     @Operation(summary = "Create a new subject", description = "Registers a new subject in the system with unique subject code")
     @PreAuthorize("hasAuthority('SUBJECT_CREATE')")
-    public ResponseObject<SubjectResponse> create(@RequestBody @Valid SubjectRequest request) {
+    public ResponseObject<SubjectResponse> create(@RequestBody @Valid SubjectRequest request, @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<SubjectResponse>builder()
-                .data(subjectService.create(request))
+                .data(subjectService.create(request, userId))
                 .message("Subject created successfully")
                 .build();
     }
@@ -112,9 +113,11 @@ public class SubjectController {
     @PreAuthorize("hasAuthority('SUBJECT_UPDATE')")
     public ResponseObject<SubjectResponse> update(
             @PathVariable UUID id,
-            @RequestBody @Valid SubjectRequest request) {
+            @RequestBody @Valid SubjectRequest request,
+            @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<SubjectResponse>builder()
-                .data(subjectService.update(id, request))
+                .data(subjectService.update(id, request, userId))
                 .message("Subject updated successfully")
                 .build();
     }
@@ -122,8 +125,9 @@ public class SubjectController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('SUBJECT_DELETE')")
     @Operation(summary = "Soft delete subject", description = "Sets subject status to inactive instead of hard deleting from database")
-    public ResponseObject<Void> delete(@PathVariable UUID id) {
-        subjectService.delete(id);
+    public ResponseObject<Void> delete(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
+        subjectService.delete(id, userId);
         return ResponseObject.<Void>builder()
                 .message("Subject deleted successfully")
                 .build();

@@ -11,8 +11,11 @@ public enum CurriculumStatus {
     @Schema(description = "Structure Reviewed: Approved by Vice President (VP) to continue internal development")
     STRUCTURE_REVIEW,
 
+    @Schema(description = "Structure Approved:The program was approved by the Vice President, who assigned the task of drafting the detailed curriculum to HoPDC.")
+    STRUCTURE_APPROVED,
+
     @Schema(description = "Syllabus Developing: HoC/FDC and Departments are creating detailed syllabuses")
-    SYLLABUS_DEVELOPING,
+    SYLLABUS_DEVELOP,
 
     @Schema(description = "Final Review: Final overall content review by HoC/FDC before submitting to VP")
     FINAL_REVIEW,

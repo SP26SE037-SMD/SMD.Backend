@@ -18,6 +18,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -61,11 +63,12 @@ public class AccountController {
 
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "createdAt,desc") String[] sort
-    ) {
+            @RequestParam(defaultValue = "createdAt,desc") String[] sort,
+            @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<PagedResponse<AccountResponse>>builder()
                 .status(1000)
-                .data(PagedResponse.of(accountService.getAllAccounts(search, searchBy, page, size, sort)))
+                .data(PagedResponse.of(accountService.getAllAccounts(search, searchBy, page, size, sort, userId)))
                 .message("Get all accounts successfully")
                 .build();
     }
@@ -93,8 +96,9 @@ public class AccountController {
 
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "createdAt,desc") String[] sort
-    ) {
+            @RequestParam(defaultValue = "createdAt,desc") String[] sort,
+            @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
         // Parse date strings to Instant
         java.time.Instant fromDate = null;
         java.time.Instant toDate = null;
@@ -120,7 +124,7 @@ public class AccountController {
 
         return ResponseObject.<PagedResponse<AccountResponse>>builder()
                 .status(1000)
-                .data(PagedResponse.of(accountService.getAccountsByDateRange(fromDate, toDate, page, size, sort)))
+                .data(PagedResponse.of(accountService.getAccountsByDateRange(fromDate, toDate, page, size, sort, userId)))
                 .message("Get accounts by date range successfully")
                 .build();
     }
@@ -140,10 +144,11 @@ public class AccountController {
     @PostMapping
     @PreAuthorize("hasAuthority('ACCOUNT_CREATE')")
     @Operation(summary = "Create new account")
-    public ResponseObject<AccountResponse> createAccount(@Valid @RequestBody AccountRequest request) {
+    public ResponseObject<AccountResponse> createAccount(@Valid @RequestBody AccountRequest request, @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<AccountResponse>builder()
                 .status(1000)
-                .data(accountService.createAccount(request))
+                .data(accountService.createAccount(request, userId))
                 .message("Create account successfully")
                 .build();
     }
@@ -181,10 +186,11 @@ public class AccountController {
     @PutMapping("/Department/{id}")
     @PreAuthorize("hasAuthority('ACCOUNT_UPDATE')")
     @Operation(summary = "Update Department account by ID")
-    public ResponseObject<Boolean> changeDepartment(@PathVariable String id, @RequestParam String departmentCode) {
+    public ResponseObject<Boolean> changeDepartment(@PathVariable String id, @RequestParam String departmentCode, @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<Boolean>builder()
                 .status(1000)
-                .data(accountService.changeDepartment(id, departmentCode))
+                .data(accountService.changeDepartment(id, departmentCode, userId))
                 .message("Update account successfully")
                 .build();
     }

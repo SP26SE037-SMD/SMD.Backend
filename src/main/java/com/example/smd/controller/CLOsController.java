@@ -41,10 +41,12 @@ public class CLOsController {
     @Operation(summary = "Create multiple CLOs", description = "Create CLOs linked to a specific Subject via PathVariable.")
     public ResponseObject<List<CLOsResponse>> createBulk(
             @PathVariable String subjectId,
-            @RequestBody @Valid List<CLOsCreateRequest> request) {
+            @RequestBody @Valid List<CLOsCreateRequest> request,
+            @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<List<CLOsResponse>>builder()
                 .status(1000)
-                .data(closService.createBulkClos(subjectId, request))
+                .data(closService.createBulkClos(subjectId, request, userId))
                 .message("CLOs created successfully")
                 .build();
     }
@@ -80,10 +82,12 @@ public class CLOsController {
     @Operation(summary = "Update CLO information including Code, Name, Description, and Bloom Level")
     public ResponseObject<CLOsResponse> update(
             @PathVariable String id,
-            @RequestBody @Valid CLOsRequest request) {
+            @RequestBody @Valid CLOsRequest request,
+            @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<CLOsResponse>builder()
                 .status(1000)
-                .data(closService.updateClo(id, request))
+                .data(closService.updateClo(id, request, userId))
                 .message("CLO updated successfully")
                 .build();
     }
@@ -91,8 +95,9 @@ public class CLOsController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('CLOS_DELETE')")
     @Operation(summary = "Delete a CLO")
-    public ResponseObject<Void> delete(@PathVariable String id) {
-        closService.deleteClo(id);
+    public ResponseObject<Void> delete(@PathVariable String id, @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
+        closService.deleteClo(id, userId);
         return ResponseObject.<Void>builder()
                 .status(1000)
                 .message("CLO deleted successfully")
@@ -102,16 +107,22 @@ public class CLOsController {
     @PostMapping("/generate")
     @PreAuthorize("hasAuthority('CLOS_GENERATE')")
     @Operation(summary = "Generate a new CLO using AI")
-    public ResponseEntity<CLOsGenerationResponse> generateClo(@RequestBody @Valid CloGenerationRequest request) {
-        CLOsGenerationResponse result = geminiService.generateClo(request);
+    public ResponseEntity<CLOsGenerationResponse> generateClo(
+            @RequestBody @Valid CloGenerationRequest request,
+            @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
+        CLOsGenerationResponse result = geminiService.generateClo(request, userId);
         return ResponseEntity.ok(result);
     }
 
     @PostMapping("/check")
     @PreAuthorize("hasAuthority('CLOS_CHECK')")
     @Operation(summary = "Validate CLO against Bloom's Taxonomy")
-    public ResponseEntity<CloCheckResponse> checkClo(@RequestBody @Valid CloCheckRequest request) {
-        CloCheckResponse result = geminiService.checkClo(request);
+    public ResponseEntity<CloCheckResponse> checkClo(
+            @RequestBody @Valid CloCheckRequest request,
+            @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
+        CloCheckResponse result = geminiService.checkClo(request, userId);
         return ResponseEntity.ok(result);
     }
 

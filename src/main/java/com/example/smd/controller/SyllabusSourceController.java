@@ -9,6 +9,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -30,8 +32,10 @@ public class SyllabusSourceController {
     )
     public ResponseObject<Void> addSources(
             @PathVariable UUID syllabusId,
-            @RequestBody List<UUID> sourceIds) {
-        service.addSourcesToSyllabus(syllabusId, sourceIds);
+            @RequestBody List<UUID> sourceIds,
+            @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
+        service.addSourcesToSyllabus(syllabusId, sourceIds, userId);
         return ResponseObject.<Void>builder()
                 .status(1000)
                 .message("Sources assigned to syllabus successfully")
@@ -58,8 +62,10 @@ public class SyllabusSourceController {
     )
     public ResponseObject<Void> removeSource(
             @PathVariable UUID syllabusId,
-            @PathVariable UUID sourceId) {
-        service.removeSourceFromSyllabus(syllabusId, sourceId);
+            @PathVariable UUID sourceId,
+            @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
+        service.removeSourceFromSyllabus(syllabusId, sourceId, userId);
         return ResponseObject.<Void>builder()
                 .status(1000)
                 .message("Source unlinked from syllabus successfully")
