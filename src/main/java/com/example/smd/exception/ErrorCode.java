@@ -115,6 +115,7 @@ public enum ErrorCode {
     CURRICULUM_HAS_SUBJECTS(10009, "Cannot delete curriculum that contains subjects", HttpStatus.CONFLICT),
     INVALID_CURRICULUM_STATUS(10010, "Invalid curriculum status transition", HttpStatus.BAD_REQUEST),
     CURRICULUM_NOT_DRAFT(10011, "Curriculum can only be modified when in DRAFT status", HttpStatus.BAD_REQUEST),
+    CURRICULUM_NOT_CREATE(10013, "Cannot create Curriculum for an ARCHIVED Major and DRAFT Major", HttpStatus.BAD_REQUEST),
 
     //System Log
     LOG_NOT_FOUND(14001, "System log not found", HttpStatus.NOT_FOUND),

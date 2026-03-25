@@ -11,6 +11,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -33,11 +35,12 @@ public class AssessmentController {
             @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "part,asc") String[] sort
-    ) {
+            @RequestParam(defaultValue = "part,asc") String[] sort,
+            @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<PagedResponse<AssessmentResponse>>builder()
                 .status(1000)
-                .data(PagedResponse.of(assessmentService.getAllAssessments(syllabusId, status, search, page, size, sort)))
+                .data(PagedResponse.of(assessmentService.getAllAssessments(syllabusId, status, search, page, size, sort, userId)))
                 .message("Get all assessments successfully")
                 .build();
     }

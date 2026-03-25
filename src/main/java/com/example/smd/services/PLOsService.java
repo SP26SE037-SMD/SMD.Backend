@@ -36,13 +36,21 @@ public class PLOsService {
     PLOsMapper plOsMapper;
 
     @Transactional
-    public List<PLOsResponse> createBulkPlos(String curriculumId, List<PLOsCreateRequest> requests) {
+    public List<PLOsResponse> createBulkPlos(String curriculumId, List<PLOsCreateRequest> requests, String accountId) {
         if (requests == null || requests.isEmpty()) return Collections.emptyList();
+
+        //Kiểm tra Role tạo
+        var account = accountService.getAccountById(accountId);
+        String roleName = account.getRole().getRoleName();
+        if (!roleName.equals("HOCFDC")) {
+            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+        }
 
         // 1. Kiểm tra Curriculum tồn tại
         UUID uuidCurriculumId = UUID.fromString(curriculumId);
         Curriculum curriculum = curriculumRepository.findById(uuidCurriculumId)
                 .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));
+
 
         // 2. Check trùng mã nội bộ trong JSON gửi lên (Local Check)
         Set<String> uniqueCodes = new HashSet<>();
@@ -72,29 +80,32 @@ public class PLOsService {
     }
 
     @Transactional
-    public PLOsResponse updatePlo(String id, PLOsRequest request) {
-        try {
-            UUID plOsId = UUID.fromString(id);
-            PLOs plo = plOsRepository.findById(plOsId)
-                    .orElseThrow(() -> new AppException(ErrorCode.PLO_NOT_FOUND));
-
-            // Nếu thay đổi code, cần check xem code mới có trùng trong Major hiện tại không
-            if (!plo.getPloCode().equals(request.getPloCode()) &&
-                    plOsRepository.existsByPloCodeAndCurriculum_CurriculumId(request.getPloCode(), plo.getCurriculum().getCurriculumId())) {
-                throw new AppException(ErrorCode.PLO_CODE_EXISTS);
-            }
-
-            if(!plo.getStatus().equals(PloStatus.DRAFT.toString())) {
-                throw new AppException(ErrorCode.PLO_NOT_DRAFT);
-            }
-
-            plo.setPloCode(request.getPloCode());
-            plo.setDescription(request.getDescription());
-
-            return plOsMapper.toPloResponse(plOsRepository.save(plo));
-        } catch (IllegalArgumentException e) {
-            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION); // Hoặc một mã lỗi định dạng ID không hợp lệ
+    public PLOsResponse updatePlo(String id, PLOsRequest request, String accountId) {
+        //Kiểm tra Role tạo
+        var account = accountService.getAccountById(accountId);
+        String roleName = account.getRole().getRoleName();
+        if (!roleName.equals("HOCFDC")) {
+            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
+
+        UUID plOsId = UUID.fromString(id);
+        PLOs plo = plOsRepository.findById(plOsId)
+                .orElseThrow(() -> new AppException(ErrorCode.PLO_NOT_FOUND));
+
+        // Nếu thay đổi code, cần check xem code mới có trùng trong Major hiện tại không
+        if (!plo.getPloCode().equals(request.getPloCode()) &&
+                plOsRepository.existsByPloCodeAndCurriculum_CurriculumId(request.getPloCode(), plo.getCurriculum().getCurriculumId())) {
+            throw new AppException(ErrorCode.PLO_CODE_EXISTS);
+        }
+
+        if (!plo.getStatus().equals(PloStatus.DRAFT.toString())) {
+            throw new AppException(ErrorCode.PLO_NOT_DRAFT);
+        }
+
+        plo.setPloCode(request.getPloCode());
+        plo.setDescription(request.getDescription());
+
+        return plOsMapper.toPloResponse(plOsRepository.save(plo));
     }
 
     public PLOsResponse getPloDetail(String id, String accountId) {
@@ -105,14 +116,14 @@ public class PLOsService {
 
             //Phân quyền ROLE Student + Lecture chỉ xem được PUBLISHED
             var account = accountService.getAccountById(accountId);
-            if(account.getRole().getRoleName().equals("STUDENT") ||  account.getRole().getRoleName().equals("LECTURER")) {
-                if(!plo.getStatus().equals(PloStatus.PUBLISHED.toString())) {
+            if (account.getRole().getRoleName().equals("STUDENT") || account.getRole().getRoleName().equals("LECTURER")) {
+                if (!plo.getStatus().equals(PloStatus.PUBLISHED.toString())) {
                     throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
                 }
             }
 
-            if(plo.getStatus().equals(PloStatus.DRAFT.toString())) {
-                if(!account.getRole().getRoleName().equals("HOCFDC")){
+            if (plo.getStatus().equals(PloStatus.DRAFT.toString())) {
+                if (!account.getRole().getRoleName().equals("HOCFDC")) {
                     throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
                 }
             }
@@ -164,26 +175,28 @@ public class PLOsService {
     }
 
     @Transactional
-    public void deletePlo(String id) {
-        try {
-            UUID ploId = UUID.fromString(id);
-
-            // 1. Kiểm tra PLO có tồn tại không
-            PLOs plo = plOsRepository.findById(ploId)
-                    .orElseThrow(() -> new AppException(ErrorCode.PLO_NOT_FOUND));
-
-            // 2. Thực hiện xóa
-            if (plo.getStatus().equals(PloStatus.DRAFT.toString())) {
-                plOsRepository.delete(plo);
-            } else {
-                plo.setStatus(PloStatus.ARCHIVED.toString());
-                plOsRepository.save(plo);
-            }
-
-
-        } catch (IllegalArgumentException e) {
-            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+    public void deletePlo(String id, String accountId) {
+        //Kiểm tra Role tạo
+        var account = accountService.getAccountById(accountId);
+        String roleName = account.getRole().getRoleName();
+        if (!roleName.equals("VP")) {
+            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
+
+        UUID ploId = UUID.fromString(id);
+
+        // 1. Kiểm tra PLO có tồn tại không
+        PLOs plo = plOsRepository.findById(ploId)
+                .orElseThrow(() -> new AppException(ErrorCode.PLO_NOT_FOUND));
+
+        // 2. Thực hiện xóa
+        if (plo.getStatus().equals(PloStatus.DRAFT.toString())) {
+            plOsRepository.delete(plo);
+        } else {
+            plo.setStatus(PloStatus.ARCHIVED.toString());
+            plOsRepository.save(plo);
+        }
+
     }
 
     @Transactional

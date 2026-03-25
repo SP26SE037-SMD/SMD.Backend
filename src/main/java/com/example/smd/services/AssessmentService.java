@@ -45,7 +45,8 @@ public class AssessmentService {
                                                       String search,
                                                       int page,
                                                       int size,
-                                                      String[] sort) {
+                                                      String[] sort,
+                                                      String accountId) {
         List<Sort.Order> orders = new ArrayList<>();
         if (sort[0].contains(",")) {
             for (String sortOrder : sort) {

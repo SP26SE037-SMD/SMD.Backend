@@ -93,11 +93,13 @@ public class CurriculumController {
             description = "Create a new curriculum with unique curriculum code. Requires CURRICULUM_CREATE permission."
     )
     public ResponseObject<CurriculumResponse> createCurriculum(
-            @RequestBody @Valid CurriculumCreateRequest request
+            @RequestBody @Valid CurriculumCreateRequest request,
+            @AuthenticationPrincipal Jwt jwt
     ) {
+        String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<CurriculumResponse>builder()
                 .status(1000)
-                .data(curriculumService.createCurriculum(request))
+                .data(curriculumService.createCurriculum(request, userId))
                 .message("Curriculum created successfully")
                 .build();
     }
@@ -156,11 +158,13 @@ public class CurriculumController {
     public ResponseObject<CurriculumResponse> updateCurriculum(
             @Parameter(description = "Curriculum ID (UUID)")
             @PathVariable String id,
-            @RequestBody @Valid CurriculumCreateRequest request
+            @RequestBody @Valid CurriculumCreateRequest request,
+            @AuthenticationPrincipal Jwt jwt
     ) {
+        String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<CurriculumResponse>builder()
                 .status(1000)
-                .data(curriculumService.updateCurriculum(id, request))
+                .data(curriculumService.updateCurriculum(id, request, userId))
                 .message("Curriculum updated successfully")
                 .build();
     }
@@ -209,11 +213,13 @@ public class CurriculumController {
             @PathVariable String id,
 
             @Parameter(description = "New end-year must be greater than or equal to start-year")
-            @RequestParam int endYear
+            @RequestParam int endYear,
+            @AuthenticationPrincipal Jwt jwt
     ) {
+        String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<CurriculumResponse>builder()
                 .status(1000)
-                .data(curriculumService.updateCurriculumEndYear(id, endYear))
+                .data(curriculumService.updateCurriculumEndYear(id, endYear, userId))
                 .message("Curriculum end-year updated successfully")
                 .build();
     }
@@ -221,8 +227,10 @@ public class CurriculumController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('CURRICULUM_DELETE')")
     @Operation(summary = "Soft delete curriculum", description = "Sets curriculum status to inactive instead of hard deleting from database")
-    public ResponseObject<Void> delete(@PathVariable UUID id) {
-        curriculumService.delete(id);
+    public ResponseObject<Void> delete(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt
+    ) {
+        String userId = jwt.getClaimAsString("accountId");
+        curriculumService.delete(id, userId);
         return ResponseObject.<Void>builder()
                 .message("Curriculum deleted successfully")
                 .build();

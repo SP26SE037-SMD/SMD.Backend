@@ -34,10 +34,12 @@ public class PLOsController {
     @Operation(summary = "Create multiple PLOs", description = "Create PLOs linked to a specific Curriculum via PathVariable.")
     public ResponseObject<List<PLOsResponse>> createBulk(
             @PathVariable String curriculumId,
-            @RequestBody @Valid List<PLOsCreateRequest> request) {
+            @RequestBody @Valid List<PLOsCreateRequest> request,
+            @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<List<PLOsResponse>>builder()
                 .status(1000)
-                .data(ploService.createBulkPlos(curriculumId, request))
+                .data(ploService.createBulkPlos(curriculumId, request, userId))
                 .message("PLOs created successfully")
                 .build();
     }
@@ -45,10 +47,14 @@ public class PLOsController {
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('PLOS_UPDATE')")
     @Operation(summary = "Update PLO", description = "Update plo_code and description.")
-    public ResponseObject<PLOsResponse> update(@PathVariable String id, @RequestBody @Valid PLOsRequest request) {
+    public ResponseObject<PLOsResponse> update(
+            @PathVariable String id,
+            @RequestBody @Valid PLOsRequest request,
+            @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<PLOsResponse>builder()
                 .status(1000)
-                .data(ploService.updatePlo(id, request))
+                .data(ploService.updatePlo(id, request, userId))
                 .message("PLO updated successfully")
                 .build();
     }
@@ -82,8 +88,9 @@ public class PLOsController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('PLOS_DELETE')")
     @Operation(summary = "Delete PLO")
-    public ResponseObject<Void> delete(@PathVariable String id) {
-        ploService.deletePlo(id);
+    public ResponseObject<Void> delete(@PathVariable String id, @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
+        ploService.deletePlo(id, userId);
         return ResponseObject.<Void>builder()
                 .status(1000)
                 .message("PLO deleted successfully")
