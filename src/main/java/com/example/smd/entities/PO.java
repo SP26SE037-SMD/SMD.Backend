@@ -22,9 +22,6 @@ public class PO {
     @Column(name = "po_code", nullable = false, length = 20)
     String poCode;
 
-    @Column(name = "po_name", nullable = false) // Đảm bảo nullable là true
-    String poName; // Theo hình là Varchar(20) hơi ngắn, có thể nên tăng lên
-
     @Column(columnDefinition = "TEXT")
     String description;
 
