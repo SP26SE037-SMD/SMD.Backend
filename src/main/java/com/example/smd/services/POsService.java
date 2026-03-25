@@ -35,13 +35,21 @@ public class POsService {
     POsMapper poMapper;
 
     @Transactional
-    public List<POsResponse> createBulkPos(String majorId, List<POsCreateRequest> requests) {
+    public List<POsResponse> createBulkPos(String majorId, List<POsCreateRequest> requests, String accountId) {
         if (requests == null || requests.isEmpty()) return Collections.emptyList();
 
         // 1. Kiểm tra Major tồn tại
         UUID uuidMajorId = UUID.fromString(majorId);
         Major major = majorRepository.findById(uuidMajorId)
                 .orElseThrow(() -> new AppException(ErrorCode.MAJOR_NOT_FOUND));
+
+        //Kiểm tra Role tạo
+        var account = accountService.getAccountById(accountId);
+        String roleName = account.getRole().getRoleName();
+        if (!roleName.equals("VP")) {
+            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+        }
+
 
         // 2. Check trùng mã nội bộ trong JSON gửi lên
         Set<String> uniqueCodes = new HashSet<>();
@@ -71,7 +79,15 @@ public class POsService {
     }
 
     @Transactional
-    public POsResponse updatePo(String id, POsRequest request) {
+    public POsResponse updatePo(String id, POsRequest request, String accountId) {
+
+        //Kiểm tra Role tạo
+        var account = accountService.getAccountById(accountId);
+        String roleName = account.getRole().getRoleName();
+        if (!roleName.equals("VP")) {
+            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+        }
+
         UUID poId = UUID.fromString(id);
         PO po = poRepository.findById(poId)
                 .orElseThrow(() -> new AppException(ErrorCode.PO_NOT_FOUND));
@@ -148,7 +164,14 @@ public class POsService {
     }
 
     @Transactional
-    public void deletePo(String id) {
+    public void deletePo(String id, String accountId) {
+        //Kiểm tra Role tạo
+        var account = accountService.getAccountById(accountId);
+        String roleName = account.getRole().getRoleName();
+        if (!roleName.equals("VP")) {
+            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+        }
+
         PO po = poRepository.findById(UUID.fromString(id))
                 .orElseThrow(() -> new AppException(ErrorCode.PO_NOT_FOUND));
 

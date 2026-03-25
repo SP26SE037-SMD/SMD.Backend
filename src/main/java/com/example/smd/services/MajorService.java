@@ -37,6 +37,7 @@ public class MajorService {
     MajorRepository majorRepository;
     MajorMapper majorMapper;
 
+    @Transactional
     public Page<MajorResponse> getAllMajors(String accountId, String search, String searchBy, String status, int page, int size, String[] sort) {
         // 1. Khởi tạo Pageable
         Sort.Direction direction = sort.length > 1 && sort[1].equalsIgnoreCase("desc")
@@ -49,7 +50,15 @@ public class MajorService {
         String finalStatus = (status == null || status.trim().isEmpty() || status.equalsIgnoreCase("all")) ? null : status.trim();
 
         if (roleName.equals("STUDENT") || roleName.equals("LECTURER")) {
-            finalStatus = "PUBLISHED";
+            if (!finalStatus.equals(PloStatus.PUBLISHED.toString())) {
+                throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+            }
+        }
+
+        if (finalStatus.equals(PloStatus.DRAFT.toString())) {
+            if (!account.getRole().getRoleName().equals("VP")) {
+                throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+            }
         }
 
         Page<Major> majorPage;
@@ -69,8 +78,10 @@ public class MajorService {
             if (hasStatus) {
                 // TRƯỜNG HỢP 2: Có cả Search và Status (Dùng toán tử AND trong SQL)
                 majorPage = switch (type) {
-                    case "code" -> majorRepository.findByMajorCodeContainingIgnoreCaseAndStatus(searchLower, finalStatus, pageable);
-                    case "name" -> majorRepository.findByMajorNameContainingIgnoreCaseAndStatus(searchLower, finalStatus, pageable);
+                    case "code" ->
+                            majorRepository.findByMajorCodeContainingIgnoreCaseAndStatus(searchLower, finalStatus, pageable);
+                    case "name" ->
+                            majorRepository.findByMajorNameContainingIgnoreCaseAndStatus(searchLower, finalStatus, pageable);
                     // Nếu type là "all" hoặc cái khác -> Search cả 2 field VÀ phải đúng Status
                     default -> majorRepository.searchAllFieldsWithStatus(searchLower, finalStatus, pageable);
                 };
@@ -79,7 +90,8 @@ public class MajorService {
                 majorPage = switch (type) {
                     case "code" -> majorRepository.findByMajorCodeContainingIgnoreCase(searchLower, pageable);
                     case "name" -> majorRepository.findByMajorNameContainingIgnoreCase(searchLower, pageable);
-                    default -> majorRepository.findByMajorNameContainingIgnoreCaseOrMajorCodeContainingIgnoreCase(searchLower, searchLower, pageable);
+                    default ->
+                            majorRepository.findByMajorNameContainingIgnoreCaseOrMajorCodeContainingIgnoreCase(searchLower, searchLower, pageable);
                 };
             }
         }
@@ -88,23 +100,41 @@ public class MajorService {
     }
 
     // Create Major
-    public MajorResponse createMajor(MajorRequest request) {
+    @Transactional
+    public MajorResponse createMajor(MajorRequest request, String accountId) {
+
+        //Kiểm tra Role tạo
+        var account = accountService.getAccountById(accountId);
+        String roleName = account.getRole().getRoleName();
+        if (!roleName.equals("VP")) {
+            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+        }
+
         if (majorRepository.existsByMajorCode(request.getMajorCode())) {
             throw new AppException(ErrorCode.MAJOR_CODE_EXISTS);
         }
 
         Major major = majorMapper.toMajor(request);
         major.setStatus(PloStatus.DRAFT.toString());
-        var response =  majorRepository.save(major);
+        var response = majorRepository.save(major);
         return majorMapper.toMajorResponse(response);
     }
 
     // Update Major
-    public MajorResponse updateMajor(UUID id, MajorRequest request) {
+    @Transactional
+    public MajorResponse updateMajor(UUID id, MajorRequest request, String accountId) {
+
+        //Kiểm tra Role tạo
+        var account = accountService.getAccountById(accountId);
+        String roleName = account.getRole().getRoleName();
+        if (!roleName.equals("VP")) {
+            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+        }
+
         Major major = majorRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.MAJOR_NOT_FOUND));
 
-        if(!major.getStatus().equals(PloStatus.DRAFT.toString())) {
+        if (!major.getStatus().equals(PloStatus.DRAFT.toString())) {
             throw new AppException(ErrorCode.MAJOR_NOT_DRAFT);
         }
 
@@ -117,56 +147,62 @@ public class MajorService {
     }
 
     // Delete Major (Xóa mềm)
-    public void deleteMajor(UUID id) {
-        try {
-            Major major = majorRepository.findById(id)
+    @Transactional
+    public void deleteMajor(UUID id, String accountId) {
+        //Kiểm tra Role tạo
+        var account = accountService.getAccountById(accountId);
+        String roleName = account.getRole().getRoleName();
+        if (!roleName.equals("VP")) {
+            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+        }
+
+        Major major = majorRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.MAJOR_NOT_FOUND));
 
-            if(major.getStatus().equals("DRAFT")) {
-                majorRepository.delete(major);
-            } else{
-                major.setStatus(PloStatus.ARCHIVED.toString());
-                majorRepository.save(major);
-            }
-        } catch (IllegalArgumentException e) {
-            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        if (major.getStatus().equals("DRAFT")) {
+            majorRepository.delete(major);
+        } else {
+            major.setStatus(PloStatus.ARCHIVED.toString());
+            majorRepository.save(major);
         }
     }
 
+    @Transactional
     public MajorResponse getMajorDetail(String majorCode, String accountId) {
         Major major = majorRepository.findByMajorCode(majorCode)
                 .orElseThrow(() -> new AppException(ErrorCode.MAJOR_NOT_FOUND));
 
         //Phân quyền ROLE Student + Lecture chỉ xem được PUBLISHED
         var account = accountService.getAccountById(accountId);
-        if(account.getRole().getRoleName().equals("STUDENT") ||  account.getRole().getRoleName().equals("LECTURER")) {
-            if(!major.getStatus().equals(PloStatus.PUBLISHED.toString())) {
+        if (account.getRole().getRoleName().equals("STUDENT") || account.getRole().getRoleName().equals("LECTURER")) {
+            if (!major.getStatus().equals(PloStatus.PUBLISHED.toString())) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
 
-        if(major.getStatus().equals(PloStatus.DRAFT.toString())) {
-            if(!account.getRole().getRoleName().equals("VP")){
+        if (major.getStatus().equals(PloStatus.DRAFT.toString())) {
+            if (!account.getRole().getRoleName().equals("VP")) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
         return majorMapper.toMajorResponse(major);
     }
 
+    @Transactional
     public MajorResponse getMajorById(UUID id, String accountId) {
         Major major = majorRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.MAJOR_NOT_FOUND));
 
         //Phân quyền ROLE Student + Lecture chỉ xem được PUBLISHED
         var account = accountService.getAccountById(accountId);
-        if(account.getRole().getRoleName().equals("STUDENT") ||  account.getRole().getRoleName().equals("LECTURER")) {
-            if(!major.getStatus().equals(PloStatus.PUBLISHED.toString())) {
+        if (account.getRole().getRoleName().equals("STUDENT") || account.getRole().getRoleName().equals("LECTURER")) {
+            if (!major.getStatus().equals(PloStatus.PUBLISHED.toString())) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
 
-        if(major.getStatus().equals(PloStatus.DRAFT.toString())) {
-            if(!account.getRole().getRoleName().equals("VP")){
+        if (major.getStatus().equals(PloStatus.DRAFT.toString())) {
+            if (!account.getRole().getRoleName().equals("VP")) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }

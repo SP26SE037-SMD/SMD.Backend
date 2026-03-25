@@ -84,10 +84,11 @@ public class MajorController {
             summary = "Create a new major",
             description = "Add a new major to the system. The major code must be unique."
     )
-    public ResponseObject<MajorResponse> create(@RequestBody @Valid MajorRequest request) {
+    public ResponseObject<MajorResponse> create(@RequestBody @Valid MajorRequest request, @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<MajorResponse>builder()
                 .status(1000)
-                .data(majorService.createMajor(request))
+                .data(majorService.createMajor(request, userId))
                 .message("Major created successfully")
                 .build();
     }
@@ -99,10 +100,11 @@ public class MajorController {
             summary = "Update an existing major",
             description = "Update the details of an existing major based on its unique ID (UUID)."
     )
-    public ResponseObject<MajorResponse> update(@PathVariable UUID id, @RequestBody @Valid MajorRequest request) {
+    public ResponseObject<MajorResponse> update(@PathVariable UUID id, @RequestBody @Valid MajorRequest request, @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<MajorResponse>builder()
                 .status(1000)
-                .data(majorService.updateMajor(id, request))
+                .data(majorService.updateMajor(id, request, userId))
                 .message("Major updated successfully")
                 .build();
     }
@@ -114,8 +116,9 @@ public class MajorController {
             summary = "Delete a major (Soft Delete)",
             description = "Mark a major as deleted. The record remains in the database but will be excluded from general listings."
     )
-    public ResponseObject<Void> delete(@PathVariable UUID id) {
-        majorService.deleteMajor(id);
+    public ResponseObject<Void> delete(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
+        majorService.deleteMajor(id, userId);
         return ResponseObject.<Void>builder()
                 .status(1000)
                 .message("Major deleted successfully")

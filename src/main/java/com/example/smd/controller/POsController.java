@@ -34,10 +34,12 @@ public class POsController {
     @Operation(summary = "Create multiple POs", description = "Create POs linked to a specific Major via PathVariable.")
     public ResponseObject<List<POsResponse>> createBulk(
             @PathVariable String majorId,
-            @RequestBody @Valid List<POsCreateRequest> request) {
+            @RequestBody @Valid List<POsCreateRequest> request,
+            @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<List<POsResponse>>builder()
                 .status(1000)
-                .data(poService.createBulkPos(majorId, request))
+                .data(poService.createBulkPos(majorId, request, userId))
                 .message("POs created successfully")
                 .build();
     }
@@ -45,10 +47,14 @@ public class POsController {
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('POS_UPDATE')")
     @Operation(summary = "Update PO", description = "Update po_code and description for a specific PO.")
-    public ResponseObject<POsResponse> update(@PathVariable String id, @RequestBody @Valid POsRequest request) {
+    public ResponseObject<POsResponse> update(
+            @PathVariable String id,
+            @RequestBody @Valid POsRequest request,
+            @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<POsResponse>builder()
                 .status(1000)
-                .data(poService.updatePo(id, request))
+                .data(poService.updatePo(id, request, userId))
                 .message("PO updated successfully")
                 .build();
     }
@@ -83,8 +89,9 @@ public class POsController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('POS_DELETE')")
     @Operation(summary = "Delete PO", description = "Soft delete a PO by moving its status to ARCHIVED.")
-    public ResponseObject<Void> delete(@PathVariable String id) {
-        poService.deletePo(id);
+    public ResponseObject<Void> delete(@PathVariable String id, @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
+        poService.deletePo(id, userId);
         return ResponseObject.<Void>builder()
                 .status(1000)
                 .message("PO deleted successfully")

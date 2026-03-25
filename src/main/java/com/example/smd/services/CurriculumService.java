@@ -32,20 +32,21 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class CurriculumService {
-    
+
     CurriculumRepository curriculumRepository;
     MajorRepository majorRepository;
     CurriculumMapper curriculumMapper;
     AccountService accountService;
-    
+
     /**
      * Lấy danh sách curriculum với phân trang và bộ lọc
-     * @param search - Từ khóa tìm kiếm (có thể null)
+     *
+     * @param search   - Từ khóa tìm kiếm (có thể null)
      * @param searchBy - Tìm theo trường nào: code, name, hoặc all
-     * @param status - Filter theo status (có thể null)
-     * @param page - Số trang (0-based)
-     * @param size - Số lượng item mỗi trang
-     * @param sort - Mảng sort [field, direction]
+     * @param status   - Filter theo status (có thể null)
+     * @param page     - Số trang (0-based)
+     * @param size     - Số lượng item mỗi trang
+     * @param sort     - Mảng sort [field, direction]
      * @return Page<CurriculumResponse>
      */
     @Transactional(readOnly = true)
@@ -72,7 +73,15 @@ public class CurriculumService {
         String roleName = account.getRole().getRoleName();
 
         if (roleName.equals("STUDENT") || roleName.equals("LECTURER")) {
-            finalStatus = "PUBLISHED"; // Role thấp luôn bị ép về PUBLISHED
+            if (!finalStatus.equals(PloStatus.PUBLISHED.toString())) {
+                throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+            }
+        }
+
+        if (finalStatus.equals(PloStatus.DRAFT.toString())) {
+            if (!account.getRole().getRoleName().equals("HOCFDC")) {
+                throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+            }
         }
 
         Page<Curriculum> curriculumPage;
@@ -95,8 +104,10 @@ public class CurriculumService {
             if (hasStatus) {
                 // TRƯỜNG HỢP 2: Có Search + Có Status (Dùng AND trong SQL)
                 curriculumPage = switch (type) {
-                    case "code" -> curriculumRepository.findByCurriculumCodeContainingIgnoreCaseAndStatus(searchLower, finalStatus, pageable);
-                    case "name" -> curriculumRepository.findByCurriculumNameContainingIgnoreCaseAndStatus(searchLower, finalStatus, pageable);
+                    case "code" ->
+                            curriculumRepository.findByCurriculumCodeContainingIgnoreCaseAndStatus(searchLower, finalStatus, pageable);
+                    case "name" ->
+                            curriculumRepository.findByCurriculumNameContainingIgnoreCaseAndStatus(searchLower, finalStatus, pageable);
                     default -> curriculumRepository.searchAllFieldsWithStatus(searchLower, finalStatus, pageable);
                 };
             } else {
@@ -104,21 +115,29 @@ public class CurriculumService {
                 curriculumPage = switch (type) {
                     case "code" -> curriculumRepository.findByCurriculumCodeContainingIgnoreCase(searchLower, pageable);
                     case "name" -> curriculumRepository.findByCurriculumNameContainingIgnoreCase(searchLower, pageable);
-                    default -> curriculumRepository.findByCurriculumNameContainingIgnoreCaseOrCurriculumCodeContainingIgnoreCase(searchLower, searchLower, pageable);
+                    default ->
+                            curriculumRepository.findByCurriculumNameContainingIgnoreCaseOrCurriculumCodeContainingIgnoreCase(searchLower, searchLower, pageable);
                 };
             }
         }
 
         return curriculumPage.map(curriculumMapper::toCurriculumResponse);
     }
-    
+
     /**
      * Tạo curriculum mới
      */
     @Transactional
-    public CurriculumResponse createCurriculum(CurriculumCreateRequest request) {
+    public CurriculumResponse createCurriculum(CurriculumCreateRequest request, String accountId) {
         log.info("Creating curriculum with code: {}", request.getCurriculumCode());
-        
+
+        //Kiểm tra Role tạo
+        var account = accountService.getAccountById(accountId);
+        String roleName = account.getRole().getRoleName();
+        if (!roleName.equals("HOCFDC")) {
+            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+        }
+
         // 1. Validate curriculum code không trùng
         if (curriculumRepository.existsByCurriculumCode(request.getCurriculumCode())) {
             throw new AppException(ErrorCode.CURRICULUM_CODE_EXISTS);
@@ -127,6 +146,10 @@ public class CurriculumService {
         // 3. Kiểm tra Major tồn tại
         Major major = majorRepository.findById(UUID.fromString(request.getMajorId()))
                 .orElseThrow(() -> new AppException(ErrorCode.MAJOR_NOT_FOUND));
+
+        if (!(major.getStatus().equals(PloStatus.PUBLISHED.toString()) || major.getStatus().equals(PloStatus.INTERNAL_REVIEW.toString()))) {
+            throw new AppException(ErrorCode.CURRICULUM_NOT_CREATE);
+        }
 
         // 4. Map request sang entity
         Curriculum curriculum = curriculumMapper.toCreateCurriculum(request);
@@ -137,14 +160,14 @@ public class CurriculumService {
         if (curriculum.getStatus() == null || curriculum.getStatus().isEmpty()) {
             curriculum.setStatus("DRAFT");
         }
-        
+
         // 6. Lưu vào database
         Curriculum savedCurriculum = curriculumRepository.save(curriculum);
         log.info("Curriculum created successfully with ID: {}", savedCurriculum.getCurriculumId());
-        
+
         return curriculumMapper.toCurriculumResponse(savedCurriculum);
     }
-    
+
     /**
      * Lấy chi tiết curriculum theo ID
      */
@@ -154,64 +177,71 @@ public class CurriculumService {
 
         Curriculum curriculum =
                 curriculumRepository.findById(UUID.fromString(id))
-                .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));
+                        .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));
 
         //Phân quyền ROLE Student + Lecture chỉ xem được PUBLISHED
         var account = accountService.getAccountById(accountId);
-        if(account.getRole().getRoleName().equals("STUDENT") ||  account.getRole().getRoleName().equals("LECTURER")) {
-            if(!curriculum.getStatus().equals(CurriculumStatus.PUBLISHED.toString())) {
+        if (account.getRole().getRoleName().equals("STUDENT") || account.getRole().getRoleName().equals("LECTURER")) {
+            if (!curriculum.getStatus().equals(CurriculumStatus.PUBLISHED.toString())) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
 
-        if(curriculum.getStatus().equals(CurriculumStatus.DRAFT.toString())) {
-            if(!account.getRole().getRoleName().equals("HOCFDC")){
+        if (curriculum.getStatus().equals(CurriculumStatus.DRAFT.toString())) {
+            if (!account.getRole().getRoleName().equals("HOCFDC")) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
         return curriculumMapper.toCurriculumResponse(curriculum);
     }
-    
+
     /**
      * Lấy chi tiết curriculum theo Code
      */
     @Transactional(readOnly = true)
     public CurriculumResponse getCurriculumByCode(String code, String accountId) {
         log.info("Fetching curriculum by code: {}", code);
-        
+
         Curriculum curriculum = curriculumRepository.findByCurriculumCode(code)
                 .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));
 
         //Phân quyền ROLE Student + Lecture chỉ xem được PUBLISHED
         var account = accountService.getAccountById(accountId);
-        if(account.getRole().getRoleName().equals("STUDENT") ||  account.getRole().getRoleName().equals("LECTURER")) {
-            if(!curriculum.getStatus().equals(CurriculumStatus.PUBLISHED.toString())) {
+        if (account.getRole().getRoleName().equals("STUDENT") || account.getRole().getRoleName().equals("LECTURER")) {
+            if (!curriculum.getStatus().equals(CurriculumStatus.PUBLISHED.toString())) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
 
-        if(curriculum.getStatus().equals(CurriculumStatus.DRAFT.toString())) {
-            if(!account.getRole().getRoleName().equals("HOCFDC")){
+        if (curriculum.getStatus().equals(CurriculumStatus.DRAFT.toString())) {
+            if (!account.getRole().getRoleName().equals("HOCFDC")) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
-        
+
         return curriculumMapper.toCurriculumResponse(curriculum);
     }
-    
+
     /**
      * Cập nhật curriculum
      */
     @Transactional
     public CurriculumResponse updateCurriculum(String id,
-                                               CurriculumCreateRequest request) {
+                                               CurriculumCreateRequest request, String accountId) {
         log.info("Updating curriculum with ID: {}", id);
-        
+
+        //Kiểm tra Role tạo
+        var account = accountService.getAccountById(accountId);
+        String roleName = account.getRole().getRoleName();
+        if (!roleName.equals("HOCFDC")) {
+            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+        }
+
         // 1. Tìm curriculum hiện tại
         Curriculum curriculum =
                 curriculumRepository.findById(UUID.fromString(id))
-                .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));
-        
+                        .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));
+
         // 2. Kiểm tra nếu đổi code thì không được trùng với code khác
         if (!curriculum.getCurriculumCode().equals(request.getCurriculumCode())) {
             if (curriculumRepository.existsByCurriculumCode(request.getCurriculumCode())) {
@@ -219,10 +249,10 @@ public class CurriculumService {
             }
         }
 
-        if(!curriculum.getStatus().equals(CurriculumStatus.DRAFT.toString())) {
+        if (!curriculum.getStatus().equals(CurriculumStatus.DRAFT.toString())) {
             throw new AppException(ErrorCode.CURRICULUM_NOT_DRAFT);
         }
-        
+
         // 5. Cập nhật các trường
         curriculum.setCurriculumCode(request.getCurriculumCode());
         curriculum.setCurriculumName(request.getCurriculumName());
@@ -231,10 +261,10 @@ public class CurriculumService {
         // 6. Lưu lại
         Curriculum updatedCurriculum = curriculumRepository.save(curriculum);
         log.info("Curriculum updated successfully: {}", id);
-        
+
         return curriculumMapper.toCurriculumResponse(updatedCurriculum);
     }
-    
+
     /**
      * Cập nhật status của curriculum
      */
@@ -242,7 +272,7 @@ public class CurriculumService {
     public CurriculumResponse updateCurriculumStatus(String id,
                                                      String status) {
         log.info("Updating curriculum status for ID: {} to {}", id, status);
-        
+
         Curriculum curriculum = curriculumRepository.findById(UUID.fromString(id))
                 .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));
         CurriculumStatus curriculumStatus;
@@ -255,7 +285,7 @@ public class CurriculumService {
         }
         curriculum.setStatus(curriculumStatus.toString());
         Curriculum updatedCurriculum = curriculumRepository.save(curriculum);
-        
+
         return curriculumMapper.toCurriculumResponse(updatedCurriculum);
     }
 
@@ -264,11 +294,18 @@ public class CurriculumService {
      */
     @Transactional
     public CurriculumResponse updateCurriculumEndYear(String id,
-                                                      int endYear) {
+                                                      int endYear, String accountId) {
         log.info("Updating curriculum status for ID: {} to {}", id, endYear);
 
         Curriculum curriculum = curriculumRepository.findById(UUID.fromString(id))
                 .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));
+
+        //Kiểm tra Role tạo
+        var account = accountService.getAccountById(accountId);
+        String roleName = account.getRole().getRoleName();
+        if (!roleName.equals("HOCFDC")) {
+            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+        }
 
         curriculum.setEndYear(endYear);
         Curriculum updatedCurriculum = curriculumRepository.save(curriculum);
@@ -276,19 +313,24 @@ public class CurriculumService {
         return curriculumMapper.toCurriculumResponse(updatedCurriculum);
     }
 
-    public void delete(UUID id) {
-        try {
-            Curriculum curriculum = curriculumRepository.findById(id)
-                    .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));
-
-            if (curriculum.getStatus().equals(CurriculumStatus.DRAFT.toString())) {
-                curriculumRepository.delete(curriculum);
-            } else {
-                curriculum.setStatus(CurriculumStatus.ARCHIVED.toString());
-                curriculumRepository.save(curriculum);
-            }
-        } catch (IllegalArgumentException e) {
-            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+    @Transactional(readOnly = true)
+    public void delete(UUID id, String accountId) {
+        //Kiểm tra Role tạo
+        var account = accountService.getAccountById(accountId);
+        String roleName = account.getRole().getRoleName();
+        if (!roleName.equals("HOCFDC")) {
+            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
+
+        Curriculum curriculum = curriculumRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));
+
+        if (curriculum.getStatus().equals(CurriculumStatus.DRAFT.toString())) {
+            curriculumRepository.delete(curriculum);
+        } else {
+            curriculum.setStatus(CurriculumStatus.ARCHIVED.toString());
+            curriculumRepository.save(curriculum);
+        }
+
     }
 }
