@@ -10,6 +10,8 @@ import com.example.smd.entities.Curriculum;
 import com.example.smd.entities.Sprint;
 import com.example.smd.entities.Syllabus;
 import com.example.smd.entities.Task;
+import com.example.smd.enums.CurriculumStatus;
+import com.example.smd.enums.SyllabusStatus;
 import com.example.smd.enums.TaskStatus;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
@@ -43,10 +45,17 @@ public class TaskService {
     AccountRepository accountRepository;
     SyllabusRepository syllabusRepository;
     CurriculumRepository curriculumRepository;
+    AccountService accountService;
     TaskMapper taskMapper;
 
     @Transactional
-    public TaskResponse create(TaskRequest request) {
+    public TaskResponse create(TaskRequest request, String check) {
+        var checkRole = accountService.getAccountById(check);
+        String roleName = checkRole.getRole().getRoleName();
+        if (!(roleName.equals("HOPDC") || roleName.equals("HOCFDC"))) {
+            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+        }
+
         Task task = taskMapper.toTask(request);
 
         // sprintId is mandatory for all users
@@ -55,7 +64,6 @@ public class TaskService {
                     .orElseThrow(() -> new AppException(ErrorCode.SPRINT_NOT_FOUND));
             task.setSprint(sprint);
         }
-
 
         // accountId is mandatory
         Account account = accountRepository.findById(request.getAccountId())
@@ -66,6 +74,10 @@ public class TaskService {
         if (request.getSyllabusId() != null) {
             Syllabus syllabus = syllabusRepository.findById(request.getSyllabusId())
                     .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
+            if (!(syllabus.getStatus().equals(SyllabusStatus.IN_PROGRESS.toString()) || syllabus.getStatus().equals(SyllabusStatus.PENDING_REVIEW.toString()))) {
+                throw new AppException(ErrorCode.SYLLABUS_NOT_READY_FOR_TASK);
+            }
+
             task.setSyllabus(syllabus);
         }
 
@@ -73,6 +85,9 @@ public class TaskService {
         if (request.getCurriculumId() != null) {
             Curriculum curriculum = curriculumRepository.findById(request.getCurriculumId())
                     .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));
+            if (!curriculum.getStatus().equals(CurriculumStatus.STRUCTURE_APPROVED.toString())) {
+                throw new AppException(ErrorCode.CURRICULUM_NOT_READY_FOR_TASK);
+            }
             task.setCurriculum(curriculum);
         }
 

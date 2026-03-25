@@ -38,9 +38,15 @@ public class CLOsService {
     CLOsMapper closMapper;
 
     @Transactional
-    public List<CLOsResponse> createBulkClos(String subjectId, List<CLOsCreateRequest> requests) {
+    public List<CLOsResponse> createBulkClos(String subjectId, List<CLOsCreateRequest> requests, String accountId) {
         if (requests == null || requests.isEmpty()) {
             return Collections.emptyList();
+        }
+
+        var account = accountService.getAccountById(accountId);
+        String roleName = account.getRole().getRoleName();
+        if (!roleName.equals("HOPDC")) {
+            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
         // 1. Kiểm tra Môn học (Subject) tồn tại
@@ -48,7 +54,7 @@ public class CLOsService {
         Subject subject = subjectRepository.findById(uuidSubjectId)
                 .orElseThrow(() -> new AppException(ErrorCode.SUBJECT_NOT_FOUND));
 
-        if (!subject.getStatus().equals(SubjectStatus.WAITING_SYLLABUS.toString())){
+        if (!subject.getStatus().equals(SubjectStatus.WAITING_SYLLABUS.toString())) {
             throw new AppException(ErrorCode.CLO_SUBJECT_NOT_EDITABLE);
         }
 
@@ -126,11 +132,18 @@ public class CLOsService {
     }
 
     @Transactional
-    public CLOsResponse updateClo(String id, CLOsRequest request) {
+    public CLOsResponse updateClo(String id, CLOsRequest request, String accountId) {
+
+        var account = accountService.getAccountById(accountId);
+        String roleName = account.getRole().getRoleName();
+        if (!roleName.equals("HOPDC")) {
+            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+        }
+
         CLOs clo = closRepository.findById(UUID.fromString(id))
                 .orElseThrow(() -> new AppException(ErrorCode.CLO_NOT_FOUND));
 
-        if(!clo.getStatus().equals(PloStatus.DRAFT.toString())){
+        if (!clo.getStatus().equals(PloStatus.DRAFT.toString())) {
             throw new AppException(ErrorCode.CLO_NOT_EDITABLE);
         }
 
@@ -143,25 +156,27 @@ public class CLOsService {
     }
 
     @Transactional
-    public void deleteClo(String id) {
-        try {
-            UUID cloId = UUID.fromString(id);
-
-            // Kiểm tra xem CLO có tồn tại không
-            CLOs clo = closRepository.findById(cloId)
-                    .orElseThrow(() -> new AppException(ErrorCode.CLO_NOT_FOUND));
-            if(clo.getStatus().equals("DRAFT")) {
-                closRepository.delete(clo);
-            } else{
-                clo.setStatus("ARCHIVED");
-                closRepository.save(clo);
-            }
-
-        } catch (IllegalArgumentException e) {
-            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+    public void deleteClo(String id, String accountId) {
+        var account = accountService.getAccountById(accountId);
+        String roleName = account.getRole().getRoleName();
+        if (!roleName.equals("HOPDC")) {
+            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
+        UUID cloId = UUID.fromString(id);
+
+        // Kiểm tra xem CLO có tồn tại không
+        CLOs clo = closRepository.findById(cloId)
+                .orElseThrow(() -> new AppException(ErrorCode.CLO_NOT_FOUND));
+        if (clo.getStatus().equals("DRAFT")) {
+            closRepository.delete(clo);
+        } else {
+            clo.setStatus("ARCHIVED");
+            closRepository.save(clo);
+        }
+
     }
 
+    @Transactional
     public CLOsResponse getCloDetail(String id, String accountId) {
         try {
             UUID cloId = UUID.fromString(id);
@@ -183,7 +198,7 @@ public class CLOsService {
 
             // 4. Phân quyền: Bản DRAFT chỉ dành cho HOCFDC (Người soạn thảo chính)
             if ("DRAFT".equalsIgnoreCase(clo.getStatus())) {
-                if (!roleName.equals("HOCFDC")) {
+                if (!roleName.equals("HOPDC")) {
                     throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
                 }
             }

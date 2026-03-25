@@ -95,15 +95,15 @@ public class EmbeddingService {
     //Đưa AI trả về điểm khác biệt của 2 môn
     @Transactional
     public ComparisonResult compareSyllabus(UUID oldId, UUID newId) {
-//        try {
+        try {
             //Lấy cấu trúc dữ liệu (Bước chuẩn bị)
             SyllabusStructureResponse oldStruct = getSyllabusStructure(oldId);
             SyllabusStructureResponse newStruct = getSyllabusStructure(newId);
 
             return gemini.compareSyllabus(oldStruct, newStruct);
-//        } catch (Exception e) {
-//            throw new RuntimeException("Failed to analyze syllabus differences");
-//        }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to analyze syllabus differences");
+        }
     }
 
     @Transactional

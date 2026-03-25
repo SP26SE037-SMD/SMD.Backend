@@ -7,6 +7,8 @@ import com.example.smd.dto.response.SubjectSimpleResponse;
 import com.example.smd.dto.request.BulkSemesterMappingRequest;
 import com.example.smd.dto.response.BulkSemesterMappingResponse;
 import com.example.smd.entities.*;
+import com.example.smd.enums.CurriculumStatus;
+import com.example.smd.enums.PloStatus;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.CurriculumGroupSubjectMapper;
@@ -38,14 +40,22 @@ public class CurriculumGroupSubjectService {
     private final GroupRepository groupRepository;
     private final SubjectRepository subjectRepository;
     private final CurriculumGroupSubjectMapper mapper;
+    private final AccountService accountService;
 
     /**
      * Tạo mới mapping giữa Curriculum, Group và Subject
      */
     @Transactional
-    public CurriculumGroupSubjectResponse createCurriculumGroupSubject(CurriculumGroupSubjectRequest request) {
+    public CurriculumGroupSubjectResponse createCurriculumGroupSubject(CurriculumGroupSubjectRequest request, String accountId) {
         log.info("Creating curriculum-group-subject mapping for curriculum: {}, subject: {}",
                  request.getCurriculumId(), request.getSubjectId());
+
+        //Kiểm tra Role tạo
+        var account = accountService.getAccountById(accountId);
+        String roleName = account.getRole().getRoleName();
+        if (!roleName.equals("HOCFDC")) {
+            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+        }
 
         // 1. Kiểm tra Curriculum tồn tại
         Curriculum curriculum = curriculumRepository.findById(request.getCurriculumId())
@@ -54,6 +64,10 @@ public class CurriculumGroupSubjectService {
         // 2. Kiểm tra Subject tồn tại
         Subject subject = subjectRepository.findById(request.getSubjectId())
                 .orElseThrow(() -> new AppException(ErrorCode.SUBJECT_NOT_FOUND));
+
+        if (!(curriculum.getStatus().equals(CurriculumStatus.DRAFT.toString()) && subject.getStatus().equals(PloStatus.DRAFT.toString()))) {
+            throw new AppException(ErrorCode.CURRICULUM_GROUP_SUBJECT_NOT_CREATE);
+        }
 
         // 3. Kiểm tra Group nếu có
         Group group = null;

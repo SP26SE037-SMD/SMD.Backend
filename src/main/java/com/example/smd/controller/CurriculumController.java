@@ -47,16 +47,17 @@ public class CurriculumController {
             @RequestParam(required = false) String searchBy,
 
             @Parameter(
-                    description = "Filter curriculums by their current lifecycle status. Valid values are:\n" +
-                            "| Status | Description |\n" +
+                    description = "Bộ lọc trạng thái vòng đời của Khung chương trình (Curriculum Lifecycle). Các giá trị hợp lệ bao gồm:\n\n" +
+                            "| Status | Ý nghĩa nghiệp vụ (Nghiệp vụ) |\n" +
                             "| :--- | :--- |\n" +
-                            "| **DRAFT** | **Biên soạn nháp:** Initial creation by HoC/FDC, not visible to other roles. |\n" +
-                            "| **STRUCTURE_REVIEWED** | **Duyệt cấu trúc:** Approved by VP to continue internal detailed development. |\n" +
-                            "| **SYLLABUS_DEVELOPING**| **Phát triển Syllabus:** HoC and Departments are creating detailed course syllabuses. |\n" +
-                            "| **FINAL_REVIEW** | **Thẩm định cuối:** Overall content review before submitting for official signing. |\n" +
-                            "| **SIGNED** | **Đã ký ban hành:** Officially enacted by the Vice President. |\n" +
-                            "| **PUBLISHED** | **Công bố:** Curriculum and all linked Syllabuses are now public and viewable. |\n" +
-                            "| **ARCHIVED** | **Lưu trữ:** Old version, no longer in use for new student intakes. |"
+                            "| **DRAFT** | **Biên soạn nháp:** HoCF đang khởi tạo cấu trúc khung, chưa hiển thị cho các vai trò khác. |\n" +
+                            "| **STRUCTURE_REVIEWED** | **Đang duyệt cấu trúc:** Đang trong quá trình đợi Vice President (VP) xem xét và đánh giá khung. |\n" +
+                            "| **STRUCTURE_APPROVED** | **Đã duyệt cấu trúc:** VP đã ký duyệt khung, **chính thức bàn giao** nhiệm vụ cho HoPDC. |\n" +
+                            "| **SYLLABUS_DEVELOPING**| **Phát triển Syllabus:** HoPDC và các Bộ môn đang xây dựng chi tiết từng đề cương môn học. |\n" +
+                            "| **FINAL_REVIEW** | **Thẩm định cuối:** Hội đồng rà soát toàn bộ nội dung (Khung + Syllabus) trước khi trình ký chính thức. |\n" +
+                            "| **SIGNED** | **Đã ký ban hành:** Đã có quyết định ban hành chính thức từ Ban giám hiệu/VP. |\n" +
+                            "| **PUBLISHED** | **Công bố:** Chương trình và tất cả Syllabus liên kết đã công khai cho sinh viên tra cứu. |\n" +
+                            "| **ARCHIVED** | **Lưu trữ:** Phiên bản cũ, không còn áp dụng cho các khóa tuyển sinh mới. |"
             )
             @RequestParam(required = false) String status,
 

@@ -30,10 +30,18 @@ public class SyllabusSourceService {
     SyllabusRepository syllabusRepository;
     SourceRepository sourceRepository;
     SourceMapper sourceMapper;
+    AccountService accountService;
 
     // 1. Thêm danh sách Source vào Syllabus
     @Transactional
-    public void addSourcesToSyllabus(UUID syllabusId, List<UUID> sourceIds) {
+    public void addSourcesToSyllabus(UUID syllabusId, List<UUID> sourceIds, String accountId) {
+        //Kiểm tra Role tạo
+        var account = accountService.getAccountById(accountId);
+        String roleName = account.getRole().getRoleName();
+        if (!roleName.equals("HOPDC")) {
+            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+        }
+
         Syllabus syllabus = syllabusRepository.findById(syllabusId)
                 .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
 
@@ -60,7 +68,14 @@ public class SyllabusSourceService {
 
     // 2. Xóa Source khỏi Syllabus
     @Transactional
-    public void removeSourceFromSyllabus(UUID syllabusId, UUID sourceId) {
+    public void removeSourceFromSyllabus(UUID syllabusId, UUID sourceId, String accountId) {
+
+        //Kiểm tra Role tạo
+        var account = accountService.getAccountById(accountId);
+        String roleName = account.getRole().getRoleName();
+        if (!roleName.equals("HOPDC")) {
+            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+        }
 
         Syllabus syllabus = syllabusRepository.findById(syllabusId)
                 .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));

@@ -18,6 +18,8 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -35,9 +37,11 @@ public class TaskController {
 
     @PostMapping
     @Operation(summary = "Create a new task", description = "accountId và taskName là bắt buộc. sprintId bắt buộc cho tất cả người dùng.")
-    public ResponseObject<TaskResponse> create(@RequestBody @Valid TaskRequest request) {
+    public ResponseObject<TaskResponse> create(@RequestBody @Valid TaskRequest request, @AuthenticationPrincipal Jwt jwt
+    ) {
+        String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<TaskResponse>builder()
-                .data(taskService.create(request))
+                .data(taskService.create(request, userId))
                 .message("Task created successfully")
                 .build();
     }

@@ -31,6 +31,9 @@ public class GeminiService {
     private GeminiConfig gemini;
 
     @Autowired
+    private AccountService accountService;
+
+    @Autowired
     private ObjectMapper objectMapper;
 
     @Value("${gemini.generate.url}")
@@ -42,7 +45,13 @@ public class GeminiService {
     @Value("${gemini.vector-embedding.url}")
     private String apiEmbeddingUrl;
 
-    public CLOsGenerationResponse generateClo(CloGenerationRequest req) {
+    public CLOsGenerationResponse generateClo(CloGenerationRequest req, String accountId) {
+        var account = accountService.getAccountById(accountId);
+        String roleName = account.getRole().getRoleName();
+        if (!roleName.equals("HOPDC")) {
+            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+        }
+
         // 1. Ghép dữ liệu vào Prompt bằng hàm format đã chuẩn bị
         String finalPrompt = String.format(PromptTemplateService.CLO_GENERATOR,
                 req.getSubjectName(),
@@ -69,7 +78,13 @@ public class GeminiService {
         }
     }
 
-    public CloCheckResponse checkClo(CloCheckRequest req) {
+    public CloCheckResponse checkClo(CloCheckRequest req, String accountId) {
+        var account = accountService.getAccountById(accountId);
+        String roleName = account.getRole().getRoleName();
+        if (!roleName.equals("HOPDC")) {
+            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+        }
+
         // 1. Tạo Prompt từ Template
         String prompt = String.format(PromptTemplateService.VALIDATOR_PROMPT,
                 req.getCloContent(),

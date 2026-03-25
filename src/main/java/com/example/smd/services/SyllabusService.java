@@ -5,6 +5,7 @@ import com.example.smd.dto.response.syllabus.SyllabusResponse;
 import com.example.smd.entities.Subject;
 import com.example.smd.entities.Syllabus;
 import com.example.smd.enums.PloStatus;
+import com.example.smd.enums.SubjectStatus;
 import com.example.smd.enums.SyllabusStatus;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
@@ -34,9 +35,20 @@ public class SyllabusService {
 
     // 1. Tạo mới
     @Transactional
-    public SyllabusResponse create(SyllabusRequest request) {
+    public SyllabusResponse create(SyllabusRequest request, String accountId) {
+
+        var account = accountService.getAccountById(accountId);
+        String roleName = account.getRole().getRoleName();
+        if (!roleName.equals("HOPDC")) {
+            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+        }
+
         Subject subject = subjectRepository.findById(request.getSubjectId())
                 .orElseThrow(() -> new AppException(ErrorCode.SUBJECT_NOT_FOUND));
+
+        if (!(subject.getStatus().equals(SubjectStatus.WAITING_SYLLABUS.toString()) || subject.getStatus().equals(SubjectStatus.COMPLETED.toString()))) {
+            throw new AppException(ErrorCode.SYLLABUS_NOT_CREATE);
+        }
 
         Syllabus syllabus = syllabusMapper.toSyllabus(request);
         syllabus.setSubject(subject);
@@ -47,11 +59,18 @@ public class SyllabusService {
 
     // 2. Cập nhật thông tin chung
     @Transactional
-    public SyllabusResponse update(UUID id, SyllabusRequest request) {
+    public SyllabusResponse update(UUID id, SyllabusRequest request, String accountId) {
         Syllabus syllabus = syllabusRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
 
-        if(!(syllabus.getStatus().equals("DRAFT") || syllabus.getStatus().equals(SyllabusStatus.REVISION_REQUESTED.toString()))) {
+        //Kiểm tra Role tạo
+        var account = accountService.getAccountById(accountId);
+        String roleName = account.getRole().getRoleName();
+        if (!roleName.equals("HOPDC")) {
+            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+        }
+
+        if (!(syllabus.getStatus().equals("DRAFT") || syllabus.getStatus().equals(SyllabusStatus.REVISION_REQUESTED.toString()))) {
             throw new AppException(ErrorCode.SYLLABUS_NOT_EDITABLE);
         }
 
@@ -78,25 +97,27 @@ public class SyllabusService {
         if (SyllabusStatus.APPROVED.toString().equalsIgnoreCase(newStatus)) {
             syllabus.setApprovedDate(Instant.now());
         }
-        return  syllabusMapper.toResponse(syllabusRepository.save(syllabus));
+        return syllabusMapper.toResponse(syllabusRepository.save(syllabus));
     }
 
     // 4. Xóa đệm (Soft Delete)
     @Transactional
-    public void delete(UUID id) {
-        try {
-            // Kiểm tra xem Material có tồn tại không
-            Syllabus syllabus = syllabusRepository.findById(id)
-                    .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
-            if(syllabus.getStatus().equals("DRAFT")) {
-                syllabusRepository.delete(syllabus);
-            } else{
-                syllabus.setStatus("ARCHIVED");
-                syllabusRepository.save(syllabus);
-            }
+    public void delete(UUID id, String accountId) {
+        //Kiểm tra Role tạo
+        var account = accountService.getAccountById(accountId);
+        String roleName = account.getRole().getRoleName();
+        if (!roleName.equals("HOPDC")) {
+            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+        }
 
-        } catch (IllegalArgumentException e) {
-            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        // Kiểm tra xem Material có tồn tại không
+        Syllabus syllabus = syllabusRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
+        if (syllabus.getStatus().equals("DRAFT")) {
+            syllabusRepository.delete(syllabus);
+        } else {
+            syllabus.setStatus("ARCHIVED");
+            syllabusRepository.save(syllabus);
         }
     }
 
@@ -112,7 +133,15 @@ public class SyllabusService {
 
         // 2. Phân quyền: Student/Lecturer chỉ được xem PUBLISHED
         if (roleName.equals("STUDENT") || roleName.equals("LECTURER")) {
-            finalStatus = "PUBLISHED";
+            if (!finalStatus.equals(SyllabusStatus.PUBLISHED.toString())) {
+                throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+            }
+        }
+
+        if (finalStatus.equals(PloStatus.DRAFT.toString())) {
+            if (!account.getRole().getRoleName().equals("HOPDC")) {
+                throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+            }
         }
 
         List<Syllabus> syllabuses;
@@ -138,14 +167,14 @@ public class SyllabusService {
 
         //Phân quyền ROLE Student + Lecture chỉ xem được PUBLISHED
         var account = accountService.getAccountById(accountId);
-        if(account.getRole().getRoleName().equals("STUDENT") ||  account.getRole().getRoleName().equals("LECTURER")) {
-            if(!syllabus.getStatus().equals(PloStatus.PUBLISHED.toString())) {
+        if (account.getRole().getRoleName().equals("STUDENT") || account.getRole().getRoleName().equals("LECTURER")) {
+            if (!syllabus.getStatus().equals(PloStatus.PUBLISHED.toString())) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
 
-        if(syllabus.getStatus().equals("DRAFT")) {
-            if(!account.getRole().getRoleName().equals("HOPDC")){
+        if (syllabus.getStatus().equals("DRAFT")) {
+            if (!account.getRole().getRoleName().equals("HOPDC")) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }

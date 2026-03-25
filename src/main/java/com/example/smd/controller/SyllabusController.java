@@ -45,8 +45,12 @@ public class SyllabusController {
     @PostMapping("/account/{email}")
     @Operation(summary = "Create a new syllabus", description = "Initializes a syllabus for a specific subject with status 'DRAFT'")
     @PreAuthorize("hasAuthority('SYLLABUS_CREATE')")
-        public ResponseObject<SyllabusResponse> create(@RequestBody @Valid SyllabusRequest request, @PathVariable String email) {
-        SyllabusResponse response = syllabusService.create(request);
+        public ResponseObject<SyllabusResponse> create(
+                @RequestBody @Valid SyllabusRequest request,
+                @PathVariable String email,
+                @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
+        SyllabusResponse response = syllabusService.create(request, userId);
 
         SyllabusActionLogRequest logRequest = new SyllabusActionLogRequest();
         logRequest.setSyllabusId(UUID.fromString(response.getSyllabusId()));
@@ -83,7 +87,6 @@ public class SyllabusController {
             @Parameter(description = "Filter by status (DRAFT, INTERNAL_REVIEW, PUBLISHED, ARCHIVED)")
             @RequestParam(required = false) String status,
             @AuthenticationPrincipal Jwt jwt) {
-
         String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<List<SyllabusResponse>>builder()
                 .status(1000)
@@ -107,9 +110,11 @@ public class SyllabusController {
     @PreAuthorize("hasAuthority('SYLLABUS_UPDATE')")
     public ResponseObject<SyllabusResponse> update(
             @PathVariable UUID id,
-            @RequestBody @Valid SyllabusRequest request) {
+            @RequestBody @Valid SyllabusRequest request,
+            @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<SyllabusResponse>builder()
-                .data(syllabusService.update(id, request))
+                .data(syllabusService.update(id, request, userId))
                 .message("Syllabus updated successfully")
                 .build();
     }
@@ -160,12 +165,15 @@ public class SyllabusController {
     @DeleteMapping("/{id}/account/{accountId}")
     @Operation(summary = "Delete syllabus", description = "Sets status to 'ARCHIVED' instead of physical deletion")
     @PreAuthorize("hasAuthority('SYLLABUS_DELETE')")
-    public ResponseObject<Void> delete(@PathVariable UUID id, @PathVariable String accountId) {
-
+    public ResponseObject<Void> delete(
+            @PathVariable UUID id,
+            @PathVariable String accountId,
+            @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
         var account =  accountService.getAccountById(accountId);
         SyllabusResponse response = syllabusService.getDetail(id, accountId);
 
-        syllabusService.delete(id);
+        syllabusService.delete(id, userId);
         if(!response.getStatus().equals("DRAFT")) {
             SyllabusActionLogRequest logRequest = new SyllabusActionLogRequest();
             logRequest.setSyllabusId(UUID.fromString(response.getSyllabusId()));

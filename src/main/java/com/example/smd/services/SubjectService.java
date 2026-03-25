@@ -49,7 +49,13 @@ public class SubjectService {
     PrerequisiteMapper prerequisiteMapper;
 
     @Transactional
-    public SubjectResponse create(SubjectRequest request) {
+    public SubjectResponse create(SubjectRequest request, String accountId) {
+        var account = accountService.getAccountById(accountId);
+        String roleName = account.getRole().getRoleName();
+        if (!roleName.equals("HOCFDC")) {
+            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+        }
+
         if (subjectRepository.existsBySubjectCode(request.getSubjectCode()))
             throw new AppException(ErrorCode.SUBJECT_CODE_EXISTS);
 
@@ -68,6 +74,7 @@ public class SubjectService {
         return response;
     }
 
+    @Transactional
     public Page<SubjectResponse> getAll(String search, String searchBy, String status, UUID departmentId, Pageable pageable, String accountId) {
 
         // 1. Lấy Account và xử lý phân quyền NGAY TẠI ĐẦU HÀM (Ngoài Specification)
@@ -80,7 +87,15 @@ public class SubjectService {
 
         // Ép buộc Role thấp chỉ được xem PUBLISHED
         if (roleName.equals("STUDENT") || roleName.equals("LECTURER")) {
-            finalStatus = "COMPLETED";
+            if (!finalStatus.equals(SubjectStatus.COMPLETED.toString())) {
+                throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+            }
+        }
+
+        if (finalStatus.equals(SubjectStatus.DRAFT.toString())) {
+            if (!account.getRole().getRoleName().equals("HOCFDC")) {
+                throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+            }
         }
 
         // Biến finalStatus này sẽ được dùng trong closure của Specification
@@ -134,7 +149,14 @@ public class SubjectService {
     }
 
     @Transactional
-    public SubjectResponse update(UUID id, SubjectRequest request) {
+    public SubjectResponse update(UUID id, SubjectRequest request, String accountId) {
+        //Kiểm tra Role tạo
+        var account = accountService.getAccountById(accountId);
+        String roleName = account.getRole().getRoleName();
+        if (!roleName.equals("HOCFDC")) {
+            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+        }
+
         //Check Department có tồn tại hay không
         Department department = departmentRepository.findById(request.getDepartmentId())
                 .orElseThrow(() -> new AppException(ErrorCode.DEPARTMENT_NOT_FOUND));
@@ -151,19 +173,23 @@ public class SubjectService {
         return subjectMapper.toSubjectResponse(subjectRepository.save(subject));
     }
 
-    public void delete(UUID id) {
-        try {
-            Subject subject = subjectRepository.findById(id)
-                    .orElseThrow(() -> new AppException(ErrorCode.SUBJECT_NOT_FOUND));
+    @Transactional
+    public void delete(UUID id, String accountId) {
+        //Kiểm tra Role tạo
+        var account = accountService.getAccountById(accountId);
+        String roleName = account.getRole().getRoleName();
+        if (!roleName.equals("HOCFDC")) {
+            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+        }
 
-            if (subject.getStatus().equals(SubjectStatus.DRAFT.toString())) {
-                subjectRepository.delete(subject);
-            } else {
-                subject.setStatus(SubjectStatus.ARCHIVED.toString());
-                subjectRepository.save(subject);
-            }
-        } catch (IllegalArgumentException e) {
-            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        Subject subject = subjectRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.SUBJECT_NOT_FOUND));
+
+        if (subject.getStatus().equals(SubjectStatus.DRAFT.toString())) {
+            subjectRepository.delete(subject);
+        } else {
+            subject.setStatus(SubjectStatus.ARCHIVED.toString());
+            subjectRepository.save(subject);
         }
     }
 

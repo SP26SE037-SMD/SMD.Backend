@@ -17,6 +17,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -45,11 +47,13 @@ public class CurriculumGroupSubjectController {
                       "and specifies the recommended semester. Requires CURRICULUM_UPDATE permission."
     )
     public ResponseObject<CurriculumGroupSubjectResponse> createCurriculumGroupSubject(
-            @Valid @RequestBody CurriculumGroupSubjectRequest request
+            @Valid @RequestBody CurriculumGroupSubjectRequest request,
+            @AuthenticationPrincipal Jwt jwt
     ) {
+        String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<CurriculumGroupSubjectResponse>builder()
                 .status(1000)
-                .data(curriculumGroupSubjectService.createCurriculumGroupSubject(request))
+                .data(curriculumGroupSubjectService.createCurriculumGroupSubject(request, userId))
                 .message("Subject added to curriculum successfully")
                 .build();
     }
