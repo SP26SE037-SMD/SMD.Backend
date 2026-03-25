@@ -52,7 +52,7 @@ public class TaskService {
     public TaskResponse create(TaskRequest request, String check) {
         var checkRole = accountService.getAccountById(check);
         String roleName = checkRole.getRole().getRoleName();
-        if (!(roleName.equals("HOPDC") || roleName.equals("HOCFDC"))) {
+        if (!("HOPDC".equals(roleName) || "HOCFDC".equals(roleName))) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 

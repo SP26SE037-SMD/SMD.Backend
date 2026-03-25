@@ -60,14 +60,14 @@ public class SessionService {
 
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (roleName.equals("STUDENT") || roleName.equals("LECTURER")) {
+        if ("STUDENT".equals(roleName) || "LECTURER".equals(roleName)) {
             if (!status.equals(SyllabusStatus.PUBLISHED.toString())) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
 
-        if (status.equals(PloStatus.DRAFT.toString())) {
-            if (!(account.getRole().getRoleName().equals("PDCM") || account.getRole().getRoleName().equals("COLLABORATOR"))) {
+        if (PloStatus.DRAFT.toString().equals(status)) {
+            if (!("PDCM".equals(account.getRole().getRoleName()) || "COLLABORATOR".equals(account.getRole().getRoleName()))) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
@@ -111,14 +111,14 @@ public class SessionService {
 
         // 3. Logic Phân quyền:
         // Nếu là STUDENT hoặc LECTURER, chỉ cho phép xem nếu status là PUBLISHED
-        if (roleName.equals("STUDENT") || roleName.equals("LECTURER")) {
+        if ("STUDENT".equals(roleName) || "LECTURER".equals(roleName)) {
             if (!"PUBLISHED".equalsIgnoreCase(session.getStatus())) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
 
-        if (session.getStatus().equals("DRAFT") || session.getStatus().equals(SyllabusStatus.REVISION_REQUESTED.toString())) {
-            if (!(account.getRole().getRoleName().equals("PDCM") || account.getRole().getRoleName().equals("COLLABORATOR"))) {
+        if ("DRAFT".equals(session.getStatus()) || SyllabusStatus.REVISION_REQUESTED.toString().equals(session.getStatus())) {
+            if (!("PDCM".equals(account.getRole().getRoleName()) || "COLLABORATOR".equals(account.getRole().getRoleName()))) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
@@ -141,14 +141,14 @@ public class SessionService {
     public SessionResponse createSession(SessionRequest request, String accountId) {
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (!(roleName.equals("COLLABORATOR") || roleName.equals("PDCM"))) {
+        if (!("COLLABORATOR".equals(roleName) || "PDCM".equals(roleName))) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
         Syllabus syllabus = syllabusRepository.findById(request.getSyllabusId())
                 .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
 
-        if (!(syllabus.getStatus().equals("DRAFT") || syllabus.getStatus().equals(SyllabusStatus.REVISION_REQUESTED.toString()))) {
+        if (!("DRAFT".equals(syllabus.getStatus()) || SyllabusStatus.REVISION_REQUESTED.toString().equals(syllabus.getStatus()))) {
             throw new AppException(ErrorCode.SESSION_CANNOT_CREATE);
         }
 
@@ -235,14 +235,14 @@ public class SessionService {
 
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (!(roleName.equals("COLLABORATOR") || roleName.equals("PDCM"))) {
+        if (!("COLLABORATOR".equals(roleName) || "PDCM".equals(roleName))) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
         Syllabus syllabus = syllabusRepository.findById(request.getSyllabusId())
                 .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
 
-        if (!(session.getStatus().equals("DRAFT") || session.getStatus().equals(SyllabusStatus.REVISION_REQUESTED.toString()))) {
+        if (!("DRAFT".equals(session.getStatus()) || SyllabusStatus.REVISION_REQUESTED.toString().equals(session.getStatus()))) {
             throw new AppException(ErrorCode.SESSION_NOT_EDITABLE);
         }
 
@@ -276,14 +276,14 @@ public class SessionService {
     public boolean deleteSession(UUID sessionId, String accountId) {
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (!(roleName.equals("COLLABORATOR") || roleName.equals("PDCM"))) {
+        if (!("COLLABORATOR".equals(roleName) || "PDCM".equals(roleName))) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
         Session session = sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new AppException(ErrorCode.SESSION_NOT_FOUND));
 
-        if (!(session.getSyllabus().getStatus().equals("DRAFT") || session.getSyllabus().getStatus().equals(SyllabusStatus.REVISION_REQUESTED.toString()))) {
+        if (!("DRAFT".equals(session.getSyllabus().getStatus()) || SyllabusStatus.REVISION_REQUESTED.toString().equals(session.getSyllabus().getStatus()))) {
             throw new AppException(ErrorCode.SESSION_NOT_EDITABLE);
         }
 

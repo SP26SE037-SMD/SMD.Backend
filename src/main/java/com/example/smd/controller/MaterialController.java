@@ -76,6 +76,7 @@ public class MaterialController {
                     "Cập nhật trạng thái để kiểm soát quyền truy cập và hiển thị của tài liệu:\n\n" +
                     "| Status | Mô tả chi tiết (Nghiệp vụ) |\n" +
                     "| :--- | :--- |\n" +
+                    "| **DRAFT** | **Khởi tạo:** Giảng viên mới tạo định danh tài liệu (Tên tài liệu, Loại: PDF/Slide/Link). | Chỉ người tạo nhìn thấy. |\n" +
                     "| **PENDING_REVIEW** | **Chờ duyệt:** Giảng viên đã upload xong và đang đợi HoD/FDC kiểm tra nội dung. |\n" +
                     "| **REVISION_REQUESTED** | **Yêu cầu chỉnh sửa:** Tài liệu cần được điều chỉnh hoặc bổ sung theo feedback của người duyệt. |\n" +
                     "| **APPROVED** | **Đã duyệt:** Nội dung tài liệu đạt yêu cầu, sẵn sàng để đưa vào Syllabus chính thức. |\n" +

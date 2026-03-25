@@ -4,8 +4,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "Trạng thái quy trình của đề cương môn học (Syllabus)")
 public enum SyllabusStatus {
-//    @Schema(description = "Đang soạn thảo (Chưa gửi duyệt)")
-//    DRAFT,
+    @Schema(description = "Đang soạn thảo (Chưa gửi duyệt)")
+    DRAFT,
+
     @Schema(description = "Đang biên soạn chi tiết nội dung, tài liệu và học liệu")
     IN_PROGRESS,
 

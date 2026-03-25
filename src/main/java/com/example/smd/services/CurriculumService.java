@@ -79,7 +79,7 @@ public class CurriculumService {
         }
 
         if (PloStatus.DRAFT.toString().equals(finalStatus)) {
-            if (!account.getRole().getRoleName().equals("HOCFDC")) {
+            if (!"HOCFDC".equals(account.getRole().getRoleName())) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
@@ -134,7 +134,7 @@ public class CurriculumService {
         //Kiểm tra Role tạo
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (!roleName.equals("HOCFDC")) {
+        if (!"HOCFDC".equals(roleName)) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
@@ -147,7 +147,7 @@ public class CurriculumService {
         Major major = majorRepository.findById(UUID.fromString(request.getMajorId()))
                 .orElseThrow(() -> new AppException(ErrorCode.MAJOR_NOT_FOUND));
 
-        if (!(major.getStatus().equals(PloStatus.PUBLISHED.toString()) || major.getStatus().equals(PloStatus.INTERNAL_REVIEW.toString()))) {
+        if (!(PloStatus.PUBLISHED.toString().equals(major.getStatus()) || PloStatus.INTERNAL_REVIEW.toString().equals(major.getStatus()))) {
             throw new AppException(ErrorCode.CURRICULUM_NOT_CREATE);
         }
 
@@ -181,14 +181,14 @@ public class CurriculumService {
 
         //Phân quyền ROLE Student + Lecture chỉ xem được PUBLISHED
         var account = accountService.getAccountById(accountId);
-        if (account.getRole().getRoleName().equals("STUDENT") || account.getRole().getRoleName().equals("LECTURER")) {
-            if (!curriculum.getStatus().equals(CurriculumStatus.PUBLISHED.toString())) {
+        if ("STUDENT".equals(account.getRole().getRoleName()) || "LECTURER".equals(account.getRole().getRoleName())) {
+            if (!CurriculumStatus.PUBLISHED.toString().equals(curriculum.getStatus())) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
 
-        if (curriculum.getStatus().equals(CurriculumStatus.DRAFT.toString())) {
-            if (!account.getRole().getRoleName().equals("HOCFDC")) {
+        if (CurriculumStatus.DRAFT.toString().equals(curriculum.getStatus())) {
+            if (!"HOCFDC".equals(account.getRole().getRoleName())) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
@@ -207,14 +207,14 @@ public class CurriculumService {
 
         //Phân quyền ROLE Student + Lecture chỉ xem được PUBLISHED
         var account = accountService.getAccountById(accountId);
-        if (account.getRole().getRoleName().equals("STUDENT") || account.getRole().getRoleName().equals("LECTURER")) {
-            if (!curriculum.getStatus().equals(CurriculumStatus.PUBLISHED.toString())) {
+        if ("STUDENT".equals(account.getRole().getRoleName()) || "LECTURER".equals(account.getRole().getRoleName())) {
+            if (!CurriculumStatus.PUBLISHED.toString().equals(curriculum.getStatus())) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
 
-        if (curriculum.getStatus().equals(CurriculumStatus.DRAFT.toString())) {
-            if (!account.getRole().getRoleName().equals("HOCFDC")) {
+        if (CurriculumStatus.DRAFT.toString().equals(curriculum.getStatus())) {
+            if (!"HOCFDC".equals(account.getRole().getRoleName())) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
@@ -233,7 +233,7 @@ public class CurriculumService {
         //Kiểm tra Role tạo
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (!roleName.equals("HOCFDC")) {
+        if (!"HOCFDC".equals(roleName)) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
@@ -249,7 +249,7 @@ public class CurriculumService {
             }
         }
 
-        if (!curriculum.getStatus().equals(CurriculumStatus.DRAFT.toString())) {
+        if (!CurriculumStatus.DRAFT.toString().equals(curriculum.getStatus())) {
             throw new AppException(ErrorCode.CURRICULUM_NOT_DRAFT);
         }
 
@@ -303,7 +303,7 @@ public class CurriculumService {
         //Kiểm tra Role tạo
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (!roleName.equals("HOCFDC")) {
+        if (!"HOCFDC".equals(roleName)) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
@@ -318,14 +318,14 @@ public class CurriculumService {
         //Kiểm tra Role tạo
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (!roleName.equals("HOCFDC")) {
+        if (!"HOCFDC".equals(roleName)) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
         Curriculum curriculum = curriculumRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));
 
-        if (curriculum.getStatus().equals(CurriculumStatus.DRAFT.toString())) {
+        if (CurriculumStatus.DRAFT.toString().equals(curriculum.getStatus())) {
             curriculumRepository.delete(curriculum);
         } else {
             curriculum.setStatus(CurriculumStatus.ARCHIVED.toString());

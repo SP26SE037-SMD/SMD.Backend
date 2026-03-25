@@ -43,7 +43,7 @@ public class BlockService {
         Material material = materialRepository.findById(materialId)
                 .orElseThrow(() -> new AppException(ErrorCode.MATERIAL_NOT_FOUND));
 
-        if(!(material.getStatus().equals("DRAFT") || material.getStatus().equals(SyllabusStatus.REVISION_REQUESTED.toString()))) {
+        if(!("DRAFT".equals(material.getStatus()) || SyllabusStatus.REVISION_REQUESTED.toString().equals(material.getStatus()))) {
             throw new AppException(ErrorCode.MATERIAL_NOT_EDITABLE);
         }
 
@@ -94,7 +94,7 @@ public class BlockService {
         Blocks block = blockRepository.findById(blockId)
                 .orElseThrow(() -> new AppException(ErrorCode.BLOCK_NOT_FOUND));
 
-        if(!(block.getMaterial().getStatus().equals("DRAFT") || block.getMaterial().getStatus().equals(SyllabusStatus.REVISION_REQUESTED.toString()))) {
+        if(!("DRAFT".equals(block.getMaterial().getStatus()) || SyllabusStatus.REVISION_REQUESTED.toString().equals(block.getMaterial().getStatus()))) {
             throw new AppException(ErrorCode.MATERIAL_NOT_EDITABLE);
         }
         blockRepository.deleteById(blockId);

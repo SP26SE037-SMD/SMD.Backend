@@ -48,7 +48,7 @@ public class GeminiService {
     public CLOsGenerationResponse generateClo(CloGenerationRequest req, String accountId) {
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (!roleName.equals("HOPDC")) {
+        if (!"HOPDC".equals(roleName)) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
@@ -81,7 +81,7 @@ public class GeminiService {
     public CloCheckResponse checkClo(CloCheckRequest req, String accountId) {
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (!roleName.equals("HOPDC")) {
+        if (!"HOPDC".equals(roleName)) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 

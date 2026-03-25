@@ -108,7 +108,7 @@ public class MajorService {
         //Kiểm tra Role tạo
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (!roleName.equals("VP")) {
+        if (!"VP".equals(roleName)) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
@@ -129,14 +129,14 @@ public class MajorService {
         //Kiểm tra Role tạo
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (!roleName.equals("VP")) {
+        if (!"VP".equals(roleName)) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
         Major major = majorRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.MAJOR_NOT_FOUND));
 
-        if (!major.getStatus().equals(PloStatus.DRAFT.toString())) {
+        if (!PloStatus.DRAFT.toString().equals(major.getStatus())) {
             throw new AppException(ErrorCode.MAJOR_NOT_DRAFT);
         }
 
@@ -154,14 +154,14 @@ public class MajorService {
         //Kiểm tra Role tạo
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (!roleName.equals("VP")) {
+        if (!"VP".equals(roleName)) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
         Major major = majorRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.MAJOR_NOT_FOUND));
 
-        if (major.getStatus().equals("DRAFT")) {
+        if ("DRAFT".equals(major.getStatus())) {
             majorRepository.delete(major);
         } else {
             major.setStatus(PloStatus.ARCHIVED.toString());
@@ -176,14 +176,14 @@ public class MajorService {
 
         //Phân quyền ROLE Student + Lecture chỉ xem được PUBLISHED
         var account = accountService.getAccountById(accountId);
-        if (account.getRole().getRoleName().equals("STUDENT") || account.getRole().getRoleName().equals("LECTURER")) {
-            if (!major.getStatus().equals(PloStatus.PUBLISHED.toString())) {
+        if ("STUDENT".equals(account.getRole().getRoleName()) ||"LECTURER".equals(account.getRole().getRoleName())) {
+            if (!PloStatus.PUBLISHED.toString().equals(major.getStatus())) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
 
-        if (major.getStatus().equals(PloStatus.DRAFT.toString())) {
-            if (!account.getRole().getRoleName().equals("VP")) {
+        if (PloStatus.DRAFT.toString().equals(major.getStatus())) {
+            if (!"VP".equals(account.getRole().getRoleName())) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
@@ -197,14 +197,14 @@ public class MajorService {
 
         //Phân quyền ROLE Student + Lecture chỉ xem được PUBLISHED
         var account = accountService.getAccountById(accountId);
-        if (account.getRole().getRoleName().equals("STUDENT") || account.getRole().getRoleName().equals("LECTURER")) {
-            if (!major.getStatus().equals(PloStatus.PUBLISHED.toString())) {
+        if ("STUDENT".equals(account.getRole().getRoleName()) || "LECTURER".equals(account.getRole().getRoleName())) {
+            if (!PloStatus.PUBLISHED.toString().equals(major.getStatus())) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
 
-        if (major.getStatus().equals(PloStatus.DRAFT.toString())) {
-            if (!account.getRole().getRoleName().equals("VP")) {
+        if (PloStatus.DRAFT.toString().equals(major.getStatus())) {
+            if (!"VP".equals(account.getRole().getRoleName())) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }

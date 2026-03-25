@@ -97,18 +97,17 @@ public class AssessmentController {
     @PreAuthorize("hasAuthority('SYLLABUS_UPDATE')")
     @Operation(
             summary = "Update Assessment Lifecycle Status (Cập nhật trạng thái bài đánh giá)",
-            description = "### Quy trình quản lý đánh giá và đo lường (Assessment Workflow):\n" +
-                    "Trạng thái của Assessment kiểm soát quyền biên soạn đề bài, ma trận đáp án (Rubric) và thời điểm công bố điểm:\n\n" +
+            description = "### 🎯 Quy trình quản lý đánh giá và đo lường (Assessment Workflow):\n" +
+                    "Kiểm soát toàn bộ vòng đời từ lúc khởi tạo ma trận đề đến khi công bố kết quả cho sinh viên:\n\n" +
                     "| Status | Mô tả chi tiết (Nghiệp vụ) | Ràng buộc hệ thống |\n" +
                     "| :--- | :--- | :--- |\n" +
-                    "| **DRAFT** | **Biên soạn:** Giảng viên đang thiết kế hình thức đánh giá, trọng số (%) và gán CLO. | Chỉ giảng viên thấy. |\n" +
-                    "| **PENDING_REVIEW** | **Chờ thẩm định:** Đề bài và ma trận đánh giá đã xong, đang đợi HoD/FDC duyệt tính phù hợp. | Khóa chỉnh sửa nội dung. |\n" +
-                    "| **REVISION_REQ** | **Yêu cầu chỉnh sửa:** Cần điều chỉnh lại trọng số hoặc nội dung câu hỏi theo feedback. | Mở lại quyền chỉnh sửa. |\n" +
-                    "| **APPROVED** | **Đã duyệt:** Cấu trúc bài đánh giá đạt yêu cầu, sẵn sàng để đưa vào Syllabus chính thức. | Không được sửa trọng số. |\n" +
-                    "| **OPEN** | **Đang diễn ra:** Bài kiểm tra đã được kích hoạt, sinh viên bắt đầu làm bài hoặc nộp bài. | Cấm sửa đề/đáp án. |\n" +
-                    "| **GRADING** | **Đang chấm điểm:** Thời gian làm bài đã hết, giảng viên đang thực hiện chấm điểm và nhận xét. | Sinh viên chưa thấy điểm. |\n" +
-                    "| **PUBLISHED** | **Đã công bố:** Điểm số và nhận xét chính thức hiển thị trên Portal cho sinh viên. | Khóa toàn bộ dữ liệu điểm. |\n" +
-                    "| **ARCHIVED** | **Lưu trữ:** Dữ liệu đánh giá của học kỳ cũ, dùng để đối soát và hậu kiểm (Audit). | Chế độ Read-only vĩnh viễn. |\n\n"
+                    "| **DRAFT** | **Bản nháp:** Giảng viên mới tạo khung tên bài đánh giá, chưa có nội dung chi tiết. | Chỉ người tạo nhìn thấy. |\n" +
+                    "| **IN_PROGRESS** | **Đang soạn thảo:** Giảng viên đang thiết kế câu hỏi, gán CLO và thiết lập trọng số (Weighting). | Cho phép chỉnh sửa nội dung & ma trận. |\n" +
+                    "| **PENDING_REVIEW** | **Chờ thẩm định:** Nội dung đã hoàn thiện, đang đợi HoD/FDC kiểm duyệt tính sư phạm. | Khóa toàn bộ quyền chỉnh sửa. |\n" +
+                    "| **REVISION_REQ** | **Yêu cầu chỉnh sửa:** Hội đồng yêu cầu điều chỉnh lại nội dung hoặc trọng số bài thi. | Mở lại quyền chỉnh sửa cho giảng viên. |\n" +
+                    "| **APPROVED** | **Đã phê duyệt:** Nội dung đạt chuẩn, sẵn sàng đưa vào đề cương chi tiết (Syllabus). | Chốt dữ liệu cấu trúc bài thi. |\n" +
+                    "| **PUBLISHED** | **Công bố:** Bài đánh giá chính thức có hiệu lực, điểm số được hiển thị công khai trên Portal. | Sinh viên có thể xem điểm & nhận xét. |\n" +
+                    "| **ARCHIVED** | **Lưu trữ:** Dữ liệu cũ dùng để đối soát lịch sử hoặc phục vụ hậu kiểm. | Chuyển sang chế độ Read-only vĩnh viễn. |\n\n"
     )
     public ResponseObject<AssessmentResponse> updateAssessmentStatus(
             @PathVariable UUID id,

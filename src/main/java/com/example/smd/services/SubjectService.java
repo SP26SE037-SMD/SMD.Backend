@@ -52,7 +52,7 @@ public class SubjectService {
     public SubjectResponse create(SubjectRequest request, String accountId) {
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (!roleName.equals("HOCFDC")) {
+        if (!"HOCFDC".equals(roleName)) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
@@ -86,14 +86,14 @@ public class SubjectService {
                 ? null : status.trim().toUpperCase();
 
         // Ép buộc Role thấp chỉ được xem PUBLISHED
-        if (roleName.equals("STUDENT") || roleName.equals("LECTURER")) {
+        if ("STUDENT".equals(roleName) || "LECTURER".equals(roleName)) {
             if (!finalStatus.equals(SubjectStatus.COMPLETED.toString())) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
 
-        if (finalStatus.equals(SubjectStatus.DRAFT.toString())) {
-            if (!account.getRole().getRoleName().equals("HOCFDC")) {
+        if (SubjectStatus.DRAFT.toString().equals(finalStatus)) {
+            if (!"HOCFDC".equals(account.getRole().getRoleName())) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
@@ -153,7 +153,7 @@ public class SubjectService {
         //Kiểm tra Role tạo
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (!roleName.equals("HOCFDC")) {
+        if (!"HOCFDC".equals(roleName)) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
@@ -164,7 +164,7 @@ public class SubjectService {
         Subject subject = subjectRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.SUBJECT_NOT_FOUND));
 
-        if (!subject.getStatus().equals(SubjectStatus.DRAFT.toString())) {
+        if (!SubjectStatus.DRAFT.toString().equals(subject.getStatus())) {
             throw new AppException(ErrorCode.SUBJECT_NOT_DRAFT);
         }
 
@@ -178,14 +178,14 @@ public class SubjectService {
         //Kiểm tra Role tạo
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (!roleName.equals("HOCFDC")) {
+        if (!"HOCFDC".equals(roleName)) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
         Subject subject = subjectRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.SUBJECT_NOT_FOUND));
 
-        if (subject.getStatus().equals(SubjectStatus.DRAFT.toString())) {
+        if (SubjectStatus.DRAFT.toString().equals(subject.getStatus())) {
             subjectRepository.delete(subject);
         } else {
             subject.setStatus(SubjectStatus.ARCHIVED.toString());
@@ -201,14 +201,14 @@ public class SubjectService {
 
         //Phân quyền ROLE Student + Lecture chỉ xem được PUBLISHED
         var account = accountService.getAccountById(accountId);
-        if (account.getRole().getRoleName().equals("STUDENT") || account.getRole().getRoleName().equals("LECTURER")) {
-            if (!subject.getStatus().equals(SubjectStatus.COMPLETED.toString())) {
+        if ("STUDENT".equals(account.getRole().getRoleName()) || "LECTURER".equals(account.getRole().getRoleName())) {
+            if (!SubjectStatus.COMPLETED.toString().equals(subject.getStatus())) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
 
-        if (subject.getStatus().equals(SubjectStatus.DRAFT.toString())) {
-            if (!account.getRole().getRoleName().equals("HOCFDC")) {
+        if (SubjectStatus.DRAFT.toString().equals(subject.getStatus())) {
+            if (!"HOCFDC".equals(account.getRole().getRoleName())) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
@@ -236,15 +236,15 @@ public class SubjectService {
         String status = subject.getStatus();
 
         // Phân quyền: Student + Lecturer chỉ xem được COMPLETED
-        if (roleName.equals("STUDENT") || roleName.equals("LECTURER")) {
-            if (!status.equals(SubjectStatus.COMPLETED.toString())) {
+        if ("STUDENT".equals(roleName) || "LECTURER".equals(roleName)) {
+            if (!SubjectStatus.COMPLETED.toString().equals(status)) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
 
         // Phân quyền: DRAFT chỉ dành cho HOCFDC
-        if (status.equals(SubjectStatus.DRAFT.toString())) {
-            if (!roleName.equals("HOCFDC")) {
+        if (SubjectStatus.DRAFT.toString().equals(status)) {
+            if (!"HOCFDC".equals(roleName)) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
@@ -457,7 +457,7 @@ public class SubjectService {
         List<Subject> subjects;
 
         // 2. Phân quyền truy vấn
-        if (roleName.equals("STUDENT") || roleName.equals("LECTURER")) {
+        if ("STUDENT".equals(roleName) || "LECTURER".equals(roleName)) {
             // Chỉ lấy những môn đã COMPLETED cho học sinh/giáo viên
             subjects = subjectRepository.findAllByDepartment_DepartmentIdAndStatus(departmentId, SubjectStatus.COMPLETED.toString());
         } else {

@@ -46,7 +46,7 @@ public class POsService {
         //Kiểm tra Role tạo
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (!roleName.equals("VP")) {
+        if (!"VP".equals(roleName)) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
@@ -84,7 +84,7 @@ public class POsService {
         //Kiểm tra Role tạo
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (!roleName.equals("VP")) {
+        if (!"VP".equals(roleName)) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
@@ -97,7 +97,7 @@ public class POsService {
             throw new AppException(ErrorCode.PO_CODE_EXISTS);
         }
 
-        if(!po.getStatus().toUpperCase().equals(PloStatus.DRAFT.toString())) {
+        if(!PloStatus.DRAFT.toString().equals(po.getStatus().toUpperCase())) {
             throw new AppException(ErrorCode.PO_NOT_DRAFT);
         }
 
@@ -114,14 +114,14 @@ public class POsService {
 
         //Phân quyền ROLE Student + Lecture chỉ xem được PUBLISHED
         var account = accountService.getAccountById(accountId);
-        if(account.getRole().getRoleName().equals("STUDENT") ||  account.getRole().getRoleName().equals("LECTURER")) {
-            if(!po.getStatus().equals(PloStatus.PUBLISHED.toString())) {
+        if("STUDENT".equals(account.getRole().getRoleName()) ||  "LECTURER".equals(account.getRole().getRoleName())) {
+            if(!PloStatus.PUBLISHED.toString().equals(po.getStatus())) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
 
-        if(po.getStatus().equals(PloStatus.DRAFT.toString())) {
-            if(!account.getRole().getRoleName().equals("VP")){
+        if(PloStatus.DRAFT.toString().equals(po.getStatus())) {
+            if(!"VP".equals(account.getRole().getRoleName())){
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
@@ -143,7 +143,7 @@ public class POsService {
         String finalStatus = null;
 
         // 3. Phân quyền: Student/Lecturer ép buộc chỉ xem PUBLISHED
-        if (roleName.equals("STUDENT") || roleName.equals("LECTURER")) {
+        if ("STUDENT".equals(roleName) || "LECTURER".equals(roleName)) {
             finalStatus = PloStatus.PUBLISHED.toString();
         }
 
@@ -154,7 +154,7 @@ public class POsService {
         } else {
             // Nhánh dành cho ADMIN/VP (Lấy tất cả các trạng thái của Major đó)
             // Lưu ý: Chỉ cho phép vào đây nếu là VP hoặc ADMIN
-            if (!roleName.equals("VP") && !roleName.equals("ADMIN") && !roleName.equals("HOCFDC")) {
+            if (!"VP".equals(roleName) && !"ADMIN".equals(roleName) && !"HOCFDC".equals(roleName)) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
             poPage = poRepository.findByMajor_MajorId(uuidMajorId, pageable);
@@ -168,14 +168,14 @@ public class POsService {
         //Kiểm tra Role tạo
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (!roleName.equals("VP")) {
+        if (!"VP".equals(roleName)) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
         PO po = poRepository.findById(UUID.fromString(id))
                 .orElseThrow(() -> new AppException(ErrorCode.PO_NOT_FOUND));
 
-        if(po.getStatus().equals(PloStatus.DRAFT.toString())) {
+        if(PloStatus.DRAFT.toString().equals(po.getStatus())) {
             poRepository.delete(po);
         } else {
             // Soft Delete (Archive)

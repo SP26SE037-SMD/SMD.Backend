@@ -53,7 +53,7 @@ public class CurriculumController {
                             "| **DRAFT** | **Biên soạn nháp:** HoCF đang khởi tạo cấu trúc khung, chưa hiển thị cho các vai trò khác. |\n" +
                             "| **STRUCTURE_REVIEWED** | **Đang duyệt cấu trúc:** Đang trong quá trình đợi Vice President (VP) xem xét và đánh giá khung. |\n" +
                             "| **STRUCTURE_APPROVED** | **Đã duyệt cấu trúc:** VP đã ký duyệt khung, **chính thức bàn giao** nhiệm vụ cho HoPDC. |\n" +
-                            "| **SYLLABUS_DEVELOPING**| **Phát triển Syllabus:** HoPDC và các Bộ môn đang xây dựng chi tiết từng đề cương môn học. |\n" +
+                            "| **SYLLABUS_DEVELOP**| **Phát triển Syllabus:** HoPDC và các Bộ môn đang xây dựng chi tiết từng đề cương môn học. |\n" +
                             "| **FINAL_REVIEW** | **Thẩm định cuối:** Hội đồng rà soát toàn bộ nội dung (Khung + Syllabus) trước khi trình ký chính thức. |\n" +
                             "| **SIGNED** | **Đã ký ban hành:** Đã có quyết định ban hành chính thức từ Ban giám hiệu/VP. |\n" +
                             "| **PUBLISHED** | **Công bố:** Chương trình và tất cả Syllabus liên kết đã công khai cho sinh viên tra cứu. |\n" +
@@ -185,7 +185,7 @@ public class CurriculumController {
                     "| :--- | :--- |\n" +
                     "| **DRAFT** | **Khởi tạo:** HoC/FDC đang thiết kế cấu trúc khung và danh mục môn học. Chỉ hiển thị nội bộ, cho phép chỉnh sửa toàn diện. |\n" +
                     "| **STRUCTURE_REVIEWED** | **Đã duyệt cấu trúc:** Văn phòng (VP) đã duyệt danh mục môn học. Chờ quyết định hành chính để triển khai tiếp. |\n" +
-                    "| **SYLLABUS_DEVELOPING** | **Soạn thảo Syllabus:** Hệ thống mở quyền cho các Bộ môn bắt đầu biên soạn Syllabus chi tiết dựa trên khung đã duyệt. |\n" +
+                    "| **SYLLABUS_DEVELOP** | **Soạn thảo Syllabus:** Hệ thống mở quyền cho các Bộ môn bắt đầu biên soạn Syllabus chi tiết dựa trên khung đã duyệt. |\n" +
                     "| **FINAL_REVIEW** | **Rà soát tổng thể:** HoC/FDC kiểm tra lại toàn bộ nội dung Syllabus và Khung trước khi trình ký chính thức. |\n" +
                     "| **SIGNED** | **Đã ký ban hành:** VP đã ký quyết định phê duyệt. Dữ liệu được khóa để chuẩn bị xuất bản. |\n" +
                     "| **PUBLISHED** | **Đã xuất bản:** Khung chương trình chính thức áp dụng cho khóa tuyển sinh. Cho phép mọi người dùng xem (Public view). |\n" +

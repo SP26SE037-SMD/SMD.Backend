@@ -151,17 +151,17 @@ public class SubjectController {
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasAuthority('SUBJECT_UPDATE')")
     @Operation(
-            summary = "Update Subject Lifecycle Status",
-            description = "### Subject Workflow (Quy trình vòng đời Môn học):\n" +
-                    "Select a status to manage the subject's readiness for the Curriculum and Syllabus development:\n\n" +
-                    "| Status | Business Logic Description (Mô tả nghiệp vụ) |\n" +
-                    "| :--- | :--- |\n" +
-                    "| **DRAFT** | **Biên soạn nháp:** Initial creation. Basic info (code, name) is being entered. Not visible to Curriculum proposals. |\n" +
-                    "| **DEFINED** | **Đã xác định nội dung:** Description and credits are finalized. Subject is now eligible to be included in a Curriculum draft for VP approval. |\n" +
-                    "| **WAITING_SYLLABUS** | **Chờ Syllabus:** The Curriculum containing this subject is approved. System is waiting for the Department to submit a detailed Syllabus. |\n" +
-                    "| **PENDING_REVIEW** | **Đợi phân công review:** Submitted and awaiting review assignment. |\n"+
-                    "| **COMPLETED** | **Hoàn tất:** Detailed Syllabus is approved and linked. The subject is fully validated and ready for teaching/enrollment. |\n" +
-                    "| **ARCHIVED** | **Lưu trữ:** Subject is retired from active curricula. Kept as Read-only for historical academic records. |"
+            summary = "Update Subject Lifecycle Status (Cập nhật trạng thái vòng đời Môn học)",
+            description = "### 📚 Quy trình điều phối Môn học (Subject Workflow):\n" +
+                    "Quản lý tính sẵn sàng của môn học từ khi khởi tạo khung đến khi có Syllabus hoàn chỉnh:\n\n" +
+                    "| Status | Mô tả chi tiết (Nghiệp vụ) | Ràng buộc hệ thống |\n" +
+                    "| :--- | :--- | :--- |\n" +
+                    "| **DRAFT** | **Khởi tạo:** HoCF mới tạo mã và tên môn học. Thông tin cơ bản đang được nhập liệu. | Chỉ hiển thị nội bộ cho HoCF. |\n" +
+                    "| **DEFINED** | **Đã xác định:** Bản mô tả môn học và số tín chỉ đã hoàn thiện, sẵn sàng để đưa vào dự thảo Curriculum trình VP. | Có thể gán vào Curriculum DRAFT. |\n" +
+                    "| **WAITING_SYLLABUS** | **Chờ Syllabus:** Curriculum chứa môn này đã được VP duyệt. Hệ thống đang đợi HoPDC nộp Syllabus chi tiết. | **Mở quyền soạn thảo Syllabus.** |\n" +
+                    "| **PENDING_REVIEW** | **Chờ thẩm định:** Syllabus chi tiết đã nộp và đang đợi Hội đồng phân công Reviewer đánh giá. | Khóa chỉnh sửa nội dung Syllabus. |\n" +
+                    "| **COMPLETED** | **Hoàn tất:** Syllabus đã được duyệt và liên kết chính thức. Môn học sẵn sàng để giảng dạy/tuyển sinh. | Dữ liệu chuyển sang Read-only. |\n" +
+                    "| **ARCHIVED** | **Lưu trữ:** Môn học không còn nằm trong chương trình giảng dạy chính thức, giữ lại để đối soát lịch sử. | Ẩn khỏi danh sách đăng ký mới. |\n\n"
     )
     public ResponseObject<SubjectResponse> publishInternal(@PathVariable UUID id, String newStatus) {
         return ResponseObject.<SubjectResponse>builder()
