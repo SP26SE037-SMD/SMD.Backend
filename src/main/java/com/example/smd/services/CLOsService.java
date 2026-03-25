@@ -45,7 +45,7 @@ public class CLOsService {
 
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (!roleName.equals("HOPDC")) {
+        if (!"HOPDC".equals(roleName)) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
@@ -54,7 +54,7 @@ public class CLOsService {
         Subject subject = subjectRepository.findById(uuidSubjectId)
                 .orElseThrow(() -> new AppException(ErrorCode.SUBJECT_NOT_FOUND));
 
-        if (!subject.getStatus().equals(SubjectStatus.WAITING_SYLLABUS.toString())) {
+        if (!SubjectStatus.WAITING_SYLLABUS.toString().equals(subject.getStatus())) {
             throw new AppException(ErrorCode.CLO_SUBJECT_NOT_EDITABLE);
         }
 
@@ -103,7 +103,7 @@ public class CLOsService {
             String finalStatus = null;
 
             // Phân quyền: Học sinh và Giảng viên chỉ được xem CLO đã PUBLISHED
-            if (roleName.equals("STUDENT") || roleName.equals("LECTURER")) {
+            if ("STUDENT".equals(roleName) || "LECTURER".equals(roleName)) {
                 finalStatus = "PUBLISHED"; // Hoặc CloStatus.PUBLISHED.toString() nếu bạn có Enum
             }
 
@@ -136,14 +136,14 @@ public class CLOsService {
 
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (!roleName.equals("HOPDC")) {
+        if (!"HOPDC".equals(roleName)) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
         CLOs clo = closRepository.findById(UUID.fromString(id))
                 .orElseThrow(() -> new AppException(ErrorCode.CLO_NOT_FOUND));
 
-        if (!clo.getStatus().equals(PloStatus.DRAFT.toString())) {
+        if (!PloStatus.DRAFT.toString().equals(clo.getStatus())) {
             throw new AppException(ErrorCode.CLO_NOT_EDITABLE);
         }
 
@@ -159,7 +159,7 @@ public class CLOsService {
     public void deleteClo(String id, String accountId) {
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (!roleName.equals("HOPDC")) {
+        if (!"HOPDC".equals(roleName)) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
         UUID cloId = UUID.fromString(id);
@@ -167,7 +167,7 @@ public class CLOsService {
         // Kiểm tra xem CLO có tồn tại không
         CLOs clo = closRepository.findById(cloId)
                 .orElseThrow(() -> new AppException(ErrorCode.CLO_NOT_FOUND));
-        if (clo.getStatus().equals("DRAFT")) {
+        if ("DRAFT".equals(clo.getStatus())) {
             closRepository.delete(clo);
         } else {
             clo.setStatus("ARCHIVED");
@@ -190,7 +190,7 @@ public class CLOsService {
             String roleName = account.getRole().getRoleName();
 
             // 3. Phân quyền: STUDENT + LECTURER chỉ xem được bản PUBLISHED
-            if (roleName.equals("STUDENT") || roleName.equals("LECTURER")) {
+            if ("STUDENT".equals(roleName) || "LECTURER".equals(roleName)) {
                 if (!"PUBLISHED".equalsIgnoreCase(clo.getStatus())) {
                     throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
                 }
@@ -198,7 +198,7 @@ public class CLOsService {
 
             // 4. Phân quyền: Bản DRAFT chỉ dành cho HOCFDC (Người soạn thảo chính)
             if ("DRAFT".equalsIgnoreCase(clo.getStatus())) {
-                if (!roleName.equals("HOPDC")) {
+                if (!"HOPDC".equals(roleName)) {
                     throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
                 }
             }

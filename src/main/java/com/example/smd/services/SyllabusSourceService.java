@@ -38,14 +38,14 @@ public class SyllabusSourceService {
         //Kiểm tra Role tạo
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (!roleName.equals("HOPDC")) {
+        if (!"HOPDC".equals(roleName)) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
         Syllabus syllabus = syllabusRepository.findById(syllabusId)
                 .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
 
-        if(!(syllabus.getStatus().equals("DRAFT") || syllabus.getStatus().equals(SyllabusStatus.REVISION_REQUESTED.toString()))) {
+        if(!("DRAFT".equals(syllabus.getStatus()) || SyllabusStatus.REVISION_REQUESTED.toString().equals(syllabus.getStatus()))) {
             throw new AppException(ErrorCode.SYLLABUS_NOT_EDITABLE);
         }
 
@@ -73,14 +73,14 @@ public class SyllabusSourceService {
         //Kiểm tra Role tạo
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (!roleName.equals("HOPDC")) {
+        if (!"HOPDC".equals(roleName)) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
         Syllabus syllabus = syllabusRepository.findById(syllabusId)
                 .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
 
-        if(!(syllabus.getStatus().equals("DRAFT") || syllabus.getStatus().equals(SyllabusStatus.REVISION_REQUESTED.toString()))) {
+        if(!("DRAFT".equals(syllabus.getStatus()) || SyllabusStatus.REVISION_REQUESTED.toString().equals(syllabus.getStatus()))) {
             throw new AppException(ErrorCode.SYLLABUS_NOT_EDITABLE);
         }
 

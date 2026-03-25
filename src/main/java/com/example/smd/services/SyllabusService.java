@@ -39,14 +39,14 @@ public class SyllabusService {
 
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (!roleName.equals("HOPDC")) {
+        if (!"HOPDC".equals(roleName)) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
         Subject subject = subjectRepository.findById(request.getSubjectId())
                 .orElseThrow(() -> new AppException(ErrorCode.SUBJECT_NOT_FOUND));
 
-        if (!(subject.getStatus().equals(SubjectStatus.WAITING_SYLLABUS.toString()) || subject.getStatus().equals(SubjectStatus.COMPLETED.toString()))) {
+        if (!(SubjectStatus.WAITING_SYLLABUS.toString().equals(subject.getStatus()) || SubjectStatus.COMPLETED.toString().equals(subject.getStatus()))) {
             throw new AppException(ErrorCode.SYLLABUS_NOT_CREATE);
         }
 
@@ -66,11 +66,11 @@ public class SyllabusService {
         //Kiểm tra Role tạo
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (!roleName.equals("HOPDC")) {
+        if (!"HOPDC".equals(roleName)) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
-        if (!(syllabus.getStatus().equals("DRAFT") || syllabus.getStatus().equals(SyllabusStatus.REVISION_REQUESTED.toString()))) {
+        if (!("DRAFT".equals(syllabus.getStatus()) || SyllabusStatus.REVISION_REQUESTED.toString().equals(syllabus.getStatus()))) {
             throw new AppException(ErrorCode.SYLLABUS_NOT_EDITABLE);
         }
 
@@ -106,14 +106,14 @@ public class SyllabusService {
         //Kiểm tra Role tạo
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (!roleName.equals("HOPDC")) {
+        if (!"HOPDC".equals(roleName)) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
         // Kiểm tra xem Material có tồn tại không
         Syllabus syllabus = syllabusRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
-        if (syllabus.getStatus().equals("DRAFT")) {
+        if ("DRAFT".equals(syllabus.getStatus())) {
             syllabusRepository.delete(syllabus);
         } else {
             syllabus.setStatus("ARCHIVED");
@@ -132,14 +132,14 @@ public class SyllabusService {
         String finalStatus = (status == null || status.trim().isEmpty()) ? null : status.trim();
 
         // 2. Phân quyền: Student/Lecturer chỉ được xem PUBLISHED
-        if (roleName.equals("STUDENT") || roleName.equals("LECTURER")) {
-            if (!finalStatus.equals(SyllabusStatus.PUBLISHED.toString())) {
+        if ("STUDENT".equals(roleName) || "LECTURER".equals(roleName)) {
+            if (!(SyllabusStatus.PUBLISHED.toString().equals(finalStatus))) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
 
-        if (finalStatus.equals(PloStatus.DRAFT.toString())) {
-            if (!account.getRole().getRoleName().equals("HOPDC")) {
+        if (PloStatus.DRAFT.toString().equals(finalStatus)) {
+            if (!"HOPDC".equals(account.getRole().getRoleName())) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
@@ -167,14 +167,14 @@ public class SyllabusService {
 
         //Phân quyền ROLE Student + Lecture chỉ xem được PUBLISHED
         var account = accountService.getAccountById(accountId);
-        if (account.getRole().getRoleName().equals("STUDENT") || account.getRole().getRoleName().equals("LECTURER")) {
-            if (!syllabus.getStatus().equals(PloStatus.PUBLISHED.toString())) {
+        if ("STUDENT".equals(account.getRole().getRoleName()) || "LECTURER".equals(account.getRole().getRoleName())) {
+            if (!PloStatus.PUBLISHED.toString().equals(syllabus.getStatus())) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
 
-        if (syllabus.getStatus().equals("DRAFT")) {
-            if (!account.getRole().getRoleName().equals("HOPDC")) {
+        if ("DRAFT".equals(syllabus.getStatus())) {
+            if (!"HOPDC".equals(account.getRole().getRoleName())) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }

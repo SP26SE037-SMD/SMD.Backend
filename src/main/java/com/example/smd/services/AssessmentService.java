@@ -51,14 +51,14 @@ public class AssessmentService {
                                                       String accountId) {
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (roleName.equals("STUDENT") || roleName.equals("LECTURER")) {
-            if (!status.equals(SyllabusStatus.PUBLISHED.toString())) {
+        if ("STUDENT".equals(roleName) || "LECTURER".equals(roleName)) {
+            if (!SyllabusStatus.PUBLISHED.toString().equals(status)) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
 
-        if (status.equals(PloStatus.DRAFT.toString())) {
-            if (!(account.getRole().getRoleName().equals("PDCM") || account.getRole().getRoleName().equals("COLLABORATOR"))) {
+        if (PloStatus.DRAFT.toString().equals(status)) {
+            if (!("PDCM".equals(account.getRole().getRoleName()) ||"COLLABORATOR".equals(account.getRole().getRoleName()))) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
@@ -113,14 +113,14 @@ public class AssessmentService {
 
         // 3. Logic Phân quyền:
         // Nếu là STUDENT hoặc LECTURER, chỉ cho phép xem nếu status là PUBLISHED
-        if (roleName.equals("STUDENT") || roleName.equals("LECTURER")) {
+        if ("STUDENT".equals(roleName) || "LECTURER".equals(roleName)) {
             if (!"PUBLISHED".equalsIgnoreCase(assessment.getStatus())) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
 
-        if (assessment.getStatus().equals("DRAFT")|| assessment.getStatus().equals(SyllabusStatus.REVISION_REQUESTED.toString())) {
-            if (!(account.getRole().getRoleName().equals("PDCM") || account.getRole().getRoleName().equals("COLLABORATOR"))) {
+        if ("DRAFT".equals(assessment.getStatus())|| SyllabusStatus.REVISION_REQUESTED.toString().equals(assessment.getStatus())) {
+            if (!("PDCM".equals(account.getRole().getRoleName()) ||"COLLABORATOR".equals(account.getRole().getRoleName()))) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
@@ -140,7 +140,7 @@ public class AssessmentService {
     public AssessmentResponse createAssessment(AssessmentRequest request, String accountId) {
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (!(roleName.equals("COLLABORATOR") || roleName.equals("PDCM"))) {
+        if (!("COLLABORATOR".equals(roleName) || "PDCM".equals(roleName))) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
@@ -148,7 +148,7 @@ public class AssessmentService {
         Syllabus syllabus = syllabusRepository.findById(syllabusId)
                 .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
 
-        if (!(syllabus.getStatus().equals("DRAFT") || syllabus.getStatus().equals(SyllabusStatus.REVISION_REQUESTED.toString()))) {
+        if (!("DRAFT".equals(syllabus.getStatus()) || SyllabusStatus.REVISION_REQUESTED.toString().equals(syllabus.getStatus()))) {
             throw new AppException(ErrorCode.ASSESSMENT_CANNOT_CREATE);
         }
 
@@ -177,7 +177,7 @@ public class AssessmentService {
                                                AssessmentRequest request, String accountId) {
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (!(roleName.equals("COLLABORATOR") || roleName.equals("PDCM"))) {
+        if (!("COLLABORATOR".equals(roleName) || "PDCM".equals(roleName))) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
@@ -191,7 +191,7 @@ public class AssessmentService {
             assessmentTypeRepository.findById(request.getTypeId())
                 .orElseThrow(() -> new AppException(ErrorCode.ASSESSMENT_TYPE_NOT_FOUND));
 
-        if (!(assessment.getStatus().equals("DRAFT") || assessment.getStatus().equals(SyllabusStatus.REVISION_REQUESTED.toString()))) {
+        if (!("DRAFT".equals(assessment.getStatus()) || SyllabusStatus.REVISION_REQUESTED.toString().equals(assessment.getStatus()))) {
             throw new AppException(ErrorCode.ASSESSMENT_NOT_EDITABLE);
         }
 
@@ -232,11 +232,11 @@ public class AssessmentService {
                 .orElseThrow(() -> new AppException(ErrorCode.ASSESSMENT_NOT_FOUND));
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (!(roleName.equals("COLLABORATOR") || roleName.equals("PDCM"))) {
+        if (!("COLLABORATOR".equals(roleName) || "PDCM".equals(roleName))) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
-        if (!(assessment.getSyllabus().getStatus().equals("DRAFT") || assessment.getSyllabus().getStatus().equals(SyllabusStatus.REVISION_REQUESTED.toString()))) {
+        if (!("DRAFT".equals(assessment.getSyllabus().getStatus()) || SyllabusStatus.REVISION_REQUESTED.toString().equals(assessment.getSyllabus().getStatus()))) {
             throw new AppException(ErrorCode.ASSESSMENT_NOT_EDITABLE);
         }
 

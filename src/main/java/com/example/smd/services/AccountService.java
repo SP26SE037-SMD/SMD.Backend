@@ -56,7 +56,7 @@ public class AccountService {
 
         var account = getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (!(roleName.equals("ADMIN"))) {
+        if (!("ADMIN".equals(roleName))) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
@@ -112,7 +112,7 @@ public class AccountService {
             String accountId) {
         var account = getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (!(roleName.equals("ADMIN"))) {
+        if (!("ADMIN".equals(roleName))) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
         // 1. Xử lý sắp xếp
@@ -162,7 +162,7 @@ public class AccountService {
     public AccountResponse createAccount(AccountRequest request, String accountId) {
         var checkRole = getAccountById(accountId);
         String roleName = checkRole.getRole().getRoleName();
-        if (!(roleName.equals("ADMIN"))) {
+        if (!("ADMIN".equals(roleName))) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
@@ -240,7 +240,7 @@ public class AccountService {
 
         var checkRole = getAccountById(adminId);
         String roleName = checkRole.getRole().getRoleName();
-        if (!(roleName.equals("ADMIN"))) {
+        if (!("ADMIN".equals(roleName))) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
