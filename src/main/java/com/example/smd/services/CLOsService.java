@@ -116,7 +116,8 @@ public class CLOsService {
                 cloPage = closRepository.findBySubject_SubjectIdAndStatus(id, finalStatus, pageable);
             } else {
                 // Nhánh lấy tất cả cho Role quản lý (Security Check)
-                List<String> managerRoles = List.of("VP", "ADMIN", "HOCFDC", "HOPDC");
+                List<String> managerRoles = List.of("VP", "ADMIN",
+                        "HOCFDC", "HOPDC", "COLLABORATOR", "PDCM");
                 if (!managerRoles.contains(roleName)) {
                     throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
                 }
