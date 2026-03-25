@@ -23,10 +23,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -208,10 +205,10 @@ public class SessionService {
             }
 
             boolean changed =
-                    !java.util.Objects.equals(existing.getSessionTitle(), request.getSessionTitle()) ||
-                    !java.util.Objects.equals(existing.getContent(), request.getContent()) ||
-                    !java.util.Objects.equals(existing.getTeachingMethods(), request.getTeachingMethods()) ||
-                    !java.util.Objects.equals(existing.getDuration(), request.getDuration());
+                    !Objects.equals(existing.getSessionTitle(), request.getSessionTitle()) ||
+                    !Objects.equals(existing.getContent(), request.getContent()) ||
+                    !Objects.equals(existing.getTeachingMethods(), request.getTeachingMethods()) ||
+                    !Objects.equals(existing.getDuration(), request.getDuration());
 
             if (changed) {
                 existing.setSessionTitle(request.getSessionTitle());
