@@ -44,54 +44,56 @@ public class MajorService {
                 ? Sort.Direction.DESC : Sort.Direction.ASC;
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sort[0]));
 
-        // 2. Chuẩn hóa Status & Phân quyền
+        // 2. Chuẩn hóa Status: null, rỗng hoặc "all" đều được coi là "Không lọc" (null)
+        String finalStatus = (status == null || status.isBlank() || "all".equalsIgnoreCase(status))
+                ? null : status.trim();
+
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        String finalStatus = (status == null || status.trim().isEmpty() || status.equalsIgnoreCase("all")) ? null : status.trim();
 
-        if (roleName.equals("STUDENT") || roleName.equals("LECTURER")) {
-            if (!finalStatus.equals(PloStatus.PUBLISHED.toString())) {
+        // 3. Phân quyền (Sửa lỗi NullPointerException và logic GetAll)
+
+        // Nếu là STUDENT/LECTURER: Họ chỉ được phép xem PUBLISHED
+        if ("STUDENT".equals(roleName) || "LECTURER".equals(roleName)) {
+            // Nếu họ muốn getAll (finalStatus == null) hoặc chọn status khác PUBLISHED
+            if (finalStatus == null || !PloStatus.PUBLISHED.toString().equals(finalStatus)) {
+                // Ép về PUBLISHED để bảo mật dữ liệu nháp, thay vì quăng lỗi gây crash
+                finalStatus = PloStatus.PUBLISHED.toString();
+            }
+        }
+
+        // Nếu muốn xem DRAFT: Chỉ VP mới được xem
+        // Dùng Yoda conditions (đẩy Enum lên trước) để tránh lỗi null.equals
+        if (PloStatus.DRAFT.toString().equals(finalStatus)) {
+            if (!"VP".equals(roleName)) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
 
-        if (finalStatus.equals(PloStatus.DRAFT.toString())) {
-            if (!account.getRole().getRoleName().equals("VP")) {
-                throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
-            }
-        }
-
+        // 4. Logic Rẽ Nhánh (Đảm bảo getAll hoạt động khi finalStatus là null)
         Page<Major> majorPage;
-        boolean hasStatus = finalStatus != null;
-        boolean hasSearch = search != null && !search.trim().isEmpty();
-        // Quy định search theo code hay theo name, mặc định là "all"
-        String type = (searchBy != null && !searchBy.trim().isEmpty()) ? searchBy.toLowerCase() : "all";
+        boolean hasStatus = (finalStatus != null);
+        boolean hasSearch = (search != null && !search.isBlank());
+        String type = (searchBy != null && !searchBy.isBlank()) ? searchBy.toLowerCase() : "all";
 
-        // 3. Logic Rẽ Nhánh Tối Ưu
         if (!hasSearch) {
-            // TRƯỜNG HỢP 1: Không truyền search -> Chỉ filter theo Status (nếu có)
+            // TRƯỜNG HỢP 1: Nếu finalStatus là null (getAll cho Admin/VP) -> Chạy findAll(pageable)
             majorPage = hasStatus ? majorRepository.findByStatus(finalStatus, pageable)
                     : majorRepository.findAll(pageable);
         } else {
             String searchLower = search.trim();
-
             if (hasStatus) {
-                // TRƯỜNG HỢP 2: Có cả Search và Status (Dùng toán tử AND trong SQL)
                 majorPage = switch (type) {
-                    case "code" ->
-                            majorRepository.findByMajorCodeContainingIgnoreCaseAndStatus(searchLower, finalStatus, pageable);
-                    case "name" ->
-                            majorRepository.findByMajorNameContainingIgnoreCaseAndStatus(searchLower, finalStatus, pageable);
-                    // Nếu type là "all" hoặc cái khác -> Search cả 2 field VÀ phải đúng Status
+                    case "code" -> majorRepository.findByMajorCodeContainingIgnoreCaseAndStatus(searchLower, finalStatus, pageable);
+                    case "name" -> majorRepository.findByMajorNameContainingIgnoreCaseAndStatus(searchLower, finalStatus, pageable);
                     default -> majorRepository.searchAllFieldsWithStatus(searchLower, finalStatus, pageable);
                 };
             } else {
-                // TRƯỜNG HỢP 3: Có Search nhưng Status rỗng -> Filter theo search (Code OR Name)
+                // Nếu không có status, search trên toàn bộ dữ liệu (getAll + search)
                 majorPage = switch (type) {
                     case "code" -> majorRepository.findByMajorCodeContainingIgnoreCase(searchLower, pageable);
                     case "name" -> majorRepository.findByMajorNameContainingIgnoreCase(searchLower, pageable);
-                    default ->
-                            majorRepository.findByMajorNameContainingIgnoreCaseOrMajorCodeContainingIgnoreCase(searchLower, searchLower, pageable);
+                    default -> majorRepository.findByMajorNameContainingIgnoreCaseOrMajorCodeContainingIgnoreCase(searchLower, searchLower, pageable);
                 };
             }
         }

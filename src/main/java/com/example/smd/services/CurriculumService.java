@@ -72,13 +72,13 @@ public class CurriculumService {
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
 
-        if (roleName.equals("STUDENT") || roleName.equals("LECTURER")) {
+        if ("STUDENT".equals(roleName) || "LECTURER".equals(roleName)) {
             if (!finalStatus.equals(PloStatus.PUBLISHED.toString())) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
 
-        if (finalStatus.equals(PloStatus.DRAFT.toString())) {
+        if (PloStatus.DRAFT.toString().equals(finalStatus)) {
             if (!account.getRole().getRoleName().equals("HOCFDC")) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
