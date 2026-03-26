@@ -6,6 +6,7 @@ import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.services.AssessmentService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -128,6 +129,36 @@ public class AssessmentController {
                 .status(1000)
                 .data(assessmentService.deleteAssessment(id, userId))
                 .message("Delete assessment successfully")
+                .build();
+    }
+
+    @PatchMapping("/syllabus/{syllabusId}/status")
+    @PreAuthorize("hasAuthority('SYLLABUS_UPDATE')")
+    @Operation(
+            summary = "Update Material Lifecycle Status",
+            description = "### Quy trình phê duyệt tài liệu học tập (Material Approval):\n" +
+                    "Cập nhật trạng thái để kiểm soát quyền truy cập và hiển thị của tài liệu:\n\n" +
+                    "| Status | Mô tả chi tiết (Nghiệp vụ) |\n" +
+                    "| :--- | :--- |\n" +
+                    "| **DRAFT** | **Khởi tạo:** Giảng viên mới tạo định danh tài liệu (Tên tài liệu, Loại: PDF/Slide/Link). | Chỉ người tạo nhìn thấy. |\n" +
+                    "| **REVISION_REQUESTED** | **Yêu cầu chỉnh sửa:** Tài liệu cần được điều chỉnh hoặc bổ sung theo feedback của người duyệt. |\n" +
+                    "| **APPROVED** | **Đã duyệt:** Nội dung tài liệu đạt yêu cầu, sẵn sàng để đưa vào Syllabus chính thức. |\n" +
+                    "| **REJECTED** | **Từ chối:** Tài liệu không phù hợp với chương trình đào tạo hoặc vi phạm quy định. |\n" +
+                    "| **PUBLISHED** | **Đã ban hành:** Tài liệu chính thức hiển thị cho sinh viên xem và tải về trên Portal. |\n" +
+                    "| **ARCHIVED** | **Lưu trữ:** Tài liệu của các học kỳ cũ, không còn áp dụng nhưng được giữ lại để đối soát lịch sử. |"
+    )
+    public ResponseObject<Void> updateStatusBySyllabus(
+            @Parameter(description = "ID of the Syllabus")
+            @PathVariable String syllabusId,
+
+            @Parameter(description = "New status to apply (e.g., PUBLISHED)")
+            @RequestParam String newStatus) {
+
+        assessmentService.updateAssessmentStatusBySyllabus(syllabusId, newStatus);
+
+        return ResponseObject.<Void>builder()
+                .status(1000)
+                .message("All materials in syllabus " + syllabusId + " updated to " + newStatus)
                 .build();
     }
 }
