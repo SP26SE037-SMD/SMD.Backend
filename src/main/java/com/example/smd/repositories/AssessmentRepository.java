@@ -3,6 +3,7 @@ package com.example.smd.repositories;
 import com.example.smd.entities.Assessment;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -22,4 +23,8 @@ public interface AssessmentRepository extends JpaRepository<Assessment, UUID>, J
     Double sumWeightBySyllabusIdAndAssessmentIdNot(@Param("syllabusId") UUID syllabusId,
                                                    @Param(
                                                            "assessmentId") UUID assessmentId);
+
+    @Modifying
+    @Query("UPDATE Assessment a SET a.status = :status WHERE a.syllabus.syllabusId = :syllabusId")
+    int updateStatusBySyllabusId(@Param("status") String status, @Param("syllabusId") UUID syllabusId);
 }

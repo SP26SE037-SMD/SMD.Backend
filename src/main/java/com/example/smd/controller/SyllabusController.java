@@ -6,7 +6,9 @@ import com.example.smd.dto.response.ComparisonResult;
 import com.example.smd.dto.response.ImpactResponse;
 import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.dto.response.syllabus.SyllabusResponse;
+import com.example.smd.enums.PloStatus;
 import com.example.smd.enums.SyllabusActionType;
+import com.example.smd.enums.SyllabusStatus;
 import com.example.smd.services.AccountService;
 import com.example.smd.services.EmbeddingService;
 import com.example.smd.services.SyllabusActionLogService;
@@ -228,7 +230,7 @@ public class SyllabusController {
             @AuthenticationPrincipal Jwt jwt) {
         String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<List<SyllabusResponse>>builder()
-                .data(syllabusService.getPendingSyllabusesByDepartment(userId))
+                .data(syllabusService.getSyllabusesByDepartment(userId, SyllabusStatus.PENDING_REVIEW.toString()))
                 .message("Syllabuses retrieved successfully")
                 .build();
     }
@@ -242,7 +244,7 @@ public class SyllabusController {
             @AuthenticationPrincipal Jwt jwt) {
         String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<List<SyllabusResponse>>builder()
-                .data(syllabusService.getInProgressSyllabusesByDepartment(userId))
+                .data(syllabusService.getSyllabusesByDepartment(userId, SyllabusStatus.IN_PROGRESS.toString()))
                 .message("Syllabuses retrieved successfully")
                 .build();
     }

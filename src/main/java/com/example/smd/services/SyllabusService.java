@@ -185,36 +185,25 @@ public class SyllabusService {
                 .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
     }
 
-    public List<SyllabusResponse> getPendingSyllabusesByDepartment(String accountId) {
+    public List<SyllabusResponse> getSyllabusesByDepartment(String accountId, String status) {
 
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
         if (!"HOPDC".equals(roleName)) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
+
         UUID departmentUuid = UUID.fromString(account.getDepartmentId());
-        List<Syllabus> syllabuses = syllabusRepository.findByDepartmentAndStatus(
-                departmentUuid,
-                SyllabusStatus.PENDING_REVIEW.toString()
-        );
-
-        // 3. Map sang Response DTO
-        return syllabuses.stream()
-                .map(syllabusMapper::toResponse)
-                .toList();
-    }
-
-    public List<SyllabusResponse> getInProgressSyllabusesByDepartment(String accountId) {
-
-        var account = accountService.getAccountById(accountId);
-        String roleName = account.getRole().getRoleName();
-        if (!"HOPDC".equals(roleName)) {
-            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+        String newStatus = "";
+        if (SyllabusStatus.PENDING_REVIEW.toString().equals(status)) {
+            newStatus = SyllabusStatus.PENDING_REVIEW.toString();
+        } else if (SyllabusStatus.IN_PROGRESS.toString().equals(status)) {
+            newStatus = SyllabusStatus.IN_PROGRESS.toString();
         }
-        UUID departmentUuid = UUID.fromString(account.getDepartmentId());
+
         List<Syllabus> syllabuses = syllabusRepository.findByDepartmentAndStatus(
                 departmentUuid,
-                SyllabusStatus.IN_PROGRESS.toString()
+                newStatus
         );
 
         // 3. Map sang Response DTO
