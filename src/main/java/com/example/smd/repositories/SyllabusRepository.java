@@ -21,6 +21,7 @@ public interface SyllabusRepository extends JpaRepository<Syllabus, UUID> {
             "JOIN s.subject sub " +
             "WHERE sub.department.departmentId = :departmentId " +
             "AND s.status = :status")
+    @EntityGraph(attributePaths = {"subject"})
     List<Syllabus> findByDepartmentAndStatus(
             @Param("departmentId") UUID departmentId,
             @Param("status") String status

@@ -122,6 +122,7 @@ public class TaskController {
                     "Trạng thái này dùng để theo dõi tiến độ công việc và hiệu suất của các thành viên trong dự án:\n\n" +
                     "| Status | Ý nghĩa nghiệp vụ (Chi tiết) | Ràng buộc & Tác động |\n" +
                     "| :--- | :--- | :--- |\n" +
+                    "| **DRAFT** | **Bản nháp:** Nhiệm vụ đang được người quản lý khởi tạo, chưa ban hành chính thức. | Người thực hiện (Assignee) chưa nhìn thấy nhiệm vụ. |\n" +
                     "| **TO_DO** | **Chưa bắt đầu:** Nhiệm vụ đã được giao nhưng người thực hiện chưa xác nhận hoặc chưa bắt tay vào làm. | Có thể thay đổi người phụ trách (Assignee). |\n" +
                     "| **IN_PROGRESS** | **Đang thực hiện:** Người nhận việc đã bắt đầu triển khai các đầu mục (Syllabus/CLO/Material). | Khóa chức năng xóa nhiệm vụ. |\n" +
                     "| **DONE** | **Hoàn thành:** Các đầu mục công việc đã hoàn tất và được nộp lên hệ thống. | Tự động cập nhật thời gian hoàn thành thực tế. |\n" +
