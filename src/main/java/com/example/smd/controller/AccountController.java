@@ -3,6 +3,7 @@ package com.example.smd.controller;
 import com.example.smd.dto.request.account.AccountRequest;
 import com.example.smd.dto.request.account.AccountUpdateRequest;
 import com.example.smd.dto.response.account.AccountResponse;
+import com.example.smd.dto.response.account.AvailableAccountResponse;
 import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.dto.response.account.ImportResult;
@@ -232,6 +233,22 @@ public class AccountController {
                 .status(1000)
                 .data(accountService.getAccountsByDepartment(departmentId))
                 .message("Accounts retrieved successfully for department: " + departmentId)
+                .build();
+    }
+
+    @GetMapping("/department/available-account-ids")
+    @Operation(
+            summary = "Get available accounts in department that " +
+                    "don't have tasks for a specific syllabus")
+    public ResponseObject<List<AvailableAccountResponse>> getAvailableAccountIdsInMyDepartmentBySyllabus(
+            @RequestParam UUID syllabusId,
+            @AuthenticationPrincipal Jwt jwt) {
+        String currentAccountId = jwt.getClaimAsString("accountId");
+
+        return ResponseObject.<List<AvailableAccountResponse>>builder()
+                .status(1000)
+                .data(accountService.getAvailableAccountIdsInMyDepartmentBySyllabus(syllabusId, currentAccountId))
+                .message("Available accounts retrieved successfully")
                 .build();
     }
 }
