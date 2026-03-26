@@ -192,6 +192,7 @@ public class SyllabusService {
         if (!"HOPDC".equals(roleName)) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
+
         UUID departmentUuid = UUID.fromString(account.getDepartmentId());
         String newStatus = "";
         if (SyllabusStatus.PENDING_REVIEW.toString().equals(status)) {

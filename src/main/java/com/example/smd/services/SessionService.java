@@ -330,4 +330,26 @@ public class SessionService {
         }
         return Sort.Direction.ASC;
     }
+
+    @jakarta.transaction.Transactional
+    public void updateSessionStatusBySyllabus(String syllabusId, String newStatus) {
+        // 1. Kiểm tra trạng thái hợp lệ từ Enum SyllabusStatus (hoặc MaterialStatus nếu bạn có riêng)
+        SyllabusStatus status;
+        try {
+            status = SyllabusStatus.valueOf(newStatus.toUpperCase());
+        } catch (IllegalArgumentException | NullPointerException e) {
+            throw new AppException(ErrorCode.INVALID_MATERIAL_STATUS);
+        }
+
+        UUID uuidSyllabusId = UUID.fromString(syllabusId);
+
+        // 2. Kiểm tra Syllabus có tồn tại không trước khi update Material
+        if (!syllabusRepository.existsById(uuidSyllabusId)) {
+            throw new AppException(ErrorCode.SYLLABUS_NOT_FOUND);
+        }
+
+        // 3. Cập nhật hàng loạt trạng thái các Materials thuộc Syllabus này
+        // Lưu ý: Material đi theo Syllabus nên ta dùng updateStatusBySyllabusId
+        int affectedRows = sessionRepository.updateStatusBySyllabusId(status.toString(), uuidSyllabusId);
+    }
 }
