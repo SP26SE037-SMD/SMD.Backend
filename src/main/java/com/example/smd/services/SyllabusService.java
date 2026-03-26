@@ -2,6 +2,7 @@ package com.example.smd.services;
 
 import com.example.smd.dto.request.SyllabusRequest;
 import com.example.smd.dto.response.syllabus.SyllabusResponse;
+import com.example.smd.entities.Department;
 import com.example.smd.entities.Subject;
 import com.example.smd.entities.Syllabus;
 import com.example.smd.enums.PloStatus;
@@ -32,6 +33,7 @@ public class SyllabusService {
     SubjectRepository subjectRepository;
     SyllabusMapper syllabusMapper;
     AccountService accountService;
+    DepartmentService departmentService;
 
     // 1. Tạo mới
     @Transactional
@@ -181,5 +183,24 @@ public class SyllabusService {
         return syllabusRepository.findById(id)
                 .map(syllabusMapper::toResponse)
                 .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
+    }
+
+    public List<SyllabusResponse> getPendingSyllabusesByDepartment(String accountId) {
+
+        var account = accountService.getAccountById(accountId);
+        String roleName = account.getRole().getRoleName();
+        if (!"HOPDC".equals(roleName)) {
+            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+        }
+        UUID departmentUuid = UUID.fromString(account.getDepartmentId());
+        List<Syllabus> syllabuses = syllabusRepository.findByDepartmentAndStatus(
+                departmentUuid,
+                SyllabusStatus.PENDING_REVIEW.toString()
+        );
+
+        // 3. Map sang Response DTO
+        return syllabuses.stream()
+                .map(syllabusMapper::toResponse)
+                .toList();
     }
 }
