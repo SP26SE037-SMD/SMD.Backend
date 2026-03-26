@@ -102,7 +102,6 @@ public class AssessmentController {
                     "| Status | Mô tả chi tiết (Nghiệp vụ) | Ràng buộc hệ thống |\n" +
                     "| :--- | :--- | :--- |\n" +
                     "| **DRAFT** | **Bản nháp:** Giảng viên mới tạo khung tên bài đánh giá, chưa có nội dung chi tiết. | Chỉ người tạo nhìn thấy. |\n" +
-                    "| **IN_PROGRESS** | **Đang soạn thảo:** Giảng viên đang thiết kế câu hỏi, gán CLO và thiết lập trọng số (Weighting). | Cho phép chỉnh sửa nội dung & ma trận. |\n" +
                     "| **PENDING_REVIEW** | **Chờ thẩm định:** Nội dung đã hoàn thiện, đang đợi HoD/FDC kiểm duyệt tính sư phạm. | Khóa toàn bộ quyền chỉnh sửa. |\n" +
                     "| **REVISION_REQ** | **Yêu cầu chỉnh sửa:** Hội đồng yêu cầu điều chỉnh lại nội dung hoặc trọng số bài thi. | Mở lại quyền chỉnh sửa cho giảng viên. |\n" +
                     "| **APPROVED** | **Đã phê duyệt:** Nội dung đạt chuẩn, sẵn sàng đưa vào đề cương chi tiết (Syllabus). | Chốt dữ liệu cấu trúc bài thi. |\n" +
