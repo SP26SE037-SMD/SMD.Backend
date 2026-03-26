@@ -19,7 +19,7 @@ public interface PLOsMapper {
     @Mapping(target = "ploId", ignore = true)
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
-    @Mapping(source = "description", target = "ploName")
+//    @Mapping(source = "description", target = "ploName")
     PLOs toPloCreate(PLOsCreateRequest request);
 
     PLOsResponse toPloResponse(PLOs plo);
