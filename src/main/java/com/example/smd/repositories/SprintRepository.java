@@ -11,6 +11,8 @@ import java.util.UUID;
 @Repository
 public interface SprintRepository extends JpaRepository<Sprint, UUID> {
     Page<Sprint> findBySprintNameContainingIgnoreCase(String sprintName, Pageable pageable);
-    
+
     Page<Sprint> findByStatus(String status, Pageable pageable);
+
+    Page<Sprint> findByAccount_AccountId(UUID accountId, Pageable pageable);
 }

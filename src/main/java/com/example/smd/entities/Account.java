@@ -5,6 +5,7 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @Getter
@@ -52,6 +53,12 @@ public class Account {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "department_id", nullable = false)
     Department department;
+
+    @OneToMany(mappedBy = "account", fetch = FetchType.LAZY)
+    List<FeedbackSubmissions> feedbackSubmissions;
+
+    @OneToMany(mappedBy = "account", fetch = FetchType.LAZY)
+    List<Sprint> sprints;
 
     @PrePersist
     protected void onCreate() {

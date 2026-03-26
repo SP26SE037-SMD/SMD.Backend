@@ -5,6 +5,7 @@ import com.example.smd.dto.request.account.AccountUpdateRequest;
 import com.example.smd.dto.response.account.AccountLoginResponse;
 import com.example.smd.dto.response.account.AccountResponse;
 import com.example.smd.entities.Account;
+import org.mapstruct.Mapping;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -77,5 +78,21 @@ public class AccountMapper {
         if (request.getAvatarUrl() != null) {
             account.setAvatarUrl(request.getAvatarUrl());
         }
+    }
+    public Account toAccount(AccountResponse account) {
+        if (account == null) {
+            return null;
+        }
+
+        return Account.builder()
+                .accountId(account.getAccountId())
+                .email(account.getEmail())
+                .fullName(account.getFullName())
+                .phoneNumber(account.getPhoneNumber())
+                .avatarUrl(account.getAvatarUrl())
+                .isActive(account.getIsActive())
+                .createdAt(account.getCreatedAt())
+                .lastLogin(account.getLastLogin())
+                .build();
     }
 }

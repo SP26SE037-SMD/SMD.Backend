@@ -60,6 +60,24 @@ public class SprintController {
                 .build();
     }
 
+    @GetMapping("/account/{accountId}")
+    @Operation(summary = "Get sprints by account ID with pagination")
+    public ResponseObject<PagedResponse<SprintResponse>> getSprintsByAccountId(
+            @PathVariable UUID accountId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "startDate") String sortBy,
+            @RequestParam(defaultValue = "desc") String direction) {
+
+        Sort sort = direction.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        return ResponseObject.<PagedResponse<SprintResponse>>builder()
+                .data(PagedResponse.of(sprintService.getSprintsByAccountId(accountId, pageable)))
+                .message("Account sprints retrieved successfully")
+                .build();
+    }
+
     @GetMapping("/{id}")
     @Operation(summary = "Get sprint detail by ID")
     public ResponseObject<SprintResponse> getDetail(@PathVariable UUID id) {

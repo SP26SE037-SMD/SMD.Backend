@@ -3,6 +3,8 @@ package com.example.smd.entities;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -22,14 +24,19 @@ public class Sprint {
     String sprintName;
 
     @Column(name = "start_date")
-    java.time.Instant startDate;
+    Instant startDate;
 
     @Column(name = "end_date")
-    java.time.Instant endDate;
+    Instant endDate;
 
     @Column(length = 20)
     String status; // Planning, Active, Completed
 
     @OneToMany(mappedBy = "sprint", fetch = FetchType.LAZY)
     List<Task> tasks;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "account_id", nullable = false)
+    Account account;
+
 }

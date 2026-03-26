@@ -249,6 +249,27 @@ public enum ErrorCode {
     SESSION_NOT_EDITABLE(28012, "Session can only be modified when in DRAFT or REVISION_REQUESTED status", HttpStatus.BAD_REQUEST),
     SESSION_CANNOT_CREATE(28013, "Session can only be added when Syllabus is in IN_PROGRESS or REVISION_REQUESTED status", HttpStatus.BAD_REQUEST),
 
+    // FEEDBACK
+    FEEDBACK_QUESTION_NOT_FOUND(29001, "Feedback question not found", HttpStatus.NOT_FOUND),
+    FEEDBACK_OPTION_NOT_FOUND(29002, "Feedback option not found", HttpStatus.NOT_FOUND),
+    FEEDBACK_SUBMISSION_NOT_FOUND(29003, "Feedback submission not found", HttpStatus.NOT_FOUND),
+    FEEDBACK_QUESTION_REQUIRED(29004, "Feedback question request is required", HttpStatus.BAD_REQUEST),
+    FEEDBACK_QUESTION_TEXT_REQUIRED(29005, "Question text is required", HttpStatus.BAD_REQUEST),
+    FEEDBACK_QUESTION_TYPE_REQUIRED(29006, "Question type is required", HttpStatus.BAD_REQUEST),
+    FEEDBACK_FORM_TYPE_REQUIRED(29007, "Form type is required", HttpStatus.BAD_REQUEST),
+    FEEDBACK_QUESTION_LIST_REQUIRED(29008, "Feedback question list is required", HttpStatus.BAD_REQUEST),
+    FEEDBACK_OPTION_REQUIRED(29009, "Feedback option request is required", HttpStatus.BAD_REQUEST),
+    FEEDBACK_OPTION_TEXT_REQUIRED(29010, "Option text is required", HttpStatus.BAD_REQUEST),
+    FEEDBACK_OPTION_LIST_REQUIRED(29011, "Feedback option list is required", HttpStatus.BAD_REQUEST),
+    FEEDBACK_SUBMISSION_REQUIRED(29012, "Feedback submission request is required", HttpStatus.BAD_REQUEST),
+    FEEDBACK_SUBMISSION_LIST_REQUIRED(29013, "Feedback submission list is required", HttpStatus.BAD_REQUEST),
+    FEEDBACK_ANSWER_LIST_REQUIRED(29014, "Feedback answer list is required", HttpStatus.BAD_REQUEST),
+    FEEDBACK_QUESTION_ID_REQUIRED(29015, "Question ID is required for each feedback answer", HttpStatus.BAD_REQUEST),
+    FEEDBACK_ANSWER_INVALID(29016, "Answer must contain selected option or answer text", HttpStatus.BAD_REQUEST),
+    FEEDBACK_QUESTION_IN_USE(29017, "Cannot delete question because it has feedback answers", HttpStatus.CONFLICT),
+    FEEDBACK_OPTION_IN_USE(29018, "Cannot delete option because it has feedback answers", HttpStatus.CONFLICT),
+    FEEDBACK_CURRICULUM_ID_REQUIRED(29019, "Curriculum ID is required", HttpStatus.BAD_REQUEST),
+
     // General
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),
     INVALID_KEY(1000, "Invalid message key", HttpStatus.BAD_REQUEST),

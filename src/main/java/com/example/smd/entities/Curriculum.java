@@ -36,6 +36,10 @@ public class Curriculum {
     @OneToMany(mappedBy = "curriculum", fetch = FetchType.LAZY)
     private List<Curriculum_Group_Subject> curriculumGroupSubjects;
 
+    @OneToMany(mappedBy = "curriculum", fetch = FetchType.LAZY)
+    List<FeedbackSubmissions> feedbackSubmissions;
+
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "major_id", nullable = false)
     Major major;

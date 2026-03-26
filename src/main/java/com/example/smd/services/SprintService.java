@@ -2,12 +2,15 @@ package com.example.smd.services;
 
 import com.example.smd.dto.request.sprint.SprintRequest;
 import com.example.smd.dto.response.sprint.SprintResponse;
+import com.example.smd.entities.Account;
 import com.example.smd.enums.SprintStatus;
 import com.example.smd.entities.Sprint;
 import com.example.smd.enums.SyllabusStatus;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
+import com.example.smd.mapper.AccountMapper;
 import com.example.smd.mapper.SprintMapper;
+import com.example.smd.repositories.AccountRepository;
 import com.example.smd.repositories.SprintRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +28,10 @@ import java.util.UUID;
 public class SprintService {
     AccountService accountService;
     SprintRepository sprintRepository;
+    AccountRepository accountRepository;
     SprintMapper sprintMapper;
+    private final AccountMapper accountMapper;
+
 
     @Transactional
     public SprintResponse create(SprintRequest request, String accountId) {
@@ -35,7 +41,10 @@ public class SprintService {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
+        Account convert = accountMapper.toAccount(account);
+
         Sprint sprint = sprintMapper.toSprint(request);
+        sprint.setAccount(convert);
 
         if (sprint.getStatus() == null || sprint.getStatus().isEmpty()) {
             sprint.setStatus("Planning");
@@ -55,6 +64,16 @@ public class SprintService {
             pageData = sprintRepository.findAll(pageable);
         }
 
+        return pageData.map(sprintMapper::toSprintResponse);
+    }
+
+    public Page<SprintResponse> getSprintsByAccountId(UUID accountId, Pageable pageable) {
+        // Verify account exists
+        if (!accountRepository.existsById(accountId)) {
+            throw new AppException(ErrorCode.ACCOUNT_NOT_FOUND);
+        }
+
+        Page<Sprint> pageData = sprintRepository.findByAccount_AccountId(accountId, pageable);
         return pageData.map(sprintMapper::toSprintResponse);
     }
 
