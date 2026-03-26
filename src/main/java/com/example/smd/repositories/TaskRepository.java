@@ -27,6 +27,14 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
            "WHERE t.account.accountId = :accountId AND t.curriculum IS NOT NULL")
     Set<UUID> findDistinctCurriculumIdsByAccountId(@Param("accountId") UUID accountId);
 
+        @Query("SELECT DISTINCT t.account.accountId FROM Task t " +
+            "WHERE t.syllabus.syllabusId = :syllabusId " +
+            "AND t.account.department.departmentId = :departmentId")
+        Set<UUID> findDistinctAccountIdsBySyllabusIdAndDepartmentId(
+            @Param("syllabusId") UUID syllabusId,
+            @Param("departmentId") UUID departmentId
+        );
+
         @Query("SELECT DISTINCT c FROM Task t " +
             "JOIN t.curriculum c " +
             "WHERE t.account.accountId = :accountId " +

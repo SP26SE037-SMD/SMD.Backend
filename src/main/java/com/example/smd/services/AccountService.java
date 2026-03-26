@@ -4,6 +4,7 @@ import com.example.smd.dto.excel.AccountExportDTO;
 import com.example.smd.dto.excel.AccountImportDTO;
 import com.example.smd.dto.request.account.AccountRequest;
 import com.example.smd.dto.request.account.AccountUpdateRequest;
+import com.example.smd.dto.response.account.AvailableAccountResponse;
 import com.example.smd.dto.response.account.AccountResponse;
 import com.example.smd.dto.response.account.ImportAccountResult;
 import com.example.smd.dto.response.account.ImportResult;
@@ -16,6 +17,8 @@ import com.example.smd.mapper.AccountMapper;
 import com.example.smd.repositories.AccountRepository;
 import com.example.smd.repositories.DepartmentRepository;
 import com.example.smd.repositories.RoleRepository;
+import com.example.smd.repositories.SyllabusRepository;
+import com.example.smd.repositories.TaskRepository;
 import com.example.smd.services.excelService.ExcelExporter;
 import com.example.smd.services.excelService.ExcelImporter;
 import lombok.RequiredArgsConstructor;
@@ -49,6 +52,8 @@ public class AccountService {
     private final PasswordEncoder passwordEncoder;
     private final DepartmentRepository departmentRepository;
     private final EmailService emailService;
+    private final SyllabusRepository syllabusRepository;
+    private final TaskRepository taskRepository;
 
     // GetAll tài khoản có phân trang và tìm kiếm theo role name hoặc full name
     @Transactional(readOnly = true)
@@ -460,6 +465,37 @@ public class AccountService {
 
         return accounts.stream()
                 .map(accountMapper::toResponse)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<AvailableAccountResponse> getAvailableAccountIdsInMyDepartmentBySyllabus(UUID syllabusId, String currentAccountId) {
+        if (!syllabusRepository.existsById(syllabusId)) {
+            throw new AppException(ErrorCode.SYLLABUS_NOT_FOUND);
+        }
+
+        UUID currentId = UUID.fromString(currentAccountId);
+        Account currentAccount = accountRepository.findById(currentId)
+                .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND));
+
+        if (currentAccount.getDepartment() == null) {
+            throw new AppException(ErrorCode.DEPARTMENT_NOT_FOUND);
+        }
+
+        UUID departmentId = currentAccount.getDepartment().getDepartmentId();
+
+        Set<UUID> assignedAccountIds = taskRepository
+                .findDistinctAccountIdsBySyllabusIdAndDepartmentId(syllabusId, departmentId);
+
+        return accountRepository.findAllByDepartmentId(departmentId).stream()
+            .filter(account -> !account.getAccountId().equals(currentId))
+            .filter(account -> !assignedAccountIds.contains(account.getAccountId()))
+            .map(account -> AvailableAccountResponse.builder()
+                .accountId(account.getAccountId())
+                .email(account.getEmail())
+                .fullName(account.getFullName())
+                .avatarUrl(account.getAvatarUrl())
+                .build())
                 .toList();
     }
 }
