@@ -50,9 +50,12 @@ public class TaskController {
     @Operation(summary = "Create multiple tasks in a sprint")
     public ResponseObject<List<TaskResponse>> createBatch(
             @PathVariable UUID sprintId,
-            @RequestBody @Valid BatchTaskRequest request) {
+            @RequestBody @Valid BatchTaskRequest request,
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<List<TaskResponse>>builder()
-                .data(taskService.createBatch(sprintId, request))
+                .data(taskService.createBatch(sprintId, request, userId))
                 .message("Tasks created successfully")
                 .build();
     }
@@ -91,24 +94,39 @@ public class TaskController {
     @Operation(summary = "Update task information")
     public ResponseObject<TaskResponse> update(
             @PathVariable UUID id,
-            @RequestBody @Valid TaskRequest request) {
+            @RequestBody @Valid TaskRequest request,
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<TaskResponse>builder()
-                .data(taskService.update(id, request))
+                .data(taskService.update(id, request, userId))
                 .message("Task updated successfully")
                 .build();
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete task")
-    public ResponseObject<Void> delete(@PathVariable UUID id) {
-        taskService.delete(id);
+    public ResponseObject<Void> delete(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt
+    ) {
+        String userId = jwt.getClaimAsString("accountId");
+        taskService.delete(id, userId);
         return ResponseObject.<Void>builder()
                 .message("Task deleted successfully")
                 .build();
     }
 
     @PatchMapping("/{id}/status")
-        @Operation(summary = "Update task status", description = "Accepted values: TODO | TO_DO | To Do | IN_PROGRESS | In Progress | IN_REVIEW | In Review | DONE | Done | BLOCKED | Blocked | CANCELLED | Cancelled")
+    @Operation(
+            summary = "Update Task Lifecycle Status (Cập nhật trạng thái nhiệm vụ)",
+            description = "### 📋 Quy trình quản lý thực hiện nhiệm vụ (Task Workflow):\n" +
+                    "Trạng thái này dùng để theo dõi tiến độ công việc và hiệu suất của các thành viên trong dự án:\n\n" +
+                    "| Status | Ý nghĩa nghiệp vụ (Chi tiết) | Ràng buộc & Tác động |\n" +
+                    "| :--- | :--- | :--- |\n" +
+                    "| **TO_DO** | **Chưa bắt đầu:** Nhiệm vụ đã được giao nhưng người thực hiện chưa xác nhận hoặc chưa bắt tay vào làm. | Có thể thay đổi người phụ trách (Assignee). |\n" +
+                    "| **IN_PROGRESS** | **Đang thực hiện:** Người nhận việc đã bắt đầu triển khai các đầu mục (Syllabus/CLO/Material). | Khóa chức năng xóa nhiệm vụ. |\n" +
+                    "| **DONE** | **Hoàn thành:** Các đầu mục công việc đã hoàn tất và được nộp lên hệ thống. | Tự động cập nhật thời gian hoàn thành thực tế. |\n" +
+                    "| **CANCELLED** | **Đã hủy:** Nhiệm vụ không còn cần thiết hoặc bị thay đổi do điều chỉnh chương trình đào tạo. | Giữ lại bản ghi để thống kê lịch sử. |\n\n"
+    )
     public ResponseObject<TaskResponse> updateStatus(
             @PathVariable UUID id,
             @RequestParam String status) {
@@ -118,14 +136,14 @@ public class TaskController {
                 .build();
     }
 
-        @GetMapping("/status-options")
-        @Operation(summary = "Get normalized task status options", description = "Danh sách status chuẩn hóa và input alias được chấp nhận")
-        public ResponseObject<List<String>> getStatusOptions() {
-                return ResponseObject.<List<String>>builder()
+    @GetMapping("/status-options")
+    @Operation(summary = "Get normalized task status options", description = "Danh sách status chuẩn hóa và input alias được chấp nhận")
+    public ResponseObject<List<String>> getStatusOptions() {
+        return ResponseObject.<List<String>>builder()
                                 .data(taskService.getNormalizedStatusOptions())
                                 .message("Task status options retrieved successfully")
                                 .build();
-        }
+    }
 
     @GetMapping("/curriculums")
     @Operation(

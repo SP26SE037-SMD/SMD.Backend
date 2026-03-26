@@ -4,6 +4,7 @@ import com.example.smd.dto.request.sprint.SprintRequest;
 import com.example.smd.dto.response.sprint.SprintResponse;
 import com.example.smd.enums.SprintStatus;
 import com.example.smd.entities.Sprint;
+import com.example.smd.enums.SyllabusStatus;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.SprintMapper;
@@ -22,11 +23,18 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class SprintService {
+    AccountService accountService;
     SprintRepository sprintRepository;
     SprintMapper sprintMapper;
 
     @Transactional
-    public SprintResponse create(SprintRequest request) {
+    public SprintResponse create(SprintRequest request, String accountId) {
+        var account = accountService.getAccountById(accountId);
+        String roleName = account.getRole().getRoleName();
+        if (!("HOCFDC".equals(roleName) || "HOPDC".equals(roleName))) {
+                throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+        }
+
         Sprint sprint = sprintMapper.toSprint(request);
 
         if (sprint.getStatus() == null || sprint.getStatus().isEmpty()) {
@@ -57,7 +65,13 @@ public class SprintService {
     }
 
     @Transactional
-    public SprintResponse update(UUID id, SprintRequest request) {
+    public SprintResponse update(UUID id, SprintRequest request, String accountId) {
+        var account = accountService.getAccountById(accountId);
+        String roleName = account.getRole().getRoleName();
+        if (!("HOCFDC".equals(roleName) || "HOPDC".equals(roleName))) {
+            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+        }
+
         Sprint sprint = sprintRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.SPRINT_NOT_FOUND));
 
@@ -68,7 +82,13 @@ public class SprintService {
     }
 
     @Transactional
-    public void delete(UUID id) {
+    public void delete(UUID id, String accountId) {
+        var account = accountService.getAccountById(accountId);
+        String roleName = account.getRole().getRoleName();
+        if (!("HOCFDC".equals(roleName) || "HOPDC".equals(roleName))) {
+            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+        }
+
         if (!sprintRepository.existsById(id)) {
             throw new AppException(ErrorCode.SPRINT_NOT_FOUND);
         }

@@ -30,8 +30,8 @@ public class TaskRequest {
 
     String description;
 
-    @Size(max = 20, message = "STATUS_TOO_LONG")
-    String status;
+//    @Size(max = 20, message = "STATUS_TOO_LONG")
+//    String status;
 
     @Size(max = 20, message = "PRIORITY_TOO_LONG")
     String priority;

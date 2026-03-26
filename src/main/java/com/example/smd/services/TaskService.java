@@ -95,15 +95,20 @@ public class TaskService {
             task.setCreatedAt(request.getCreatedAt());
         }
 
-        task.setStatus(normalizeStatusInput(task.getStatus(), true));
-        applyCompletedAtByStatus(task);
+        task.setStatus(TaskStatus.TO_DO.toString());
 
         task = taskRepository.save(task);
         return taskMapper.toTaskResponse(task);
     }
 
     @Transactional
-    public List<TaskResponse> createBatch(UUID sprintId, BatchTaskRequest request) {
+    public List<TaskResponse> createBatch(UUID sprintId, BatchTaskRequest request, String check) {
+        var checkRole = accountService.getAccountById(check);
+        String roleName = checkRole.getRole().getRoleName();
+        if (!("HOPDC".equals(roleName) || "HOCFDC".equals(roleName))) {
+            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+        }
+
         // Batch API still requires sprintId in path for all roles
         Sprint sprint = sprintRepository.findById(sprintId)
             .orElseThrow(() -> new AppException(ErrorCode.SPRINT_NOT_FOUND));
@@ -136,8 +141,7 @@ public class TaskService {
                 task.setCreatedAt(item.getCreatedAt());
             }
 
-            task.setStatus(normalizeStatusInput(task.getStatus(), true));
-            applyCompletedAtByStatus(task);
+            task.setStatus(TaskStatus.TO_DO.toString());
 
             tasksToSave.add(task);
         }
@@ -170,9 +174,19 @@ public class TaskService {
     }
 
     @Transactional
-    public TaskResponse update(UUID id, TaskRequest request) {
+    public TaskResponse update(UUID id, TaskRequest request, String accountId) {
+        var checkRole = accountService.getAccountById(accountId);
+        String roleName = checkRole.getRole().getRoleName();
+        if (!("HOPDC".equals(roleName) || "HOCFDC".equals(roleName))) {
+            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+        }
+
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.TASK_NOT_FOUND));
+
+        if(!TaskStatus.TO_DO.toString().equals(task.getStatus())) {
+            throw new AppException(ErrorCode.TASK_NOT_EDITABLE);
+        }
 
         taskMapper.updateTask(task, request);
 
@@ -218,7 +232,6 @@ public class TaskService {
             task.setCreatedAt(request.getCreatedAt());
         }
 
-        task.setStatus(normalizeStatusInput(task.getStatus(), true));
         applyCompletedAtByStatus(task);
 
         task = taskRepository.save(task);
@@ -226,10 +239,20 @@ public class TaskService {
     }
 
     @Transactional
-    public void delete(UUID id) {
-        if (!taskRepository.existsById(id)) {
-            throw new AppException(ErrorCode.TASK_NOT_FOUND);
+    public void delete(UUID id, String accountId) {
+        var checkRole = accountService.getAccountById(accountId);
+        String roleName = checkRole.getRole().getRoleName();
+        if (!("HOPDC".equals(roleName) || "HOCFDC".equals(roleName))) {
+            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
+
+        Task task = taskRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.TASK_NOT_FOUND));
+
+        if(!TaskStatus.TO_DO.toString().equals(task.getStatus())) {
+            throw new AppException(ErrorCode.TASK_NOT_EDITABLE);
+        }
+
         taskRepository.deleteById(id);
     }
 
@@ -284,7 +307,7 @@ public class TaskService {
     private String normalizeStatusInput(String rawStatus, boolean useDefaultWhenBlank) {
         if (rawStatus == null || rawStatus.isBlank()) {
             if (useDefaultWhenBlank) {
-                return toDisplayStatus(TaskStatus.TODO);
+                return toDisplayStatus(TaskStatus.TO_DO);
             }
             throw new AppException(ErrorCode.INVALID_TASK_STATUS);
         }
@@ -296,10 +319,10 @@ public class TaskService {
         if ("TO_DO".equals(normalized)) {
             normalized = "TODO";
         }
-        if ("INPROGRESS".equals(normalized)) {
+        if ("IN_PROGRESS".equals(normalized)) {
             normalized = "IN_PROGRESS";
         }
-        if ("INREVIEW".equals(normalized)) {
+        if ("IN_REVIEW".equals(normalized)) {
             normalized = "IN_REVIEW";
         }
 
@@ -315,11 +338,9 @@ public class TaskService {
 
     private String toDisplayStatus(TaskStatus status) {
         return switch (status) {
-            case TODO -> "To Do";
+            case TO_DO -> "To Do";
             case IN_PROGRESS -> "In Progress";
-            case IN_REVIEW -> "In Review";
             case DONE -> "Done";
-            case BLOCKED -> "Blocked";
             case CANCELLED -> "Cancelled";
         };
     }

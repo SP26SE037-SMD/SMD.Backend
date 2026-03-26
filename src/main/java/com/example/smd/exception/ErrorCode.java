@@ -189,6 +189,7 @@ public enum ErrorCode {
     TASK_TYPE_TOO_LONG(25008, "Task type must not exceed 50 characters", HttpStatus.BAD_REQUEST),
     SYLLABUS_NOT_READY_FOR_TASK(25009, "Tasks can only be assigned when Syllabus is IN_PROGRESS or PENDING_REVIEW", HttpStatus.BAD_REQUEST),
     CURRICULUM_NOT_READY_FOR_TASK(25010, "Tasks can only be assigned after Curriculum structure is APPROVED", HttpStatus.BAD_REQUEST),
+    TASK_NOT_EDITABLE(25011, "Tasks can only be modified when in TO_DO status", HttpStatus.BAD_REQUEST),
 
     // SOURCE
     SOURCE_NOT_FOUND(24001, "Source not found", HttpStatus.NOT_FOUND),

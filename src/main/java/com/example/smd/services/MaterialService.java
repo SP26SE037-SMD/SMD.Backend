@@ -108,7 +108,7 @@ public class MaterialService {
         Material material = materialRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.MATERIAL_NOT_FOUND));
 
-        if (!("DRAFT".equals(material.getSyllabus().getStatus()) || SyllabusStatus.REVISION_REQUESTED.toString().equals(material.getSyllabus().getStatus()))) {
+        if (!("IN_PROGRESS".equals(material.getSyllabus().getStatus()) || SyllabusStatus.REVISION_REQUESTED.toString().equals(material.getSyllabus().getStatus()))) {
             throw new AppException(ErrorCode.MATERIAL_NOT_EDITABLE);
         }
 
