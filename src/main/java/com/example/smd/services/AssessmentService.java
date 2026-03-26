@@ -148,7 +148,7 @@ public class AssessmentService {
         Syllabus syllabus = syllabusRepository.findById(syllabusId)
                 .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
 
-        if (!("DRAFT".equals(syllabus.getStatus()) || SyllabusStatus.REVISION_REQUESTED.toString().equals(syllabus.getStatus()))) {
+        if (!("IN_PROGRESS".equals(syllabus.getStatus()) || SyllabusStatus.REVISION_REQUESTED.toString().equals(syllabus.getStatus()))) {
             throw new AppException(ErrorCode.ASSESSMENT_CANNOT_CREATE);
         }
 
@@ -236,7 +236,7 @@ public class AssessmentService {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
-        if (!("DRAFT".equals(assessment.getSyllabus().getStatus()) || SyllabusStatus.REVISION_REQUESTED.toString().equals(assessment.getSyllabus().getStatus()))) {
+        if (!("IN_PROGRESS".equals(assessment.getSyllabus().getStatus()) || SyllabusStatus.REVISION_REQUESTED.toString().equals(assessment.getSyllabus().getStatus()))) {
             throw new AppException(ErrorCode.ASSESSMENT_NOT_EDITABLE);
         }
 

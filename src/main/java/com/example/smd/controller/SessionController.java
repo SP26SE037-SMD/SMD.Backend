@@ -120,7 +120,6 @@ public class SessionController {
                     "| Status | Mô tả chi tiết (Nghiệp vụ) | Ràng buộc hệ thống |\n" +
                     "| :--- | :--- | :--- |\n" +
                     "| **DRAFT** | **Khởi tạo:** Giảng viên mới tạo tiêu đề và thứ tự buổi học (Session Order). | Chỉ giảng viên nhìn thấy. |\n" +
-                    "| **IN_PROGRESS** | **Đang biên soạn:** Giảng viên đang lên mục tiêu bài học, hoạt động (Activities) và tài liệu đính kèm. | Cho phép chỉnh sửa nội dung chi tiết. |\n" +
                     "| **PENDING_REVIEW** | **Chờ duyệt:** Nội dung buổi học đã xong, đang đợi HoD kiểm tra tính phù hợp với Syllabus. | Khóa toàn bộ quyền chỉnh sửa. |\n" +
                     "| **REVISION_REQUESTED**| **Yêu cầu sửa:** Cần điều chỉnh lại thời lượng hoặc mục tiêu bài học theo feedback của người duyệt. | Mở lại quyền chỉnh sửa nội dung. |\n" +
                     "| **APPROVED** | **Đã duyệt:** Kế hoạch buổi học đạt yêu cầu, sẵn sàng để gán vào lịch trình giảng dạy. | Khóa nội dung, chuẩn bị ban hành. |\n" +

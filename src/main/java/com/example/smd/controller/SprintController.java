@@ -15,6 +15,8 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -31,9 +33,10 @@ public class SprintController {
 
     @PostMapping
     @Operation(summary = "Create a new sprint")
-    public ResponseObject<SprintResponse> create(@RequestBody @Valid SprintRequest request) {
+    public ResponseObject<SprintResponse> create(@RequestBody @Valid SprintRequest request, @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<SprintResponse>builder()
-                .data(sprintService.create(request))
+                .data(sprintService.create(request, userId))
                 .message("Sprint created successfully")
                 .build();
     }
@@ -88,17 +91,20 @@ public class SprintController {
     @Operation(summary = "Update sprint information")
     public ResponseObject<SprintResponse> update(
             @PathVariable UUID id,
-            @RequestBody @Valid SprintRequest request) {
+            @RequestBody @Valid SprintRequest request,
+            @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<SprintResponse>builder()
-                .data(sprintService.update(id, request))
+                .data(sprintService.update(id, request, userId))
                 .message("Sprint updated successfully")
                 .build();
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete sprint")
-    public ResponseObject<Void> delete(@PathVariable UUID id) {
-        sprintService.delete(id);
+    public ResponseObject<Void> delete(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
+        sprintService.delete(id, userId);
         return ResponseObject.<Void>builder()
                 .message("Sprint deleted successfully")
                 .build();

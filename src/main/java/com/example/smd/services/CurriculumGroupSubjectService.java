@@ -9,6 +9,7 @@ import com.example.smd.dto.response.BulkSemesterMappingResponse;
 import com.example.smd.entities.*;
 import com.example.smd.enums.CurriculumStatus;
 import com.example.smd.enums.PloStatus;
+import com.example.smd.enums.SubjectStatus;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.CurriculumGroupSubjectMapper;
@@ -53,7 +54,7 @@ public class CurriculumGroupSubjectService {
         //Kiểm tra Role tạo
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (!roleName.equals("HOCFDC")) {
+        if (!"HOCFDC".equals(roleName)) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
@@ -65,7 +66,7 @@ public class CurriculumGroupSubjectService {
         Subject subject = subjectRepository.findById(request.getSubjectId())
                 .orElseThrow(() -> new AppException(ErrorCode.SUBJECT_NOT_FOUND));
 
-        if (!(curriculum.getStatus().equals(CurriculumStatus.DRAFT.toString()) && subject.getStatus().equals(PloStatus.DRAFT.toString()))) {
+        if (!(CurriculumStatus.DRAFT.toString().equals(curriculum.getStatus()) && SubjectStatus.DRAFT.toString().equals(subject.getStatus()))) {
             throw new AppException(ErrorCode.CURRICULUM_GROUP_SUBJECT_NOT_CREATE);
         }
 
