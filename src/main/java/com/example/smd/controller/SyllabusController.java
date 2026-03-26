@@ -232,4 +232,18 @@ public class SyllabusController {
                 .message("Syllabuses retrieved successfully")
                 .build();
     }
+
+    @GetMapping("/in-progress/department")
+    @Operation(
+            summary = "Get in prgress Syllabuses by Department",
+            description = "Lấy danh sách các Đề cương đang biên soạn chi tiết nội dung Phòng ban của người dùng hiện tại."
+    )
+    public ResponseObject<List<SyllabusResponse>> getInProgressSyllabusesByDept(
+            @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
+        return ResponseObject.<List<SyllabusResponse>>builder()
+                .data(syllabusService.getInProgressSyllabusesByDepartment(userId))
+                .message("Syllabuses retrieved successfully")
+                .build();
+    }
 }

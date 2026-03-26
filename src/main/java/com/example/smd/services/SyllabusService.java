@@ -203,4 +203,23 @@ public class SyllabusService {
                 .map(syllabusMapper::toResponse)
                 .toList();
     }
+
+    public List<SyllabusResponse> getInProgressSyllabusesByDepartment(String accountId) {
+
+        var account = accountService.getAccountById(accountId);
+        String roleName = account.getRole().getRoleName();
+        if (!"HOPDC".equals(roleName)) {
+            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+        }
+        UUID departmentUuid = UUID.fromString(account.getDepartmentId());
+        List<Syllabus> syllabuses = syllabusRepository.findByDepartmentAndStatus(
+                departmentUuid,
+                SyllabusStatus.IN_PROGRESS.toString()
+        );
+
+        // 3. Map sang Response DTO
+        return syllabuses.stream()
+                .map(syllabusMapper::toResponse)
+                .toList();
+    }
 }
