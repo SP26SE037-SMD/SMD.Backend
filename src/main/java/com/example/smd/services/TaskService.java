@@ -338,6 +338,7 @@ public class TaskService {
 
     private String toDisplayStatus(TaskStatus status) {
         return switch (status) {
+            case DRAFT -> "Draft";
             case TO_DO -> "To Do";
             case IN_PROGRESS -> "In Progress";
             case DONE -> "Done";
