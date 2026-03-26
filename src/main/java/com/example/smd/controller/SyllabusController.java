@@ -187,7 +187,7 @@ public class SyllabusController {
     }
 
     @PostMapping("/compare")
-    public ResponseEntity<ComparisonResult> compareSyllabusVersions(
+    public ResponseObject<ComparisonResult> compareSyllabusVersions(
             @RequestParam("oldSyllabusId") UUID oldSyllabusId,
             @RequestParam("newSyllabusId") UUID newSyllabusId) {
 
@@ -195,11 +195,15 @@ public class SyllabusController {
         ComparisonResult analysis = embeddingService.compareSyllabus(oldSyllabusId, newSyllabusId);
 
         // Trả về mã 200 OK kèm cục dữ liệu phân tích
-        return ResponseEntity.ok(analysis);
+
+        return ResponseObject.<ComparisonResult>builder()
+                .data(analysis)
+                .message("Compare syllabus successfully")
+                .build();
     }
 
     @PostMapping("/check-impact")
-    public ResponseEntity<List<ImpactResponse>> checkProgramImpact(
+    public ResponseObject<List<ImpactResponse>> checkProgramImpact(
             @RequestParam("rootId") UUID rootId,
             @RequestBody List<String> removedConcepts) {
 
@@ -209,7 +213,23 @@ public class SyllabusController {
             var response = embeddingService.checkImpact(removedConcept, rootId);
             impactReports.add(response);
         }
+        return ResponseObject.<List<ImpactResponse>>builder()
+                .data(impactReports)
+                .message("Compare syllabus successfully")
+                .build();
+    }
 
-        return ResponseEntity.ok(impactReports);
+    @GetMapping("/pending-review/department")
+    @Operation(
+            summary = "Get Pending Review Syllabuses by Department",
+            description = "Lấy danh sách các Đề cương đang chờ duyệt thuộc Phòng ban của người dùng hiện tại."
+    )
+    public ResponseObject<List<SyllabusResponse>> getPendingSyllabusesByDept(
+            @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
+        return ResponseObject.<List<SyllabusResponse>>builder()
+                .data(syllabusService.getPendingSyllabusesByDepartment(userId))
+                .message("Syllabuses retrieved successfully")
+                .build();
     }
 }
