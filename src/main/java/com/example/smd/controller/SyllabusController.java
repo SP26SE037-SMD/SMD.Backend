@@ -244,7 +244,7 @@ public class SyllabusController {
             @AuthenticationPrincipal Jwt jwt) {
         String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<List<SyllabusResponse>>builder()
-                .data(syllabusService.getSyllabusesByDepartment(userId, SyllabusStatus.PENDING_REVIEW.toString()))
+                .data(syllabusService.getSyllabusesByDepartment(userId, SyllabusStatus.IN_PROGRESS.toString()))
                 .message("Syllabuses retrieved successfully")
                 .build();
     }
