@@ -20,7 +20,7 @@ public interface CLOsMapper {
     @Mapping(target = "cloId", ignore = true)
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
-    @Mapping(source = "description", target = "cloName")
+//    @Mapping(source = "description", target = "cloName")
     CLOs toCloCreate(CLOsCreateRequest request);
 
     CLOsResponse toCloResponse(CLOs clo);

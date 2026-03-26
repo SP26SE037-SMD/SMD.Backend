@@ -151,7 +151,7 @@ public enum ErrorCode {
     SYLLABUS_NOT_FOUND(18001, "The syllabus does not exist on the system.", HttpStatus.NOT_FOUND),
     INVALID_SYLLABUS_STATUS(18002, "The syllabus status is invalid.", HttpStatus.BAD_REQUEST),
     SYLLABUS_NOT_EDITABLE(18003, "Syllabus can only be modified when in DRAFT or REVISION_REQUESTED status", HttpStatus.BAD_REQUEST),
-    SYLLABUS_NOT_CREATE(18004, "Major must be in INTERNAL_REVIEW or PUBLISHED status to create a Syllabus", HttpStatus.BAD_REQUEST),
+    SYLLABUS_NOT_CREATE(18004, "Subject must be in WAITING_SYLLABUS or COMPLETED status to create a Syllabus", HttpStatus.BAD_REQUEST),
 
     //CURRICULUM_GROUP_SUBJECT
     CURRICULUM_GROUP_SUBJECT_ALREADY_EXISTS(20001, "This subject is already added to this curriculum", HttpStatus.BAD_REQUEST),
@@ -220,13 +220,13 @@ public enum ErrorCode {
     ASSESSMENT_TYPE_NAME_REQUIRED(26020, "Assessment type name is required", HttpStatus.BAD_REQUEST),
     ASSESSMENT_TYPE_NAME_INVALID(26021, "Assessment type name must not exceed 50 characters", HttpStatus.BAD_REQUEST),
     ASSESSMENT_NOT_EDITABLE(26022, "Assessment can only be modified when in DRAFT or REVISION_REQUESTED status", HttpStatus.BAD_REQUEST),
-    ASSESSMENT_CANNOT_CREATE(26023, "Assessment can only be added when Syllabus is in UNDER_DEVELOPMENT or REVISION_REQUESTED status", HttpStatus.BAD_REQUEST),
+    ASSESSMENT_CANNOT_CREATE(26023, "Assessment can only be added when Syllabus is in IN_PROGRESS or REVISION_REQUESTED status", HttpStatus.BAD_REQUEST),
 
     //Material
     MATERIAL_NOT_FOUND(25001, "Material not found", HttpStatus.NOT_FOUND),
     INVALID_MATERIAL_STATUS(25002, "Invalid material status", HttpStatus.BAD_REQUEST),
     MATERIAL_NOT_EDITABLE(25003, "Material can only be modified when in DRAFT or REVISION_REQUESTED status", HttpStatus.BAD_REQUEST),
-    MATERIAL_CANNOT_CREATE(25004, "Materials can only be added when Syllabus is in UNDER_DEVELOPMENT or REVISION_REQUESTED status", HttpStatus.BAD_REQUEST),
+    MATERIAL_CANNOT_CREATE(25004, "Materials can only be added when Syllabus is in IN_PROGRESS or REVISION_REQUESTED status", HttpStatus.BAD_REQUEST),
 
     //Blocks
     BLOCK_NOT_FOUND(27001, "Block content could not be located", HttpStatus.NOT_FOUND),
@@ -246,7 +246,7 @@ public enum ErrorCode {
     SESSION_NOT_DRAFT(28010, "Session can only be overwritten when status is Draft", HttpStatus.BAD_REQUEST),
     SESSION_NUMBER_LIST_REQUIRED(28011, "Session number list is required", HttpStatus.BAD_REQUEST),
     SESSION_NOT_EDITABLE(28012, "Session can only be modified when in DRAFT or REVISION_REQUESTED status", HttpStatus.BAD_REQUEST),
-    SESSION_CANNOT_CREATE(28013, "Session can only be added when Syllabus is in UNDER_DEVELOPMENT or REVISION_REQUESTED status", HttpStatus.BAD_REQUEST),
+    SESSION_CANNOT_CREATE(28013, "Session can only be added when Syllabus is in IN_PROGRESS or REVISION_REQUESTED status", HttpStatus.BAD_REQUEST),
 
     // General
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),

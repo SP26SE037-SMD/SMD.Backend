@@ -16,7 +16,7 @@ public interface POsMapper {
     @Mapping(target = "poId", ignore = true)
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
-    @Mapping(source = "description", target = "description")
+//    @Mapping(source = "description", target = "description")
     PO toPoCreate(POsCreateRequest request);
 
     POsResponse toPoResponse(PO po);
