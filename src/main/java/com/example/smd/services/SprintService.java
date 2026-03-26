@@ -7,6 +7,7 @@ import com.example.smd.entities.Sprint;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.SprintMapper;
+import com.example.smd.repositories.AccountRepository;
 import com.example.smd.repositories.SprintRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -23,11 +24,16 @@ import java.util.UUID;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class SprintService {
     SprintRepository sprintRepository;
+    AccountRepository accountRepository;
     SprintMapper sprintMapper;
 
     @Transactional
     public SprintResponse create(SprintRequest request) {
+        var account = accountRepository.findById(request.getAccountId())
+                .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND));
+
         Sprint sprint = sprintMapper.toSprint(request);
+        sprint.setAccount(account);
 
         if (sprint.getStatus() == null || sprint.getStatus().isEmpty()) {
             sprint.setStatus("Planning");
@@ -47,6 +53,16 @@ public class SprintService {
             pageData = sprintRepository.findAll(pageable);
         }
 
+        return pageData.map(sprintMapper::toSprintResponse);
+    }
+
+    public Page<SprintResponse> getSprintsByAccountId(UUID accountId, Pageable pageable) {
+        // Verify account exists
+        if (!accountRepository.existsById(accountId)) {
+            throw new AppException(ErrorCode.ACCOUNT_NOT_FOUND);
+        }
+
+        Page<Sprint> pageData = sprintRepository.findByAccount_AccountId(accountId, pageable);
         return pageData.map(sprintMapper::toSprintResponse);
     }
 

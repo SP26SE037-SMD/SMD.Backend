@@ -57,6 +57,9 @@ public class Account {
     @OneToMany(mappedBy = "account", fetch = FetchType.LAZY)
     List<FeedbackSubmissions> feedbackSubmissions;
 
+    @OneToMany(mappedBy = "account", fetch = FetchType.LAZY)
+    List<Sprint> sprints;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = Instant.now();
