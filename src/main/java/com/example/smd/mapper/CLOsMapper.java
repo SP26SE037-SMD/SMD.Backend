@@ -12,7 +12,6 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface CLOsMapper {
     @Mapping(target = "subject", ignore = true) // Chúng ta sẽ set Major thủ công trong Service bằng ID
-    @Mapping(target = "cloName", source = "description")
     @Mapping(source = "description", target = "description")
     CLOs toClo(CLOsRequest clOsRequest);
 
@@ -20,7 +19,6 @@ public interface CLOsMapper {
     @Mapping(target = "cloId", ignore = true)
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
-//    @Mapping(source = "description", target = "cloName")
     CLOs toCloCreate(CLOsCreateRequest request);
 
     CLOsResponse toCloResponse(CLOs clo);
