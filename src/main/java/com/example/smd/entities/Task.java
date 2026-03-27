@@ -6,6 +6,7 @@ import lombok.experimental.FieldDefaults;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 @Getter
@@ -61,6 +62,9 @@ public class Task {
 
     @Column(name = "task_type", length = 50)
     String type;
+
+    @OneToMany(mappedBy = "task", fetch = FetchType.LAZY)
+    List<ReviewTask> reviewTaskList;
 
     @PrePersist
     protected void onCreate() {

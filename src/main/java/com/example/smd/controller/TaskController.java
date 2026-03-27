@@ -5,6 +5,7 @@ import com.example.smd.dto.request.task.TaskRequest;
 import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.dto.response.task.TaskCurriculumResponse;
+import com.example.smd.dto.response.task.TaskListResponse;
 import com.example.smd.dto.response.task.TaskResponse;
 import com.example.smd.services.TaskService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -61,8 +62,9 @@ public class TaskController {
     }
 
     @GetMapping
-    @Operation(summary = "Search and filter tasks with pagination")
-    public ResponseObject<PagedResponse<TaskResponse>> getAll(
+    @Operation(summary = "Search by TaskName and filter tasks with " +
+            "pagination")
+                public ResponseObject<PagedResponse<TaskListResponse>> getAll(
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) UUID sprintId,
@@ -75,7 +77,7 @@ public class TaskController {
         Sort sort = direction.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
         Pageable pageable = PageRequest.of(page, size, sort);
 
-        return ResponseObject.<PagedResponse<TaskResponse>>builder()
+        return ResponseObject.<PagedResponse<TaskListResponse>>builder()
                 .data(PagedResponse.of(taskService.getAll(search, status, sprintId, accountId, pageable)))
                 .message("Tasks retrieved successfully")
                 .build();

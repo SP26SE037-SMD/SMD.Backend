@@ -21,10 +21,10 @@ public class ReviewTask {
     @Column(name = "review_id")
     private UUID reviewId;
 
-    @Column(name = "title_task", length = 50)
+    @Column(name = "tiltle_task", length = 50)
     private String titleTask;
 
-    @Column(name = "content", columnDefinition = "text")
+    @Column(name = "contents", columnDefinition = "text")
     private String content;
 
     @Column(name = "review_date")
