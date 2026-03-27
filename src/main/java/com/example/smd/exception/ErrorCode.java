@@ -270,6 +270,12 @@ public enum ErrorCode {
     FEEDBACK_OPTION_IN_USE(29018, "Cannot delete option because it has feedback answers", HttpStatus.CONFLICT),
     FEEDBACK_CURRICULUM_ID_REQUIRED(29019, "Curriculum ID is required", HttpStatus.BAD_REQUEST),
 
+    // REVIEW TASK
+    REVIEW_TASK_NOT_FOUND(30001, "Review task not found", HttpStatus.NOT_FOUND),
+    REVIEW_TASK_REQUEST_REQUIRED(30002, "Review task request is required", HttpStatus.BAD_REQUEST),
+    REVIEW_TASK_TASK_ID_REQUIRED(30003, "Task ID is required", HttpStatus.BAD_REQUEST),
+    REVIEW_TASK_STATUS_REQUIRED(30004, "Review task status is required", HttpStatus.BAD_REQUEST),
+
     // General
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),
     INVALID_KEY(1000, "Invalid message key", HttpStatus.BAD_REQUEST),
