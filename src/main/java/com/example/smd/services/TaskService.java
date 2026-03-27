@@ -4,6 +4,7 @@ import com.example.smd.dto.request.task.BatchTaskRequest;
 import com.example.smd.dto.request.task.TaskItemRequest;
 import com.example.smd.dto.request.task.TaskRequest;
 import com.example.smd.dto.response.task.TaskCurriculumResponse;
+import com.example.smd.dto.response.task.TaskListResponse;
 import com.example.smd.dto.response.task.TaskResponse;
 import com.example.smd.entities.Account;
 import com.example.smd.entities.Curriculum;
@@ -150,7 +151,7 @@ public class TaskService {
         return savedTasks.stream().map(taskMapper::toTaskResponse).toList();
     }
 
-    public Page<TaskResponse> getAll(String search, String status, UUID sprintId, UUID accountId, Pageable pageable) {
+    public Page<TaskListResponse> getAll(String search, String status, UUID sprintId, UUID accountId, Pageable pageable) {
         Page<Task> pageData;
         if (search != null && !search.isEmpty()) {
             pageData = taskRepository.findByTaskNameContainingIgnoreCase(search, pageable);
@@ -164,7 +165,7 @@ public class TaskService {
             pageData = taskRepository.findAll(pageable);
         }
 
-        return pageData.map(taskMapper::toTaskResponse);
+        return pageData.map(taskMapper::toTaskListResponse);
     }
 
     public TaskResponse getDetail(UUID id) {

@@ -24,7 +24,7 @@ public class ReviewTask {
     @Column(name = "title_task", length = 50)
     private String titleTask;
 
-    @Column(name = "content", columnDefinition = "text")
+    @Column(name = "contents", columnDefinition = "text")
     private String content;
 
     @Column(name = "review_date")
