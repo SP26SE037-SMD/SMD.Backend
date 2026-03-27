@@ -23,9 +23,6 @@ public class PLOs {
     @Column(name = "plo_code", nullable = false, length = 20)
     String ploCode;
 
-    @Column(name = "plo_name", nullable = false) // Đảm bảo nullable là true
-    String ploName; // Theo hình là Varchar(20) hơi ngắn, có thể nên tăng lên
-
     @Column(columnDefinition = "TEXT")
     String description;
 

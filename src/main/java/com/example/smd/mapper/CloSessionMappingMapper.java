@@ -23,7 +23,6 @@ public class CloSessionMappingMapper {
                 .id(mapping.getId() != null ? mapping.getId().toString() : null)
                 .cloId(clo != null && clo.getCloId() != null ? clo.getCloId().toString() : null)
                 .cloCode(clo != null ? clo.getCloCode() : null)
-                .cloName(clo != null ? clo.getCloName() : null)
                 .sessionId(session != null && session.getSessionId() != null
                         ? session.getSessionId().toString()
                         : null)
