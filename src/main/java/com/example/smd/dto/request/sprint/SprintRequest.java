@@ -20,6 +20,7 @@ public class SprintRequest {
     String sprintName;
 
     Instant startDate;
+
     Instant endDate;
 
     @Size(max = 20, message = "STATUS_TOO_LONG")
@@ -27,4 +28,7 @@ public class SprintRequest {
 
     @NotNull(message = "ACCOUNT_ID_REQUIRED")
     UUID accountId;
+
+    @NotNull(message = "CURRICULUM_ID_REQUIRED")
+    UUID curriculumId;
 }

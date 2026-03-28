@@ -3,6 +3,7 @@ package com.example.smd.services;
 import com.example.smd.dto.request.sprint.SprintRequest;
 import com.example.smd.dto.response.sprint.SprintResponse;
 import com.example.smd.entities.Account;
+import com.example.smd.entities.Curriculum;
 import com.example.smd.enums.SprintStatus;
 import com.example.smd.entities.Sprint;
 import com.example.smd.enums.SyllabusStatus;
@@ -11,6 +12,7 @@ import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.AccountMapper;
 import com.example.smd.mapper.SprintMapper;
 import com.example.smd.repositories.AccountRepository;
+import com.example.smd.repositories.CurriculumRepository;
 import com.example.smd.repositories.SprintRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +31,7 @@ public class SprintService {
     AccountService accountService;
     SprintRepository sprintRepository;
     AccountRepository accountRepository;
+    CurriculumRepository curriculumRepository;
     SprintMapper sprintMapper;
     private final AccountMapper accountMapper;
 
@@ -45,6 +48,15 @@ public class SprintService {
 
         Sprint sprint = sprintMapper.toSprint(request);
         sprint.setAccount(convert);
+// Map Curriculum (mandatory)
+        if (request.getCurriculumId() != null) {
+            Curriculum curriculum = curriculumRepository.findById(request.getCurriculumId())
+                    .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));
+            sprint.setCurriculum(curriculum);
+        } else {
+            throw new AppException(ErrorCode.CURRICULUM_ID_REQUIRED);
+        }
+
 
         if (sprint.getStatus() == null || sprint.getStatus().isEmpty()) {
             sprint.setStatus("Planning");

@@ -1,6 +1,5 @@
 package com.example.smd.repositories;
 
-import com.example.smd.entities.Curriculum;
 import com.example.smd.entities.Task;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -16,25 +15,24 @@ import java.util.UUID;
 
 @Repository
 public interface TaskRepository extends JpaRepository<Task, UUID> {
-    @EntityGraph(attributePaths = {"sprint", "account", "syllabus", "curriculum"})
+    @EntityGraph(attributePaths = {"sprint", "account", "syllabus", "subject"})
     Page<Task> findByTaskNameContainingIgnoreCase(String taskName, Pageable pageable);
 
-    @EntityGraph(attributePaths = {"sprint", "account", "syllabus", "curriculum"})
+    @EntityGraph(attributePaths = {"sprint", "account", "syllabus", "subject"})
     Page<Task> findByStatusIgnoreCase(String status, Pageable pageable);
 
-    @EntityGraph(attributePaths = {"sprint", "account", "syllabus", "curriculum"})
+    @EntityGraph(attributePaths = {"sprint", "account", "syllabus", "subject"})
     Page<Task> findBySprint_SprintId(UUID sprintId, Pageable pageable);
 
-    @EntityGraph(attributePaths = {"sprint", "account", "syllabus", "curriculum"})
+    @EntityGraph(attributePaths = {"sprint", "account", "syllabus", "subject"})
     Page<Task> findByAccount_AccountId(UUID accountId, Pageable pageable);
 
-    @Override
-    @EntityGraph(attributePaths = {"sprint", "account", "syllabus", "curriculum"})
-    Page<Task> findAll(Pageable pageable);
+    @EntityGraph(attributePaths = {"sprint", "account", "syllabus", "subject"})
+    Page<Task> findBySubject_SubjectIdIn(List<UUID> subjectIds, Pageable pageable);
 
-    @Query("SELECT DISTINCT t.curriculum.curriculumId FROM Task t " +
-           "WHERE t.account.accountId = :accountId AND t.curriculum IS NOT NULL")
-    Set<UUID> findDistinctCurriculumIdsByAccountId(@Param("accountId") UUID accountId);
+    @Override
+    @EntityGraph(attributePaths = {"sprint", "account", "syllabus", "subject"})
+    Page<Task> findAll(Pageable pageable);
 
         @Query("SELECT DISTINCT t.account.accountId FROM Task t " +
             "WHERE t.syllabus.syllabusId = :syllabusId " +
@@ -42,14 +40,5 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
         Set<UUID> findDistinctAccountIdsBySyllabusIdAndDepartmentId(
             @Param("syllabusId") UUID syllabusId,
             @Param("departmentId") UUID departmentId
-        );
-
-        @Query("SELECT DISTINCT c FROM Task t " +
-            "JOIN t.curriculum c " +
-            "WHERE t.account.accountId = :accountId " +
-            "AND (:status IS NULL OR :status = '' OR LOWER(c.status) = LOWER(:status))")
-        List<Curriculum> findDistinctCurriculumsByAccountIdAndStatus(
-             @Param("accountId") UUID accountId,
-             @Param("status") String status
         );
 }

@@ -39,4 +39,8 @@ public class Sprint {
     @JoinColumn(name = "account_id", nullable = false)
     Account account;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "curriculum_id")
+    Curriculum curriculum;
+
 }

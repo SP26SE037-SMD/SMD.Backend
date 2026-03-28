@@ -1,25 +1,23 @@
 package com.example.smd.services;
 
 import com.example.smd.dto.request.task.BatchTaskRequest;
-import com.example.smd.dto.request.task.TaskItemRequest;
-import com.example.smd.dto.request.task.TaskRequest;
-import com.example.smd.dto.response.task.TaskCurriculumResponse;
+import com.example.smd.dto.request.task.BatchTaskItemCreateRequest;
+import com.example.smd.dto.request.task.TaskCreateRequest;
+import com.example.smd.dto.request.task.TaskUpdateRequest;
 import com.example.smd.dto.response.task.TaskListResponse;
 import com.example.smd.dto.response.task.TaskResponse;
 import com.example.smd.entities.Account;
-import com.example.smd.entities.Curriculum;
 import com.example.smd.entities.Sprint;
+import com.example.smd.entities.Subject;
 import com.example.smd.entities.Syllabus;
 import com.example.smd.entities.Task;
-import com.example.smd.enums.CurriculumStatus;
-import com.example.smd.enums.SyllabusStatus;
 import com.example.smd.enums.TaskStatus;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.TaskMapper;
 import com.example.smd.repositories.AccountRepository;
-import com.example.smd.repositories.CurriculumRepository;
 import com.example.smd.repositories.SprintRepository;
+import com.example.smd.repositories.SubjectRepository;
 import com.example.smd.repositories.SyllabusRepository;
 import com.example.smd.repositories.TaskRepository;
 import lombok.AccessLevel;
@@ -33,7 +31,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Set;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -45,12 +42,12 @@ public class TaskService {
     SprintRepository sprintRepository;
     AccountRepository accountRepository;
     SyllabusRepository syllabusRepository;
-    CurriculumRepository curriculumRepository;
+    SubjectRepository subjectRepository;
     AccountService accountService;
     TaskMapper taskMapper;
 
     @Transactional
-    public TaskResponse create(TaskRequest request, String check) {
+    public TaskResponse create(TaskCreateRequest request, String check, UUID accountId) {
         var checkRole = accountService.getAccountById(check);
         String roleName = checkRole.getRole().getRoleName();
         if (!("HOPDC".equals(roleName) || "HOCFDC".equals(roleName))) {
@@ -59,41 +56,25 @@ public class TaskService {
 
         Task task = taskMapper.toTask(request);
 
-        // sprintId is mandatory for all users
-        if(request.getSprintId() != null) {
-            Sprint sprint = sprintRepository.findById(request.getSprintId())
-                    .orElseThrow(() -> new AppException(ErrorCode.SPRINT_NOT_FOUND));
-            task.setSprint(sprint);
+        if (request.getSprintId() == null) {
+            throw new AppException(ErrorCode.SPRINT_ID_REQUIRED);
         }
+        Sprint sprint = sprintRepository.findById(request.getSprintId())
+            .orElseThrow(() -> new AppException(ErrorCode.SPRINT_NOT_FOUND));
+        task.setSprint(sprint);
 
-        // accountId is mandatory
-        Account account = accountRepository.findById(request.getAccountId())
+        if (accountId == null) {
+            throw new AppException(ErrorCode.ACCOUNT_ID_REQUIRED);
+        }
+        Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND));
         task.setAccount(account);
 
-        // Map Syllabus if provided
-        if (request.getSyllabusId() != null) {
-            Syllabus syllabus = syllabusRepository.findById(request.getSyllabusId())
-                    .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
-            if (!(syllabus.getStatus().equals(SyllabusStatus.IN_PROGRESS.toString()) || syllabus.getStatus().equals(SyllabusStatus.PENDING_REVIEW.toString()))) {
-                throw new AppException(ErrorCode.SYLLABUS_NOT_READY_FOR_TASK);
-            }
-
-            task.setSyllabus(syllabus);
-        }
-
-        // Map Curriculum if provided
-        if (request.getCurriculumId() != null) {
-            Curriculum curriculum = curriculumRepository.findById(request.getCurriculumId())
-                    .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));
-            if (!curriculum.getStatus().equals(CurriculumStatus.STRUCTURE_APPROVED.toString())) {
-                throw new AppException(ErrorCode.CURRICULUM_NOT_READY_FOR_TASK);
-            }
-            task.setCurriculum(curriculum);
-        }
-
-        if (request.getCreatedAt() != null) {
-            task.setCreatedAt(request.getCreatedAt());
+        // Map Subject if provided
+        if (request.getSubjectId() != null) {
+            Subject subject = subjectRepository.findById(request.getSubjectId())
+                    .orElseThrow(() -> new AppException(ErrorCode.SUBJECT_NOT_FOUND));
+            task.setSubject(subject);
         }
 
         task.setStatus(TaskStatus.TO_DO.toString());
@@ -103,10 +84,10 @@ public class TaskService {
     }
 
     @Transactional
-    public List<TaskResponse> createBatch(UUID sprintId, BatchTaskRequest request, String check) {
+    public List<TaskResponse> createBatch(UUID sprintId, BatchTaskRequest request, String check, UUID departmentId) {
         var checkRole = accountService.getAccountById(check);
         String roleName = checkRole.getRole().getRoleName();
-        if (!("HOPDC".equals(roleName) || "HOCFDC".equals(roleName))) {
+        if (!("HOCFDC".equals(roleName))) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
@@ -116,42 +97,41 @@ public class TaskService {
 
         List<Task> tasksToSave = new ArrayList<>();
 
-        for (TaskItemRequest item : request.getTasks()) {
+        for (BatchTaskItemCreateRequest item : request.getTasks()) {
             Task task = taskMapper.toTask(item);
             task.setSprint(sprint);
 
-                // accountId is mandatory
-                Account account = accountRepository.findById(item.getAccountId())
-                    .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND));
-                task.setAccount(account);
-
-            // Map Syllabus if provided
-            if (item.getSyllabusId() != null) {
-                Syllabus syllabus = syllabusRepository.findById(item.getSyllabusId())
-                        .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
-                task.setSyllabus(syllabus);
+            if (item.getSubjectId() != null) {
+                Subject subject = subjectRepository.findById(item.getSubjectId())
+                        .orElseThrow(() -> new AppException(ErrorCode.SUBJECT_NOT_FOUND));
+                task.setSubject(subject);
             }
-
-            if (item.getCurriculumId() != null) {
-                Curriculum curriculum = curriculumRepository.findById(item.getCurriculumId())
-                        .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));
-                task.setCurriculum(curriculum);
-            }
-
-            if (item.getCreatedAt() != null) {
-                task.setCreatedAt(item.getCreatedAt());
-            }
-
             task.setStatus(TaskStatus.TO_DO.toString());
 
             tasksToSave.add(task);
         }
 
         List<Task> savedTasks = taskRepository.saveAll(tasksToSave);
+
+        // Send notification to HoPDC accounts in departmentId if provided
+        if (departmentId != null) {
+            List<Account> hopDCAccounts = accountRepository.findByDepartmentAndRoleName(departmentId, "HOPDC");
+            if (!hopDCAccounts.isEmpty()) {
+                // Collect task names for notification
+                List<String> taskNames = savedTasks.stream().map(Task::getTaskName).toList();
+                // TODO: Implement actual notification logic
+                // This could include: sending emails, creating in-app notifications, sending messages, etc.
+                // Example: notificationService.notifyHoPDC(hopDCAccounts, taskNames, sprint.getSprintName());
+                // For now, log the notification info
+                System.out.println("Notification: Tasks " + taskNames + " created in sprint " + sprint.getSprintName() +
+                                   " for HoPDC accounts: " + hopDCAccounts.stream().map(Account::getEmail).toList());
+            }
+        }
+
         return savedTasks.stream().map(taskMapper::toTaskResponse).toList();
     }
 
-    public Page<TaskListResponse> getAll(String search, String status, UUID sprintId, UUID accountId, Pageable pageable) {
+    public Page<TaskListResponse> getAll(String search, String status, UUID sprintId, UUID accountId, UUID departmentId, Pageable pageable) {
         Page<Task> pageData;
         if (search != null && !search.isEmpty()) {
             pageData = taskRepository.findByTaskNameContainingIgnoreCase(search, pageable);
@@ -161,6 +141,17 @@ public class TaskService {
             pageData = taskRepository.findBySprint_SprintId(sprintId, pageable);
         } else if (accountId != null) {
             pageData = taskRepository.findByAccount_AccountId(accountId, pageable);
+        } else if (departmentId != null) {
+            List<UUID> subjectIds = subjectRepository.findAllByDepartment_DepartmentId(departmentId)
+                    .stream()
+                    .map(Subject::getSubjectId)
+                    .toList();
+
+            if (subjectIds.isEmpty()) {
+                pageData = Page.empty(pageable);
+            } else {
+                pageData = taskRepository.findBySubject_SubjectIdIn(subjectIds, pageable);
+            }
         } else {
             pageData = taskRepository.findAll(pageable);
         }
@@ -175,7 +166,7 @@ public class TaskService {
     }
 
     @Transactional
-    public TaskResponse update(UUID id, TaskRequest request, String accountId) {
+    public TaskResponse update(UUID id, TaskUpdateRequest request, String accountId) {
         var checkRole = accountService.getAccountById(accountId);
         String roleName = checkRole.getRole().getRoleName();
         if (!("HOPDC".equals(roleName) || "HOCFDC".equals(roleName))) {
@@ -191,14 +182,9 @@ public class TaskService {
 
         taskMapper.updateTask(task, request);
 
-        // Update Sprint (mandatory for all users)
-        Sprint sprint = sprintRepository.findById(request.getSprintId())
-                .orElseThrow(() -> new AppException(ErrorCode.SPRINT_NOT_FOUND));
-        task.setSprint(sprint);
-
         // Update Account (mandatory)
         if (request.getAccountId() == null) {
-            throw new AppException(ErrorCode.ACCOUNT_NOT_FOUND);
+            throw new AppException(ErrorCode.ACCOUNT_ID_REQUIRED);
         }
         if (task.getAccount() == null || !task.getAccount().getAccountId().equals(request.getAccountId())) {
             Account account = accountRepository.findById(request.getAccountId())
@@ -216,24 +202,6 @@ public class TaskService {
         } else {
             task.setSyllabus(null);
         }
-
-        // Update Curriculum if changed
-        if (request.getCurriculumId() != null) {
-            if (task.getCurriculum() == null ||
-                !task.getCurriculum().getCurriculumId().equals(request.getCurriculumId())) {
-                Curriculum curriculum = curriculumRepository.findById(request.getCurriculumId())
-                        .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));
-                task.setCurriculum(curriculum);
-            }
-        } else {
-            task.setCurriculum(null);
-        }
-
-        if (request.getCreatedAt() != null) {
-            task.setCreatedAt(request.getCreatedAt());
-        }
-
-        applyCompletedAtByStatus(task);
 
         task = taskRepository.save(task);
         return taskMapper.toTaskResponse(task);
@@ -266,31 +234,6 @@ public class TaskService {
         applyCompletedAtByStatus(task);
         task = taskRepository.save(task);
         return taskMapper.toTaskResponse(task);
-    }
-
-    @Transactional(readOnly = true)
-    public List<TaskCurriculumResponse> getCurriculumIdsByAccountId(UUID accountId, String curriculumStatus) {
-        if (!accountRepository.existsById(accountId)) {
-            throw new AppException(ErrorCode.ACCOUNT_NOT_FOUND);
-        }
-
-        String normalizedStatus = curriculumStatus == null ? null : curriculumStatus.trim();
-        if (normalizedStatus != null && normalizedStatus.isEmpty()) {
-            normalizedStatus = null;
-        }
-
-        List<Curriculum> curriculums =
-                taskRepository.findDistinctCurriculumsByAccountIdAndStatus(accountId, normalizedStatus);
-
-        return curriculums.stream()
-                .map(curriculum -> TaskCurriculumResponse.builder()
-                        .curriculumId(curriculum.getCurriculumId())
-                        .curriculumCode(curriculum.getCurriculumCode())
-                        .curriculumName(curriculum.getCurriculumName())
-                        .startYear(curriculum.getStartYear())
-                        .status(curriculum.getStatus())
-                        .build())
-                .toList();
     }
 
     @Transactional(readOnly = true)

@@ -35,10 +35,6 @@ public class Task {
     @JoinColumn(name = "syllabus_id")
     Syllabus syllabus;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "curriculum_id")
-    Curriculum curriculum;
-
     @Column(name = "task_name", nullable = false, length = 150)
     String taskName;
 
@@ -65,6 +61,10 @@ public class Task {
 
     @OneToMany(mappedBy = "task", fetch = FetchType.LAZY)
     List<ReviewTask> reviewTaskList;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "subject_id")
+    Subject subject;
 
     @PrePersist
     protected void onCreate() {

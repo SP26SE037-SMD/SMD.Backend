@@ -59,6 +59,9 @@ public interface AccountRepository extends JpaRepository<Account, java.util.UUID
     @Query("SELECT a FROM Account a JOIN FETCH a.role")
     List<Account> findAllWithRole();
 
+    @Query("SELECT a FROM Account a LEFT JOIN FETCH a.role WHERE a.department.departmentId = :departmentId AND a.role.roleName = :roleName")
+    List<Account> findByDepartmentAndRoleName(@Param("departmentId") UUID departmentId, @Param("roleName") String roleName);
+
     @Query("""
     SELECT new com.example.smd.dto.excel.AccountExportDTO(
         a.email,

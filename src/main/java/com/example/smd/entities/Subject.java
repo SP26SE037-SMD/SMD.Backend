@@ -81,13 +81,18 @@ public class Subject {
     List<Syllabus> syllabuses;
 
     @OneToMany(mappedBy = "subject", fetch = FetchType.LAZY)
+    List<Task> tasks;
+
+    @OneToMany(mappedBy = "subject", fetch = FetchType.LAZY)
     List<Subject_Prerequisite> prerequisites;
+
+    @OneToMany(mappedBy = "subject", fetch = FetchType.LAZY)
+    private List<Curriculum_Group_Subject> curriculumGroupSubjects;
 
     @PrePersist
     protected void onCreate() {
         this.createdAt = Instant.now();
     }
 
-    @OneToMany(mappedBy = "subject", fetch = FetchType.LAZY)
-    private List<Curriculum_Group_Subject> curriculumGroupSubjects;
+
 }

@@ -1,10 +1,10 @@
 package com.example.smd.controller;
 
 import com.example.smd.dto.request.task.BatchTaskRequest;
-import com.example.smd.dto.request.task.TaskRequest;
+import com.example.smd.dto.request.task.TaskCreateRequest;
+import com.example.smd.dto.request.task.TaskUpdateRequest;
 import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.ResponseObject;
-import com.example.smd.dto.response.task.TaskCurriculumResponse;
 import com.example.smd.dto.response.task.TaskListResponse;
 import com.example.smd.dto.response.task.TaskResponse;
 import com.example.smd.services.TaskService;
@@ -37,26 +37,31 @@ public class TaskController {
     TaskService taskService;
 
     @PostMapping
-    @Operation(summary = "Create a new task", description = "accountId và taskName là bắt buộc. sprintId bắt buộc cho tất cả người dùng.")
-    public ResponseObject<TaskResponse> create(@RequestBody @Valid TaskRequest request, @AuthenticationPrincipal Jwt jwt
+    @Operation(summary = "Create a new task", description = "taskName là bắt buộc. sprintId bắt buộc cho tất cả người dùng.")
+    public ResponseObject<TaskResponse> create(
+            @RequestBody @Valid TaskCreateRequest request,
+            @Parameter(description = "Account ID dùng để gán task và gửi thông báo cho account")
+            @RequestParam UUID accountId,
+            @AuthenticationPrincipal Jwt jwt
     ) {
         String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<TaskResponse>builder()
-                .data(taskService.create(request, userId))
+                .data(taskService.create(request, userId, accountId))
                 .message("Task created successfully")
                 .build();
     }
 
-    @PostMapping("/batch/{sprintId}")
+    @PostMapping("/batch/{sprintId}/{departmentId}")
     @Operation(summary = "Create multiple tasks in a sprint")
     public ResponseObject<List<TaskResponse>> createBatch(
             @PathVariable UUID sprintId,
+            @PathVariable UUID departmentId,
             @RequestBody @Valid BatchTaskRequest request,
             @AuthenticationPrincipal Jwt jwt
     ) {
         String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<List<TaskResponse>>builder()
-                .data(taskService.createBatch(sprintId, request, userId))
+                .data(taskService.createBatch(sprintId, request, userId, departmentId))
                 .message("Tasks created successfully")
                 .build();
     }
@@ -69,6 +74,7 @@ public class TaskController {
             @RequestParam(required = false) String status,
             @RequestParam(required = false) UUID sprintId,
             @RequestParam(required = false) UUID accountId,
+                            @RequestParam(required = false) UUID departmentId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "deadline") String sortBy,
@@ -78,7 +84,7 @@ public class TaskController {
         Pageable pageable = PageRequest.of(page, size, sort);
 
         return ResponseObject.<PagedResponse<TaskListResponse>>builder()
-                .data(PagedResponse.of(taskService.getAll(search, status, sprintId, accountId, pageable)))
+                .data(PagedResponse.of(taskService.getAll(search, status, sprintId, accountId, departmentId, pageable)))
                 .message("Tasks retrieved successfully")
                 .build();
     }
@@ -96,7 +102,7 @@ public class TaskController {
     @Operation(summary = "Update task information")
     public ResponseObject<TaskResponse> update(
             @PathVariable UUID id,
-            @RequestBody @Valid TaskRequest request,
+            @RequestBody @Valid TaskUpdateRequest request,
             @AuthenticationPrincipal Jwt jwt
     ) {
         String userId = jwt.getClaimAsString("accountId");
@@ -146,21 +152,5 @@ public class TaskController {
                                 .data(taskService.getNormalizedStatusOptions())
                                 .message("Task status options retrieved successfully")
                                 .build();
-    }
-
-    @GetMapping("/curriculums")
-    @Operation(
-            summary = "Get curriculums by accountId",
-            description = "Trả về danh sách curriculum duy nhất từ task theo accountId, có thể lọc thêm theo curriculum status"
-    )
-    public ResponseObject<List<TaskCurriculumResponse>> getCurriculumIdsByAccountId(
-            @RequestParam UUID accountId,
-            @Parameter(description = "Curriculum status (optional)")
-            @RequestParam(name = "status", required = false) String curriculumStatus
-    ) {
-        return ResponseObject.<List<TaskCurriculumResponse>>builder()
-                .data(taskService.getCurriculumIdsByAccountId(accountId, curriculumStatus))
-                .message("Curriculums retrieved successfully")
-                .build();
     }
 }

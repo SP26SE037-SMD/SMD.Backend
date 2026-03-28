@@ -1,6 +1,6 @@
 package com.example.smd.mapper;
 
-import com.example.smd.dto.request.SessionRequest;
+import com.example.smd.dto.request.session.SessionRequest;
 import com.example.smd.dto.response.SessionResponse;
 import com.example.smd.entities.Session;
 import org.springframework.stereotype.Component;
