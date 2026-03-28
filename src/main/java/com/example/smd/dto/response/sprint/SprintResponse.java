@@ -23,4 +23,6 @@ public class SprintResponse {
     Instant endDate;
 
     String status;
+    UUID accountId;
+    UUID curriculumId;
 }

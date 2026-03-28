@@ -21,7 +21,7 @@ public class TaskListResponse {
     UUID sprintId;
     TaskAccountResponse account;
     TaskSyllabusResponse syllabus;
-    UUID curriculumId;
+    UUID subjectId;
     String taskName;
     String description;
     String status;

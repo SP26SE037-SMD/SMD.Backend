@@ -1,4 +1,4 @@
-package com.example.smd.dto.request;
+package com.example.smd.dto.request.account;
 
 import jakarta.validation.constraints.Pattern;
 import lombok.*;

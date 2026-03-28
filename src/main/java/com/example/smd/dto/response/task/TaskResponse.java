@@ -17,7 +17,7 @@ public class TaskResponse {
     UUID sprintId;
     UUID accountId;
     UUID syllabusId;
-    UUID curriculumId;
+    UUID subjectId;
     String taskName;
     String description;
     String status;

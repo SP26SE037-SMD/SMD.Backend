@@ -1,8 +1,8 @@
 package com.example.smd.controller;
 
-import com.example.smd.dto.request.SessionRequest;
-import com.example.smd.dto.request.SessionItemRequest;
-import com.example.smd.dto.request.SessionNumberListRequest;
+import com.example.smd.dto.request.session.SessionRequest;
+import com.example.smd.dto.request.session.SessionItemRequest;
+import com.example.smd.dto.request.session.SessionNumberListRequest;
 import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.dto.response.SessionResponse;

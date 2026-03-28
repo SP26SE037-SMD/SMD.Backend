@@ -1,4 +1,4 @@
-package com.example.smd.dto.request;
+package com.example.smd.dto.request.session;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;

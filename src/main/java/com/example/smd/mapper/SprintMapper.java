@@ -11,11 +11,17 @@ import org.mapstruct.MappingTarget;
 public interface SprintMapper {
     @Mapping(target = "sprintId", ignore = true)
     @Mapping(target = "tasks", ignore = true)
+    @Mapping(target = "account", ignore = true)
+    @Mapping(target = "curriculum", ignore = true)
     Sprint toSprint(SprintRequest request);
 
+    @Mapping(target = "accountId", source = "account.accountId")
+    @Mapping(target = "curriculumId", source = "curriculum.curriculumId")
     SprintResponse toSprintResponse(Sprint sprint);
 
     @Mapping(target = "sprintId", ignore = true)
     @Mapping(target = "tasks", ignore = true)
+    @Mapping(target = "account", ignore = true)
+    @Mapping(target = "curriculum", ignore = true)
     void updateSprint(@MappingTarget Sprint sprint, SprintRequest request);
 }
