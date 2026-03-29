@@ -38,10 +38,10 @@ public class MaterialService {
     public MaterialResponse create(MaterialRequest request, String accountId) {
 
         var account = accountService.getAccountById(accountId);
-        String roleName = account.getRole().getRoleName();
-        if (!(RoleName.COLLABORATOR.toString().equals(roleName) || RoleName.PDCM.toString().equals(roleName))) {
-            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
-        }
+//        String roleName = account.getRole().getRoleName();
+//        if (!(RoleName.COLLABORATOR.toString().equals(roleName) || RoleName.PDCM.toString().equals(roleName))) {
+//            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+//        }
 
         Syllabus syllabus = syllabusRepository.findById(request.getSyllabusId())
                 .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
@@ -92,6 +92,11 @@ public class MaterialService {
             // Ném ra lỗi của hệ thống nếu trạng thái không tồn tại
             throw new AppException(ErrorCode.INVALID_MATERIAL_STATUS);
         }
+
+        if (SyllabusStatus.ARCHIVED.toString().equals(material.getStatus())) {
+            throw new AppException(ErrorCode.SYLLABUS_NOT_EDITABLE); // Không cho sửa đồ đã lưu trữ
+        }
+
         material.setStatus(status.toString());
         return materialMapper.toResponse(materialRepository.save(material));
     }
@@ -154,10 +159,10 @@ public class MaterialService {
         List<Material> materials;
         if (finalStatus != null) {
             // Tìm theo Syllabus ID và Status cụ thể
-            materials = materialRepository.findAllBySyllabus_SyllabusIdAndStatus(syllabusId, finalStatus);
+            materials = materialRepository.findLatestMaterialsBySyllabus(syllabusId, finalStatus);
         } else {
             // Nếu không có filter status (chỉ dành cho Role cao), lấy toàn bộ
-            materials = materialRepository.findAllBySyllabus_SyllabusId(syllabusId);
+            materials = materialRepository.findLatestMaterialsBySyllabusId(syllabusId);
         }
 
         return materials.stream()

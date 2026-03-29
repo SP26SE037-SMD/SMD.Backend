@@ -18,6 +18,8 @@ public class MaterialResponse {
     String materialType;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+7")
     Instant uploadedAt;
+    Integer id;
+    Integer version;
     String status;
     UUID syllabusId;
 }
