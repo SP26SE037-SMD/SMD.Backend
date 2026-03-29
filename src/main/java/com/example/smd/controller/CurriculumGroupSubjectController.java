@@ -6,6 +6,7 @@ import com.example.smd.dto.response.CurriculumSemesterMappingsResponse;
 import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.dto.response.SubjectSimpleResponse;
+import com.example.smd.dto.response.curriculumgroupsubject.ImportCurriculumGroupSubjectResponse;
 import com.example.smd.services.CurriculumGroupSubjectService;
 import com.example.smd.dto.request.BulkSemesterMappingRequest;
 import com.example.smd.dto.response.BulkSemesterMappingResponse;
@@ -15,13 +16,20 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayInputStream;
 import java.util.List;
+import java.util.UUID;
 
 @Tag(name = "Curriculum Group Subject", description = "Curriculum" +
         "-Group-Subject Mapping APIs - Quản lý môn học trong khung " +
@@ -82,6 +90,44 @@ public class CurriculumGroupSubjectController {
                         "Bulk mapping completed successfully" :
                         "Bulk mapping completed with validation issues")
                 .build();
+    }
+
+    @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAnyAuthority('CURRICULUM_UPDATE', 'SUBJECT_UPDATE', 'GROUP_UPDATE')")
+    @Operation(
+            summary = "Import curriculum-group-subject mappings from Excel",
+            description = "Import mappings from Excel columns: Group code, Subject Code, Semester. " +
+                    "Curriculum is provided by request parameter curriculumId."
+    )
+    public ResponseObject<ImportCurriculumGroupSubjectResponse> importCurriculumGroupSubjectMappings(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam UUID curriculumId
+    ) {
+        return ResponseObject.<ImportCurriculumGroupSubjectResponse>builder()
+                .status(1000)
+                .data(curriculumGroupSubjectService.importCurriculumGroupSubjectMappings(file, curriculumId))
+                .message("Import curriculum-group-subject mappings successfully")
+                .build();
+    }
+
+    @GetMapping("/export")
+    @Operation(
+            summary = "Export curriculum-group-subject mappings to Excel",
+            description = "Export file with first row Curriculum Code/Curriculum Name and second row headers: " +
+                    "Group subject, Subject Code, Subject Name, Semester"
+    )
+    public ResponseEntity<InputStreamResource> exportCurriculumGroupSubjectMappings(
+            @RequestParam UUID curriculumId
+    ) {
+        ByteArrayInputStream excel = curriculumGroupSubjectService.exportCurriculumGroupSubjectMappings(curriculumId);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Disposition", "attachment; filename=curriculum-group-subjects.xlsx");
+
+        return ResponseEntity.ok()
+                .headers(headers)
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .body(new InputStreamResource(excel));
     }
 
     /**
