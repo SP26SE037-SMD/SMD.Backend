@@ -26,11 +26,14 @@ public class Material {
     @Column(name = "material_type", length = 50)
     String materialType;
 
-//    @Column(length = 100)
-//    String url; // hoặc "edition" tùy context
-
     @Column(name = "upload_date")
     java.time.Instant uploadedAt;
+
+    @Column(name = "id")
+    Integer id;
+
+    @Column(name = "version")
+    Integer version;
 
     @Column(name = "status")
     String status;
@@ -41,4 +44,7 @@ public class Material {
 
     @OneToMany(mappedBy = "material", fetch = FetchType.LAZY)
     List<Blocks> blocks;
+
+    @OneToMany(mappedBy = "material", fetch = FetchType.LAZY)
+    List<Session> sessions;
 }
