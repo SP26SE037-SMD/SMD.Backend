@@ -37,16 +37,16 @@ public class TaskController {
     TaskService taskService;
 
     @PostMapping
-    @Operation(summary = "Create a new task", description = "taskName là bắt buộc. sprintId bắt buộc cho tất cả người dùng.")
+    @Operation(summary = "Create a new task",
+            description = "taskName là bắt buộc. sprintId bắt buộc cho tất cả người dùng.")
     public ResponseObject<TaskResponse> create(
             @RequestBody @Valid TaskCreateRequest request,
-            @Parameter(description = "Account ID dùng để gán task và gửi thông báo cho account")
-            @RequestParam UUID accountId,
+
             @AuthenticationPrincipal Jwt jwt
     ) {
         String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<TaskResponse>builder()
-                .data(taskService.create(request, userId, accountId))
+                .data(taskService.create(request, userId))
                 .message("Task created successfully")
                 .build();
     }
@@ -68,13 +68,16 @@ public class TaskController {
 
     @GetMapping
     @Operation(summary = "Search by TaskName and filter tasks with " +
-            "pagination")
+            "pagination", description = "Lấy danh sách task theo " +
+            "các trường ở dưới " )
                 public ResponseObject<PagedResponse<TaskListResponse>> getAll(
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) UUID sprintId,
             @RequestParam(required = false) UUID accountId,
-                            @RequestParam(required = false) UUID departmentId,
+            @RequestParam(required = false) UUID departmentId,
+            @RequestParam(required = false) UUID syllabusId,
+
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "deadline") String sortBy,
@@ -84,7 +87,7 @@ public class TaskController {
         Pageable pageable = PageRequest.of(page, size, sort);
 
         return ResponseObject.<PagedResponse<TaskListResponse>>builder()
-                .data(PagedResponse.of(taskService.getAll(search, status, sprintId, accountId, departmentId, pageable)))
+                .data(PagedResponse.of(taskService.getAll(search, status, sprintId, accountId, departmentId, syllabusId, pageable)))
                 .message("Tasks retrieved successfully")
                 .build();
     }

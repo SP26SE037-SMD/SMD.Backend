@@ -46,6 +46,7 @@ public class SprintController {
     public ResponseObject<PagedResponse<SprintResponse>> getAll(
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String status,
+            @RequestParam(required = false) UUID curriculumId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "startDate") String sortBy,
@@ -55,7 +56,7 @@ public class SprintController {
         Pageable pageable = PageRequest.of(page, size, sort);
 
         return ResponseObject.<PagedResponse<SprintResponse>>builder()
-                .data(PagedResponse.of(sprintService.getAll(search, status, pageable)))
+                .data(PagedResponse.of(sprintService.getAll(search, status, curriculumId, pageable)))
                 .message("Sprints retrieved successfully")
                 .build();
     }

@@ -14,6 +14,7 @@ import com.example.smd.mapper.SprintMapper;
 import com.example.smd.repositories.AccountRepository;
 import com.example.smd.repositories.CurriculumRepository;
 import com.example.smd.repositories.SprintRepository;
+import com.example.smd.repositories.SprintSpecification;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -66,16 +67,9 @@ public class SprintService {
         return sprintMapper.toSprintResponse(sprint);
     }
 
-    public Page<SprintResponse> getAll(String search, String status, Pageable pageable) {
-        Page<Sprint> pageData;
-        if (search != null && !search.isEmpty()) {
-            pageData = sprintRepository.findBySprintNameContainingIgnoreCase(search, pageable);
-        } else if (status != null && !status.isEmpty()) {
-            pageData = sprintRepository.findByStatus(status, pageable);
-        } else {
-            pageData = sprintRepository.findAll(pageable);
-        }
-
+    public Page<SprintResponse> getAll(String search, String status, UUID curriculumId, Pageable pageable) {
+        var spec = SprintSpecification.withFilters(search, status, curriculumId);
+        Page<Sprint> pageData = sprintRepository.findAll(spec, pageable);
         return pageData.map(sprintMapper::toSprintResponse);
     }
 
