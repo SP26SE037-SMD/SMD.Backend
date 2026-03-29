@@ -5,6 +5,7 @@ import com.example.smd.dto.request.po.POsRequest;
 import com.example.smd.dto.response.POsResponse;
 import com.example.smd.entities.Major;
 import com.example.smd.entities.PO;
+import com.example.smd.enums.RoleName;
 import com.example.smd.mapper.POsMapper;
 import com.example.smd.enums.PloStatus;
 import com.example.smd.exception.AppException;
@@ -46,7 +47,7 @@ public class POsService {
         //Kiểm tra Role tạo
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (!"VP".equals(roleName)) {
+        if (!RoleName.VP.toString().equals(roleName)) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
@@ -84,7 +85,7 @@ public class POsService {
         //Kiểm tra Role tạo
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (!"VP".equals(roleName)) {
+        if (!RoleName.VP.toString().equals(roleName)) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
@@ -114,14 +115,14 @@ public class POsService {
 
         //Phân quyền ROLE Student + Lecture chỉ xem được PUBLISHED
         var account = accountService.getAccountById(accountId);
-        if("STUDENT".equals(account.getRole().getRoleName()) ||  "LECTURER".equals(account.getRole().getRoleName())) {
+        if(RoleName.STUDENT.toString().equals(account.getRole().getRoleName()) ||  RoleName.LECTURER.toString().equals(account.getRole().getRoleName())) {
             if(!PloStatus.PUBLISHED.toString().equals(po.getStatus())) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
 
         if(PloStatus.DRAFT.toString().equals(po.getStatus())) {
-            if(!"VP".equals(account.getRole().getRoleName())){
+            if(!RoleName.VP.toString().equals(account.getRole().getRoleName())){
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
@@ -143,7 +144,7 @@ public class POsService {
         String finalStatus = null;
 
         // 3. Phân quyền: Student/Lecturer ép buộc chỉ xem PUBLISHED
-        if ("STUDENT".equals(roleName) || "LECTURER".equals(roleName)) {
+        if (RoleName.STUDENT.toString().equals(roleName) || RoleName.LECTURER.toString().equals(roleName)) {
             finalStatus = PloStatus.PUBLISHED.toString();
         }
 
@@ -154,7 +155,7 @@ public class POsService {
         } else {
             // Nhánh dành cho ADMIN/VP (Lấy tất cả các trạng thái của Major đó)
             // Lưu ý: Chỉ cho phép vào đây nếu là VP hoặc ADMIN
-            if (!"VP".equals(roleName) && !"ADMIN".equals(roleName) && !"HOCFDC".equals(roleName)) {
+            if (!RoleName.VP.toString().equals(roleName) && !RoleName.ADMIN.toString().equals(roleName) && !RoleName.HOCFDC.toString().equals(roleName)) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
             poPage = poRepository.findByMajor_MajorId(uuidMajorId, pageable);
@@ -168,7 +169,7 @@ public class POsService {
         //Kiểm tra Role tạo
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (!"VP".equals(roleName)) {
+        if (!RoleName.VP.toString().equals(roleName)) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 

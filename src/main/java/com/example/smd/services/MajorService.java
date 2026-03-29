@@ -6,6 +6,7 @@ import com.example.smd.dto.response.PLOsResponse;
 import com.example.smd.entities.Major;
 import com.example.smd.entities.PLOs;
 import com.example.smd.enums.PloStatus;
+import com.example.smd.enums.RoleName;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.MajorMapper;
@@ -54,7 +55,7 @@ public class MajorService {
         // 3. Phân quyền (Sửa lỗi NullPointerException và logic GetAll)
 
         // Nếu là STUDENT/LECTURER: Họ chỉ được phép xem PUBLISHED
-        if ("STUDENT".equals(roleName) || "LECTURER".equals(roleName)) {
+        if (RoleName.STUDENT.toString().equals(roleName) || RoleName.LECTURER.toString().equals(roleName)) {
             // Nếu họ muốn getAll (finalStatus == null) hoặc chọn status khác PUBLISHED
             if (finalStatus == null || !PloStatus.PUBLISHED.toString().equals(finalStatus)) {
                 // Ép về PUBLISHED để bảo mật dữ liệu nháp, thay vì quăng lỗi gây crash
@@ -65,7 +66,7 @@ public class MajorService {
         // Nếu muốn xem DRAFT: Chỉ VP mới được xem
         // Dùng Yoda conditions (đẩy Enum lên trước) để tránh lỗi null.equals
         if (PloStatus.DRAFT.toString().equals(finalStatus)) {
-            if (!"VP".equals(roleName)) {
+            if (!RoleName.VP.toString().equals(roleName)) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
@@ -108,7 +109,7 @@ public class MajorService {
         //Kiểm tra Role tạo
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (!"VP".equals(roleName)) {
+        if (!RoleName.VP.toString().equals(roleName)) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
@@ -129,7 +130,7 @@ public class MajorService {
         //Kiểm tra Role tạo
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (!"VP".equals(roleName)) {
+        if (!RoleName.VP.toString().equals(roleName)) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
@@ -154,7 +155,7 @@ public class MajorService {
         //Kiểm tra Role tạo
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (!"VP".equals(roleName)) {
+        if (!RoleName.VP.toString().equals(roleName)) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
@@ -176,14 +177,14 @@ public class MajorService {
 
         //Phân quyền ROLE Student + Lecture chỉ xem được PUBLISHED
         var account = accountService.getAccountById(accountId);
-        if ("STUDENT".equals(account.getRole().getRoleName()) ||"LECTURER".equals(account.getRole().getRoleName())) {
+        if (RoleName.STUDENT.toString().equals(account.getRole().getRoleName()) ||RoleName.LECTURER.toString().equals(account.getRole().getRoleName())) {
             if (!PloStatus.PUBLISHED.toString().equals(major.getStatus())) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
 
         if (PloStatus.DRAFT.toString().equals(major.getStatus())) {
-            if (!"VP".equals(account.getRole().getRoleName())) {
+            if (!RoleName.VP.toString().equals(account.getRole().getRoleName())) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
@@ -197,14 +198,14 @@ public class MajorService {
 
         //Phân quyền ROLE Student + Lecture chỉ xem được PUBLISHED
         var account = accountService.getAccountById(accountId);
-        if ("STUDENT".equals(account.getRole().getRoleName()) || "LECTURER".equals(account.getRole().getRoleName())) {
+        if (RoleName.STUDENT.toString().equals(account.getRole().getRoleName()) || RoleName.LECTURER.toString().equals(account.getRole().getRoleName())) {
             if (!PloStatus.PUBLISHED.toString().equals(major.getStatus())) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
 
         if (PloStatus.DRAFT.toString().equals(major.getStatus())) {
-            if (!"VP".equals(account.getRole().getRoleName())) {
+            if (!RoleName.VP.toString().equals(account.getRole().getRoleName())) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }

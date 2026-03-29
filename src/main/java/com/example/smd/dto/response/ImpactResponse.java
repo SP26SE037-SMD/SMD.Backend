@@ -12,5 +12,6 @@ import lombok.experimental.FieldDefaults;
 public class ImpactResponse {
     String removeContent;
     ImpactStatus impactStatus;
+    String chapterTitle;
     Double similarity;
 }

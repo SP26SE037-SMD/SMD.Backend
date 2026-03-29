@@ -11,6 +11,7 @@ import com.example.smd.dto.response.account.ImportResult;
 import com.example.smd.entities.Account;
 import com.example.smd.entities.Department;
 import com.example.smd.entities.Role;
+import com.example.smd.enums.RoleName;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.AccountMapper;
@@ -61,7 +62,7 @@ public class AccountService {
 
         var account = getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (!("ADMIN".equals(roleName))) {
+        if (!(RoleName.ADMIN.toString().equals(roleName))) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
@@ -117,7 +118,7 @@ public class AccountService {
             String accountId) {
         var account = getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (!("ADMIN".equals(roleName))) {
+        if (!(RoleName.ADMIN.toString().equals(roleName))) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
         // 1. Xử lý sắp xếp
@@ -167,7 +168,7 @@ public class AccountService {
     public AccountResponse createAccount(AccountRequest request, String accountId) {
         var checkRole = getAccountById(accountId);
         String roleName = checkRole.getRole().getRoleName();
-        if (!("ADMIN".equals(roleName))) {
+        if (!(RoleName.ADMIN.toString().equals(roleName))) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
@@ -245,7 +246,7 @@ public class AccountService {
 
         var checkRole = getAccountById(adminId);
         String roleName = checkRole.getRole().getRoleName();
-        if (!("ADMIN".equals(roleName))) {
+        if (!(RoleName.ADMIN.toString().equals(roleName))) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
