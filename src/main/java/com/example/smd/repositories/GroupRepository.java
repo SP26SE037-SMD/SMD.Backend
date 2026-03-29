@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -15,6 +16,8 @@ public interface GroupRepository extends JpaRepository<Group, UUID> {
 
     // Kiểm tra tồn tại theo group code
     boolean existsByGroupCode(String groupCode);
+
+    Optional<Group> findByGroupCode(String groupCode);
 
     // Tìm kiếm Group theo group code (không phân biệt hoa thường)
     @Query("SELECT c FROM Group c WHERE LOWER(c.groupCode) LIKE LOWER(CONCAT('%', :groupCode, '%'))")

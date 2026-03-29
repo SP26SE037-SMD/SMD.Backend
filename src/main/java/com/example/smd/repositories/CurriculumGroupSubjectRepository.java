@@ -1,6 +1,7 @@
 package com.example.smd.repositories;
 
 import com.example.smd.entities.Curriculum_Group_Subject;
+import com.example.smd.entities.Subject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 @Repository
@@ -106,4 +108,11 @@ public interface CurriculumGroupSubjectRepository extends JpaRepository<Curricul
         @Param("curriculumId") UUID curriculumId,
         @Param("subjectIds") List<UUID> subjectIds
     );
+
+    @Query("SELECT cgs.subject.subjectId FROM Curriculum_Group_Subject cgs " +
+            "WHERE cgs.curriculum.curriculumId = :curriculumId")
+    Set<UUID> findAllSubjectIdsByCurriculum(
+            @Param("curriculumId") UUID curriculumId
+    );
+
 }

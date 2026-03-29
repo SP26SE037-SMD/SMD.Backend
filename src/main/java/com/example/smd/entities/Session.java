@@ -45,6 +45,10 @@ public class Session {
     @Column(name = "status")
     String status;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "material_id")
+    Material material;
+
     @OneToMany(mappedBy = "session", fetch = FetchType.LAZY)
     List<CLO_Session> cloSessions;
 
