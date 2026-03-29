@@ -11,6 +11,7 @@ import com.example.smd.entities.Sprint;
 import com.example.smd.entities.Subject;
 import com.example.smd.entities.Syllabus;
 import com.example.smd.entities.Task;
+import com.example.smd.enums.RoleName;
 import com.example.smd.enums.TaskStatus;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
@@ -20,9 +21,11 @@ import com.example.smd.repositories.SprintRepository;
 import com.example.smd.repositories.SubjectRepository;
 import com.example.smd.repositories.SyllabusRepository;
 import com.example.smd.repositories.TaskRepository;
+import com.example.smd.repositories.TaskSpecification;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -34,6 +37,7 @@ import java.util.Locale;
 import java.time.LocalDate;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -47,10 +51,10 @@ public class TaskService {
     TaskMapper taskMapper;
 
     @Transactional
-    public TaskResponse create(TaskCreateRequest request, String check, UUID accountId) {
+    public TaskResponse create(TaskCreateRequest request, String check) {
         var checkRole = accountService.getAccountById(check);
         String roleName = checkRole.getRole().getRoleName();
-        if (!("HOPDC".equals(roleName) || "HOCFDC".equals(roleName))) {
+        if (!( RoleName.HOCFDC.toString().equals(roleName))) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
@@ -63,12 +67,6 @@ public class TaskService {
             .orElseThrow(() -> new AppException(ErrorCode.SPRINT_NOT_FOUND));
         task.setSprint(sprint);
 
-        if (accountId == null) {
-            throw new AppException(ErrorCode.ACCOUNT_ID_REQUIRED);
-        }
-        Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND));
-        task.setAccount(account);
 
         // Map Subject if provided
         if (request.getSubjectId() != null) {
@@ -87,7 +85,7 @@ public class TaskService {
     public List<TaskResponse> createBatch(UUID sprintId, BatchTaskRequest request, String check, UUID departmentId) {
         var checkRole = accountService.getAccountById(check);
         String roleName = checkRole.getRole().getRoleName();
-        if (!("HOCFDC".equals(roleName))) {
+        if (!(RoleName.HOCFDC.toString().equals(roleName))) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
@@ -115,7 +113,8 @@ public class TaskService {
 
         // Send notification to HoPDC accounts in departmentId if provided
         if (departmentId != null) {
-            List<Account> hopDCAccounts = accountRepository.findByDepartmentAndRoleName(departmentId, "HOPDC");
+            List<Account> hopDCAccounts =
+                    accountRepository.findByDepartmentAndRoleName(departmentId, RoleName.HOPDC.toString());
             if (!hopDCAccounts.isEmpty()) {
                 // Collect task names for notification
                 List<String> taskNames = savedTasks.stream().map(Task::getTaskName).toList();
@@ -123,7 +122,8 @@ public class TaskService {
                 // This could include: sending emails, creating in-app notifications, sending messages, etc.
                 // Example: notificationService.notifyHoPDC(hopDCAccounts, taskNames, sprint.getSprintName());
                 // For now, log the notification info
-                System.out.println("Notification: Tasks " + taskNames + " created in sprint " + sprint.getSprintName() +
+                log.info("Notification: Tasks " + taskNames + " created" +
+                    " in sprint " + sprint.getSprintName() +
                                    " for HoPDC accounts: " + hopDCAccounts.stream().map(Account::getEmail).toList());
             }
         }
@@ -131,31 +131,9 @@ public class TaskService {
         return savedTasks.stream().map(taskMapper::toTaskResponse).toList();
     }
 
-    public Page<TaskListResponse> getAll(String search, String status, UUID sprintId, UUID accountId, UUID departmentId, Pageable pageable) {
-        Page<Task> pageData;
-        if (search != null && !search.isEmpty()) {
-            pageData = taskRepository.findByTaskNameContainingIgnoreCase(search, pageable);
-        } else if (status != null && !status.isEmpty()) {
-            pageData = taskRepository.findByStatusIgnoreCase(normalizeStatusInput(status, false), pageable);
-        } else if (sprintId != null) {
-            pageData = taskRepository.findBySprint_SprintId(sprintId, pageable);
-        } else if (accountId != null) {
-            pageData = taskRepository.findByAccount_AccountId(accountId, pageable);
-        } else if (departmentId != null) {
-            List<UUID> subjectIds = subjectRepository.findAllByDepartment_DepartmentId(departmentId)
-                    .stream()
-                    .map(Subject::getSubjectId)
-                    .toList();
-
-            if (subjectIds.isEmpty()) {
-                pageData = Page.empty(pageable);
-            } else {
-                pageData = taskRepository.findBySubject_SubjectIdIn(subjectIds, pageable);
-            }
-        } else {
-            pageData = taskRepository.findAll(pageable);
-        }
-
+    public Page<TaskListResponse> getAll(String search, String status, UUID sprintId, UUID accountId, UUID departmentId, UUID syllabusId, Pageable pageable) {
+        var spec = TaskSpecification.withFilters(search, status, sprintId, accountId, departmentId, syllabusId);
+        Page<Task> pageData = taskRepository.findAll(spec, pageable);
         return pageData.map(taskMapper::toTaskListResponse);
     }
 
@@ -169,7 +147,7 @@ public class TaskService {
     public TaskResponse update(UUID id, TaskUpdateRequest request, String accountId) {
         var checkRole = accountService.getAccountById(accountId);
         String roleName = checkRole.getRole().getRoleName();
-        if (!("HOPDC".equals(roleName) || "HOCFDC".equals(roleName))) {
+        if (!(RoleName.HOPDC.toString().equals(roleName) ||RoleName.HOCFDC.toString().equals(roleName))) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
@@ -211,7 +189,7 @@ public class TaskService {
     public void delete(UUID id, String accountId) {
         var checkRole = accountService.getAccountById(accountId);
         String roleName = checkRole.getRole().getRoleName();
-        if (!("HOPDC".equals(roleName) || "HOCFDC".equals(roleName))) {
+        if (!(RoleName.HOPDC.toString().equals(roleName) ||RoleName.HOCFDC.toString().equals(roleName))) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
