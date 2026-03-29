@@ -6,7 +6,9 @@ import com.example.smd.dto.request.session.SessionNumberListRequest;
 import com.example.smd.dto.response.SessionResponse;
 import com.example.smd.entities.Session;
 import com.example.smd.entities.Syllabus;
+import com.example.smd.enums.MaterialStatus;
 import com.example.smd.enums.PloStatus;
+import com.example.smd.enums.RoleName;
 import com.example.smd.enums.SyllabusStatus;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
@@ -57,14 +59,14 @@ public class SessionService {
 
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if ("STUDENT".equals(roleName) || "LECTURER".equals(roleName)) {
-            if (!status.equals(SyllabusStatus.PUBLISHED.toString())) {
+        if (RoleName.STUDENT.toString().equals(roleName) || RoleName.LECTURER.toString().equals(roleName)) {
+            if (!status.equals(MaterialStatus.PUBLISHED.toString())) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
 
         if (PloStatus.DRAFT.toString().equals(status)) {
-            if (!("PDCM".equals(account.getRole().getRoleName()) || "COLLABORATOR".equals(account.getRole().getRoleName()))) {
+            if (!(RoleName.PDCM.toString().equals(account.getRole().getRoleName()) || RoleName.COLLABORATOR.toString().equals(account.getRole().getRoleName()))) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
@@ -108,14 +110,14 @@ public class SessionService {
 
         // 3. Logic Phân quyền:
         // Nếu là STUDENT hoặc LECTURER, chỉ cho phép xem nếu status là PUBLISHED
-        if ("STUDENT".equals(roleName) || "LECTURER".equals(roleName)) {
-            if (!"PUBLISHED".equalsIgnoreCase(session.getStatus())) {
+        if (RoleName.STUDENT.toString().equals(roleName) || RoleName.LECTURER.toString().equals(roleName)) {
+            if (!MaterialStatus.PUBLISHED.toString().equalsIgnoreCase(session.getStatus())) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
 
-        if ("DRAFT".equals(session.getStatus()) || SyllabusStatus.REVISION_REQUESTED.toString().equals(session.getStatus())) {
-            if (!("PDCM".equals(account.getRole().getRoleName()) || "COLLABORATOR".equals(account.getRole().getRoleName()))) {
+        if ("DRAFT".equals(session.getStatus()) || MaterialStatus.REVISION_REQUESTED.toString().equals(session.getStatus())) {
+            if (!(RoleName.PDCM.toString().equals(account.getRole().getRoleName()) || RoleName.COLLABORATOR.toString().equals(account.getRole().getRoleName()))) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
@@ -138,14 +140,14 @@ public class SessionService {
     public SessionResponse createSession(SessionRequest request, String accountId) {
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (!("COLLABORATOR".equals(roleName) || "PDCM".equals(roleName))) {
+        if (!(RoleName.PDCM.toString().equals(roleName) || RoleName.COLLABORATOR.toString().equals(roleName))) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
         Syllabus syllabus = syllabusRepository.findById(request.getSyllabusId())
                 .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
 
-        if (!("IN_PROGRESS".equals(syllabus.getStatus()) || SyllabusStatus.REVISION_REQUESTED.toString().equals(syllabus.getStatus()))) {
+        if (!(SyllabusStatus.IN_PROGRESS.toString().equals(syllabus.getStatus()) || SyllabusStatus.REVISION_REQUESTED.toString().equals(syllabus.getStatus()))) {
             throw new AppException(ErrorCode.SESSION_CANNOT_CREATE);
         }
 
@@ -232,14 +234,14 @@ public class SessionService {
 
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (!("COLLABORATOR".equals(roleName) || "PDCM".equals(roleName))) {
+        if (!(RoleName.PDCM.toString().equals(roleName) || RoleName.COLLABORATOR.toString().equals(roleName))) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
         Syllabus syllabus = syllabusRepository.findById(request.getSyllabusId())
                 .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
 
-        if (!("DRAFT".equals(session.getStatus()) || SyllabusStatus.REVISION_REQUESTED.toString().equals(session.getStatus()))) {
+        if (!("DRAFT".equals(session.getStatus()) || MaterialStatus.REVISION_REQUESTED.toString().equals(session.getStatus()))) {
             throw new AppException(ErrorCode.SESSION_NOT_EDITABLE);
         }
 
@@ -273,14 +275,14 @@ public class SessionService {
     public boolean deleteSession(UUID sessionId, String accountId) {
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (!("COLLABORATOR".equals(roleName) || "PDCM".equals(roleName))) {
+        if (!(RoleName.PDCM.toString().equals(roleName) || RoleName.COLLABORATOR.toString().equals(roleName))) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
         Session session = sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new AppException(ErrorCode.SESSION_NOT_FOUND));
 
-        if (!("IN_PROGRESS".equals(session.getSyllabus().getStatus()) || SyllabusStatus.REVISION_REQUESTED.toString().equals(session.getSyllabus().getStatus()))) {
+        if (!(SyllabusStatus.IN_PROGRESS.toString().equals(session.getSyllabus().getStatus()) || SyllabusStatus.REVISION_REQUESTED.toString().equals(session.getSyllabus().getStatus()))) {
             throw new AppException(ErrorCode.SESSION_NOT_EDITABLE);
         }
 

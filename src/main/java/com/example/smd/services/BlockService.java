@@ -5,6 +5,7 @@ import com.example.smd.dto.response.BlockResponse;
 import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.entities.Blocks;
 import com.example.smd.entities.Material;
+import com.example.smd.enums.MaterialStatus;
 import com.example.smd.enums.SyllabusStatus;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
@@ -43,7 +44,7 @@ public class BlockService {
         Material material = materialRepository.findById(materialId)
                 .orElseThrow(() -> new AppException(ErrorCode.MATERIAL_NOT_FOUND));
 
-        if(!("DRAFT".equals(material.getStatus()) || SyllabusStatus.REVISION_REQUESTED.toString().equals(material.getStatus()))) {
+        if(!("DRAFT".equals(material.getStatus()) || MaterialStatus.REVISION_REQUESTED.toString().equals(material.getStatus()))) {
             throw new AppException(ErrorCode.MATERIAL_NOT_EDITABLE);
         }
 
@@ -94,7 +95,7 @@ public class BlockService {
         Blocks block = blockRepository.findById(blockId)
                 .orElseThrow(() -> new AppException(ErrorCode.BLOCK_NOT_FOUND));
 
-        if(!("DRAFT".equals(block.getMaterial().getStatus()) || SyllabusStatus.REVISION_REQUESTED.toString().equals(block.getMaterial().getStatus()))) {
+        if(!("DRAFT".equals(block.getMaterial().getStatus()) || MaterialStatus.REVISION_REQUESTED.toString().equals(block.getMaterial().getStatus()))) {
             throw new AppException(ErrorCode.MATERIAL_NOT_EDITABLE);
         }
         blockRepository.deleteById(blockId);

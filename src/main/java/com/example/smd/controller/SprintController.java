@@ -50,13 +50,14 @@ public class SprintController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "startDate") String sortBy,
-            @RequestParam(defaultValue = "desc") String direction) {
-
+            @RequestParam(defaultValue = "desc") String direction,
+            @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
         Sort sort = direction.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
         Pageable pageable = PageRequest.of(page, size, sort);
 
         return ResponseObject.<PagedResponse<SprintResponse>>builder()
-                .data(PagedResponse.of(sprintService.getAll(search, status, curriculumId, pageable)))
+                .data(PagedResponse.of(sprintService.getAll(search, status, curriculumId, pageable, userId)))
                 .message("Sprints retrieved successfully")
                 .build();
     }
@@ -81,9 +82,10 @@ public class SprintController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Get sprint detail by ID")
-    public ResponseObject<SprintResponse> getDetail(@PathVariable UUID id) {
+    public ResponseObject<SprintResponse> getDetail(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<SprintResponse>builder()
-                .data(sprintService.getDetail(id))
+                .data(sprintService.getDetail(id, userId))
                 .message("Sprint detail retrieved successfully")
                 .build();
     }
