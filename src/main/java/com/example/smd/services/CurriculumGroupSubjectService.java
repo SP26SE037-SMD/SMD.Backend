@@ -9,6 +9,7 @@ import com.example.smd.dto.response.BulkSemesterMappingResponse;
 import com.example.smd.entities.*;
 import com.example.smd.enums.CurriculumStatus;
 import com.example.smd.enums.PloStatus;
+import com.example.smd.enums.RoleName;
 import com.example.smd.enums.SubjectStatus;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
@@ -54,7 +55,7 @@ public class CurriculumGroupSubjectService {
         //Kiểm tra Role tạo
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (!"HOCFDC".equals(roleName)) {
+        if (!RoleName.HOCFDC.toString().equals(roleName)) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 

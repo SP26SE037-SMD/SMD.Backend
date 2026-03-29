@@ -6,6 +6,7 @@ import com.example.smd.entities.Department;
 import com.example.smd.entities.Subject;
 import com.example.smd.entities.Syllabus;
 import com.example.smd.enums.PloStatus;
+import com.example.smd.enums.RoleName;
 import com.example.smd.enums.SubjectStatus;
 import com.example.smd.enums.SyllabusStatus;
 import com.example.smd.exception.AppException;
@@ -41,7 +42,7 @@ public class SyllabusService {
 
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (!"HOPDC".equals(roleName)) {
+        if (!RoleName.HOPDC.toString().equals(roleName)) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
@@ -68,11 +69,11 @@ public class SyllabusService {
         //Kiểm tra Role tạo
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (!"HOPDC".equals(roleName)) {
+        if (!RoleName.HOPDC.toString().equals(roleName)) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
-        if (!("DRAFT".equals(syllabus.getStatus()) || SyllabusStatus.REVISION_REQUESTED.toString().equals(syllabus.getStatus()))) {
+        if (!(SyllabusStatus.DRAFT.toString().equals(syllabus.getStatus()) || SyllabusStatus.REVISION_REQUESTED.toString().equals(syllabus.getStatus()))) {
             throw new AppException(ErrorCode.SYLLABUS_NOT_EDITABLE);
         }
 
@@ -108,7 +109,7 @@ public class SyllabusService {
         //Kiểm tra Role tạo
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (!"HOPDC".equals(roleName)) {
+        if (!RoleName.HOPDC.toString().equals(roleName)) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
@@ -134,14 +135,14 @@ public class SyllabusService {
         String finalStatus = (status == null || status.trim().isEmpty()) ? null : status.trim();
 
         // 2. Phân quyền: Student/Lecturer chỉ được xem PUBLISHED
-        if ("STUDENT".equals(roleName) || "LECTURER".equals(roleName)) {
+        if (RoleName.STUDENT.toString().equals(roleName) || RoleName.LECTURER.toString().equals(roleName)) {
             if (!(SyllabusStatus.PUBLISHED.toString().equals(finalStatus))) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
 
         if (PloStatus.DRAFT.toString().equals(finalStatus)) {
-            if (!"HOPDC".equals(account.getRole().getRoleName())) {
+            if (!RoleName.HOPDC.toString().equals(account.getRole().getRoleName())) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
@@ -169,14 +170,14 @@ public class SyllabusService {
 
         //Phân quyền ROLE Student + Lecture chỉ xem được PUBLISHED
         var account = accountService.getAccountById(accountId);
-        if ("STUDENT".equals(account.getRole().getRoleName()) || "LECTURER".equals(account.getRole().getRoleName())) {
+        if (RoleName.STUDENT.toString().equals(account.getRole().getRoleName()) || RoleName.LECTURER.toString().equals(account.getRole().getRoleName())) {
             if (!PloStatus.PUBLISHED.toString().equals(syllabus.getStatus())) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
 
-        if ("DRAFT".equals(syllabus.getStatus())) {
-            if (!"HOPDC".equals(account.getRole().getRoleName())) {
+        if (SyllabusStatus.DRAFT.toString().equals(syllabus.getStatus())) {
+            if (!RoleName.HOPDC.toString().equals(account.getRole().getRoleName())) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
@@ -189,7 +190,7 @@ public class SyllabusService {
 
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (!"HOPDC".equals(roleName)) {
+        if (!RoleName.HOPDC.toString().equals(roleName)) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 

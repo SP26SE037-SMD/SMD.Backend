@@ -2,7 +2,7 @@ package com.example.smd.enums;
 
 public enum RoleName {
     ADMIN,
-    TEACHER,
+    LECTURER,
     STUDENT,
     HOPDC ,
     HOCFDC,

@@ -129,6 +129,7 @@ public class EmbeddingService {
         if (matches.isEmpty()) {
             return ImpactResponse.builder()
                     .impactStatus(ImpactStatus.NO_IMPACT)
+                    .chapterTitle("Not defined")
                     .similarity(0.0)
                     .removeContent(gapConcept).build();
         }
@@ -149,6 +150,7 @@ public class EmbeddingService {
             return ImpactResponse.builder()
                     .impactStatus(determineImpactType(gapConcept, contentText))
                     .similarity(similarity)
+                    .chapterTitle(topMatch.getChapterTitle())
                     .removeContent(gapConcept).build();
             // Trả về: REQUIRED (Lỗ hổng lan truyền) hoặc RESOLVED (Đã được dạy lại)
         }
@@ -156,6 +158,7 @@ public class EmbeddingService {
         return ImpactResponse.builder()
                 .impactStatus(ImpactStatus.NO_IMPACT)
                 .similarity(similarity)
+                .chapterTitle(topMatch.getChapterTitle())
                 .removeContent(gapConcept).build();
     }
 
