@@ -1,6 +1,7 @@
 package com.example.smd.controller;
 
-import com.example.smd.dto.request.sprint.SprintRequest;
+import com.example.smd.dto.request.sprint.SprintCreateRequest;
+import com.example.smd.dto.request.sprint.SprintUpdateRequest;
 import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.dto.response.sprint.SprintResponse;
@@ -33,7 +34,7 @@ public class SprintController {
 
     @PostMapping
     @Operation(summary = "Create a new sprint")
-    public ResponseObject<SprintResponse> create(@RequestBody @Valid SprintRequest request, @AuthenticationPrincipal Jwt jwt) {
+        public ResponseObject<SprintResponse> create(@RequestBody @Valid SprintCreateRequest request, @AuthenticationPrincipal Jwt jwt) {
         String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<SprintResponse>builder()
                 .data(sprintService.create(request, userId))
@@ -94,7 +95,7 @@ public class SprintController {
     @Operation(summary = "Update sprint information")
     public ResponseObject<SprintResponse> update(
             @PathVariable UUID id,
-            @RequestBody @Valid SprintRequest request,
+            @RequestBody @Valid SprintUpdateRequest request,
             @AuthenticationPrincipal Jwt jwt) {
         String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<SprintResponse>builder()

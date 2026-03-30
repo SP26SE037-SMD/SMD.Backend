@@ -1,15 +1,15 @@
 package com.example.smd.services;
 
-import com.example.smd.dto.request.sprint.SprintRequest;
+import com.example.smd.dto.request.sprint.SprintCreateRequest;
+import com.example.smd.dto.request.sprint.SprintUpdateRequest;
 import com.example.smd.dto.response.sprint.SprintResponse;
 import com.example.smd.entities.Account;
 import com.example.smd.entities.Curriculum;
 import com.example.smd.enums.SprintStatus;
 import com.example.smd.entities.Sprint;
-import com.example.smd.enums.SyllabusStatus;
+import com.example.smd.enums.RoleName;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
-import com.example.smd.mapper.AccountMapper;
 import com.example.smd.mapper.SprintMapper;
 import com.example.smd.repositories.AccountRepository;
 import com.example.smd.repositories.CurriculumRepository;
@@ -34,21 +34,26 @@ public class SprintService {
     AccountRepository accountRepository;
     CurriculumRepository curriculumRepository;
     SprintMapper sprintMapper;
-    private final AccountMapper accountMapper;
 
 
     @Transactional
-    public SprintResponse create(SprintRequest request, String accountId) {
+        public SprintResponse create(SprintCreateRequest request, String accountId) {
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (!("HOCFDC".equals(roleName) || "HOPDC".equals(roleName))) {
+        if (!(RoleName.HOCFDC.equals(roleName) )) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
-        Account convert = accountMapper.toAccount(account);
-
         Sprint sprint = sprintMapper.toSprint(request);
-        sprint.setAccount(convert);
+        Account hopdcAccount = accountRepository
+            .findByDepartmentAndRoleName(request.getDepartmentId(), RoleName.HOPDC.toString())
+            .stream()
+            .findFirst()
+            .orElseThrow(() -> new AppException(
+                ErrorCode.ACCOUNT_NOT_FOUND,
+                "No HoPDC account found in this department"
+            ));
+        sprint.setAccount(hopdcAccount);
 // Map Curriculum (mandatory)
         if (request.getCurriculumId() != null) {
             Curriculum curriculum = curriculumRepository.findById(request.getCurriculumId())
@@ -90,7 +95,7 @@ public class SprintService {
     }
 
     @Transactional
-    public SprintResponse update(UUID id, SprintRequest request, String accountId) {
+    public SprintResponse update(UUID id, SprintUpdateRequest request, String accountId) {
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
         if (!("HOCFDC".equals(roleName) || "HOPDC".equals(roleName))) {
