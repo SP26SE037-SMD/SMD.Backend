@@ -1,0 +1,98 @@
+package com.example.smd.controller;
+
+import com.example.smd.dto.request.session.SessionMaterialBlockBulkRequest;
+import com.example.smd.dto.request.session.SessionMaterialBlockUpdateRequest;
+import com.example.smd.dto.response.PagedResponse;
+import com.example.smd.dto.response.ResponseObject;
+import com.example.smd.dto.response.session.BulkSessionMaterialBlockResponse;
+import com.example.smd.dto.response.session.SessionMaterialBlockDetailResponse;
+import com.example.smd.services.SessionMaterialBlockService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.UUID;
+
+@RestController
+@RequestMapping("/api/session-material-blocks")
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+@Tag(name = "Session Material Block", description = "Bulk configure session-material-block mappings")
+@SecurityRequirement(name = "bearerAuth")
+public class SessionMaterialBlockController {
+
+    SessionMaterialBlockService sessionMaterialBlockService;
+
+    @PostMapping("/bulk-configure")
+//    @PreAuthorize("hasAuthority('SYLLABUS_UPDATE')")
+    @Operation(
+            summary = "Bulk configure session-material-block mappings",
+            description = "Create/reuse session and map material-block pairs into session_material_block. Session and material are required."
+    )
+    public ResponseObject<BulkSessionMaterialBlockResponse> bulkConfigure(@Valid @RequestBody SessionMaterialBlockBulkRequest request) {
+        BulkSessionMaterialBlockResponse response = sessionMaterialBlockService.bulkConfigureSessionMaterialBlocks(request);
+
+        return ResponseObject.<BulkSessionMaterialBlockResponse>builder()
+                .status(response.isSuccess() ? 1000 : 400)
+                .data(response)
+                .message(response.isSuccess() ? "Bulk session-material-block mapping completed successfully" : "Bulk session-material-block mapping completed with validation issues")
+                .build();
+    }
+
+            @PutMapping("/update")
+            @Operation(
+                summary = "Update session info and replace all session-material-block mappings",
+                description = "Update session fields by sessionId, delete all related rows in session_material_block, then insert the new material-block mappings."
+            )
+            public ResponseObject<BulkSessionMaterialBlockResponse> updateSessionMaterialBlocks(
+                @Valid @RequestBody SessionMaterialBlockUpdateRequest request
+            ) {
+            BulkSessionMaterialBlockResponse response = sessionMaterialBlockService.updateSessionMaterialBlocks(request);
+
+            return ResponseObject.<BulkSessionMaterialBlockResponse>builder()
+                .status(response.isSuccess() ? 1000 : 400)
+                .data(response)
+                .message(response.isSuccess() ?
+                    "Update session-material-block mapping completed successfully" :
+                    "Update session-material-block mapping completed with validation issues")
+                .build();
+            }
+
+            @GetMapping
+            @Operation(summary = "Get session-material-block list by syllabusId with pagination")
+            public ResponseObject<PagedResponse<SessionMaterialBlockDetailResponse>> getBySyllabus(
+                @RequestParam UUID syllabusId,
+                @RequestParam(defaultValue = "0") int page,
+                @RequestParam(defaultValue = "10") int size
+            ) {
+            return ResponseObject.<PagedResponse<SessionMaterialBlockDetailResponse>>builder()
+                .status(1000)
+                .data(sessionMaterialBlockService.getBySyllabus(syllabusId, page, size))
+                .message("Get session-material-block list successfully")
+                .build();
+            }
+
+            @GetMapping("/detail")
+            @Operation(summary = "Get session-material-block detail by sessionId")
+            public ResponseObject<SessionMaterialBlockDetailResponse> getSessionDetail(
+                @RequestParam UUID sessionId
+            ) {
+            return ResponseObject.<SessionMaterialBlockDetailResponse>builder()
+                .status(1000)
+                .data(sessionMaterialBlockService.getSessionDetail(sessionId))
+                .message("Get session-material-block detail successfully")
+                .build();
+            }
+}

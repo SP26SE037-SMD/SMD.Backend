@@ -2,6 +2,7 @@ package com.example.smd.controller;
 
 import com.example.smd.dto.request.BlockRequest;
 import com.example.smd.dto.response.BlockResponse;
+import com.example.smd.dto.response.BlockSimpleResponse;
 import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.services.BlockService;
@@ -68,6 +69,19 @@ public class BlockController {
                 .status(1000)
                 .data(blockService.getAllByMaterial(materialId, page, size))
                 .message("Truy vấn danh sách blocks thành công")
+                .build();
+    }
+
+    @GetMapping("/material/{materialId}/by-style")
+    @Operation(summary = "Lấy danh sách block theo materialId và blockStyle")
+    public ResponseObject<List<BlockSimpleResponse>> getByMaterialAndStyle(
+            @PathVariable UUID materialId,
+            @RequestParam String blockStyle
+    ) {
+        return ResponseObject.<List<BlockSimpleResponse>>builder()
+                .status(1000)
+                .data(blockService.getBlocksByMaterialAndStyle(materialId, blockStyle))
+                .message("Truy vấn danh sách block theo materialId và blockStyle thành công")
                 .build();
     }
 

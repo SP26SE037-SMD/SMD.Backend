@@ -32,6 +32,9 @@ public class Blocks {
     @Column(name = "content", columnDefinition = "TEXT")
     String contentText;
 
+    @OneToMany(mappedBy = "block", fetch = FetchType.LAZY)
+    List<Session_Material_Block> sessionMaterialBlocks;
+
     @Column(name = "created_at")
     Instant createdAt;
 

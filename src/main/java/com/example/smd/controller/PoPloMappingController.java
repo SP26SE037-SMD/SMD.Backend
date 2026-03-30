@@ -1,7 +1,10 @@
 package com.example.smd.controller;
 
 
+import com.example.smd.dto.request.PoPloMappingBulkRequest;
 import com.example.smd.dto.request.PoPloMappingRequest;
+import com.example.smd.dto.response.PoPloCurriculumResponse;
+import com.example.smd.dto.response.PoPloMappingBulkResponse;
 import com.example.smd.dto.response.PoPloMappingResponse;
 import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.services.PoPloMappingService;
@@ -40,13 +43,24 @@ public class PoPloMappingController {
                 .build();
     }
 
+        @PostMapping("/bulk-configure")
+        @PreAuthorize("hasAuthority('MAPPING_CREATE')")
+        @Operation(summary = "Bulk configure PO-PLO mappings")
+        public ResponseObject<PoPloMappingBulkResponse> bulkConfigure(@RequestBody @Valid PoPloMappingBulkRequest request) {
+                return ResponseObject.<PoPloMappingBulkResponse>builder()
+                                .status(1000)
+                                .data(service.bulkConfigureMappings(request))
+                                .message("PO-PLO mappings configured successfully")
+                                .build();
+        }
+
     @GetMapping("/curriculum/{curriculumId}")
     @Operation(
             summary = "Get all mappings for a specific Curriculum",
             description = "Retrieve the matrix of PO-PLO mappings for all PLOs within a given curriculum."
     )
-    public ResponseObject<List<PoPloMappingResponse>> getByCurriculum(@PathVariable String curriculumId) {
-        return ResponseObject.<List<PoPloMappingResponse>>builder()
+        public ResponseObject<List<PoPloCurriculumResponse>> getByCurriculum(@PathVariable String curriculumId) {
+                return ResponseObject.<List<PoPloCurriculumResponse>>builder()
                 .status(1000)
                 .data(service.getByCurriculum(curriculumId))
                 .message("Get curriculum PO-PLO matrix successfully")

@@ -13,6 +13,8 @@ public interface PoPloMappingRepository extends JpaRepository<PO_PLO_Mapping, UU
 
     boolean existsByPo_PoIdAndPlo_PloId(UUID poId, UUID ploId);
 
+    long deleteByPo_PoIdAndPlo_PloId(UUID poId, UUID ploId);
+
     @EntityGraph(attributePaths = {"po", "plo"})
     List<PO_PLO_Mapping> findByPo_PoId(UUID poId);
 

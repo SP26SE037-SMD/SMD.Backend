@@ -46,5 +46,5 @@ public class Material {
     List<Blocks> blocks;
 
     @OneToMany(mappedBy = "material", fetch = FetchType.LAZY)
-    List<Session> sessions;
+    List<Session_Material_Block> sessionMaterialBlocks;
 }

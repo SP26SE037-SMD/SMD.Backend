@@ -1,7 +1,6 @@
 package com.example.smd.services;
 
 import com.example.smd.dto.request.session.SessionRequest;
-import com.example.smd.dto.request.session.SessionItemRequest;
 import com.example.smd.dto.request.session.SessionNumberListRequest;
 import com.example.smd.dto.response.SessionResponse;
 import com.example.smd.entities.Session;
@@ -162,69 +161,6 @@ public class SessionService {
 
         session = sessionRepository.save(session);
         return sessionMapper.toResponse(session);
-    }
-
-    @Transactional
-    public List<SessionResponse> createSessionsBySyllabus(UUID syllabusId, List<SessionItemRequest> requests) {
-        if (requests == null || requests.isEmpty()) {
-            throw new AppException(ErrorCode.SESSION_LIST_REQUIRED);
-        }
-
-        Syllabus syllabus = syllabusRepository.findById(syllabusId)
-                .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
-
-        Set<Integer> distinctSessionNumbers = requests.stream()
-                .map(SessionItemRequest::getSessionNumber)
-                .collect(java.util.stream.Collectors.toSet());
-
-        if (distinctSessionNumbers.size() != requests.size()) {
-            throw new AppException(ErrorCode.SESSION_NUMBER_EXISTS);
-        }
-
-        List<Session> sessionsToSave = new ArrayList<>();
-
-        for (SessionItemRequest request : requests) {
-            Session existing = sessionRepository
-                    .findBySyllabus_SyllabusIdAndSessionNumber(syllabusId, request.getSessionNumber())
-                    .orElse(null);
-
-            if (existing == null) {
-                Session newSession = Session.builder()
-                        .syllabus(syllabus)
-                        .sessionNumber(request.getSessionNumber())
-                        .sessionTitle(request.getSessionTitle())
-                        .content(request.getContent())
-                        .teachingMethods(request.getTeachingMethods())
-                        .duration(request.getDuration())
-                        .status(DEFAULT_STATUS)
-                        .build();
-                sessionsToSave.add(newSession);
-                continue;
-            }
-
-            if (!DEFAULT_STATUS.equalsIgnoreCase(existing.getStatus())) {
-                throw new AppException(ErrorCode.SESSION_NOT_DRAFT);
-            }
-
-            boolean changed =
-                    !Objects.equals(existing.getSessionTitle(), request.getSessionTitle()) ||
-                    !Objects.equals(existing.getContent(), request.getContent()) ||
-                    !Objects.equals(existing.getTeachingMethods(), request.getTeachingMethods()) ||
-                    !Objects.equals(existing.getDuration(), request.getDuration());
-
-            if (changed) {
-                existing.setSessionTitle(request.getSessionTitle());
-                existing.setContent(request.getContent());
-                existing.setTeachingMethods(request.getTeachingMethods());
-                existing.setDuration(request.getDuration());
-                sessionsToSave.add(existing);
-            }
-        }
-
-        return sessionRepository.saveAll(sessionsToSave)
-                .stream()
-                .map(sessionMapper::toResponse)
-                .toList();
     }
 
     @Transactional

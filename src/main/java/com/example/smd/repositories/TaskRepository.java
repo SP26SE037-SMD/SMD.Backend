@@ -3,6 +3,7 @@ package com.example.smd.repositories;
 import com.example.smd.entities.Task;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -36,7 +37,7 @@ public interface TaskRepository extends JpaRepository<Task, UUID>, JpaSpecificat
 
     @Override
     @EntityGraph(attributePaths = {"sprint", "account", "syllabus", "subject"})
-    Page<Task> findAll(Pageable pageable);
+    Page<Task> findAll(Specification<Task> spec, Pageable pageable);
 
         @Query("SELECT DISTINCT t.account.accountId FROM Task t " +
             "WHERE t.syllabus.syllabusId = :syllabusId " +
