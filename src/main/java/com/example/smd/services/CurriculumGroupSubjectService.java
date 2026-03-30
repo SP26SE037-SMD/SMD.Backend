@@ -4,6 +4,7 @@ import com.example.smd.dto.excel.CurriculumGroupSubjectImportDTO;
 import com.example.smd.dto.request.CurriculumGroupSubjectRequest;
 import com.example.smd.dto.response.CurriculumGroupSubjectResponse;
 import com.example.smd.dto.response.CurriculumSemesterMappingsResponse;
+import com.example.smd.dto.response.DepartmentResponse;
 import com.example.smd.dto.response.SubjectSimpleResponse;
 import com.example.smd.dto.request.BulkSemesterMappingRequest;
 import com.example.smd.dto.response.BulkSemesterMappingResponse;
@@ -47,6 +48,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -677,6 +679,40 @@ public class CurriculumGroupSubjectService {
                             .build();
                 })
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<DepartmentResponse> getDepartmentsByCurriculum(UUID curriculumUUID) {
+
+        if (!curriculumRepository.existsById(curriculumUUID)) {
+            throw new AppException(ErrorCode.CURRICULUM_NOT_FOUND);
+        }
+
+        List<Curriculum_Group_Subject> mappings =
+                curriculumGroupSubjectRepository.findAllByCurriculumIdOrderBySemester(curriculumUUID);
+
+        Set<UUID> uniqueDepartmentIds = new LinkedHashSet<>();
+        List<DepartmentResponse> departments = new ArrayList<>();
+
+        for (Curriculum_Group_Subject mapping : mappings) {
+            Subject subject = mapping.getSubject();
+            if (subject == null || subject.getDepartment() == null || subject.getDepartment().getDepartmentId() == null) {
+                continue;
+            }
+
+            Department department = subject.getDepartment();
+            if (uniqueDepartmentIds.add(department.getDepartmentId())) {
+                departments.add(DepartmentResponse.builder()
+                        .departmentId(department.getDepartmentId())
+                        .departmentCode(department.getDepartmentCode())
+                        .departmentName(department.getDepartmentName())
+                        .description(department.getDescription())
+                        .createdAt(department.getCreatedAt())
+                        .build());
+            }
+        }
+
+        return departments;
     }
 
     private ImportCurriculumGroupSubjectResult buildFail(

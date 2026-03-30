@@ -3,6 +3,7 @@ package com.example.smd.controller;
 import com.example.smd.dto.request.CurriculumGroupSubjectRequest;
 import com.example.smd.dto.response.CurriculumGroupSubjectResponse;
 import com.example.smd.dto.response.CurriculumSemesterMappingsResponse;
+import com.example.smd.dto.response.DepartmentResponse;
 import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.dto.response.SubjectSimpleResponse;
@@ -196,6 +197,26 @@ public class CurriculumGroupSubjectController {
                 .status(1000)
                 .data(subjects)
                 .message("Get subjects successfully")
+                .build();
+    }
+
+    @GetMapping("/departments/by-curriculum")
+    @Operation(
+            summary = "Get departments by curriculum",
+            description = "Get unique departments from subjects that belong to a curriculum. " +
+                    "Department is derived via subjects because curriculum does not store department directly."
+    )
+    public ResponseObject<List<DepartmentResponse>> getDepartmentsByCurriculum(
+            @Parameter(description = "Curriculum ID (UUID, required)", required = true)
+            @RequestParam(name = "curriculumId") UUID curriculumId
+    ) {
+        List<DepartmentResponse> departments =
+                curriculumGroupSubjectService.getDepartmentsByCurriculum(curriculumId);
+
+        return ResponseObject.<List<DepartmentResponse>>builder()
+                .status(1000)
+                .data(departments)
+                .message("Get departments successfully")
                 .build();
     }
 
