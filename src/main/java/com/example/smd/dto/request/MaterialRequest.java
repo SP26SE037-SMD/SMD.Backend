@@ -16,7 +16,8 @@ public class MaterialRequest {
     @NotBlank(message = "Material title is required")
     String title;
     String materialType;
-
+    Integer id;
+    Integer version;
     @NotNull(message = "Syllabus ID is required")
     UUID syllabusId;
 }

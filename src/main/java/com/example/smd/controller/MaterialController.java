@@ -98,6 +98,37 @@ public class MaterialController {
                 .build();
     }
 
+    @PatchMapping("/{id}/status")
+    @PreAuthorize("hasAuthority('MATERIAL_UPDATE_STATUS')")
+    @Operation(
+            summary = "Update Individual Material Lifecycle Status (Cập nhật trạng thái từng tài liệu)",
+            description = "### Quy trình phê duyệt tài liệu học tập (Material Approval):\n" +
+                    "Cập nhật trạng thái để kiểm soát quyền truy cập và hiển thị của một tài liệu cụ thể:\n\n" +
+                    "| Status | Mô tả chi tiết (Nghiệp vụ) | Ràng buộc hệ thống |\n" +
+                    "| :--- | :--- | :--- |\n" +
+                    "| **DRAFT** | **Khởi tạo:** Giảng viên mới tạo định danh tài liệu (Tên tài liệu, Loại: PDF/Slide/Link). | Chỉ người tạo nhìn thấy. |\n" +
+                    "| **REVISION_REQUESTED** | **Yêu cầu chỉnh sửa:** Tài liệu cần được điều chỉnh hoặc bổ sung theo feedback của người duyệt. |\n" +
+                    "| **APPROVED** | **Đã duyệt:** Nội dung tài liệu đạt yêu cầu, sẵn sàng để đưa vào Syllabus chính thức. |\n" +
+                    "| **REJECTED** | **Từ chối:** Tài liệu không phù hợp với chương trình đào tạo hoặc vi phạm quy định. |\n" +
+                    "| **PUBLISHED** | **Đã ban hành:** Tài liệu chính thức hiển thị cho sinh viên xem và tải về trên Portal. |\n" +
+                    "| **ARCHIVED** | **Lưu trữ:** Tài liệu của các học kỳ cũ, không còn áp dụng nhưng được giữ lại để đối soát lịch sử. |"
+    )
+    public ResponseObject<MaterialResponse> updateStatus(
+            @Parameter(description = "ID của tài liệu cần cập nhật (UUID)")
+            @PathVariable UUID id,
+
+            @Parameter(description = "Trạng thái mới cần áp dụng (VD: APPROVED, PUBLISHED)")
+            @RequestParam String newStatus) {
+
+        MaterialResponse result = materialService.updateStatus(id, newStatus);
+
+        return ResponseObject.<MaterialResponse>builder()
+                .status(1000)
+                .message("Material " + id + " has been updated to " + newStatus)
+                .data(result)
+                .build();
+    }
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('MATERIAL_DELETE')")
     @Operation(summary = "Delete a material")
