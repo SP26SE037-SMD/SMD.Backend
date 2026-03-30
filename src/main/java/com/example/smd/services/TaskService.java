@@ -137,7 +137,7 @@ public class TaskService {
 
     public Page<TaskListResponse> getAll(String search, String status, UUID sprintId, UUID accountId, UUID departmentId, UUID syllabusId, Pageable pageable) {
         var spec = TaskSpecification.withFilters(search, status, sprintId, accountId, departmentId, syllabusId);
-        Page<Task> pageData = taskRepository.findAll(pageable);
+        Page<Task> pageData = taskRepository.findAll(spec, pageable);
         return pageData.map(taskMapper::toTaskListResponse);
     }
 
