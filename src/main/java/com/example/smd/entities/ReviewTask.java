@@ -30,6 +30,9 @@ public class ReviewTask {
     @Column(name = "review_date")
     Instant reviewDate;
 
+    @Column(name = "due_to")
+    Instant dueDate;
+
     @Column(name = "status", length = 50)
     private String status;
 

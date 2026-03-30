@@ -1,7 +1,6 @@
 package com.example.smd.services;
 
 import com.example.smd.dto.request.task.BatchTaskRequest;
-import com.example.smd.dto.request.task.BatchTaskItemCreateRequest;
 import com.example.smd.dto.request.task.TaskCreateRequest;
 import com.example.smd.dto.request.task.TaskUpdateRequest;
 import com.example.smd.dto.response.task.TaskListResponse;
@@ -11,6 +10,7 @@ import com.example.smd.entities.Sprint;
 import com.example.smd.entities.Subject;
 import com.example.smd.entities.Syllabus;
 import com.example.smd.entities.Task;
+import com.example.smd.enums.Priority;
 import com.example.smd.enums.RoleName;
 import com.example.smd.enums.TaskStatus;
 import com.example.smd.exception.AppException;
@@ -95,15 +95,19 @@ public class TaskService {
 
         List<Task> tasksToSave = new ArrayList<>();
 
-        for (BatchTaskItemCreateRequest item : request.getTasks()) {
-            Task task = taskMapper.toTask(item);
-            task.setSprint(sprint);
+        for (UUID subjectId : request.getSubjectIds()) {
+            Subject subject = subjectRepository.findById(subjectId)
+                .orElseThrow(() -> new AppException(ErrorCode.SUBJECT_NOT_FOUND));
 
-            if (item.getSubjectId() != null) {
-                Subject subject = subjectRepository.findById(item.getSubjectId())
-                        .orElseThrow(() -> new AppException(ErrorCode.SUBJECT_NOT_FOUND));
-                task.setSubject(subject);
-            }
+            Task task = Task.builder()
+                .taskName(subject.getSubjectCode() + " - " + subject.getSubjectName())
+                .description("Auto-generated task for subject " + subject.getSubjectCode())
+                .priority(Priority.HIGH.toString())
+                .type("UNKNOWN")
+                .build();
+
+            task.setSprint(sprint);
+            task.setSubject(subject);
             task.setStatus(TaskStatus.TO_DO.toString());
 
             tasksToSave.add(task);
@@ -133,7 +137,7 @@ public class TaskService {
 
     public Page<TaskListResponse> getAll(String search, String status, UUID sprintId, UUID accountId, UUID departmentId, UUID syllabusId, Pageable pageable) {
         var spec = TaskSpecification.withFilters(search, status, sprintId, accountId, departmentId, syllabusId);
-        Page<Task> pageData = taskRepository.findAll(spec, pageable);
+        Page<Task> pageData = taskRepository.findAll(pageable);
         return pageData.map(taskMapper::toTaskListResponse);
     }
 

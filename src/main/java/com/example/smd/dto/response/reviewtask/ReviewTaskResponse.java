@@ -24,6 +24,9 @@ public class ReviewTaskResponse {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+7")
     Instant reviewDate;
 
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+7")
+    Instant dueDate;
+
     String status;
     ReviewTaskTaskResponse task;
     ReviewTaskReviewerResponse reviewer;

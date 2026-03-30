@@ -1,6 +1,7 @@
 package com.example.smd.mapper;
 
-import com.example.smd.dto.request.sprint.SprintRequest;
+import com.example.smd.dto.request.sprint.SprintCreateRequest;
+import com.example.smd.dto.request.sprint.SprintUpdateRequest;
 import com.example.smd.dto.response.sprint.SprintResponse;
 import com.example.smd.entities.Sprint;
 import org.mapstruct.Mapper;
@@ -13,7 +14,7 @@ public interface SprintMapper {
     @Mapping(target = "tasks", ignore = true)
     @Mapping(target = "account", ignore = true)
     @Mapping(target = "curriculum", ignore = true)
-    Sprint toSprint(SprintRequest request);
+    Sprint toSprint(SprintCreateRequest request);
 
     @Mapping(target = "accountId", source = "account.accountId")
     @Mapping(target = "curriculumId", source = "curriculum.curriculumId")
@@ -23,5 +24,5 @@ public interface SprintMapper {
     @Mapping(target = "tasks", ignore = true)
     @Mapping(target = "account", ignore = true)
     @Mapping(target = "curriculum", ignore = true)
-    void updateSprint(@MappingTarget Sprint sprint, SprintRequest request);
+    void updateSprint(@MappingTarget Sprint sprint, SprintUpdateRequest request);
 }

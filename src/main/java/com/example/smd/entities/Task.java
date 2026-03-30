@@ -27,7 +27,7 @@ public class Task {
 
     // Người được giao việc
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "assigned_to", nullable = false)
+    @JoinColumn(name = "assigned_to")
     Account account;
 
     // Task này liên quan đến Syllabus nào? (Optional)

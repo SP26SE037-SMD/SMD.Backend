@@ -19,6 +19,8 @@ public class ReviewTaskRequest {
     String titleTask;
     String content;
     Instant reviewDate;
+    Instant dueDate;
     String status;
     UUID taskId;
+    UUID reviewerId;
 }
