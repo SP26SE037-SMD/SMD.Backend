@@ -31,8 +31,6 @@ public class SessionRequest {
     @Size(max = 200, message = "SESSION_TITLE_INVALID")
     String sessionTitle;
 
-    String content;
-
     String teachingMethods;
 
     @Min(value = 0, message = "SESSION_DURATION_INVALID")

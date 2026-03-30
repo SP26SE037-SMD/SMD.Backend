@@ -18,7 +18,6 @@ public class SessionMapper {
                 .syllabusId(session.getSyllabus() != null ? session.getSyllabus().getSyllabusId() : null)
                 .sessionNumber(session.getSessionNumber())
                 .sessionTitle(session.getSessionTitle())
-                .content(session.getContent())
                 .teachingMethods(session.getTeachingMethods())
                 .duration(session.getDuration())
                 .status(session.getStatus())
@@ -34,7 +33,6 @@ public class SessionMapper {
         return Session.builder()
                 .sessionNumber(request.getSessionNumber())
                 .sessionTitle(request.getSessionTitle())
-                .content(request.getContent())
                 .teachingMethods(request.getTeachingMethods())
                 .duration(request.getDuration())
                 .build();
@@ -43,7 +41,6 @@ public class SessionMapper {
     public void updateEntity(Session session, SessionRequest request) {
         session.setSessionNumber(request.getSessionNumber());
         session.setSessionTitle(request.getSessionTitle());
-        session.setContent(request.getContent());
         session.setTeachingMethods(request.getTeachingMethods());
         session.setDuration(request.getDuration());
     }

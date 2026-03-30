@@ -1,7 +1,6 @@
 package com.example.smd.controller;
 
 import com.example.smd.dto.request.session.SessionRequest;
-import com.example.smd.dto.request.session.SessionItemRequest;
 import com.example.smd.dto.request.session.SessionNumberListRequest;
 import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.ResponseObject;
@@ -80,20 +79,6 @@ public class SessionController {
                 .status(1000)
                 .data(sessionService.createSession(request, userId))
                 .message("Create session successfully")
-                .build();
-    }
-
-    @PostMapping("/batch")
-    @PreAuthorize("hasAuthority('SYLLABUS_UPDATE')")
-    @Operation(summary = "Create session list for a syllabus")
-    public ResponseObject<List<SessionResponse>> createSessionList(
-            @RequestParam UUID syllabusId,
-            @RequestBody List<@Valid SessionItemRequest> requests
-    ) {
-        return ResponseObject.<List<SessionResponse>>builder()
-                .status(1000)
-                .data(sessionService.createSessionsBySyllabus(syllabusId, requests))
-                .message("Create session list successfully")
                 .build();
     }
 

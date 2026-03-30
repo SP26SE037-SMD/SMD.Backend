@@ -2,6 +2,7 @@ package com.example.smd.services;
 
 import com.example.smd.dto.request.BlockRequest;
 import com.example.smd.dto.response.BlockResponse;
+import com.example.smd.dto.response.BlockSimpleResponse;
 import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.entities.Blocks;
 import com.example.smd.entities.Material;
@@ -76,6 +77,21 @@ public class BlockService {
     public List<BlockResponse> getAllByMaterial(UUID materialId) {
         return blockRepository.findAllByMaterial_MaterialIdOrderByIdxAsc(materialId).stream()
                 .map(blockMapper::toResponse)
+                .toList();
+    }
+
+    public List<BlockSimpleResponse> getBlocksByMaterialAndStyle(UUID materialId, String blockStyle) {
+        if (!materialRepository.existsById(materialId)) {
+            throw new AppException(ErrorCode.MATERIAL_NOT_FOUND);
+        }
+
+        return blockRepository.findAllByMaterial_MaterialIdAndBlockStyleIgnoreCaseOrderByIdxAsc(materialId, blockStyle)
+                .stream()
+                .map(block -> BlockSimpleResponse.builder()
+                        .blockId(block.getBlockId())
+                        .blockName(block.getContentText())
+                        .idx(block.getIdx())
+                        .build())
                 .toList();
     }
 
