@@ -1,6 +1,7 @@
 package com.example.smd.controller;
 
 import com.example.smd.dto.request.session.SessionMaterialBlockBulkRequest;
+import com.example.smd.dto.request.session.SessionMaterialBlockUpdateRequest;
 import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.dto.response.session.BulkSessionMaterialBlockResponse;
@@ -16,6 +17,7 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -48,6 +50,25 @@ public class SessionMaterialBlockController {
                 .message(response.isSuccess() ? "Bulk session-material-block mapping completed successfully" : "Bulk session-material-block mapping completed with validation issues")
                 .build();
     }
+
+            @PutMapping("/update")
+            @Operation(
+                summary = "Update session info and replace all session-material-block mappings",
+                description = "Update session fields by sessionId, delete all related rows in session_material_block, then insert the new material-block mappings."
+            )
+            public ResponseObject<BulkSessionMaterialBlockResponse> updateSessionMaterialBlocks(
+                @Valid @RequestBody SessionMaterialBlockUpdateRequest request
+            ) {
+            BulkSessionMaterialBlockResponse response = sessionMaterialBlockService.updateSessionMaterialBlocks(request);
+
+            return ResponseObject.<BulkSessionMaterialBlockResponse>builder()
+                .status(response.isSuccess() ? 1000 : 400)
+                .data(response)
+                .message(response.isSuccess() ?
+                    "Update session-material-block mapping completed successfully" :
+                    "Update session-material-block mapping completed with validation issues")
+                .build();
+            }
 
             @GetMapping
             @Operation(summary = "Get session-material-block list by syllabusId with pagination")
