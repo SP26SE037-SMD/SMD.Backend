@@ -40,7 +40,7 @@ public class SprintService {
         public SprintResponse create(SprintCreateRequest request, String accountId) {
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (!(RoleName.HOCFDC.equals(roleName) )) {
+        if (!(RoleName.HOCFDC.toString().equals(roleName) )) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 

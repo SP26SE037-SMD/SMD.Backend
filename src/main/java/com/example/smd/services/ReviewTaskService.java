@@ -39,7 +39,15 @@ public class ReviewTaskService {
         Task task = taskRepository.findById(request.getTaskId())
                 .orElseThrow(() -> new AppException(ErrorCode.TASK_NOT_FOUND));
 
-        Account reviewer = accountRepository.findById(UUID.fromString(reviewerAccountId))
+        UUID reviewerId = request.getReviewerId();
+        if (reviewerId == null && reviewerAccountId != null && !reviewerAccountId.isBlank()) {
+            reviewerId = UUID.fromString(reviewerAccountId);
+        }
+        if (reviewerId == null) {
+            throw new AppException(ErrorCode.INVALID_KEY, "Reviewer ID is required");
+        }
+
+        Account reviewer = accountRepository.findById(reviewerId)
                 .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND));
 
         ReviewTask reviewTask = reviewTaskMapper.toReviewTask(request);

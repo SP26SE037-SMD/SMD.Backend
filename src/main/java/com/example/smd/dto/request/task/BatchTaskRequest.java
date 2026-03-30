@@ -6,6 +6,7 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.util.List;
+import java.util.UUID;
 
 @Data
 @NoArgsConstructor
@@ -16,5 +17,5 @@ public class BatchTaskRequest {
 
     @NotEmpty(message = "TASK_LIST_REQUIRED")
     @Valid
-    List<BatchTaskItemCreateRequest> tasks;
+    List<UUID> subjectIds;
 }

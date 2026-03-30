@@ -1,7 +1,6 @@
 package com.example.smd.mapper;
 
 import com.example.smd.dto.request.task.TaskCreateRequest;
-import com.example.smd.dto.request.task.BatchTaskItemCreateRequest;
 import com.example.smd.dto.request.task.TaskUpdateRequest;
 import com.example.smd.dto.response.task.TaskListResponse;
 import com.example.smd.dto.response.task.TaskResponse;
@@ -34,13 +33,6 @@ public interface TaskMapper {
     @Mapping(target = "syllabus.syllabusName", source = "syllabus.syllabusName")
     @Mapping(target = "subjectId", source = "subject.subjectId")
     TaskListResponse toTaskListResponse(Task task);
-
-    @Mapping(target = "taskId", ignore = true)
-    @Mapping(target = "sprint", ignore = true)
-    @Mapping(target = "account", ignore = true)
-    @Mapping(target = "syllabus", ignore = true)
-    @Mapping(target = "subject", ignore = true)
-    Task toTask(BatchTaskItemCreateRequest request);
 
     @Mapping(target = "taskId", ignore = true)
     @Mapping(target = "sprint", ignore = true)
