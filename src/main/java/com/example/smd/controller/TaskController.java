@@ -1,6 +1,5 @@
 package com.example.smd.controller;
 
-import com.example.smd.dto.request.task.BatchTaskRequest;
 import com.example.smd.dto.request.task.TaskCreateRequest;
 import com.example.smd.dto.request.task.TaskUpdateRequest;
 import com.example.smd.dto.response.PagedResponse;
@@ -51,17 +50,15 @@ public class TaskController {
                 .build();
     }
 
-    @PostMapping("/batch/{sprintId}/{departmentId}")
-    @Operation(summary = "Create multiple tasks in a sprint")
-    public ResponseObject<List<TaskResponse>> createBatch(
+    @PostMapping("/batch/{sprintId}")
+    @Operation(summary = "Create multiple tasks in a sprint", description = "Auto-create tasks from subjects of sprint's curriculum and department")
+    public ResponseObject<Boolean> createBatch(
             @PathVariable UUID sprintId,
-            @PathVariable UUID departmentId,
-            @RequestBody @Valid BatchTaskRequest request,
             @AuthenticationPrincipal Jwt jwt
     ) {
         String userId = jwt.getClaimAsString("accountId");
-        return ResponseObject.<List<TaskResponse>>builder()
-                .data(taskService.createBatch(sprintId, request, userId, departmentId))
+        return ResponseObject.<Boolean>builder()
+                .data(taskService.createBatch(sprintId, userId))
                 .message("Tasks created successfully")
                 .build();
     }

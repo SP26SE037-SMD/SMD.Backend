@@ -1,12 +1,12 @@
 package com.example.smd.services;
 
-import com.example.smd.dto.request.task.BatchTaskRequest;
 import com.example.smd.dto.request.task.TaskCreateRequest;
 import com.example.smd.dto.request.task.TaskUpdateRequest;
 import com.example.smd.dto.response.task.TaskListResponse;
 import com.example.smd.dto.response.task.TaskResponse;
 import com.example.smd.entities.Account;
 import com.example.smd.entities.Sprint;
+import com.example.smd.entities.Curriculum_Group_Subject;
 import com.example.smd.entities.Subject;
 import com.example.smd.entities.Syllabus;
 import com.example.smd.entities.Task;
@@ -17,6 +17,7 @@ import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.TaskMapper;
 import com.example.smd.repositories.AccountRepository;
+import com.example.smd.repositories.CurriculumGroupSubjectRepository;
 import com.example.smd.repositories.SprintRepository;
 import com.example.smd.repositories.SubjectRepository;
 import com.example.smd.repositories.SyllabusRepository;
@@ -32,9 +33,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.time.LocalDate;
+import java.util.Set;
 import java.util.UUID;
 
 @Slf4j
@@ -47,6 +50,7 @@ public class TaskService {
     AccountRepository accountRepository;
     SyllabusRepository syllabusRepository;
     SubjectRepository subjectRepository;
+    CurriculumGroupSubjectRepository curriculumGroupSubjectRepository;
     AccountService accountService;
     TaskMapper taskMapper;
 
@@ -82,7 +86,7 @@ public class TaskService {
     }
 
     @Transactional
-    public List<TaskResponse> createBatch(UUID sprintId, BatchTaskRequest request, String check, UUID departmentId) {
+    public boolean createBatch(UUID sprintId, String check) {
         var checkRole = accountService.getAccountById(check);
         String roleName = checkRole.getRole().getRoleName();
         if (!(RoleName.HOCFDC.toString().equals(roleName))) {
@@ -93,9 +97,33 @@ public class TaskService {
         Sprint sprint = sprintRepository.findById(sprintId)
             .orElseThrow(() -> new AppException(ErrorCode.SPRINT_NOT_FOUND));
 
-        List<Task> tasksToSave = new ArrayList<>();
+        if (sprint.getCurriculum() == null || sprint.getCurriculum().getCurriculumId() == null) {
+            throw new AppException(ErrorCode.CURRICULUM_NOT_FOUND);
+        }
+        if (sprint.getAccount() == null || sprint.getAccount().getDepartment() == null ||
+                sprint.getAccount().getDepartment().getDepartmentId() == null) {
+            throw new AppException(ErrorCode.DEPARTMENT_NOT_FOUND);
+        }
 
-        for (UUID subjectId : request.getSubjectIds()) {
+        UUID curriculumId = sprint.getCurriculum().getCurriculumId();
+        UUID departmentId = sprint.getAccount().getDepartment().getDepartmentId();
+
+        List<Curriculum_Group_Subject> mappings =
+                curriculumGroupSubjectRepository.findByCurriculumIdAndDepartmentId(curriculumId, departmentId);
+
+        Set<UUID> subjectIds = new HashSet<>();
+        for (Curriculum_Group_Subject mapping : mappings) {
+            if (mapping.getSubject() != null && mapping.getSubject().getSubjectId() != null) {
+                subjectIds.add(mapping.getSubject().getSubjectId());
+            }
+        }
+
+        if (subjectIds.isEmpty()) {
+            throw new AppException(ErrorCode.SUBJECT_NOT_FOUND);
+        }
+
+        List<Task> tasksToSave = new ArrayList<>();
+        for (UUID subjectId : subjectIds) {
             Subject subject = subjectRepository.findById(subjectId)
                 .orElseThrow(() -> new AppException(ErrorCode.SUBJECT_NOT_FOUND));
 
@@ -115,24 +143,17 @@ public class TaskService {
 
         List<Task> savedTasks = taskRepository.saveAll(tasksToSave);
 
-        // Send notification to HoPDC accounts in departmentId if provided
-        if (departmentId != null) {
-            List<Account> hopDCAccounts =
-                    accountRepository.findByDepartmentAndRoleName(departmentId, RoleName.HOPDC.toString());
-            if (!hopDCAccounts.isEmpty()) {
-                // Collect task names for notification
-                List<String> taskNames = savedTasks.stream().map(Task::getTaskName).toList();
-                // TODO: Implement actual notification logic
-                // This could include: sending emails, creating in-app notifications, sending messages, etc.
-                // Example: notificationService.notifyHoPDC(hopDCAccounts, taskNames, sprint.getSprintName());
-                // For now, log the notification info
-                log.info("Notification: Tasks " + taskNames + " created" +
-                    " in sprint " + sprint.getSprintName() +
-                                   " for HoPDC accounts: " + hopDCAccounts.stream().map(Account::getEmail).toList());
-            }
+        if (sprint.getAccount() != null &&
+            sprint.getAccount().getRole() != null &&
+            RoleName.HOPDC.toString().equals(sprint.getAccount().getRole().getRoleName())) {
+            List<String> taskNames = savedTasks.stream().map(Task::getTaskName).toList();
+            log.info("Notification: Tasks " + taskNames + " created" +
+                " in sprint " + sprint.getSprintName() +
+                " for HoPDC account: " + sprint.getAccount().getEmail());
         }
 
-        return savedTasks.stream().map(taskMapper::toTaskResponse).toList();
+//        return savedTasks.stream().map(taskMapper::toTaskResponse).toList();
+        return true;
     }
 
     public Page<TaskListResponse> getAll(String search, String status, UUID sprintId, UUID accountId, UUID departmentId, UUID syllabusId, Pageable pageable) {
