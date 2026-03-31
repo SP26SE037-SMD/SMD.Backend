@@ -46,11 +46,11 @@ public class GeminiService {
     private String apiEmbeddingUrl;
 
     public CLOsGenerationResponse generateClo(CloGenerationRequest req, String accountId) {
-//        var account = accountService.getAccountById(accountId);
-//        String roleName = account.getRole().getRoleName();
-//        if (!"HOPDC".equals(roleName)) {
-//            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
-//        }
+        var account = accountService.getAccountById(accountId);
+        String roleName = account.getRole().getRoleName();
+        if (!"HOPDC".equals(roleName)) {
+            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+        }
 
         // 1. Ghép dữ liệu vào Prompt bằng hàm format đã chuẩn bị
         String finalPrompt = String.format(PromptTemplateService.CLO_GENERATOR,
