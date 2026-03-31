@@ -45,6 +45,7 @@ public class SessionMaterialBlockService {
     MaterialRepository materialRepository;
     BlockRepository blockRepository;
     SessionMaterialBlockRepository sessionMaterialBlockRepository;
+    SessionRegulationValidationService sessionRegulationValidationService;
 
     @Transactional
     public BulkSessionMaterialBlockResponse bulkConfigureSessionMaterialBlocks(SessionMaterialBlockBulkRequest request) {
@@ -64,6 +65,12 @@ public class SessionMaterialBlockService {
 
         List<String> warnings = new ArrayList<>();
         if (session == null) {
+            sessionRegulationValidationService.validateDurationByRegulation(
+                request.getSyllabusId(),
+                request.getDuration(),
+                null
+            );
+
             session = Session.builder()
                     .syllabus(syllabus)
                     .sessionNumber(request.getSessionNumber())
@@ -187,6 +194,12 @@ public class SessionMaterialBlockService {
         if (duplicatedSessionNumber) {
             throw new AppException(ErrorCode.SESSION_NUMBER_EXISTS);
         }
+
+        sessionRegulationValidationService.validateDurationByRegulation(
+            syllabusId,
+            request.getDuration(),
+            session.getSessionId()
+        );
 
         session.setSessionNumber(request.getSessionNumber());
         session.setSessionTitle(request.getSessionTitle());

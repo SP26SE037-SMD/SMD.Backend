@@ -37,6 +37,7 @@ public class SessionService {
     private final SessionRepository sessionRepository;
     private final SyllabusRepository syllabusRepository;
     private final SessionMapper sessionMapper;
+    private final SessionRegulationValidationService sessionRegulationValidationService;
 
     @Transactional(readOnly = true)
     public Page<SessionResponse> getAllSessions(UUID syllabusId,
@@ -155,6 +156,12 @@ public class SessionService {
             throw new AppException(ErrorCode.SESSION_NUMBER_EXISTS);
         }
 
+        sessionRegulationValidationService.validateDurationByRegulation(
+            request.getSyllabusId(),
+            request.getDuration(),
+            null
+        );
+
         Session session = sessionMapper.toEntity(request);
         session.setSyllabus(syllabus);
         session.setStatus(DEFAULT_STATUS);
@@ -185,6 +192,12 @@ public class SessionService {
                 request.getSyllabusId(), request.getSessionNumber(), sessionId)) {
             throw new AppException(ErrorCode.SESSION_NUMBER_EXISTS);
         }
+
+        sessionRegulationValidationService.validateDurationByRegulation(
+            request.getSyllabusId(),
+            request.getDuration(),
+            sessionId
+        );
 
         session.setSyllabus(syllabus);
         sessionMapper.updateEntity(session, request);
