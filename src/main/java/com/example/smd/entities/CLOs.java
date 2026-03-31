@@ -23,6 +23,9 @@ public class CLOs {
     @Column(name = "clo_code", nullable = false, length = 20)
     String cloCode;
 
+    @Column(name = "clo_name", columnDefinition = "TEXT")
+    String cloName;
+
     @Column(columnDefinition = "TEXT")
     String description;
 

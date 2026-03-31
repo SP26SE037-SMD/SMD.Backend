@@ -14,6 +14,8 @@ public class CLOsRequest {
     @NotBlank(message = "CLO_CODE_REQUIRED")
     String cloCode;
 
+    String cloName;
+
     String description;
 
     @NotNull(message = "BLOOM_LEVEL_REQUIRED")

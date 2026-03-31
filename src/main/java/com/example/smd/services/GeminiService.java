@@ -86,9 +86,16 @@ public class GeminiService {
         }
 
         // 1. Tạo Prompt từ Template
+        // Trong GeminiService.java
         String prompt = String.format(PromptTemplateService.VALIDATOR_PROMPT,
-                req.getCloContent(),
-                req.getTargetLevel());
+                req.getTargetLevel(),  // (1)
+                req.getTargetLevel(),  // (2)
+                req.getCloName(),      // (3)
+                req.getCloContent(),   // (4)
+                req.getTargetLevel(),  // (5)
+                req.getTargetLevel(),  // (6)
+                req.getTargetLevel()   // (7)
+        );
 
         // 2. Gọi API thông qua Gemini Client
         String jsonResult = gemini.prompt(prompt, apiCheckUrl);
