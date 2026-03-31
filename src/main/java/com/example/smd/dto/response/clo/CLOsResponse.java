@@ -15,6 +15,7 @@ import java.util.UUID;
 public class CLOsResponse {
     UUID cloId;
     String cloCode;
+    String cloName;
     String description;
     String bloomLevel;
     String status;

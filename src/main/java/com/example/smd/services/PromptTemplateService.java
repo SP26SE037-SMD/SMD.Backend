@@ -32,17 +32,26 @@ public class PromptTemplateService {
 
     // Template cho việc check CLO
     public static final String VALIDATOR_PROMPT =
-            "Role: Bạn là chuyên gia kiểm định chất lượng giáo dục (QA).\n" +
-                    "Nhiệm vụ: Kiểm tra xem CLO sau đây có khớp với Thang đo Bloom mong muốn không.\n" +
+            "Role: Chuyên gia kiểm định chất lượng đào tạo (QA).\n" +
+                    "Nhiệm vụ: Phân tích CLO để xác định tính phù hợp với mức độ Bloom %d.\n" +
+                    "\n" +
+                    "Tiêu chí bắt buộc:\n" +
+                    "1. Tính đầy đủ: CLO phải có cả động từ hành động VÀ nội dung kiến thức đi kèm. Nếu chỉ có động từ (ví dụ: 'Sử dụng', 'Phân tích'), hãy trả về valid: false.\n" +
+                    "2. Sự tương xứng: Nội dung mô tả phải đủ độ sâu để đạt mức %d. 'Sử dụng' cho các bài toán cơ bản (Mức 3) là khác với 'Sử dụng' để tối ưu hóa hệ thống phức tạp (Mức 4/5).\n" +
+                    "\n" +
                     "Input:\n" +
-                    "- CLO: \"%s\"\n" +
+                    "- CLO Name: \"%s\"\n" +
+                    "- Description: \"%s\"\n" +
                     "- Mức mong muốn: %d\n" +
-                    "Yêu cầu Output: Trả về duy nhất 1 JSON object (không markdown, không giải thích) theo định dạng:\n" +
+                    "\n" +
+                    "Output JSON:\n" +
                     "{\n" +
                     "  \"valid\": true/false,\n" +
                     "  \"detectedVerb\": \"...\",\n" +
                     "  \"detectedLevel\": \"...\",\n" +
-                    "  \"suggestion\": \"...\"\n" +
+                    "  \"completeness\": \"Đầy đủ/Thiếu nội dung/Chỉ có động từ\",\n" +
+                    "  \"reason\": \"Giải thích chi tiết tại sao đạt hoặc không đạt, đặc biệt nếu thiếu nội dung thì phải chỉ rõ\",\n" +
+                    "  \"suggestion\": \"Gợi ý cách viết lại đầy đủ cả hành động và đối tượng\"\n" +
                     "}";
 
     public static final String COMPARISON_PROMPT = """

@@ -11,6 +11,7 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class CloCheckRequest {
+    String cloName;
     String cloContent; // Ví dụ: "Liệt kê các thẻ HTML"
     int targetLevel;   // Ví dụ: 6 (Sáng tạo)
 }

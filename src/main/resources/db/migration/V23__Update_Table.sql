@@ -1,0 +1,2 @@
+ALTER TABLE clos
+ADD COLUMN clo_name TEXT;
