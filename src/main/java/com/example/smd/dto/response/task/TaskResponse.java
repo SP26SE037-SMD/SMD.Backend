@@ -20,6 +20,7 @@ public class TaskResponse {
     UUID subjectId;
     String taskName;
     String description;
+    String subjectStatus;
     String status;
     String priority;
     String type;
