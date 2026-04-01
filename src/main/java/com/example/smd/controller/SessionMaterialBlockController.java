@@ -1,6 +1,7 @@
 package com.example.smd.controller;
 
 import com.example.smd.dto.request.session.SessionMaterialBlockBulkRequest;
+import com.example.smd.dto.request.session.SessionMaterialBlockBulkListRequest;
 import com.example.smd.dto.request.session.SessionMaterialBlockUpdateRequest;
 import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.ResponseObject;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.UUID;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/session-material-blocks")
@@ -50,6 +52,24 @@ public class SessionMaterialBlockController {
                 .message(response.isSuccess() ? "Bulk session-material-block mapping completed successfully" : "Bulk session-material-block mapping completed with validation issues")
                 .build();
     }
+
+            @PostMapping("/bulk-configure-list")
+            @Operation(
+                summary = "Bulk configure session-material-block mappings by session list",
+                description = "Apply the same bulk-configure logic for each item in sessions list under one syllabusId"
+            )
+            public ResponseObject<List<BulkSessionMaterialBlockResponse>> bulkConfigureByList(
+                @Valid @RequestBody SessionMaterialBlockBulkListRequest request
+            ) {
+            List<BulkSessionMaterialBlockResponse> responses =
+                sessionMaterialBlockService.bulkConfigureSessionMaterialBlocksByList(request);
+
+            return ResponseObject.<List<BulkSessionMaterialBlockResponse>>builder()
+                .status(1000)
+                .data(responses)
+                .message("Bulk session-material-block mapping by list completed successfully")
+                .build();
+            }
 
             @PutMapping("/update")
             @Operation(

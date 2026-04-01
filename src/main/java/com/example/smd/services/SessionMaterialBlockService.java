@@ -1,6 +1,7 @@
 package com.example.smd.services;
 
 import com.example.smd.dto.request.session.SessionMaterialBlockBulkRequest;
+import com.example.smd.dto.request.session.SessionMaterialBlockBulkListRequest;
 import com.example.smd.dto.request.session.SessionMaterialBlockUpdateRequest;
 import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.session.BulkSessionMaterialBlockResponse;
@@ -46,6 +47,29 @@ public class SessionMaterialBlockService {
     BlockRepository blockRepository;
     SessionMaterialBlockRepository sessionMaterialBlockRepository;
     SessionRegulationValidationService sessionRegulationValidationService;
+
+    @Transactional
+    public List<BulkSessionMaterialBlockResponse> bulkConfigureSessionMaterialBlocksByList(
+            SessionMaterialBlockBulkListRequest request
+    ) {
+        List<BulkSessionMaterialBlockResponse> responses = new ArrayList<>();
+
+        for (SessionMaterialBlockBulkListRequest.SessionItem item : request.getSessions()) {
+            SessionMaterialBlockBulkRequest singleRequest = SessionMaterialBlockBulkRequest.builder()
+                    .syllabusId(request.getSyllabusId())
+                    .sessionNumber(item.getSessionNumber())
+                    .sessionTitle(item.getSessionTitle())
+                    .teachingMethods(item.getTeachingMethods())
+                    .duration(item.getDuration())
+                    .material(item.getMaterial())
+                    .block(item.getBlock())
+                    .build();
+
+            responses.add(bulkConfigureSessionMaterialBlocks(singleRequest));
+        }
+
+        return responses;
+    }
 
     @Transactional
     public BulkSessionMaterialBlockResponse bulkConfigureSessionMaterialBlocks(SessionMaterialBlockBulkRequest request) {

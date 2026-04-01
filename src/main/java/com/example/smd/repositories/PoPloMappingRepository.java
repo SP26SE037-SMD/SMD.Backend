@@ -3,7 +3,11 @@ package com.example.smd.repositories;
 import com.example.smd.entities.PO_PLO_Mapping;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -13,8 +17,11 @@ public interface PoPloMappingRepository extends JpaRepository<PO_PLO_Mapping, UU
 
     boolean existsByPo_PoIdAndPlo_PloId(UUID poId, UUID ploId);
 
-    long deleteByPo_PoIdAndPlo_PloId(UUID poId, UUID ploId);
-
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM PO_PLO_Mapping m WHERE m.po.poId = :poId AND " +
+            "m.plo.ploId = :ploId")
+    int deleteByPo_PoIdAndPlo_PloId(@Param("poId") UUID poId, @Param("ploId") UUID ploId);
     @EntityGraph(attributePaths = {"po", "plo"})
     List<PO_PLO_Mapping> findByPo_PoId(UUID poId);
 
