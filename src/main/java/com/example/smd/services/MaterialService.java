@@ -38,10 +38,10 @@ public class MaterialService {
     public MaterialResponse create(MaterialRequest request, String accountId) {
 
         var account = accountService.getAccountById(accountId);
-//        String roleName = account.getRole().getRoleName();
-//        if (!(RoleName.COLLABORATOR.toString().equals(roleName) || RoleName.PDCM.toString().equals(roleName))) {
-//            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
-//        }
+        String roleName = account.getRole().getRoleName();
+        if (!(RoleName.COLLABORATOR.toString().equals(roleName) || RoleName.PDCM.toString().equals(roleName))) {
+            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+        }
 
         Syllabus syllabus = syllabusRepository.findById(request.getSyllabusId())
                 .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));

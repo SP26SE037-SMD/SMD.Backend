@@ -25,7 +25,7 @@ public interface BlockRepository extends JpaRepository<Blocks, UUID> {
 
     @Query("SELECT b.contentText FROM Blocks b " +
             "WHERE b.material.materialId = :materialId " +
-            "AND b.blockStyle IN ('H1', 'H2') " +
+            "AND b.blockType IN ('H1', 'H2') " +
             "ORDER BY b.idx ASC")
     List<String> findTitlesByMaterialId(@Param("materialId") UUID materialId);
 }

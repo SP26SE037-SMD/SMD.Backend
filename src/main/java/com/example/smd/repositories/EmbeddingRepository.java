@@ -31,7 +31,7 @@ public interface EmbeddingRepository extends JpaRepository<Vector_Embeddings, UU
 
     @Query(value = """
 SELECT 
-    b.block_style AS contentTitle, 
+    b.block_type AS contentTitle, 
     v.content AS contentBody,
     m.material_name AS chapterTitle,
     (v.embedding_vector <=> CAST(:vectorStr AS vector)) AS distance,

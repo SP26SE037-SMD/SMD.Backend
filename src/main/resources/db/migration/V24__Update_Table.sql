@@ -1,0 +1,1 @@
+ALTER TABLE public.blocks ADD block_type text NULL;
