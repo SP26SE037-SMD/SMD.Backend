@@ -23,6 +23,7 @@ public interface TaskMapper {
     @Mapping(target = "accountId", source = "account.accountId")
     @Mapping(target = "syllabusId", source = "syllabus.syllabusId")
     @Mapping(target = "subjectId", source = "subject.subjectId")
+    @Mapping(target = "subjectStatus", source = "subject.status")
     TaskResponse toTaskResponse(Task task);
 
     @Mapping(target = "sprintId", source = "sprint.sprintId")
@@ -32,6 +33,7 @@ public interface TaskMapper {
     @Mapping(target = "syllabus.syllabusId", source = "syllabus.syllabusId")
     @Mapping(target = "syllabus.syllabusName", source = "syllabus.syllabusName")
     @Mapping(target = "subjectId", source = "subject.subjectId")
+    @Mapping(target = "subjectStatus", source = "subject.status")
     TaskListResponse toTaskListResponse(Task task);
 
     @Mapping(target = "taskId", ignore = true)
