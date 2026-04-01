@@ -41,7 +41,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class SubjectService {
-
+    CurriculumRepository curriculumRepository;
     SubjectRepository subjectRepository;
     DepartmentRepository departmentRepository;
     PrerequisiteRepository prerequisiteRepository;
@@ -315,6 +315,62 @@ public class SubjectService {
         response.setPreRequisite(prerequisites);
 
         return response;
+    }
+
+    @Transactional
+    public int updateAllSubjectStatusInCurriculum(UUID curriculumId, UUID departmentId, String newStatus) {
+
+        // 1. Kiểm tra Curriculum có tồn tại không
+        if (!curriculumRepository.existsById(curriculumId)) {
+            throw new AppException(ErrorCode.CURRICULUM_NOT_FOUND);
+        }
+
+        // 2. Kiểm tra Department có tồn tại không
+        if (!departmentRepository.existsById(departmentId)) {
+            throw new AppException(ErrorCode.DEPARTMENT_NOT_FOUND);
+        }
+
+        // 3. Kiểm tra tính hợp lệ của Status Enum
+        SubjectStatus status;
+        try {
+            status = SubjectStatus.valueOf(newStatus.toUpperCase());
+        } catch (IllegalArgumentException | NullPointerException e) {
+            throw new AppException(ErrorCode.INVALID_SUBJECT_STATUS);
+        }
+
+        // 4. Thực hiện cập nhật đồng loạt dưới Database
+        // Trả về số lượng bản ghi đã được cập nhật thành công
+        return subjectRepository.updateStatusByCurriculumAndDepartment(
+                status.toString(),
+                curriculumId,
+                departmentId
+        );
+    }
+
+    @Transactional
+    public int updateDecisionOnly(UUID curriculumId, UUID departmentId, String decisionNo) {
+
+        // 1. Kiểm tra mã quyết định không được rỗng
+        if (decisionNo == null || decisionNo.trim().isEmpty()) {
+            throw new AppException(ErrorCode.DECISION_NO_REQUIRED);
+        }
+
+        // 2. Kiểm tra thực thể tồn tại để đảm bảo tính an toàn dữ liệu
+        if (!curriculumRepository.existsById(curriculumId)) {
+            throw new AppException(ErrorCode.CURRICULUM_NOT_FOUND);
+        }
+        if (!departmentRepository.existsById(departmentId)) {
+            throw new AppException(ErrorCode.DEPARTMENT_NOT_FOUND);
+        }
+
+        // 3. Thực hiện cập nhật thông tin pháp lý
+        // Mặc định lấy ngày hiện tại làm ngày phê duyệt (Approved Date)
+        return subjectRepository.updateDecisionInfoByCurriculumAndDepartment(
+                decisionNo.trim(),
+                java.time.Instant.now(),
+                curriculumId,
+                departmentId
+        );
     }
 
     @Transactional

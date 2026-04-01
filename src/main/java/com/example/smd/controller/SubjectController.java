@@ -2,6 +2,7 @@ package com.example.smd.controller;
 
 import com.example.smd.dto.request.subject.SubjectPublishRequest;
 import com.example.smd.dto.request.subject.SubjectRequest;
+import com.example.smd.dto.response.PLOsResponse;
 import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.dto.response.SubjectResponse;
@@ -167,6 +168,57 @@ public class SubjectController {
         return ResponseObject.<SubjectResponse>builder()
                 .data(subjectService.updateSubjectStatus(id, newStatus))
                 .message("Subject has been successfully moved to internal review status.")
+                .build();
+    }
+
+    @PatchMapping("/curriculum/{curriculum_id}/department/{department_id}/status")
+    @PreAuthorize("hasAuthority('SUBJECT_UPDATE')")
+    @Operation(
+            summary = "Update Subject Lifecycle Status (Cập nhật trạng thái vòng đời Môn học)",
+            description = "### 📚 Quy trình điều phối Môn học (Subject Workflow):\n" +
+                    "Quản lý tính sẵn sàng của môn học từ khi khởi tạo khung đến khi có Syllabus hoàn chỉnh:\n\n" +
+                    "| Status | Mô tả chi tiết (Nghiệp vụ) | Ràng buộc hệ thống |\n" +
+                    "| :--- | :--- | :--- |\n" +
+                    "| **DRAFT** | **Khởi tạo:** HoCF mới tạo mã và tên môn học. Thông tin cơ bản đang được nhập liệu. | Chỉ hiển thị nội bộ cho HoCF. |\n" +
+                    "| **DEFINED** | **Đã xác định:** Bản mô tả môn học và số tín chỉ đã hoàn thiện, sẵn sàng để đưa vào dự thảo Curriculum trình VP. | Có thể gán vào Curriculum DRAFT. |\n" +
+                    "| **WAITING_SYLLABUS** | **Chờ Syllabus:** Curriculum chứa môn này đã được VP duyệt. Hệ thống đang đợi HoPDC nộp Syllabus chi tiết. | **Mở quyền soạn thảo Syllabus.** |\n" +
+                    "| **PENDING_REVIEW** | **Chờ thẩm định:** Syllabus chi tiết đã nộp và đang đợi Hội đồng phân công Reviewer đánh giá. | Khóa chỉnh sửa nội dung Syllabus. |\n" +
+                    "| **COMPLETED** | **Hoàn tất:** Syllabus đã được duyệt và liên kết chính thức. Môn học sẵn sàng để giảng dạy/tuyển sinh. | Dữ liệu chuyển sang Read-only. |\n" +
+                    "| **ARCHIVED** | **Lưu trữ:** Môn học không còn nằm trong chương trình giảng dạy chính thức, giữ lại để đối soát lịch sử. | Ẩn khỏi danh sách đăng ký mới. |\n\n"
+    )
+    public ResponseObject<SubjectResponse> changeStatus(
+            @PathVariable UUID curriculum_id,
+            @PathVariable UUID department_id,
+            @RequestParam String newStatus
+    ) {
+        subjectService.updateAllSubjectStatusInCurriculum(curriculum_id, department_id, newStatus);
+        return ResponseObject.<SubjectResponse>builder()
+                .status(1000)
+                .message("Cập nhật trạng thái PLO thành công")
+                .build();
+    }
+
+    @PatchMapping("/curriculum/{curriculum_id}/department/{department_id}/decision")
+    @PreAuthorize("hasAuthority('SUBJECT_UPDATE')")
+    @Operation(
+            summary = "Update Decision Number for all subjects in Curriculum and Department",
+            description = "Cập nhật đồng loạt số quyết định và ngày phê duyệt cho các môn học thuộc Khoa và Khung chương trình cụ thể."
+    )
+    public ResponseObject<Integer> updateBulkDecision(
+            @Parameter(description = "ID của Khung chương trình", required = true)
+            @RequestParam UUID curriculumId,
+
+            @Parameter(description = "ID của Khoa/Bộ môn", required = true)
+            @RequestParam UUID departmentId,
+
+            @Parameter(description = "Số quyết định ban hành", required = true)
+            @RequestParam String decisionNo
+    ) {
+        int updatedCount = subjectService.updateDecisionOnly(curriculumId, departmentId, decisionNo);
+        return ResponseObject.<Integer>builder()
+                .status(1000)
+                .data(updatedCount)
+                .message("Đã cập nhật số quyết định cho " + updatedCount + " môn học thành công.")
                 .build();
     }
 

@@ -1,13 +1,11 @@
 package com.example.smd.repositories;
 
 import com.example.smd.entities.Subject;
+import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.data.jpa.repository.EntityGraph;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
@@ -40,4 +38,42 @@ public interface SubjectRepository extends JpaRepository<Subject, UUID>, JpaSpec
 
     List<Subject> findAllByDepartment_DepartmentIdAndStatus(UUID departmentId, String status);
     List<Subject> findAllByDepartment_DepartmentId(UUID departmentId);
+
+    @Modifying
+    @Transactional
+    @Query(value = """
+        UPDATE subjects s
+        SET status = :newStatus
+        WHERE s.department_id = :departmentId
+        AND s.subject_id IN (
+            SELECT cgs.subject_id 
+            FROM curriculum_group_subject cgs
+            WHERE cgs.curriculum_id = :curriculumId
+        )
+    """, nativeQuery = true)
+    int updateStatusByCurriculumAndDepartment(
+            @Param("newStatus") String newStatus,
+            @Param("curriculumId") UUID curriculumId,
+            @Param("departmentId") UUID departmentId
+    );
+
+    @Modifying
+    @Transactional
+    @Query(value = """
+        UPDATE subjects s
+        SET decision_no = :decisionNo,
+            approved_date = :approvedDate
+        WHERE s.department_id = :departmentId
+        AND s.subject_id IN (
+            SELECT cgs.subject_id 
+            FROM curriculum_group_subject cgs
+            WHERE cg.curriculum_id = :curriculumId
+        )
+    """, nativeQuery = true)
+    int updateDecisionInfoByCurriculumAndDepartment(
+            @Param("decisionNo") String decisionNo,
+            @Param("approvedDate") java.time.Instant approvedDate,
+            @Param("curriculumId") UUID curriculumId,
+            @Param("departmentId") UUID departmentId
+    );
 }
