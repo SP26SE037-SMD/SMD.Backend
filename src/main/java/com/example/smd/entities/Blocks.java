@@ -23,8 +23,11 @@ public class Blocks {
     @JoinColumn(name = "material_id", nullable = false)
     Material material;
 
-    @Column(name = "block_style", length = 50)
+    @Column(name = "block_style")
     String blockStyle;
+
+    @Column(name = "block_type", length = 250)
+    String blockType;
 
     @Column(name = "idx", nullable = false)
     Integer idx; // Cột mới thay thế block_sequence

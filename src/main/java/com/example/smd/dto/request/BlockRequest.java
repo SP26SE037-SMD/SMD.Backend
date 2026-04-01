@@ -10,6 +10,7 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class BlockRequest {
     String blockStyle;
+    String blockType;
     String contentText;
     // idx sẽ được hệ thống tự tính dựa trên thứ tự trong mảng gửi lên
 }

@@ -14,5 +14,6 @@ public class BlockResponse {
     UUID blockId;
     Integer idx;
     String blockStyle;
+    String blockType;
     String contentText;
 }

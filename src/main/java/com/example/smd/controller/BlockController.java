@@ -33,7 +33,7 @@ public class BlockController {
             summary = "Tạo danh sách các khối nội dung (Bulk Create Blocks)",
             description = "### Quy trình khởi tạo nội dung tài liệu:\n" +
                     "Gửi lên một danh sách các khối nội dung. Hệ thống sẽ tự động tính toán số thứ tự (**idx**) dựa trên vị trí của phần tử trong mảng (bắt đầu từ 0).\n\n" +
-                    "| Block Style | Mô tả cách hiển thị |\n" +
+                    "| Block Type | Mô tả cách hiển thị |\n" +
                     "| :--- | :--- |\n" +
                     "| **H1** | Tiêu đề chính, cỡ chữ lớn nhất. |\n" +
                     "| **H2** | Tiêu đề phụ, dùng cho các mục nhỏ. |\n" +
