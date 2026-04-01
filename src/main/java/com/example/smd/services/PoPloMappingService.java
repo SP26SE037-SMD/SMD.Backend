@@ -121,7 +121,8 @@ public class PoPloMappingService {
                 UUID poId = parseUuid(item.getPoId());
                 UUID ploId = parseUuid(item.getPloId());
 
-                long affectedRows = repository.deleteByPo_PoIdAndPlo_PloId(poId, ploId);
+                int affectedRows =
+                        repository.deleteByPo_PoIdAndPlo_PloId(poId, ploId);
                 if (affectedRows > 0) {
                     deletedCount += (int) affectedRows;
                 } else {
