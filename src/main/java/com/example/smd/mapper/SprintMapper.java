@@ -18,6 +18,7 @@ public interface SprintMapper {
 
     @Mapping(target = "accountId", source = "account.accountId")
     @Mapping(target = "curriculumId", source = "curriculum.curriculumId")
+    @Mapping(target = "departmentId", source = "account.department.departmentId")
     SprintResponse toSprintResponse(Sprint sprint);
 
     @Mapping(target = "sprintId", ignore = true)

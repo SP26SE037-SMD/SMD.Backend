@@ -22,6 +22,8 @@ public class SprintResponse {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+7")
     Instant endDate;
 
+    UUID departmentId;
+
     String status;
     UUID accountId;
     UUID curriculumId;
