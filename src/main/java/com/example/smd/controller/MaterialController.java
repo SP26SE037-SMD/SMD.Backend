@@ -157,4 +157,15 @@ public class MaterialController {
                 .message("Material details retrieved successfully")
                 .build();
     }
+
+    @GetMapping("/{syllabusId}/chapters/{id}/history")
+    @Operation(summary = "Lấy lịch sử tất cả các phiên bản của tài liệu")
+    public ResponseObject<List<MaterialResponse>> getMaterialHistory(
+            @PathVariable UUID syllabusId,
+            @PathVariable int id) {
+        return ResponseObject.<List<MaterialResponse>>builder()
+                .data(materialService.getAllVersionsById(id, syllabusId))
+                .message("Fetched material history successfully")
+                .build();
+    }
 }
