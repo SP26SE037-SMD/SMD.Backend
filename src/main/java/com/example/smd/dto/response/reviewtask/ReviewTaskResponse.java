@@ -19,7 +19,10 @@ import java.util.UUID;
 public class ReviewTaskResponse {
     UUID reviewId;
     String titleTask;
-    String content;
+    String commentMaterial;
+    String commentSession;
+    String commentAssessment;
+    Boolean isAccepted;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+7")
     Instant reviewDate;

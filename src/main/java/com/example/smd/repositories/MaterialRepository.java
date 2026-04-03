@@ -18,23 +18,26 @@ public interface MaterialRepository extends JpaRepository<Material, UUID> {
     @EntityGraph(attributePaths = {"syllabus"})
     List<Material> findAllBySyllabus_SyllabusId(UUID syllabusId);
 
+    @EntityGraph(attributePaths = {"syllabus"})
+    List<Material> findBySyllabus_SyllabusId(UUID syllabusId);
+
     @Modifying
     @Query(value = """
-    UPDATE material m 
-    SET status = :status 
+    UPDATE material m
+    SET status = :status
     WHERE m.material_id IN (
-        SELECT DISTINCT ON (m2.id) m2.material_id 
-        FROM material m2 
-        WHERE m2.syllabus_id = :syllabusId 
+        SELECT DISTINCT ON (m2.id) m2.material_id
+        FROM material m2
+        WHERE m2.syllabus_id = :syllabusId
         ORDER BY m2.id, m2.version DESC
     )
     """, nativeQuery = true)
     int updateStatusBySyllabusId(@Param("status") String status, @Param("syllabusId") UUID syllabusId);
 
     @Query(value = """
-        SELECT DISTINCT ON (m.id) m.* FROM material m 
-        WHERE m.syllabus_id = :syllabusId 
-          AND m.status = :status 
+        SELECT DISTINCT ON (m.id) m.* FROM material m
+        WHERE m.syllabus_id = :syllabusId
+          AND m.status = :status
         ORDER BY m.id, m.version DESC
         """, nativeQuery = true)
     List<Material> findLatestMaterialsBySyllabus(
@@ -43,23 +46,23 @@ public interface MaterialRepository extends JpaRepository<Material, UUID> {
     );
 
     @Query(value = """
-        SELECT DISTINCT ON (m.id) m.* FROM material m 
-        WHERE m.syllabus_id = :syllabusId 
+        SELECT DISTINCT ON (m.id) m.* FROM material m
+        WHERE m.syllabus_id = :syllabusId
         ORDER BY m.id, m.version DESC
         """, nativeQuery = true)
     List<Material> findLatestMaterialsBySyllabusId(@Param("syllabusId") UUID syllabusId);
 
     @Query(value = """
-        SELECT m.* FROM material m 
-        WHERE m.syllabus_id = :syllabusId 
+        SELECT m.* FROM material m
+        WHERE m.syllabus_id = :syllabusId
         AND m.id = :id
         ORDER BY m.version DESC
         """, nativeQuery = true)
     List<Material> findMaterialByIdAndSyllabusId(@Param("id") int id, @Param("syllabusId")UUID syllabusId);
 
     @Query(value = """
-        SELECT m.* FROM material m 
-        WHERE m.syllabus_id = :syllabusId 
+        SELECT m.* FROM material m
+        WHERE m.syllabus_id = :syllabusId
         AND m.id = :id
         ORDER BY m.version DESC
         LIMIT 1

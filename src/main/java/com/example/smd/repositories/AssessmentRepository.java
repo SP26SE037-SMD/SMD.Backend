@@ -16,6 +16,8 @@ public interface AssessmentRepository extends JpaRepository<Assessment, UUID>, J
 
     List<Assessment> findBySyllabus_SyllabusIdOrderByPartAsc(UUID syllabusId);
 
+    List<Assessment> findBySyllabus_SyllabusId(UUID syllabusId);
+
     @Query("SELECT COALESCE(SUM(a.weight), 0) FROM Assessment a WHERE a.syllabus.syllabusId = :syllabusId AND UPPER(COALESCE(a.status, '')) <> 'ARCHIVED'")
     Double sumWeightBySyllabusId(@Param("syllabusId") UUID syllabusId);
 
