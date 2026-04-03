@@ -55,6 +55,11 @@ public class MaterialService {
         material.setSyllabus(syllabus);
         material.setUploadedAt(Instant.now());
 
+        int nextVersion = materialRepository.findLatestMaterialByIdAndSyllabusId(request.getId(), request.getSyllabusId())
+                .map(latest -> latest.getVersion() + 1)
+                .orElse(1); // Nếu chưa có thì là bản đầu tiên (V1)
+        material.setVersion(nextVersion);
+
         return materialMapper.toResponse(materialRepository.save(material));
     }
 
@@ -163,6 +168,19 @@ public class MaterialService {
         } else {
             // Nếu không có filter status (chỉ dành cho Role cao), lấy toàn bộ
             materials = materialRepository.findLatestMaterialsBySyllabusId(syllabusId);
+        }
+
+        return materials.stream()
+                .map(materialMapper::toResponse)
+                .toList();
+    }
+
+    public List<MaterialResponse> getAllVersionsById(int id, UUID syllabusId) {
+
+        List<Material> materials = materialRepository.findMaterialByIdAndSyllabusId(id, syllabusId);
+
+        if (materials.isEmpty()) {
+            throw new AppException(ErrorCode.MATERIAL_NOT_FOUND);
         }
 
         return materials.stream()
