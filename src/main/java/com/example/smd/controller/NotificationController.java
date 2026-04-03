@@ -31,7 +31,7 @@ public class NotificationController {
     @PreAuthorize("hasAuthority('NOTIFICATION_CREATE')")
     @Operation(summary = "Create and send a notification to a user")
     public ResponseObject<NotificationResponse> createNotification(
-            @RequestBody @Valid NotificationRequest request) {
+                        @RequestBody @Valid NotificationRequest request) {
         return ResponseObject.<NotificationResponse>builder()
                 .status(1000)
                 .data(notificationService.createNotification(request))
