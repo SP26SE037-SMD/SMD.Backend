@@ -24,8 +24,17 @@ public class ReviewTask {
     @Column(name = "tiltle_task", length = 50)
     private String titleTask;
 
-    @Column(name = "contents", columnDefinition = "text")
-    private String content;
+    @Column(name = "comment_material", columnDefinition = "text")
+    private String commentMaterial;
+
+    @Column(name = "comment_session", columnDefinition = "text")
+    private String commentSession;
+
+    @Column(name = "comment_assessment", columnDefinition = "text")
+    private String commentAssessment;
+
+    @Column(name = "is_accepted")
+    private Boolean isAccepted;
 
     @Column(name = "review_date")
     Instant reviewDate;

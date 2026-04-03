@@ -26,5 +26,6 @@ public interface ReviewTaskMapper {
     @Mapping(target = "reviewId", ignore = true)
     @Mapping(target = "task", ignore = true)
     @Mapping(target = "reviewer", ignore = true)
+    @Mapping(target = "isAccepted", ignore = true)
     void updateReviewTask(@MappingTarget ReviewTask reviewTask, ReviewTaskRequest request);
 }

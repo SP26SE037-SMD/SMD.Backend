@@ -1,5 +1,6 @@
 package com.example.smd.controller;
 
+import com.example.smd.dto.request.reviewtask.ReviewTaskAcceptanceRequest;
 import com.example.smd.dto.request.reviewtask.ReviewTaskRequest;
 import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.ResponseObject;
@@ -107,6 +108,18 @@ public class ReviewTaskController {
         return ResponseObject.<ReviewTaskResponse>builder()
                 .data(reviewTaskService.updateStatus(id, status))
                 .message("Review task status updated successfully")
+                .build();
+    }
+
+    @PatchMapping("/{id}/acceptance")
+    @Operation(summary = "Update review task acceptance status - triggers cascading status updates")
+    public ResponseObject<ReviewTaskResponse> updateAcceptance(
+            @PathVariable UUID id,
+            @RequestBody @Valid ReviewTaskAcceptanceRequest request
+    ) {
+        return ResponseObject.<ReviewTaskResponse>builder()
+                .data(reviewTaskService.updateAcceptance(id, request.getIsAccepted()))
+                .message("Review task acceptance updated successfully with cascading status changes")
                 .build();
     }
 }

@@ -19,6 +19,8 @@ public interface SessionRepository extends JpaRepository<Session, UUID>, JpaSpec
 
     List<Session> findBySyllabus_SyllabusIdOrderBySessionNumberAsc(UUID syllabusId);
 
+    List<Session> findBySyllabus_SyllabusId(UUID syllabusId);
+
     boolean existsBySyllabus_SyllabusIdAndSessionNumber(UUID syllabusId, Integer sessionNumber);
 
     Optional<Session> findBySyllabus_SyllabusIdAndSessionNumber(UUID syllabusId, Integer sessionNumber);
