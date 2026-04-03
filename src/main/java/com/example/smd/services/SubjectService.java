@@ -302,10 +302,10 @@ public class SubjectService {
             throw new AppException(ErrorCode.INVALID_SUBJECT_STATUS);
         }
 
-        // 2. Cập nhật các trường liên quan đến việc ban hành
+        // 3. Cập nhật các trường liên quan đến việc ban hành
         subject.setStatus(status.toString());
 
-        // 3. Lưu và trả về response
+        // 4. Lưu và trả về response
         SubjectResponse response = subjectMapper.toSubjectResponse(subjectRepository.save(subject));
 
         List<PrerequisiteResponse> prerequisites = prerequisiteRepository.findBySubject_SubjectId(subjectId)
@@ -318,7 +318,7 @@ public class SubjectService {
     }
 
     @Transactional
-    public int updateAllSubjectStatusInCurriculum(UUID curriculumId, UUID departmentId, String newStatus) {
+    public int updateAllSubjectStatusInCurriculum(UUID curriculumId, UUID departmentId, String newStatus, String oldStatus) {
 
         // 1. Kiểm tra Curriculum có tồn tại không
         if (!curriculumRepository.existsById(curriculumId)) {
@@ -330,21 +330,42 @@ public class SubjectService {
             throw new AppException(ErrorCode.DEPARTMENT_NOT_FOUND);
         }
 
-        // 3. Kiểm tra tính hợp lệ của Status Enum
-        SubjectStatus status;
+        // 3. Kiểm tra tính hợp lệ của newStatus Enum
+        SubjectStatus newSubjectStatus;
         try {
-            status = SubjectStatus.valueOf(newStatus.toUpperCase());
+            newSubjectStatus = SubjectStatus.valueOf(newStatus.toUpperCase());
         } catch (IllegalArgumentException | NullPointerException e) {
             throw new AppException(ErrorCode.INVALID_SUBJECT_STATUS);
         }
 
-        // 4. Thực hiện cập nhật đồng loạt dưới Database
-        // Trả về số lượng bản ghi đã được cập nhật thành công
-        return subjectRepository.updateStatusByCurriculumAndDepartment(
-                status.toString(),
-                curriculumId,
-                departmentId
-        );
+        // 4. Nếu có oldStatus, kiểm tra tính hợp lệ
+        String normalizedOldStatus = null;
+        if (oldStatus != null && !oldStatus.trim().isEmpty()) {
+            try {
+                SubjectStatus oldSubjectStatus = SubjectStatus.valueOf(oldStatus.trim().toUpperCase());
+                normalizedOldStatus = oldSubjectStatus.toString();
+            } catch (IllegalArgumentException | NullPointerException e) {
+                throw new AppException(ErrorCode.INVALID_SUBJECT_STATUS);
+            }
+        }
+
+        // 5. Thực hiện cập nhật đồng loạt dưới Database
+        // Nếu có oldStatus, chỉ cập nhật những subject có status = oldStatus
+        // Nếu không có oldStatus, cập nhật tất cả không phân biệt status hiện tại
+        if (normalizedOldStatus != null) {
+            return subjectRepository.updateStatusByCurriculumAndDepartmentWithCondition(
+                    newSubjectStatus.toString(),
+                    normalizedOldStatus,
+                    curriculumId,
+                    departmentId
+            );
+        } else {
+            return subjectRepository.updateStatusByCurriculumAndDepartment(
+                    newSubjectStatus.toString(),
+                    curriculumId,
+                    departmentId
+            );
+        }
     }
 
     @Transactional

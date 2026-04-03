@@ -18,13 +18,13 @@ public class NotificationRequest {
 
     @NotBlank(message = "TITLE_REQUIRED")
     String title;
-    
+
     @NotBlank(message = "MESSAGE_REQUIRED")
     String message;
 
     @NotNull(message = "TYPE_REQUIRED")
     NotificationType type;
-    
+
     @NotNull(message = "ACCOUNT_ID_REQUIRED")
     UUID accountId;
 

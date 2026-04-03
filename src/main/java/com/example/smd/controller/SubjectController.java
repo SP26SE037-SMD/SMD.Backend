@@ -164,7 +164,9 @@ public class SubjectController {
                     "| **COMPLETED** | **Hoàn tất:** Syllabus đã được duyệt và liên kết chính thức. Môn học sẵn sàng để giảng dạy/tuyển sinh. | Dữ liệu chuyển sang Read-only. |\n" +
                     "| **ARCHIVED** | **Lưu trữ:** Môn học không còn nằm trong chương trình giảng dạy chính thức, giữ lại để đối soát lịch sử. | Ẩn khỏi danh sách đăng ký mới. |\n\n"
     )
-    public ResponseObject<SubjectResponse> publishInternal(@PathVariable UUID id, String newStatus) {
+    public ResponseObject<SubjectResponse> publishInternal(
+            @PathVariable UUID id,
+            @RequestParam String newStatus) {
         return ResponseObject.<SubjectResponse>builder()
                 .data(subjectService.updateSubjectStatus(id, newStatus))
                 .message("Subject has been successfully moved to internal review status.")
@@ -189,12 +191,14 @@ public class SubjectController {
     public ResponseObject<SubjectResponse> changeStatus(
             @PathVariable UUID curriculum_id,
             @PathVariable UUID department_id,
-            @RequestParam String newStatus
+            @RequestParam String newStatus,
+            @RequestParam(required = false) String oldStatus
     ) {
-        subjectService.updateAllSubjectStatusInCurriculum(curriculum_id, department_id, newStatus);
+        int updatedCount = subjectService.updateAllSubjectStatusInCurriculum(curriculum_id, department_id, newStatus, oldStatus);
         return ResponseObject.<SubjectResponse>builder()
                 .status(1000)
-                .message("Cập nhật trạng thái PLO thành công")
+                .data(SubjectResponse.builder().build()) // Return empty response as bulk operation
+                .message("Cập nhật trạng thái " + updatedCount + " môn học thành công")
                 .build();
     }
 
