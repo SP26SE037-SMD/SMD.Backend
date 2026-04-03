@@ -44,9 +44,29 @@ public interface SubjectRepository extends JpaRepository<Subject, UUID>, JpaSpec
     @Query(value = """
         UPDATE subjects s
         SET status = :newStatus
+        WHERE s.status = :oldStatus
+        AND s.department_id = :departmentId
+        AND s.subject_id IN (
+            SELECT cgs.subject_id
+            FROM curriculum_group_subject cgs
+            WHERE cgs.curriculum_id = :curriculumId
+        )
+    """, nativeQuery = true)
+    int updateStatusByCurriculumAndDepartmentWithCondition(
+            @Param("newStatus") String newStatus,
+            @Param("oldStatus") String oldStatus,
+            @Param("curriculumId") UUID curriculumId,
+            @Param("departmentId") UUID departmentId
+    );
+
+    @Modifying
+    @Transactional
+    @Query(value = """
+        UPDATE subjects s
+        SET status = :newStatus
         WHERE s.department_id = :departmentId
         AND s.subject_id IN (
-            SELECT cgs.subject_id 
+            SELECT cgs.subject_id
             FROM curriculum_group_subject cgs
             WHERE cgs.curriculum_id = :curriculumId
         )
@@ -65,7 +85,7 @@ public interface SubjectRepository extends JpaRepository<Subject, UUID>, JpaSpec
             approved_date = :approvedDate
         WHERE s.department_id = :departmentId
         AND s.subject_id IN (
-            SELECT cgs.subject_id 
+            SELECT cgs.subject_id
             FROM curriculum_group_subject cgs
             WHERE cg.curriculum_id = :curriculumId
         )
