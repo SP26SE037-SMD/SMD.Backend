@@ -77,7 +77,7 @@ public class ReviewTaskService {
             reviewTask.setReviewDate(Instant.now());
         }
         if (reviewTask.getStatus() == null || reviewTask.getStatus().isBlank()) {
-            reviewTask.setStatus("Pending");
+            reviewTask.setStatus(ReviewStatus.PENDING.name());
         }
         if (reviewTask.getIsAccepted() == null) {
             reviewTask.setIsAccepted(Boolean.FALSE);
