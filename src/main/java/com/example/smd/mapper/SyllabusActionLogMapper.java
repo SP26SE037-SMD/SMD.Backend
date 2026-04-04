@@ -10,6 +10,7 @@ import org.mapstruct.Mapping;
 public interface SyllabusActionLogMapper {
     @Mapping(target = "syllabusId", source = "syllabus.syllabusId")
     @Mapping(target = "actionByFullName", source = "actionBy.fullName")
+    @Mapping(target = "actionByEmail", source = "actionBy.email")
     @Mapping(target = "actionType", source = "action")
     SyllabusActionLogResponse toResponse(Syllabus_Action_Logs log);
 

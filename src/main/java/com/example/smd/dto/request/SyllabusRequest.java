@@ -13,6 +13,6 @@ import java.util.UUID;
 public class SyllabusRequest {
     UUID subjectId;
     String syllabusName;
-    Integer minBloomLevel;
+
     Double minAvgGrade;
 }

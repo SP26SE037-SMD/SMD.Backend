@@ -73,6 +73,9 @@ public class Subject {
     @Column(name = "tool")
     String tool;
 
+    @Column(name = "min_bloom_level")
+    Integer minBloomLevel;
+
     // Relationships
     @OneToMany(mappedBy = "subject", fetch = FetchType.LAZY)
     List<CLOs> clos;
