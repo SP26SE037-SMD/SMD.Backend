@@ -7,38 +7,38 @@ import lombok.Getter;
 @Schema(description = "Các loại hành động thực hiện trên Syllabus để lưu vết lịch sử (Logs)")
 public enum SyllabusActionType {
 
-    @Schema(description = "Khởi tạo đề cương mới")
-    CREATE("Khởi tạo"),
+    @Schema(description = "Create a new syllabus record in the system")
+    CREATE("created a new syllabus record in the system"),
 
-    @Schema(description = "Cập nhật nội dung (CLOs, Sessions, Assessments,...)")
-    UPDATE("Cập nhật"),
+    @Schema(description = "Update general information such as CLOs, Credits, and Descriptions")
+    UPDATE("updated general information such as CLOs, Credits, and Descriptions"),
 
-    @Schema(description = "Bắt đầu biên soạn chi tiết nội dung, học liệu và tài liệu")
-    DEVELOPING("Biên soạn"),
+    @Schema(description = "Develop detailed content including sessions and learning materials")
+    DEVELOP("developed detailed content including sessions and learning materials"),
 
-    @Schema(description = "Gửi đề cương đi để chờ phê duyệt")
-    SUBMIT("Gửi duyệt"),
+    @Schema(description = "Submit the syllabus to the department for formal review")
+    SUBMIT("submitted the syllabus to the department for formal review"),
 
-    @Schema(description = "Phân công người hoặc hội đồng thẩm định")
-    ASSIGN_REVIEW("Phân công Review"),
+    @Schema(description = "Assign a specific reviewer or committee to evaluate the syllabus")
+    ASSIGN_REVIEW("assigned a specific reviewer or committee to evaluate the syllabus"),
 
-    @Schema(description = "Reviewer bắt đầu quá trình đánh giá")
-    START_REVIEW("Bắt đầu Review"),
+    @Schema(description = "Start the formal evaluation process by the assigned reviewer")
+    START_REVIEW("start the formal evaluation process by the assigned reviewer"),
 
-    @Schema(description = "Yêu cầu người soạn thảo chỉnh sửa lại nội dung")
-    REQUEST_REVISION("Yêu cầu chỉnh sửa"),
+    @Schema(description = "Request the author to revise content based on evaluation feedback")
+    REQUEST_REVISION("requested the author to revise content based on evaluation feedback"),
 
-    @Schema(description = "Chấp nhận nội dung đề cương (Về mặt chuyên môn)")
-    APPROVE("Phê duyệt"),
+    @Schema(description = "Approve the syllabus content as technically and academically sound")
+    APPROVE("approved the syllabus content as technically and academically sound"),
 
-    @Schema(description = "Từ chối đề cương")
-    REJECT("Từ chối"),
+    @Schema(description = "Reject the syllabus and stop the current approval workflow")
+    REJECT("rejected the syllabus content as technically and academically sound"),
 
-    @Schema(description = "Ban hành đề cương để áp dụng chính thức")
-    PUBLISH("Ban hành"),
+    @Schema(description = "Publish the syllabus for official use and portal display")
+    PUBLISH("Published the syllabus for official use and portal display"),
 
-    @Schema(description = "Đưa đề cương vào kho lưu trữ (Hết hiệu lực)")
-    ARCHIVE("Lưu trữ");
+    @Schema(description = "Archive the syllabus when it is no longer in effect")
+    ARCHIVE("Archived the syllabus when it is no longer in effect");
 
     private final String description;
 
