@@ -325,8 +325,8 @@ public class SubjectService {
             throw new AppException(ErrorCode.CURRICULUM_NOT_FOUND);
         }
 
-        // 2. Kiểm tra Department có tồn tại không
-        if (!departmentRepository.existsById(departmentId)) {
+        // 2. Nếu có departmentId thì kiểm tra department tồn tại
+        if (departmentId != null && !departmentRepository.existsById(departmentId)) {
             throw new AppException(ErrorCode.DEPARTMENT_NOT_FOUND);
         }
 
@@ -350,22 +350,37 @@ public class SubjectService {
         }
 
         // 5. Thực hiện cập nhật đồng loạt dưới Database
-        // Nếu có oldStatus, chỉ cập nhật những subject có status = oldStatus
-        // Nếu không có oldStatus, cập nhật tất cả không phân biệt status hiện tại
-        if (normalizedOldStatus != null) {
+        // Trường hợp A: có curriculum và department
+        // Trường hợp B: có curriculum, department = null
+        // oldStatus có thể có hoặc không
+        if (departmentId != null) {
+            if (normalizedOldStatus != null) {
             return subjectRepository.updateStatusByCurriculumAndDepartmentWithCondition(
-                    newSubjectStatus.toString(),
-                    normalizedOldStatus,
-                    curriculumId,
-                    departmentId
+                newSubjectStatus.toString(),
+                normalizedOldStatus,
+                curriculumId,
+                departmentId
             );
-        } else {
+            }
             return subjectRepository.updateStatusByCurriculumAndDepartment(
-                    newSubjectStatus.toString(),
-                    curriculumId,
-                    departmentId
+                newSubjectStatus.toString(),
+                curriculumId,
+                departmentId
             );
         }
+
+        if (normalizedOldStatus != null) {
+            return subjectRepository.updateStatusByCurriculumWithCondition(
+                newSubjectStatus.toString(),
+                normalizedOldStatus,
+                curriculumId
+            );
+        }
+
+        return subjectRepository.updateStatusByCurriculum(
+            newSubjectStatus.toString(),
+            curriculumId
+        );
     }
 
     @Transactional

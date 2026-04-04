@@ -622,6 +622,7 @@ public class CurriculumGroupSubjectService {
                                         .subjectCode(subject.getSubjectCode())
                                         .subjectName(subject.getSubjectName())
                                         .groupId(group != null ? group.getGroupId() : null)
+                                        .credit(subject.getCredits())
                                         .build();
                             })
                             .sorted(Comparator.comparing(CurriculumSemesterMappingsResponse.SubjectMappingItem::getSubjectCode,
