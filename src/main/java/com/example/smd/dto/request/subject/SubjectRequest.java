@@ -18,6 +18,7 @@ public class SubjectRequest {
     @NotBlank(message = "SUBJECT_NAME_REQUIRED")
     String subjectName;
 
+    Integer minBloomLevel;
     Integer credits;
     String degreeLevel;
     String timeAllocation;

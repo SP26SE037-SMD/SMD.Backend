@@ -13,7 +13,6 @@ import java.util.UUID;
 public class SyllabusResponse {
     String syllabusId;
     String syllabusName;
-    Integer minBloomLevel;
     Double minAvgGrade;
     String status;
     Instant createdAt;
