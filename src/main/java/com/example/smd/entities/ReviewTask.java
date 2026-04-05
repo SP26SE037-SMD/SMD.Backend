@@ -33,6 +33,12 @@ public class ReviewTask {
     @Column(name = "comment_assessment", columnDefinition = "text")
     private String commentAssessment;
 
+    @Column(name = "comment", columnDefinition = "text")
+    private String comment;
+
+    @Column(name = "type", length = 20)
+    private String type;
+
     @Column(name = "is_accepted")
     private Boolean isAccepted;
 

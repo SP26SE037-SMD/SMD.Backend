@@ -1,5 +1,7 @@
 package com.example.smd.services;
 
+import com.example.smd.dto.request.reviewtask.ReviewTaskCreateHoCFDC;
+import com.example.smd.dto.request.reviewtask.ReviewTaskCreateRequest;
 import com.example.smd.dto.request.reviewtask.ReviewTaskRequest;
 import com.example.smd.dto.response.reviewtask.ReviewTaskResponse;
 import com.example.smd.entities.Account;
@@ -52,13 +54,16 @@ public class ReviewTaskService {
     SubjectRepository subjectRepository;
 
     @Transactional
-    public ReviewTaskResponse create(ReviewTaskRequest request, String reviewerAccountId) {
-        validateRequest(request);
+    public ReviewTaskResponse create(ReviewTaskCreateRequest request,
+                                     String reviewerAccountId) {
 
-        Task task = taskRepository.findById(request.getTaskId())
+        var check = reviewTaskMapper.toReviewTaskRequest(request);
+        validateRequest(check);
+
+        Task task = taskRepository.findById(check.getTaskId())
                 .orElseThrow(() -> new AppException(ErrorCode.TASK_NOT_FOUND));
 
-        UUID reviewerId = request.getReviewerId();
+        UUID reviewerId = check.getReviewerId();
         if (reviewerId == null && reviewerAccountId != null && !reviewerAccountId.isBlank()) {
             reviewerId = UUID.fromString(reviewerAccountId);
         }
@@ -69,7 +74,7 @@ public class ReviewTaskService {
         Account reviewer = accountRepository.findById(reviewerId)
                 .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND));
 
-        ReviewTask reviewTask = reviewTaskMapper.toReviewTask(request);
+        ReviewTask reviewTask = reviewTaskMapper.toReviewTask(check);
         reviewTask.setTask(task);
         reviewTask.setReviewer(reviewer);
 
@@ -84,6 +89,99 @@ public class ReviewTaskService {
         }
 
         reviewTask = reviewTaskRepository.save(reviewTask);
+
+        return reviewTaskMapper.toReviewTaskResponse(reviewTask);
+    }
+
+    private void applyHoCFDCCascadeStatuses(Task task, Boolean isAccepted) {
+        if (task == null) {
+            return;
+        }
+
+        Syllabus syllabus = task.getSyllabus();
+
+        if (Boolean.TRUE.equals(isAccepted)) {
+            if (syllabus != null && syllabus.getSubject() != null) {
+                syllabus.getSubject().setStatus(SubjectStatus.COMPLETED.name());
+                subjectRepository.save(syllabus.getSubject());
+            }
+            return;
+        }
+
+        task.setStatus(TaskStatus.IN_PROGRESS.name());
+        taskRepository.save(task);
+
+        if (syllabus == null) {
+            return;
+        }
+
+        if (syllabus.getSubject() != null) {
+            syllabus.getSubject().setStatus(SubjectStatus.WAITING_SYLLABUS.name());
+            subjectRepository.save(syllabus.getSubject());
+        }
+
+        syllabus.setStatus(SyllabusStatus.REVISION_REQUESTED.name());
+        syllabusRepository.save(syllabus);
+
+        materialRepository.findBySyllabus_SyllabusId(syllabus.getSyllabusId())
+                .forEach(m -> {
+                    m.setStatus(SyllabusStatus.REVISION_REQUESTED.name());
+                    materialRepository.save(m);
+                });
+
+        sessionRepository.findBySyllabus_SyllabusId(syllabus.getSyllabusId())
+                .forEach(s -> {
+                    s.setStatus(SyllabusStatus.REVISION_REQUESTED.name());
+                    sessionRepository.save(s);
+                });
+
+        assessmentRepository.findBySyllabus_SyllabusId(syllabus.getSyllabusId())
+                .forEach(a -> {
+                    a.setStatus(SyllabusStatus.REVISION_REQUESTED.name());
+                    assessmentRepository.save(a);
+                });
+    }
+
+    @Transactional
+    public ReviewTaskResponse createByHoCFDC(ReviewTaskCreateHoCFDC request,
+                                             String reviewerAccountId) {
+
+        var check = reviewTaskMapper.toReviewTaskRequestHoCFDC(request);
+        validateRequest(check);
+
+        Task task = taskRepository.findById(check.getTaskId())
+                .orElseThrow(() -> new AppException(ErrorCode.TASK_NOT_FOUND));
+
+        UUID reviewerId = check.getReviewerId();
+        if (reviewerId == null && reviewerAccountId != null && !reviewerAccountId.isBlank()) {
+            reviewerId = UUID.fromString(reviewerAccountId);
+        }
+        if (reviewerId == null) {
+            throw new AppException(ErrorCode.INVALID_KEY, "Reviewer ID is required");
+        }
+
+        Account reviewer = accountRepository.findById(reviewerId)
+                .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND));
+
+        ReviewTask reviewTask = reviewTaskMapper.toReviewTask(check);
+        reviewTask.setTask(task);
+        reviewTask.setReviewer(reviewer);
+        reviewTask.setIsAccepted(request.getIsAccepted());
+
+        if (reviewTask.getReviewDate() == null) {
+            reviewTask.setReviewDate(Instant.now());
+        }
+        if (reviewTask.getStatus() == null || reviewTask.getStatus().isBlank()) {
+            reviewTask.setStatus(ReviewStatus.APPROVED.name());
+        }
+        if (reviewTask.getIsAccepted() == null) {
+            reviewTask.setIsAccepted(Boolean.FALSE);
+        }
+
+        reviewTask = reviewTaskRepository.save(reviewTask);
+
+        applyHoCFDCCascadeStatuses(reviewTask.getTask(), reviewTask.getIsAccepted());
+
         return reviewTaskMapper.toReviewTaskResponse(reviewTask);
     }
 

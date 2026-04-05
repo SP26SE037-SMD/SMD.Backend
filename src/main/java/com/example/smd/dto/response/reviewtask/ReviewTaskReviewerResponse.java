@@ -22,4 +22,5 @@ public class ReviewTaskReviewerResponse {
 
     @JsonInclude(JsonInclude.Include.ALWAYS)
     String avatarUrl;
+    String role;
 }
