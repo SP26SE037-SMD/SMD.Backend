@@ -1,6 +1,8 @@
 package com.example.smd.controller;
 
 import com.example.smd.dto.request.reviewtask.ReviewTaskAcceptanceRequest;
+import com.example.smd.dto.request.reviewtask.ReviewTaskCreateHoCFDC;
+import com.example.smd.dto.request.reviewtask.ReviewTaskCreateRequest;
 import com.example.smd.dto.request.reviewtask.ReviewTaskRequest;
 import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.ResponseObject;
@@ -35,7 +37,7 @@ public class ReviewTaskController {
     @PostMapping
     @Operation(summary = "Create a new review task")
     public ResponseObject<ReviewTaskResponse> create(
-            @RequestBody @Valid ReviewTaskRequest request,
+            @RequestBody @Valid ReviewTaskCreateRequest request,
             @AuthenticationPrincipal Jwt jwt
     ) {
         String reviewerId = jwt.getClaimAsString("accountId");
@@ -43,6 +45,20 @@ public class ReviewTaskController {
         return ResponseObject.<ReviewTaskResponse>builder()
                 .data(reviewTaskService.create(request, reviewerId))
                 .message("Review task created successfully")
+                .build();
+    }
+
+    @PostMapping("/hocfdc")
+    @Operation(summary = "Create a new review task")
+    public ResponseObject<ReviewTaskResponse> createHoCFDC(
+            @RequestBody @Valid ReviewTaskCreateHoCFDC request,
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        String reviewerId = jwt.getClaimAsString("accountId");
+
+        return ResponseObject.<ReviewTaskResponse>builder()
+                .data(reviewTaskService.createByHoCFDC(request, reviewerId))
+                .message("Review task created successfully for HoCFDC")
                 .build();
     }
 
