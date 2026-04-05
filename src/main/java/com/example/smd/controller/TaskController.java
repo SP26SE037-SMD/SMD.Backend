@@ -145,12 +145,4 @@ public class TaskController {
                 .build();
     }
 
-    @GetMapping("/status-options")
-    @Operation(summary = "Get normalized task status options", description = "Danh sách status chuẩn hóa và input alias được chấp nhận")
-    public ResponseObject<List<String>> getStatusOptions() {
-        return ResponseObject.<List<String>>builder()
-                                .data(taskService.getNormalizedStatusOptions())
-                                .message("Task status options retrieved successfully")
-                                .build();
-    }
 }

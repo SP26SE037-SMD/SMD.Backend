@@ -58,7 +58,7 @@ public class TaskService {
     public TaskResponse create(TaskCreateRequest request, String check) {
         var checkRole = accountService.getAccountById(check);
         String roleName = checkRole.getRole().getRoleName();
-        if (!( RoleName.HOCFDC.toString().equals(roleName))) {
+        if (!( RoleName.HOCFDC.name().equals(roleName))) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
@@ -79,7 +79,7 @@ public class TaskService {
             task.setSubject(subject);
         }
 
-        task.setStatus(TaskStatus.TO_DO.toString());
+        task.setStatus(TaskStatus.TO_DO.name());
 
         task = taskRepository.save(task);
         return taskMapper.toTaskResponse(task);
@@ -89,7 +89,7 @@ public class TaskService {
     public boolean createBatch(UUID sprintId, String check) {
         var checkRole = accountService.getAccountById(check);
         String roleName = checkRole.getRole().getRoleName();
-        if (!(RoleName.HOCFDC.toString().equals(roleName))) {
+        if (!(RoleName.HOCFDC.name().equals(roleName))) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
@@ -145,7 +145,7 @@ public class TaskService {
 
         if (sprint.getAccount() != null &&
             sprint.getAccount().getRole() != null &&
-            RoleName.HOPDC.toString().equals(sprint.getAccount().getRole().getRoleName())) {
+            RoleName.HOPDC.name().equals(sprint.getAccount().getRole().getRoleName())) {
             List<String> taskNames = savedTasks.stream().map(Task::getTaskName).toList();
             log.info("Notification: Tasks " + taskNames + " created" +
                 " in sprint " + sprint.getSprintName() +
@@ -179,7 +179,7 @@ public class TaskService {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.TASK_NOT_FOUND));
 
-        if(!TaskStatus.TO_DO.toString().equals(task.getStatus())) {
+        if(!TaskStatus.TO_DO.name().equals(task.getStatus())) {
             throw new AppException(ErrorCode.TASK_NOT_EDITABLE);
         }
 
@@ -214,14 +214,14 @@ public class TaskService {
     public void delete(UUID id, String accountId) {
         var checkRole = accountService.getAccountById(accountId);
         String roleName = checkRole.getRole().getRoleName();
-        if (!(RoleName.HOPDC.toString().equals(roleName) ||RoleName.HOCFDC.toString().equals(roleName))) {
+        if (!(RoleName.HOPDC.name().equals(roleName) ||RoleName.HOCFDC.toString().equals(roleName))) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.TASK_NOT_FOUND));
 
-        if(!TaskStatus.TO_DO.toString().equals(task.getStatus())) {
+        if(!TaskStatus.TO_DO.name().equals(task.getStatus())) {
             throw new AppException(ErrorCode.TASK_NOT_EDITABLE);
         }
 
@@ -239,17 +239,6 @@ public class TaskService {
         return taskMapper.toTaskResponse(task);
     }
 
-    @Transactional(readOnly = true)
-    public List<String> getNormalizedStatusOptions() {
-        return List.of(
-                "To Do (aliases: TODO, TO_DO, To Do)",
-                "In Progress (aliases: IN_PROGRESS, In Progress)",
-                "In Review (aliases: IN_REVIEW, In Review)",
-                "Done (aliases: DONE, Done)",
-                "Blocked (aliases: BLOCKED, Blocked)",
-                "Cancelled (aliases: CANCELLED, Cancelled)"
-        );
-    }
 
     private String normalizeStatusInput(String rawStatus, boolean useDefaultWhenBlank) {
         if (rawStatus == null || rawStatus.isBlank()) {
@@ -263,16 +252,18 @@ public class TaskService {
                 .replace('-', '_')
                 .replace(' ', '_');
 
-        if ("TO_DO".equals(normalized)) {
-            normalized = "TODO";
+        if (TaskStatus.TO_DO.name().equals(normalized)) {
+            normalized = "TO_DO";
         }
-        if ("IN_PROGRESS".equals(normalized)) {
+        if (TaskStatus.IN_PROGRESS.name().equals(normalized)) {
             normalized = "IN_PROGRESS";
         }
-        if ("IN_REVIEW".equals(normalized)) {
-            normalized = "IN_REVIEW";
+        if (TaskStatus.DONE.name().equals(normalized)) {
+            normalized = "DONE";
         }
-
+        if (TaskStatus.CANCELLED.name().equals(normalized)) {
+            normalized = "CANCELLED";
+        }
         TaskStatus taskStatus;
         try {
             taskStatus = TaskStatus.valueOf(normalized);
@@ -285,16 +276,16 @@ public class TaskService {
 
     private String toDisplayStatus(TaskStatus status) {
         return switch (status) {
-            case DRAFT -> "Draft";
-            case TO_DO -> "To Do";
-            case IN_PROGRESS -> "In Progress";
-            case DONE -> "Done";
-            case CANCELLED -> "Cancelled";
+            case DRAFT -> TaskStatus.DRAFT.name();
+            case TO_DO -> TaskStatus.TO_DO.name();
+            case IN_PROGRESS -> TaskStatus.IN_PROGRESS.name();
+            case DONE -> TaskStatus.DONE.name();
+            case CANCELLED -> TaskStatus.CANCELLED.name();
         };
     }
 
     private void applyCompletedAtByStatus(Task task) {
-        if ("Done".equalsIgnoreCase(task.getStatus())) {
+        if (TaskStatus.DONE.name().equalsIgnoreCase(task.getStatus())) {
             if (task.getCompletedAt() == null) {
                 task.setCompletedAt(LocalDate.now());
             }
