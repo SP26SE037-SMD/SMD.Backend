@@ -96,7 +96,7 @@ public class BlockController {
     }
 
     @PutMapping("/material/{materialId}")
-//    @PreAuthorize("hasAuthority('BLOCK_UPDATE')")
+    @PreAuthorize("hasAuthority('BLOCK_UPDATE')")
     @Operation(
             summary = "Bulk Update blocks theo Material (xóa + upsert)",
             description = "### Quy trình cập nhật hàng loạt blocks của một tài liệu (material):\n" +
