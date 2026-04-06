@@ -23,6 +23,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Arrays;
 import java.util.UUID;
 
 @Service
@@ -40,13 +41,13 @@ public class SprintService {
         public SprintResponse create(SprintCreateRequest request, String accountId) {
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (!(RoleName.HOCFDC.toString().equals(roleName) )) {
+        if (!(RoleName.HOCFDC.name().equals(roleName) )) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
         Sprint sprint = sprintMapper.toSprint(request);
         Account hopdcAccount = accountRepository
-            .findByDepartmentAndRoleName(request.getDepartmentId(), RoleName.HOPDC.toString())
+            .findByDepartmentAndRoleName(request.getDepartmentId(), RoleName.HOPDC.name())
             .stream()
             .findFirst()
             .orElseThrow(() -> new AppException(
@@ -65,7 +66,7 @@ public class SprintService {
 
 
         if (sprint.getStatus() == null || sprint.getStatus().isEmpty()) {
-            sprint.setStatus("Planning");
+            sprint.setStatus(SprintStatus.PLANNING.name());
         }
 
         sprint = sprintRepository.save(sprint);
@@ -98,7 +99,7 @@ public class SprintService {
     public SprintResponse update(UUID id, SprintUpdateRequest request, String accountId) {
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (!("HOCFDC".equals(roleName) || "HOPDC".equals(roleName))) {
+        if (!(RoleName.HOCFDC.name().equals(roleName) || RoleName.HOPDC.name().equals(roleName))) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
@@ -115,7 +116,7 @@ public class SprintService {
     public void delete(UUID id, String accountId) {
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (!("HOCFDC".equals(roleName) || "HOPDC".equals(roleName))) {
+        if (!(RoleName.HOCFDC.name().equals(roleName) || RoleName.HOPDC.name().equals(roleName))) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
@@ -127,7 +128,7 @@ public class SprintService {
 
     @Transactional
     public SprintResponse updateStatus(UUID id, String status) {
-        boolean isValid = java.util.Arrays.stream(SprintStatus.values())
+        boolean isValid = Arrays.stream(SprintStatus.values())
                 .anyMatch(s -> s.name().equalsIgnoreCase(status));
         if (!isValid) {
             throw new AppException(ErrorCode.INVALID_SPRINT_STATUS);

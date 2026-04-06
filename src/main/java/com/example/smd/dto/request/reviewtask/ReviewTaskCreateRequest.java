@@ -1,6 +1,5 @@
-package com.example.smd.dto.response.reviewtask;
+package com.example.smd.dto.request.reviewtask;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -8,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
+import java.time.Instant;
 import java.util.UUID;
 
 @Data
@@ -15,12 +15,10 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class ReviewTaskReviewerResponse {
+public class ReviewTaskCreateRequest {
+    String titleTask;
+    Instant dueDate;
+    String status;
+    UUID taskId;
     UUID reviewerId;
-    String fullName;
-    String email;
-
-    @JsonInclude(JsonInclude.Include.ALWAYS)
-    String avatarUrl;
-    String role;
 }

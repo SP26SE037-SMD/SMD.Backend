@@ -12,11 +12,17 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
 @Repository
 public interface TaskRepository extends JpaRepository<Task, UUID>, JpaSpecificationExecutor<Task> {
+
+    @Override
+    @EntityGraph(attributePaths = {"subject"})
+    Optional<Task> findById(UUID id);
+
     @EntityGraph(attributePaths = {"sprint", "account", "syllabus", "subject"})
     Page<Task> findByTaskNameContainingIgnoreCase(String taskName, Pageable pageable);
 

@@ -2,6 +2,7 @@ package com.example.smd.services;
 
 import com.example.smd.dto.request.BlockRequest;
 import com.example.smd.dto.request.BlockSingleRequest;
+import com.example.smd.dto.request.BulkUpdateBlockRequest;
 import com.example.smd.dto.request.UpdateBlockRequest;
 import com.example.smd.dto.response.BlockResponse;
 import com.example.smd.dto.response.BlockSimpleResponse;
@@ -16,6 +17,7 @@ import com.example.smd.mapper.BlockMapper;
 import com.example.smd.repositories.BlockRepository;
 import com.example.smd.repositories.EmbeddingRepository;
 import com.example.smd.repositories.MaterialRepository;
+import com.example.smd.repositories.SessionMaterialBlockRepository;
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +40,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class BlockService {
+    SessionMaterialBlockRepository sessionMaterialBlockRepository;
     BlockRepository blockRepository;
     MaterialRepository materialRepository;
     EmbeddingService embeddingService;
@@ -237,5 +240,69 @@ public class BlockService {
                 .orElseThrow(() -> new AppException(ErrorCode.BLOCK_NOT_FOUND));
 
         return blockMapper.toResponse(block);
+    }
+
+    /**
+     * Bulk Update blocks của một Material:
+     * 1. Xóa các block trong deleteBlockList (xóa session_material_block trước, sau đó xóa block)
+     * 2. Upsert danh sách blocks: nếu có blockId → update, không có → create mới
+     */
+    @Transactional
+    public List<BlockResponse> bulkUpdateBlocks(UUID materialId, BulkUpdateBlockRequest request) {
+        Material material = materialRepository.findById(materialId)
+                .orElseThrow(() -> new AppException(ErrorCode.MATERIAL_NOT_FOUND));
+
+        if (!("DRAFT".equals(material.getStatus())
+                || MaterialStatus.REVISION_REQUESTED.toString().equals(material.getStatus()))) {
+            throw new AppException(ErrorCode.MATERIAL_NOT_EDITABLE);
+        }
+
+        // --- 1. Xử lý xóa ---
+        List<UUID> deleteList = request.getDeleteBlockList();
+        if (deleteList != null && !deleteList.isEmpty()) {
+            // Kiểm tra & xóa các bản ghi session_material_block liên quan trước
+            sessionMaterialBlockRepository.deleteByBlock_BlockIdIn(deleteList);
+            // Sau đó xóa chính các block
+            blockRepository.deleteAllById(deleteList);
+        }
+
+        // --- 2. Upsert danh sách blocks ---
+        List<Blocks> toSave = new ArrayList<>();
+        if (request.getBlocks() != null) {
+            for (BulkUpdateBlockRequest.BlockUpdateItem item : request.getBlocks()) {
+                Blocks block;
+                if (item.getBlockId() != null) {
+                    // Update block hiện có
+                    block = blockRepository.findById(item.getBlockId())
+                            .orElseThrow(() -> new AppException(ErrorCode.BLOCK_NOT_FOUND));
+                } else {
+                    // Tạo block mới
+                    block = new Blocks();
+                    block.setMaterial(material);
+                }
+                block.setIdx(item.getIdx());
+                block.setBlockStyle(item.getBlockStyle());
+                block.setBlockType(item.getBlockType());
+                block.setContentText(item.getContentText());
+                toSave.add(block);
+            }
+        }
+
+        List<Blocks> savedBlocks = blockRepository.saveAll(toSave);
+
+        // Tạo embedding cho các block mới có nội dung
+        for (Blocks block : savedBlocks) {
+            if (block.getCreatedAt() == null // block vừa được persist lần đầu
+                    && block.getContentText() != null
+                    && !block.getContentText().isBlank()) {
+                embeddingService.createEmbedding(block.getContentText(), block);
+            }
+        }
+
+        // Trả về toàn bộ blocks còn lại của material (đã sắp xếp theo idx)
+        return blockRepository.findAllByMaterial_MaterialIdOrderByIdxAsc(materialId)
+                .stream()
+                .map(blockMapper::toResponse)
+                .toList();
     }
 }

@@ -42,4 +42,7 @@ public class SubjectImportDTO {
 
     @ExcelColumn(name = "scoringScale", order = 10)
     String scoringScale;
+
+    @ExcelColumn(name = "minBloomLevel", order = 11)
+    String minBloomLevel;
 }

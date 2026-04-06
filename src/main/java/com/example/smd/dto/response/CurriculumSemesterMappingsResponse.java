@@ -40,6 +40,7 @@ public class CurriculumSemesterMappingsResponse {
         UUID subjectId;
         String subjectCode;
         String subjectName;
+        Integer credit;
         UUID groupId;
     }
 }

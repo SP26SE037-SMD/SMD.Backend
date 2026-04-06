@@ -29,6 +29,10 @@ public class NotificationResponse {
 
     UUID accountId;
 
+    UUID taskId;
+
+    UUID reviewId;
+
     String accountEmail;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+7")

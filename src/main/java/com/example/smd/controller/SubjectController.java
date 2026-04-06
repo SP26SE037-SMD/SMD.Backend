@@ -164,14 +164,16 @@ public class SubjectController {
                     "| **COMPLETED** | **Hoàn tất:** Syllabus đã được duyệt và liên kết chính thức. Môn học sẵn sàng để giảng dạy/tuyển sinh. | Dữ liệu chuyển sang Read-only. |\n" +
                     "| **ARCHIVED** | **Lưu trữ:** Môn học không còn nằm trong chương trình giảng dạy chính thức, giữ lại để đối soát lịch sử. | Ẩn khỏi danh sách đăng ký mới. |\n\n"
     )
-    public ResponseObject<SubjectResponse> publishInternal(@PathVariable UUID id, String newStatus) {
+    public ResponseObject<SubjectResponse> publishInternal(
+            @PathVariable UUID id,
+            @RequestParam String newStatus) {
         return ResponseObject.<SubjectResponse>builder()
                 .data(subjectService.updateSubjectStatus(id, newStatus))
                 .message("Subject has been successfully moved to internal review status.")
                 .build();
     }
 
-    @PatchMapping("/curriculum/{curriculum_id}/department/{department_id}/status")
+    @PatchMapping("/curriculum/department/status")
     @PreAuthorize("hasAuthority('SUBJECT_UPDATE')")
     @Operation(
             summary = "Update Subject Lifecycle Status (Cập nhật trạng thái vòng đời Môn học)",
@@ -186,15 +188,36 @@ public class SubjectController {
                     "| **COMPLETED** | **Hoàn tất:** Syllabus đã được duyệt và liên kết chính thức. Môn học sẵn sàng để giảng dạy/tuyển sinh. | Dữ liệu chuyển sang Read-only. |\n" +
                     "| **ARCHIVED** | **Lưu trữ:** Môn học không còn nằm trong chương trình giảng dạy chính thức, giữ lại để đối soát lịch sử. | Ẩn khỏi danh sách đăng ký mới. |\n\n"
     )
-    public ResponseObject<SubjectResponse> changeStatus(
-            @PathVariable UUID curriculum_id,
-            @PathVariable UUID department_id,
-            @RequestParam String newStatus
+    public ResponseObject<Integer> changeStatus(
+            @RequestParam (required = true) UUID curriculum_id,
+            @RequestParam  (required = false)UUID department_id,
+            @RequestParam String newStatus,
+            @RequestParam(required = false) String oldStatus
     ) {
-        subjectService.updateAllSubjectStatusInCurriculum(curriculum_id, department_id, newStatus);
+        int updatedCount = subjectService.updateAllSubjectStatusInCurriculum(curriculum_id, department_id, newStatus, oldStatus);
+        return ResponseObject.<Integer>builder()
+                .status(1000)
+                .data(updatedCount) // Return empty response as bulk operation
+                .message("Cập nhật trạng thái " + updatedCount + " môn học thành công")
+                .build();
+    }
+
+    @PatchMapping("/curriculum/{curriculum_id}/status")
+    @PreAuthorize("hasAuthority('SUBJECT_UPDATE')")
+    @Operation(
+            summary = "Update Subject status by Curriculum (optional oldStatus)",
+            description = "Cập nhật trạng thái môn học theo curriculum. Trường hợp này department được coi là null."
+    )
+    public ResponseObject<SubjectResponse> changeStatusByCurriculum(
+            @PathVariable UUID curriculum_id,
+            @RequestParam String newStatus,
+            @RequestParam(required = false) String oldStatus
+    ) {
+        int updatedCount = subjectService.updateAllSubjectStatusInCurriculum(curriculum_id, null, newStatus, oldStatus);
         return ResponseObject.<SubjectResponse>builder()
                 .status(1000)
-                .message("Cập nhật trạng thái PLO thành công")
+                .data(SubjectResponse.builder().build())
+                .message("Cập nhật trạng thái " + updatedCount + " môn học thành công")
                 .build();
     }
 
