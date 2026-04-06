@@ -1,6 +1,7 @@
 package com.example.smd.controller;
 
 import com.example.smd.dto.request.BlockRequest;
+import com.example.smd.dto.request.BlockWithIdxRequest;
 import com.example.smd.dto.request.BulkUpdateBlockRequest;
 import com.example.smd.dto.request.BlockSingleRequest;
 import com.example.smd.dto.request.UpdateBlockRequest;
@@ -55,6 +56,34 @@ public class BlockController {
         return ResponseObject.<List<BlockResponse>>builder()
                 .status(1000)
                 .data(blockService.createBlocks(materialId, requests))
+                .build();
+    }
+
+    @PostMapping("/material/{materialId}/with-idx")
+    @PreAuthorize("hasAuthority('BLOCK_CREATE')")
+    @Operation(
+            summary = "Tạo danh sách các khối nội dung với idx do client chỉ định",
+            description = "### Tạo danh sách blocks với thứ tự (idx) do client tự định nghĩa:\n" +
+                    "Khác với API tạo cư (tự tính idx theo vị trí trong mảng), API này cho phép client gửi kèm giá trị **idx** cho từng block.\n\n" +
+                    "| Block Type | Mô tả cách hiển thị |\n" +
+                    "| :--- | :--- |\n" +
+                    "| **H1** | Tiêu đề chính, cỡ chữ lớn nhất. |\n" +
+                    "| **H2** | Tiêu đề phụ, dùng cho các mục nhỏ. |\n" +
+                    "| **PARAGRAPH** | Văn bản thông thường, hỗ trợ xuống dòng. |\n" +
+                    "| **ORDERED_LIST** | Danh sách có đánh số (1, 2, 3...). |\n" +
+                    "| **BULLET_LIST** | Danh sách dấu chấm đầu dòng. |\n" +
+                    "| **CODE_BLOCK** | Khối mã nguồn, hiển thị font chữ Mono. |\n" +
+                    "| **QUOTE** | Đoạn trích dẫn, có đường kẻ lề trái. |\n" +
+                    "| **TABLE** | Dữ liệu bảng (dưới dạng Markdown hoặc JSON String). |\n" +
+                    "| **DIVIDER** | Đường kẻ ngang phân cách các phần. |\n" +
+                    "\n**Lưu ý:** Giá trị **idx** do client tự cung cấp, cho phép chèn block vào bất kỳ vị trí nào mà không phụ thuộc vào thứ tự trong mảng."
+    )
+    public ResponseObject<List<BlockResponse>> createBlocksWithIdx(
+            @PathVariable UUID materialId,
+            @RequestBody List<BlockWithIdxRequest> requests) {
+        return ResponseObject.<List<BlockResponse>>builder()
+                .status(1000)
+                .data(blockService.createBlocksWithIdx(materialId, requests))
                 .build();
     }
 

@@ -2,6 +2,7 @@ package com.example.smd.services;
 
 import com.example.smd.dto.request.BlockRequest;
 import com.example.smd.dto.request.BlockSingleRequest;
+import com.example.smd.dto.request.BlockWithIdxRequest;
 import com.example.smd.dto.request.BulkUpdateBlockRequest;
 import com.example.smd.dto.request.UpdateBlockRequest;
 import com.example.smd.dto.response.BlockResponse;
@@ -75,6 +76,41 @@ public class BlockService {
         // 2. Với mỗi block đã lưu, tạo Embedding tương ứng
         for (Blocks block : savedBlocks) {
             // Chỉ tạo embedding nếu nội dung text không rỗng
+            if (block.getContentText() != null && !block.getContentText().isBlank()) {
+                embeddingService.createEmbedding(block.getContentText(), block);
+            }
+        }
+
+        return savedBlocks.stream()
+                .map(blockMapper::toResponse)
+                .toList();
+    }
+
+    // 1b. Create List Blocks with explicit idx provided by client
+    @Transactional
+    public List<BlockResponse> createBlocksWithIdx(UUID materialId, List<BlockWithIdxRequest> requests) {
+        Material material = materialRepository.findById(materialId)
+                .orElseThrow(() -> new AppException(ErrorCode.MATERIAL_NOT_FOUND));
+
+        if (!(SyllabusStatus.DRAFT.name().equals(material.getStatus()) || MaterialStatus.REVISION_REQUESTED.name().equals(material.getStatus()))) {
+            throw new AppException(ErrorCode.MATERIAL_NOT_EDITABLE);
+        }
+
+        List<Blocks> blocksList = new ArrayList<>();
+        for (BlockWithIdxRequest req : requests) {
+            Blocks block = Blocks.builder()
+                    .blockStyle(req.getBlockStyle())
+                    .blockType(req.getBlockType())
+                    .contentText(req.getContentText())
+                    .idx(req.getIdx()) // Dùng idx do client chỉ định
+                    .material(material)
+                    .build();
+            blocksList.add(block);
+        }
+
+        List<Blocks> savedBlocks = blockRepository.saveAll(blocksList);
+
+        for (Blocks block : savedBlocks) {
             if (block.getContentText() != null && !block.getContentText().isBlank()) {
                 embeddingService.createEmbedding(block.getContentText(), block);
             }
