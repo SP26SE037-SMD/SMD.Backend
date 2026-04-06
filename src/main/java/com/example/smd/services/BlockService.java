@@ -116,12 +116,12 @@ public class BlockService {
                 .toList();
     }
 
-    public List<BlockSimpleResponse> getBlocksByMaterialAndStyle(UUID materialId, String blockStyle) {
+    public List<BlockSimpleResponse> getBlocksByMaterialAndType(UUID materialId, String blockType) {
         if (!materialRepository.existsById(materialId)) {
             throw new AppException(ErrorCode.MATERIAL_NOT_FOUND);
         }
 
-        return blockRepository.findAllByMaterial_MaterialIdAndBlockStyleIgnoreCaseOrderByIdxAsc(materialId, blockStyle)
+        return blockRepository.findAllByMaterial_MaterialIdAndBlockTypeIgnoreCaseOrderByIdxAsc(materialId, blockType)
                 .stream()
                 .map(block -> BlockSimpleResponse.builder()
                         .blockId(block.getBlockId())

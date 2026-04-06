@@ -17,7 +17,7 @@ public interface BlockRepository extends JpaRepository<Blocks, UUID> {
     // Lấy danh sách block và sắp xếp theo thứ tự idx tăng dần
     List<Blocks> findAllByMaterial_MaterialIdOrderByIdxAsc(UUID materialId);
 
-    List<Blocks> findAllByMaterial_MaterialIdAndBlockStyleIgnoreCaseOrderByIdxAsc(UUID materialId, String blockStyle);
+    List<Blocks> findAllByMaterial_MaterialIdAndBlockTypeIgnoreCaseOrderByIdxAsc(UUID materialId, String blockType);
 
     // Xóa tất cả blocks cũ của một material để ghi đè (thường dùng khi cập nhật bài viết)
     void deleteAllByMaterial_MaterialId(UUID materialId);
