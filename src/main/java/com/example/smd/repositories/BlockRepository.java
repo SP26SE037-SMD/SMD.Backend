@@ -4,6 +4,7 @@ import com.example.smd.entities.Blocks;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -28,4 +29,8 @@ public interface BlockRepository extends JpaRepository<Blocks, UUID> {
             "AND b.blockType IN ('H1', 'H2') " +
             "ORDER BY b.idx ASC")
     List<String> findTitlesByMaterialId(@Param("materialId") UUID materialId);
+
+    @Modifying
+    @Query("UPDATE Blocks b SET b.idx = b.idx + 1 WHERE b.idx >= :newIdx AND b.material.materialId = :materialId")
+    void shiftBlocksIndex(@Param("newIdx") int newIdx, @Param("materialId") UUID materialId);
 }
