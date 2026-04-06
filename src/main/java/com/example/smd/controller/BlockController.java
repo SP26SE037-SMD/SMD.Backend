@@ -1,6 +1,7 @@
 package com.example.smd.controller;
 
 import com.example.smd.dto.request.BlockRequest;
+import com.example.smd.dto.request.BulkUpdateBlockRequest;
 import com.example.smd.dto.response.BlockResponse;
 import com.example.smd.dto.response.BlockSimpleResponse;
 import com.example.smd.dto.response.PagedResponse;
@@ -91,6 +92,25 @@ public class BlockController {
         return ResponseObject.<BlockResponse>builder()
                 .status(1000)
                 .data(blockService.getDetail(id))
+                .build();
+    }
+
+    @PutMapping("/material/{materialId}")
+//    @PreAuthorize("hasAuthority('BLOCK_UPDATE')")
+    @Operation(
+            summary = "Bulk Update blocks theo Material (xóa + upsert)",
+            description = "### Quy trình cập nhật hàng loạt blocks của một tài liệu (material):\n" +
+                    "1. **deleteBlockList**: danh sách blockId cần xóa. Hệ thống sẽ tự động kiểm tra và xóa các bản ghi liên kết trong bảng **session_material_block** trước khi xóa block.\n" +
+                    "2. **blocks**: danh sách blocks cần upsert. Nếu có `blockId` → cập nhật block hiện có; không có `blockId` → tạo mới.\n\n" +
+                    "**Lưu ý:** Chỉ áp dụng khi material có trạng thái `DRAFT` hoặc `REVISION_REQUESTED`."
+    )
+    public ResponseObject<List<BlockResponse>> bulkUpdateBlocks(
+            @PathVariable UUID materialId,
+            @RequestBody BulkUpdateBlockRequest request) {
+        return ResponseObject.<List<BlockResponse>>builder()
+                .status(1000)
+                .data(blockService.bulkUpdateBlocks(materialId, request))
+                .message("Cập nhật blocks thành công")
                 .build();
     }
 
