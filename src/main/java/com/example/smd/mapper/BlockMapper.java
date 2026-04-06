@@ -1,6 +1,7 @@
 package com.example.smd.mapper;
 
 import com.example.smd.dto.request.BlockRequest;
+import com.example.smd.dto.request.UpdateBlockRequest;
 import com.example.smd.dto.response.BlockResponse;
 import com.example.smd.entities.Blocks;
 import org.mapstruct.Mapper;
@@ -24,4 +25,9 @@ public interface BlockMapper {
     @Mapping(target = "material", ignore = true)
     @Mapping(target = "idx", ignore = true)
     void updateBlock(@MappingTarget Blocks block, BlockRequest request);
+
+    @Mapping(target = "blockId", ignore = true)
+    @Mapping(target = "material", ignore = true)
+    @Mapping(target = "idx", ignore = true)
+    void updateBlockList(@MappingTarget Blocks block, UpdateBlockRequest request);
 }
