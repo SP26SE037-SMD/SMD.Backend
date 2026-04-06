@@ -103,16 +103,16 @@ public class BlockController {
                 .build();
     }
 
-    @GetMapping("/material/{materialId}/by-style")
-    @Operation(summary = "Lấy danh sách block theo materialId và blockStyle")
-    public ResponseObject<List<BlockSimpleResponse>> getByMaterialAndStyle(
+    @GetMapping("/material/{materialId}/by-type")
+    @Operation(summary = "Lấy danh sách block theo materialId và blockType")
+    public ResponseObject<List<BlockSimpleResponse>> getByMaterialAndType(
             @PathVariable UUID materialId,
-            @RequestParam String blockStyle
+            @RequestParam String blockType
     ) {
         return ResponseObject.<List<BlockSimpleResponse>>builder()
                 .status(1000)
-                .data(blockService.getBlocksByMaterialAndStyle(materialId, blockStyle))
-                .message("Truy vấn danh sách block theo materialId và blockStyle thành công")
+                .data(blockService.getBlocksByMaterialAndType(materialId, blockType))
+                .message("Truy vấn danh sách block theo materialId và blockType thành công")
                 .build();
     }
 
