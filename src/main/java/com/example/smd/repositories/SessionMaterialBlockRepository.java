@@ -23,7 +23,9 @@ public interface SessionMaterialBlockRepository extends JpaRepository<Session_Ma
     List<Session_Material_Block> findAllBySession_SessionIdIn(List<UUID> sessionIds);
 
     @Modifying
-    int deleteBySession_SessionId(UUID sessionId);
+    @Transactional
+    @Query("DELETE FROM Session_Material_Block s WHERE s.session.sessionId = :sessionId")
+    int deleteBySession_SessionId(@Param("sessionId") UUID sessionId);
 
     /** Xóa tất cả bản ghi session_material_block có block_id nằm trong danh sách */
     @Modifying

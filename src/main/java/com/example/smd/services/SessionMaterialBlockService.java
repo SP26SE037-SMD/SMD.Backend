@@ -11,6 +11,7 @@ import com.example.smd.entities.Material;
 import com.example.smd.entities.Session;
 import com.example.smd.entities.Session_Material_Block;
 import com.example.smd.entities.Syllabus;
+import com.example.smd.enums.SyllabusStatus;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.repositories.BlockRepository;
@@ -101,7 +102,7 @@ public class SessionMaterialBlockService {
                     .sessionTitle(request.getSessionTitle())
                     .teachingMethods(request.getTeachingMethods())
                     .duration(request.getDuration())
-                    .status("DRAFT")
+                    .status(SyllabusStatus.DRAFT.name())
                     .build();
             session = sessionRepository.save(session);
         } else {
