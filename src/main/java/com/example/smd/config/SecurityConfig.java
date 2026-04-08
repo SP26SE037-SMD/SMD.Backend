@@ -34,7 +34,9 @@ public class SecurityConfig {
             "/api/auth/login", "/api/auth/login-google", "/api/auth/introspect",
             "/api/auth/logout",
             "/api/auth/me",
-            "/api/auth/password-reset"
+            "/api/auth/password-reset",
+            "/websocket-test.html",
+            "/ws/**"
     };
 
     @Autowired

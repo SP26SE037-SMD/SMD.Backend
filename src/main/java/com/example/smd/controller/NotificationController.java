@@ -28,7 +28,7 @@ public class NotificationController {
     NotificationService notificationService;
 
     @PostMapping
-    @PreAuthorize("hasAuthority('NOTIFICATION_CREATE')")
+//    @PreAuthorize("hasAuthority('NOTIFICATION_CREATE')")
     @Operation(summary = "Create and send a notification to a user")
     public ResponseObject<NotificationResponse> createNotification(
                         @RequestBody @Valid NotificationRequest request) {
@@ -78,7 +78,7 @@ public class NotificationController {
     }
 
     @PutMapping("/{id}/mark-as-read")
-    @PreAuthorize("hasAuthority('NOTIFICATION_UPDATE')")
+//    @PreAuthorize("hasAuthority('NOTIFICATION_UPDATE')")
     @Operation(summary = "Mark a notification as read")
     public ResponseObject<NotificationResponse> markAsRead(
             @PathVariable("id") UUID notificationId) {
@@ -90,7 +90,7 @@ public class NotificationController {
     }
 
     @PostMapping("/mark-all-as-read")
-    @PreAuthorize("hasAuthority('NOTIFICATION_UPDATE')")
+//    @PreAuthorize("hasAuthority('NOTIFICATION_UPDATE')")
     @Operation(summary = "Mark all notifications as read")
     public ResponseObject<Void> markAllAsRead() {
         notificationService.markAllAsRead();
