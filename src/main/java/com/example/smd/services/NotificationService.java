@@ -73,7 +73,8 @@ public class NotificationService {
                     notificationMapper.toNotificationResponse(savedNotification)
             );
             realtimePublisher.publishToAccount(account.getAccountId().toString(), payload);
-            log.debug("Published notification {} to WebSocket", savedNotification.getNotificationId());
+            log.info("Published notification {} to WebSocket",
+                    savedNotification.getNotificationId());
         } catch (Exception e) {
             log.error("Error publishing notification to WebSocket: {}", e.getMessage(), e);
             // Không throw exception, notification vẫn được lưu
