@@ -1,5 +1,5 @@
 package com.example.smd.dto.excel;
-import jakarta.validation.constraints.Pattern;
+
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -21,6 +21,5 @@ public class AccountImportDTO {
 
     @ExcelColumn(name = "Department Code", order = 3, required = true)
     private String departmentCode;
-
 
 }
