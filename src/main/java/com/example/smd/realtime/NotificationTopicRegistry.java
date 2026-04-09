@@ -81,7 +81,7 @@ public final class NotificationTopicRegistry {
         public static String syllabusEvent(String syllabusId) {
             return EVENT_PREFIX + "/syllabus/" + syllabusId;
         }
- 
+
         // Sprint event (create, update, status change, etc.)
         public static String sprintEvent(String sprintId) {
             return EVENT_PREFIX + "/sprint/" + sprintId;
