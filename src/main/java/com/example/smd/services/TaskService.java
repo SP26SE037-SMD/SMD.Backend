@@ -122,23 +122,65 @@ public class TaskService {
             throw new AppException(ErrorCode.SUBJECT_NOT_FOUND);
         }
 
+        long existingTaskCount = taskRepository.countBySprint_SprintId(sprintId);
+        if (existingTaskCount >= subjectIds.size()) {
+            throw new AppException(
+                ErrorCode.TASK_LIST_REQUIRED,
+                "Task list for this sprint has already reached the number of subjects in department"
+            );
+        }
+
+        Set<UUID> existingSubjectIds = taskRepository.findExistingSubjectIdsInSprint(sprintId, subjectIds);
+
+        Account hopdcAccount = accountRepository
+            .findByDepartmentAndRoleName(departmentId, RoleName.HOPDC.name())
+            .stream()
+            .findFirst()
+            .orElse(null);
+
         List<Task> tasksToSave = new ArrayList<>();
         for (UUID subjectId : subjectIds) {
+            if (existingSubjectIds.contains(subjectId)) {
+                continue;
+            }
+
             Subject subject = subjectRepository.findById(subjectId)
                 .orElseThrow(() -> new AppException(ErrorCode.SUBJECT_NOT_FOUND));
+
+            boolean hasSyllabus = !syllabusRepository.findBySubject_SubjectId(subjectId).isEmpty();
 
             Task task = Task.builder()
                 .taskName(subject.getSubjectCode() + " - " + subject.getSubjectName())
                 .description("Auto-generated task for subject " + subject.getSubjectCode())
                 .priority(Priority.HIGH.toString())
-                .type("UNKNOWN")
                 .build();
 
             task.setSprint(sprint);
             task.setSubject(subject);
             task.setStatus(TaskStatus.TO_DO.toString());
 
+            if (hasSyllabus) {
+                if (hopdcAccount == null) {
+                    throw new AppException(
+                        ErrorCode.ACCOUNT_NOT_FOUND,
+                        "No HoPDC account found in this department"
+                    );
+                }
+                task.setType("REUSED_SUBJECT");
+                task.setAccount(hopdcAccount);
+            } else {
+                task.setType("NEW_SUBJECT");
+                task.setAccount(null);
+            }
+
             tasksToSave.add(task);
+        }
+
+        if (tasksToSave.isEmpty()) {
+            throw new AppException(
+                ErrorCode.TASK_LIST_REQUIRED,
+                "No new tasks can be created for this sprint"
+            );
         }
 
         List<Task> savedTasks = taskRepository.saveAll(tasksToSave);

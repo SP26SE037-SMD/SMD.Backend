@@ -41,6 +41,16 @@ public interface TaskRepository extends JpaRepository<Task, UUID>, JpaSpecificat
     @EntityGraph(attributePaths = {"sprint", "account", "syllabus", "subject"})
     Page<Task> findBySubject_SubjectIdIn(List<UUID> subjectIds, Pageable pageable);
 
+        long countBySprint_SprintId(UUID sprintId);
+
+        @Query("SELECT DISTINCT t.subject.subjectId FROM Task t " +
+            "WHERE t.sprint.sprintId = :sprintId " +
+            "AND t.subject.subjectId IN :subjectIds")
+        Set<UUID> findExistingSubjectIdsInSprint(
+            @Param("sprintId") UUID sprintId,
+            @Param("subjectIds") Set<UUID> subjectIds
+        );
+
     @Override
     @EntityGraph(attributePaths = {"sprint", "account", "syllabus", "subject"})
     Page<Task> findAll(Specification<Task> spec, Pageable pageable);

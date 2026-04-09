@@ -7,6 +7,8 @@ import com.example.smd.entities.Notification;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.NotificationMapper;
+import com.example.smd.realtime.RealtimePayload;
+import com.example.smd.realtime.RealtimePublisher;
 import com.example.smd.repositories.AccountRepository;
 import com.example.smd.repositories.NotificationRepository;
 import com.example.smd.repositories.ReviewTaskRepository;
@@ -36,9 +38,11 @@ public class NotificationService {
     NotificationMapper notificationMapper;
     TaskRepository taskRepository;
     ReviewTaskRepository reviewTaskRepository;
+    RealtimePublisher realtimePublisher;
 
     /**
      * Tạo và gửi thông báo cho một user cụ thể
+     * Ngoài lưu vào DB, còn publish realtime message qua WebSocket
      */
     @Transactional
     public NotificationResponse createNotification(NotificationRequest request) {
@@ -61,6 +65,20 @@ public class NotificationService {
         // Lưu notification
         Notification savedNotification = notificationRepository.save(notification);
         log.info("Created notification {} for user {}", savedNotification.getNotificationId(), account.getEmail());
+
+        // Publish realtime notification qua WebSocket
+        try {
+            RealtimePayload payload = RealtimePayload.notification(
+                    savedNotification.getTitle(),
+                    notificationMapper.toNotificationResponse(savedNotification)
+            );
+            realtimePublisher.publishToAccount(account.getAccountId().toString(), payload);
+            log.info("Published notification {} to WebSocket",
+                    savedNotification.getNotificationId());
+        } catch (Exception e) {
+            log.error("Error publishing notification to WebSocket: {}", e.getMessage(), e);
+            // Không throw exception, notification vẫn được lưu
+        }
 
         return notificationMapper.toNotificationResponse(savedNotification);
     }
@@ -131,6 +149,7 @@ public class NotificationService {
 
     /**
      * Đánh dấu một thông báo là đã đọc
+     * Publish event realtime
      */
     @Transactional
     public NotificationResponse markAsRead(UUID notificationId) {
@@ -146,11 +165,24 @@ public class NotificationService {
         notification.setIsRead(true);
         Notification updatedNotification = notificationRepository.save(notification);
 
+        // Publish event qua WebSocket
+        try {
+            RealtimePayload payload = RealtimePayload.event(
+                    "NOTIFICATION_READ",
+                    "Notification marked as read",
+                    notificationMapper.toNotificationResponse(updatedNotification)
+            );
+            realtimePublisher.publishToAccount(currentUserId.toString(), payload);
+        } catch (Exception e) {
+            log.error("Error publishing read event to WebSocket: {}", e.getMessage(), e);
+        }
+
         return notificationMapper.toNotificationResponse(updatedNotification);
     }
 
     /**
      * Đánh dấu tất cả thông báo là đã đọc
+     * Publish event realtime
      */
     @Transactional
     public void markAllAsRead() {
@@ -166,6 +198,18 @@ public class NotificationService {
         notificationRepository.saveAll(unreadNotifications);
 
         log.info("Marked all notifications as read for user {}", currentUserId);
+
+        // Publish event qua WebSocket
+        try {
+            RealtimePayload payload = RealtimePayload.event(
+                    "ALL_NOTIFICATIONS_READ",
+                    "All notifications marked as read",
+                    java.util.Map.of("count", unreadNotifications.getContent().size())
+            );
+            realtimePublisher.publishToAccount(currentUserId.toString(), payload);
+        } catch (Exception e) {
+            log.error("Error publishing all-read event to WebSocket: {}", e.getMessage(), e);
+        }
     }
 
     /**

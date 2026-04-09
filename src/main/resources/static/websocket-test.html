@@ -1,0 +1,628 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SMD WebSocket Test Dashboard</title>
+    <script src="https://unpkg.com/@stomp/stompjs@7.0.0/bundles/stomp.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.6.1/dist/sockjs.min.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        overflow: hidden;
+      }
+
+      .header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        text-align: center;
+      }
+
+      .header h1 {
+        font-size: 2.5em;
+        margin-bottom: 10px;
+      }
+
+      .header p {
+        font-size: 1.1em;
+        opacity: 0.9;
+      }
+
+      .content {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        padding: 30px;
+      }
+
+      @media (max-width: 768px) {
+        .content {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .section {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 20px;
+        border-left: 4px solid #667eea;
+      }
+
+      .section h2 {
+        color: #667eea;
+        margin-bottom: 15px;
+        font-size: 1.3em;
+      }
+
+      .form-group {
+        margin-bottom: 15px;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 5px;
+        color: #333;
+        font-weight: 500;
+      }
+
+      input,
+      textarea,
+      select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 1em;
+        font-family: inherit;
+      }
+
+      input:focus,
+      textarea:focus,
+      select:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 5px rgba(102, 126, 234, 0.3);
+      }
+
+      button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 1em;
+        transition: transform 0.2s;
+        width: 100%;
+      }
+
+      button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+      }
+
+      button:active {
+        transform: translateY(0);
+      }
+
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .button-group {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-bottom: 15px;
+      }
+
+      .status {
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 15px;
+        font-weight: 500;
+      }
+
+      .status.connected {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+      }
+
+      .status.disconnected {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+      }
+
+      .messages {
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        height: 400px;
+        overflow-y: auto;
+        padding: 15px;
+      }
+
+      .message {
+        margin-bottom: 10px;
+        padding: 10px;
+        border-left: 3px solid #667eea;
+        background: #f0f1ff;
+        border-radius: 3px;
+        font-size: 0.9em;
+      }
+
+      .message.success {
+        border-left-color: #28a745;
+        background: #d4edda;
+      }
+
+      .message.error {
+        border-left-color: #dc3545;
+        background: #f8d7da;
+      }
+
+      .message.info {
+        border-left-color: #17a2b8;
+        background: #d1ecf1;
+      }
+
+      .message-time {
+        color: #666;
+        font-size: 0.85em;
+        margin-right: 10px;
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-bottom: 15px;
+      }
+
+      .stat-box {
+        background: white;
+        padding: 15px;
+        border-radius: 5px;
+        text-align: center;
+        border: 1px solid #ddd;
+      }
+
+      .stat-label {
+        color: #666;
+        font-size: 0.9em;
+        margin-bottom: 5px;
+      }
+
+      .stat-value {
+        color: #667eea;
+        font-size: 2em;
+        font-weight: bold;
+      }
+
+      .full-width {
+        grid-column: 1 / -1;
+      }
+
+      .tabs {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 15px;
+      }
+
+      .tab {
+        flex: 1;
+        padding: 10px;
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        cursor: pointer;
+        text-align: center;
+        transition: all 0.2s;
+      }
+
+      .tab.active {
+        background: #667eea;
+        color: white;
+        border-color: #667eea;
+      }
+
+      .tab:hover {
+        border-color: #667eea;
+      }
+
+      .tab-content {
+        display: none;
+      }
+
+      .tab-content.active {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>🚀 SMD WebSocket Real-time Dashboard</h1>
+        <p>Test Notifications, Events, and Real-time Updates</p>
+      </div>
+
+      <div class="content">
+        <!-- Connection Section -->
+        <div class="section">
+          <h2>📡 Connection Settings</h2>
+
+          <div id="connectionStatus" class="status disconnected">
+            ⚫ Disconnected
+          </div>
+
+          <div class="form-group">
+            <label for="serverUrl">Server URL</label>
+            <input
+              type="text"
+              id="serverUrl"
+              value="ws://localhost:8080/ws"
+              placeholder="ws://localhost:8080/ws"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="accountId">Account ID</label>
+            <input
+              type="text"
+              id="accountId"
+              placeholder="Your Account UUID"
+              value="123e4567-e89b-12d3-a456-426614174000"
+            />
+          </div>
+
+          <div class="button-group">
+            <button onclick="connect()" id="connectBtn">Connect</button>
+            <button onclick="disconnect()" id="disconnectBtn" disabled>
+              Disconnect
+            </button>
+          </div>
+
+          <div class="stats">
+            <div class="stat-box">
+              <div class="stat-label">Messages</div>
+              <div class="stat-value" id="messageCount">0</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">Subscriptions</div>
+              <div class="stat-value" id="subscriptionCount">0</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Test Actions Section -->
+        <div class="section">
+          <h2>🧪 Test Actions</h2>
+
+          <div class="tabs">
+            <div class="tab active" onclick="switchTab('tab-notification')">
+              Notification
+            </div>
+            <div class="tab" onclick="switchTab('tab-event')">Event</div>
+            <div class="tab" onclick="switchTab('tab-broadcast')">
+              Broadcast
+            </div>
+          </div>
+
+          <!-- Notification Tab -->
+          <div id="tab-notification" class="tab-content active">
+            <div class="form-group">
+              <label for="notifMessage">Message</label>
+              <input
+                type="text"
+                id="notifMessage"
+                placeholder="Test message"
+                value="This is a test notification"
+              />
+            </div>
+            <button onclick="sendTestNotification()">
+              📨 Send Notification
+            </button>
+          </div>
+
+          <!-- Event Tab -->
+          <div id="tab-event" class="tab-content">
+            <div class="form-group">
+              <label for="eventType">Event Type</label>
+              <select id="eventType">
+                <option value="SYLLABUS_SUBMITTED">Syllabus Submitted</option>
+                <option value="TASK_ASSIGNED">Task Assigned</option>
+                <option value="REVIEW_REQUESTED">Review Requested</option>
+                <option value="APPROVAL_NEEDED">Approval Needed</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="eventMessage">Message</label>
+              <input
+                type="text"
+                id="eventMessage"
+                placeholder="Event message"
+              />
+            </div>
+            <button onclick="sendTestEvent()">⚡ Send Event</button>
+          </div>
+
+          <!-- Broadcast Tab -->
+          <div id="tab-broadcast" class="tab-content">
+            <div class="form-group">
+              <label for="broadcastType">Target</label>
+              <select id="broadcastType">
+                <option value="department">Department</option>
+                <option value="system">System-wide</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="deptId">Department ID (if department)</label>
+              <input type="text" id="deptId" placeholder="Department ID" />
+            </div>
+            <div class="form-group">
+              <label for="broadcastMessage">Message</label>
+              <textarea
+                id="broadcastMessage"
+                placeholder="Broadcast message"
+                rows="3"
+              ></textarea>
+            </div>
+            <button onclick="sendBroadcast()">📢 Broadcast</button>
+          </div>
+        </div>
+
+        <!-- Messages Section -->
+        <div class="section full-width">
+          <h2>📨 Messages Log</h2>
+          <div class="messages" id="messages"></div>
+          <button onclick="clearMessages()" style="margin-top: 10px">
+            Clear Log
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let client = null
+      let accountId = null
+      let messageCount = 0
+      let subscriptionCount = 0
+      let isConnected = false
+
+      function connect() {
+        accountId = document.getElementById('accountId').value
+        const serverUrl = document.getElementById('serverUrl').value
+
+        if (!accountId) {
+          addMessage('⚠️  Please enter Account ID', 'error')
+          return
+        }
+
+        const socket = new SockJS(serverUrl)
+
+        client = new StompJs.Client({
+          webSocketFactory: () => socket,
+          reconnectDelay: 5000,
+          heartbeatIncoming: 4000,
+          heartbeatOutgoing: 4000,
+          onConnect: onConnected,
+          onStompError: onError,
+          onDisconnect: onDisconnected,
+        })
+
+        client.activate()
+      }
+
+      function onConnected() {
+        isConnected = true
+        updateConnectionStatus(true)
+        addMessage('✅ Connected to WebSocket', 'success')
+
+        // Subscribe to main topic
+        subscribeToTopic(`/topic/notification/account/${accountId}`)
+        subscribeToTopic(`/topic/event/syllabus/any`)
+        subscribeToTopic(`/topic/notification/broadcast/system`)
+        subscribeToTopic(`/topic/notification/broadcast/department/any`)
+      }
+
+      function subscribeToTopic(topic) {
+        try {
+          client.subscribe(topic, onMessageReceived)
+          subscriptionCount++
+          document.getElementById('subscriptionCount').textContent =
+            subscriptionCount
+          addMessage(`📡 Subscribed to: ${topic}`, 'info')
+        } catch (e) {
+          addMessage(`❌ Failed to subscribe to ${topic}`, 'error')
+        }
+      }
+
+      function onMessageReceived(message) {
+        try {
+          const payload = JSON.parse(message.body)
+          messageCount++
+          document.getElementById('messageCount').textContent = messageCount
+
+          const dataStr =
+            typeof payload.data === 'string'
+              ? payload.data
+              : JSON.stringify(payload.data || {}).substring(0, 100)
+
+          addMessage(
+            `📨 [${payload.code}] ${payload.message} - ${dataStr}`,
+            'success'
+          )
+        } catch (e) {
+          addMessage(`📨 Raw: ${message.body}`, 'info')
+        }
+      }
+
+      function onError(error) {
+        isConnected = false
+        updateConnectionStatus(false)
+        addMessage(`❌ Error: ${error}`, 'error')
+      }
+
+      function onDisconnected() {
+        isConnected = false
+        updateConnectionStatus(false)
+        addMessage('🔌 Disconnected', 'error')
+      }
+
+      function disconnect() {
+        if (client) {
+          client.deactivate()
+        }
+      }
+
+      function updateConnectionStatus(connected) {
+        const status = document.getElementById('connectionStatus')
+        const connectBtn = document.getElementById('connectBtn')
+        const disconnectBtn = document.getElementById('disconnectBtn')
+
+        if (connected) {
+          status.className = 'status connected'
+          status.textContent = '🟢 Connected'
+          connectBtn.disabled = true
+          disconnectBtn.disabled = false
+        } else {
+          status.className = 'status disconnected'
+          status.textContent = '⚫ Disconnected'
+          connectBtn.disabled = false
+          disconnectBtn.disabled = true
+        }
+      }
+
+      function sendTestNotification() {
+        if (!client || !client.connected) {
+          addMessage('⚠️  Not connected', 'error')
+          return
+        }
+
+        const message = document.getElementById('notifMessage').value
+        const destination = `/app/notification/test/${accountId}`
+
+        try {
+          client.publish({
+            destination,
+            body: message,
+          })
+          addMessage(`➡️  Sent test notification: ${message}`, 'info')
+        } catch (e) {
+          addMessage(`❌ Failed to send: ${e}`, 'error')
+        }
+      }
+
+      function sendTestEvent() {
+        if (!client || !client.connected) {
+          addMessage('⚠️  Not connected', 'error')
+          return
+        }
+
+        const eventType = document.getElementById('eventType').value
+        const message =
+          document.getElementById('eventMessage').value || eventType
+        const destination = `/app/event/test/${accountId}`
+
+        try {
+          client.publish({
+            destination,
+            body: JSON.stringify({ type: eventType, message }),
+          })
+          addMessage(`➡️  Sent event: ${eventType}`, 'info')
+        } catch (e) {
+          addMessage(`❌ Failed to send: ${e}`, 'error')
+        }
+      }
+
+      function sendBroadcast() {
+        if (!client || !client.connected) {
+          addMessage('⚠️  Not connected', 'error')
+          return
+        }
+
+        const broadcastType = document.getElementById('broadcastType').value
+        const message = document.getElementById('broadcastMessage').value
+        let destination
+
+        if (broadcastType === 'department') {
+          const deptId = document.getElementById('deptId').value
+          destination = `/app/event/broadcast-department/${deptId}`
+        } else {
+          destination = '/app/event/broadcast-system'
+        }
+
+        try {
+          client.publish({
+            destination,
+            body: message,
+          })
+          addMessage(`📢 Broadcast sent to ${broadcastType}`, 'info')
+        } catch (e) {
+          addMessage(`❌ Failed to broadcast: ${e}`, 'error')
+        }
+      }
+
+      function addMessage(text, type = 'info') {
+        const messagesDiv = document.getElementById('messages')
+        const message = document.createElement('div')
+        message.className = `message ${type}`
+
+        const time = new Date().toLocaleTimeString()
+        message.innerHTML = `<span class="message-time">[${time}]</span> ${text}`
+
+        messagesDiv.appendChild(message)
+        messagesDiv.scrollTop = messagesDiv.scrollHeight
+      }
+
+      function clearMessages() {
+        document.getElementById('messages').innerHTML = ''
+        messageCount = 0
+        document.getElementById('messageCount').textContent = '0'
+      }
+
+      function switchTab(tabName) {
+        // Hide all tab contents
+        document.querySelectorAll('.tab-content').forEach((tab) => {
+          tab.classList.remove('active')
+        })
+
+        // Remove active from all tabs
+        document.querySelectorAll('.tab').forEach((tab) => {
+          tab.classList.remove('active')
+        })
+
+        // Show selected tab
+        document.getElementById(tabName).classList.add('active')
+        event.target.classList.add('active')
+      }
+
+      // Auto-connect on page load
+      window.addEventListener('load', () => {
+        addMessage('🟢 Ready to connect', 'info')
+        addMessage('💡 Tip: Adjust settings and click Connect to start', 'info')
+      })
+    </script>
+  </body>
+</html>
