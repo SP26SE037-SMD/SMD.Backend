@@ -24,9 +24,6 @@ import com.example.smd.services.excelService.ExcelExporter;
 import com.example.smd.services.excelService.ExcelImporter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -37,8 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -58,7 +54,8 @@ public class AccountService {
 
     // GetAll tài khoản có phân trang và tìm kiếm theo role name hoặc full name
     @Transactional(readOnly = true)
-    public Page<AccountResponse> getAllAccounts(String search, String searchBy, int page, int size, String[] sort, String accountId) {
+    public Page<AccountResponse> getAllAccounts(String search, String searchBy, int page, int size, String[] sort,
+            String accountId) {
 
         var account = getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
@@ -191,7 +188,7 @@ public class AccountService {
                     .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
             account.setRole(role);
         }
-        if(request.getDepartmentCode() != null) {
+        if (request.getDepartmentCode() != null) {
             Department department = departmentRepository.findByDepartmentCode(request.getDepartmentCode())
                     .orElseThrow(() -> new AppException(ErrorCode.DEPARTMENT_NOT_FOUND));
             account.setDepartment(department);
@@ -204,11 +201,9 @@ public class AccountService {
 
         // Send notification email after successful account creation.
         emailService.sendAccountCreatedEmailsBatch(List.of(
-            new EmailService.AccountCreatedEmail(
-                account.getEmail(),
-                account.getFullName()
-            )
-        ));
+                new EmailService.AccountCreatedEmail(
+                        account.getEmail(),
+                        account.getFullName())));
 
         return accountMapper.toResponse(account);
     }
@@ -216,8 +211,8 @@ public class AccountService {
     // Cập nhật thông tin tài khoản
     @Transactional
     public AccountResponse updateAccount(String accountId,
-                                         boolean status,
-                                         AccountUpdateRequest request) {
+            boolean status,
+            AccountUpdateRequest request) {
         var convert = UUID.fromString(accountId);
         Account account = accountRepository.findById(convert)
                 .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND));
@@ -242,7 +237,7 @@ public class AccountService {
 
     @Transactional
     public boolean changeDepartment(String accountId,
-                                    String departmentCode, String adminId) {
+            String departmentCode, String adminId) {
 
         var checkRole = getAccountById(adminId);
         String roleName = checkRole.getRole().getRoleName();
@@ -262,14 +257,13 @@ public class AccountService {
         return true;
     }
 
-    //Import tài khoản từ file Excel
+    // Import tài khoản từ file Excel
     public ImportResult importAccounts(MultipartFile file, String roleName) {
 
         Role role = roleRepository.findByRoleName(roleName)
                 .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
 
-        List<AccountImportDTO> rows =
-                null;
+        List<AccountImportDTO> rows = null;
         try {
             rows = ExcelImporter.importFromExcel(file, AccountImportDTO.class);
         } catch (Exception e) {
@@ -295,12 +289,10 @@ public class AccountService {
                     results.add(new ImportAccountResult(
                             email,
                             "FAILED",
-                            "Duplicate email in Excel"
-                    ));
+                            "Duplicate email in Excel"));
 
                     continue;
                 }
-
 
                 Department department = departmentRepository.findByDepartmentCode(departmentCode)
                         .orElse(null);
@@ -308,20 +300,16 @@ public class AccountService {
                     results.add(new ImportAccountResult(
                             email,
                             "FAILED",
-                            "Department code not found"
-                    ));
+                            "Department code not found"));
                     continue;
                 }
-
-
 
                 // Validate phoneNumber
                 if (phoneNumber.isEmpty()) {
                     results.add(new ImportAccountResult(
                             email,
                             "FAILED",
-                            "Phone number is required"
-                    ));
+                            "Phone number is required"));
                     continue;
                 }
 
@@ -330,8 +318,7 @@ public class AccountService {
                     results.add(new ImportAccountResult(
                             email,
                             "FAILED",
-                            "Phone number must be 10-11 digits"
-                    ));
+                            "Phone number must be 10-11 digits"));
                     continue;
                 }
 
@@ -350,8 +337,7 @@ public class AccountService {
                 results.add(new ImportAccountResult(
                         null,
                         "FAILED",
-                        "Invalid data format"
-                ));
+                        "Invalid data format"));
             }
         }
 
@@ -375,8 +361,7 @@ public class AccountService {
                 results.add(new ImportAccountResult(
                         account.getEmail(),
                         "FAILED",
-                        "Email already exists"
-                ));
+                        "Email already exists"));
 
             } else {
 
@@ -385,8 +370,7 @@ public class AccountService {
                 results.add(new ImportAccountResult(
                         account.getEmail(),
                         "SUCCESS",
-                        "Created successfully"
-                ));
+                        "Created successfully"));
             }
         }
 
@@ -394,11 +378,10 @@ public class AccountService {
 
         if (!savedAccounts.isEmpty()) {
             List<EmailService.AccountCreatedEmail> emailPayloads = savedAccounts.stream()
-                .map(account -> new EmailService.AccountCreatedEmail(
-                    account.getEmail(),
-                    account.getFullName()
-                ))
-                .toList();
+                    .map(account -> new EmailService.AccountCreatedEmail(
+                            account.getEmail(),
+                            account.getFullName()))
+                    .toList();
 
             emailService.sendAccountCreatedEmailsBatch(emailPayloads);
         }
@@ -415,29 +398,29 @@ public class AccountService {
                 results.size(),
                 (int) success,
                 (int) failed,
-                results
-        );
+                results);
     }
 
     public ByteArrayInputStream exportAccounts() throws Exception {
 
-        List<AccountExportDTO> accounts =
-                accountRepository.exportAccounts();
+        List<AccountExportDTO> accounts = accountRepository.exportAccounts();
 
-//        List<AccountExportDTO> dtoList = accounts.stream()
-//                .map(a -> {
-//
-//                    AccountExportDTO dto = new AccountExportDTO();
-//
-//                    dto.setEmail(a.getEmail());
-//                    dto.setFullName(a.getFullName());
-//                    dto.setPhoneNumber(a.getPhoneNumber());
-//                    dto.setRole(a.getRole().getRoleName());
-//                    dto.setDepartmentCode(a.getDepartment() != null ? a.getDepartment().getDepartmentCode() : "");
-//                    dto.setDepartmentName(a.getDepartment() != null ? a.getDepartment().getDepartmentName() : "");
-//                    return dto;
-//
-//                }).toList();
+        // List<AccountExportDTO> dtoList = accounts.stream()
+        // .map(a -> {
+        //
+        // AccountExportDTO dto = new AccountExportDTO();
+        //
+        // dto.setEmail(a.getEmail());
+        // dto.setFullName(a.getFullName());
+        // dto.setPhoneNumber(a.getPhoneNumber());
+        // dto.setRole(a.getRole().getRoleName());
+        // dto.setDepartmentCode(a.getDepartment() != null ?
+        // a.getDepartment().getDepartmentCode() : "");
+        // dto.setDepartmentName(a.getDepartment() != null ?
+        // a.getDepartment().getDepartmentName() : "");
+        // return dto;
+        //
+        // }).toList();
 
         return ExcelExporter.export(accounts, AccountExportDTO.class);
     }
@@ -470,7 +453,8 @@ public class AccountService {
     }
 
     @Transactional(readOnly = true)
-    public List<AvailableAccountResponse> getAvailableAccountIdsInMyDepartmentBySyllabus(UUID syllabusId, String currentAccountId) {
+    public List<AvailableAccountResponse> getAvailableAccountIdsInMyDepartmentBySyllabus(UUID syllabusId,
+            String currentAccountId) {
         if (!syllabusRepository.existsById(syllabusId)) {
             throw new AppException(ErrorCode.SYLLABUS_NOT_FOUND);
         }
@@ -489,14 +473,14 @@ public class AccountService {
                 .findDistinctAccountIdsBySyllabusIdAndDepartmentId(syllabusId, departmentId);
 
         return accountRepository.findAllByDepartmentId(departmentId).stream()
-            .filter(account -> !account.getAccountId().equals(currentId))
-            .filter(account -> !assignedAccountIds.contains(account.getAccountId()))
-            .map(account -> AvailableAccountResponse.builder()
-                .accountId(account.getAccountId())
-                .email(account.getEmail())
-                .fullName(account.getFullName())
-                .avatarUrl(account.getAvatarUrl())
-                .build())
+                .filter(account -> !account.getAccountId().equals(currentId))
+                .filter(account -> !assignedAccountIds.contains(account.getAccountId()))
+                .map(account -> AvailableAccountResponse.builder()
+                        .accountId(account.getAccountId())
+                        .email(account.getEmail())
+                        .fullName(account.getFullName())
+                        .avatarUrl(account.getAvatarUrl())
+                        .build())
                 .toList();
     }
 }

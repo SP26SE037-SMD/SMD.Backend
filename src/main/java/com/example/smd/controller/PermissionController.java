@@ -11,7 +11,6 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -35,8 +34,7 @@ public class PermissionController {
             @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "permissionName,asc") String[] sort
-    ) {
+            @RequestParam(defaultValue = "permissionName,asc") String[] sort) {
         return ResponseObject.<PagedResponse<PermissionResponse>>builder()
                 .status(1000)
                 .data(PagedResponse.of(permissionService.getAllPermissions(search, page, size, sort)))
@@ -58,7 +56,7 @@ public class PermissionController {
 
     // API lấy chi tiết quyền theo tên
     @GetMapping("/name/{name}")
-//    @PreAuthorize("hasAuthority('PERMISSION_READ')")
+    // @PreAuthorize("hasAuthority('PERMISSION_READ')")
     @Operation(summary = "Get permission by name")
     public ResponseObject<PermissionResponse> getPermissionByName(@PathVariable String name) {
         return ResponseObject.<PermissionResponse>builder()
@@ -70,7 +68,7 @@ public class PermissionController {
 
     // API tạo quyền mới
     @PostMapping
-//    @PreAuthorize("hasAuthority('PERMISSION_CREATE')")
+    // @PreAuthorize("hasAuthority('PERMISSION_CREATE')")
     @Operation(summary = "Create new permission")
     public ResponseObject<PermissionResponse> createPermission(@Valid @RequestBody PermissionRequest request) {
         return ResponseObject.<PermissionResponse>builder()
@@ -82,7 +80,7 @@ public class PermissionController {
 
     // API cập nhật quyền
     @PutMapping("/{id}")
-//    @PreAuthorize("hasAuthority('PERMISSION_UPDATE')")
+    // @PreAuthorize("hasAuthority('PERMISSION_UPDATE')")
     @Operation(summary = "Update permission")
     public ResponseObject<PermissionResponse> updatePermission(
             @PathVariable UUID id,
@@ -96,7 +94,7 @@ public class PermissionController {
 
     // API xóa quyền
     @DeleteMapping("/{id}")
-//    @PreAuthorize("hasAuthority('PERMISSION_DELETE')")
+    // @PreAuthorize("hasAuthority('PERMISSION_DELETE')")
     @Operation(summary = "Delete permission")
     public ResponseObject<Boolean> deletePermission(@PathVariable UUID id) {
         return ResponseObject.<Boolean>builder()
@@ -109,8 +107,7 @@ public class PermissionController {
     @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Import permissions from Excel")
     public ResponseObject<ImportPermissionResponse> importPermissions(
-            @RequestParam("file") MultipartFile file
-    ) {
+            @RequestParam("file") MultipartFile file) {
         return ResponseObject.<ImportPermissionResponse>builder()
                 .status(1000)
                 .data(permissionService.importPermissions(file))

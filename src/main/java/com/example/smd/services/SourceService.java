@@ -4,7 +4,6 @@ import com.example.smd.dto.request.SourceRequest;
 import com.example.smd.dto.response.SourceResponse;
 import com.example.smd.entities.Source;
 import com.example.smd.enums.SourceType;
-import com.example.smd.enums.SyllabusStatus;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.SourceMapper;

@@ -8,7 +8,6 @@ import com.example.smd.entities.Subject;
 import com.example.smd.enums.PloStatus;
 import com.example.smd.enums.RoleName;
 import com.example.smd.enums.SubjectStatus;
-import com.example.smd.enums.SyllabusStatus;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.CLOsMapper;
@@ -86,7 +85,6 @@ public class CLOsService {
                 .map(closMapper::toCloResponse)
                 .toList();
     }
-
 
     public Page<CLOsResponse> getClosBySubject(String subjectId, int page, int size, String accountId) {
         try {
@@ -182,7 +180,8 @@ public class CLOsService {
         try {
             UUID cloId = UUID.fromString(id);
 
-            // 1. Tìm CLO (Nên dùng EntityGraph hoặc Fetch Join trong Repo để lấy luôn Subject nếu cần)
+            // 1. Tìm CLO (Nên dùng EntityGraph hoặc Fetch Join trong Repo để lấy luôn
+            // Subject nếu cần)
             CLOs clo = closRepository.findById(cloId)
                     .orElseThrow(() -> new AppException(ErrorCode.CLO_NOT_FOUND));
 

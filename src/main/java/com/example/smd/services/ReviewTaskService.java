@@ -5,11 +5,7 @@ import com.example.smd.dto.request.reviewtask.ReviewTaskCreateRequest;
 import com.example.smd.dto.request.reviewtask.ReviewTaskRequest;
 import com.example.smd.dto.response.reviewtask.ReviewTaskResponse;
 import com.example.smd.entities.Account;
-import com.example.smd.entities.Assessment;
-import com.example.smd.entities.Material;
 import com.example.smd.entities.ReviewTask;
-import com.example.smd.entities.Session;
-import com.example.smd.entities.Subject;
 import com.example.smd.entities.Syllabus;
 import com.example.smd.entities.Task;
 import com.example.smd.enums.ReviewStatus;
@@ -55,7 +51,7 @@ public class ReviewTaskService {
 
     @Transactional
     public ReviewTaskResponse create(ReviewTaskCreateRequest request,
-                                     String reviewerAccountId) {
+            String reviewerAccountId) {
 
         var check = reviewTaskMapper.toReviewTaskRequest(request);
         validateRequest(check);
@@ -144,7 +140,7 @@ public class ReviewTaskService {
 
     @Transactional
     public ReviewTaskResponse createByHoCFDC(ReviewTaskCreateHoCFDC request,
-                                             String reviewerAccountId) {
+            String reviewerAccountId) {
 
         var check = reviewTaskMapper.toReviewTaskRequestHoCFDC(request);
         validateRequest(check);
@@ -185,7 +181,8 @@ public class ReviewTaskService {
         return reviewTaskMapper.toReviewTaskResponse(reviewTask);
     }
 
-    public Page<ReviewTaskResponse> getAll(String search, String status, UUID taskId, UUID reviewerId, Pageable pageable) {
+    public Page<ReviewTaskResponse> getAll(String search, String status, UUID taskId, UUID reviewerId,
+            Pageable pageable) {
         Page<ReviewTask> pageData;
 
         if (search != null && !search.isBlank()) {
@@ -324,7 +321,7 @@ public class ReviewTaskService {
 
                 task.setStatus(TaskStatus.DONE.name());
                 taskRepository.save(task);
-            } else if (!isAccepted &&ReviewStatus.REVISION_REQUESTED.name().equals(reviewTaskStatus)) {
+            } else if (!isAccepted && ReviewStatus.REVISION_REQUESTED.name().equals(reviewTaskStatus)) {
                 // Syllabus, Material, Session, Assessment → APPROVED
                 // Subject → PENDING_REVIEW
                 // Task → DONE

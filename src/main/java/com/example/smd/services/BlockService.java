@@ -8,7 +8,6 @@ import com.example.smd.dto.request.UpdateBlockRequest;
 import com.example.smd.dto.response.BlockResponse;
 import com.example.smd.dto.response.BlockSimpleResponse;
 import com.example.smd.dto.response.PagedResponse;
-import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.entities.Blocks;
 import com.example.smd.entities.Material;
 import com.example.smd.enums.MaterialStatus;
@@ -17,10 +16,8 @@ import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.BlockMapper;
 import com.example.smd.repositories.BlockRepository;
-import com.example.smd.repositories.EmbeddingRepository;
 import com.example.smd.repositories.MaterialRepository;
 import com.example.smd.repositories.SessionMaterialBlockRepository;
-import io.swagger.v3.oas.annotations.Operation;
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -31,9 +28,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -58,7 +52,8 @@ public class BlockService {
         Material material = materialRepository.findById(materialId)
                 .orElseThrow(() -> new AppException(ErrorCode.MATERIAL_NOT_FOUND));
 
-        if(!("DRAFT".equals(material.getStatus()) || MaterialStatus.REVISION_REQUESTED.toString().equals(material.getStatus()))) {
+        if (!("DRAFT".equals(material.getStatus())
+                || MaterialStatus.REVISION_REQUESTED.toString().equals(material.getStatus()))) {
             throw new AppException(ErrorCode.MATERIAL_NOT_EDITABLE);
         }
 
@@ -92,7 +87,8 @@ public class BlockService {
         Material material = materialRepository.findById(materialId)
                 .orElseThrow(() -> new AppException(ErrorCode.MATERIAL_NOT_FOUND));
 
-        if (!(SyllabusStatus.DRAFT.name().equals(material.getStatus()) || MaterialStatus.REVISION_REQUESTED.name().equals(material.getStatus()))) {
+        if (!(SyllabusStatus.DRAFT.name().equals(material.getStatus())
+                || MaterialStatus.REVISION_REQUESTED.name().equals(material.getStatus()))) {
             throw new AppException(ErrorCode.MATERIAL_NOT_EDITABLE);
         }
 
@@ -207,7 +203,8 @@ public class BlockService {
         Blocks block = blockRepository.findById(blockId)
                 .orElseThrow(() -> new AppException(ErrorCode.BLOCK_NOT_FOUND));
 
-        if(!("DRAFT".equals(block.getMaterial().getStatus()) || MaterialStatus.REVISION_REQUESTED.toString().equals(block.getMaterial().getStatus()))) {
+        if (!("DRAFT".equals(block.getMaterial().getStatus())
+                || MaterialStatus.REVISION_REQUESTED.toString().equals(block.getMaterial().getStatus()))) {
             throw new AppException(ErrorCode.MATERIAL_NOT_EDITABLE);
         }
         blockRepository.deleteById(blockId);
@@ -223,7 +220,8 @@ public class BlockService {
 
     @Transactional
     public void deleteBlocks(List<UUID> blockIds) {
-        if (blockIds == null || blockIds.isEmpty()) return;
+        if (blockIds == null || blockIds.isEmpty())
+            return;
 
         // 1. Lấy thông tin các block sắp xóa để biết chúng thuộc Material nào
         List<Blocks> blocksToDelete = blockRepository.findAllById(blockIds);
@@ -246,7 +244,8 @@ public class BlockService {
         // 3. Thực hiện xóa danh sách Block
         blockRepository.deleteAll(blocksToDelete);
 
-        // 4. Quan trọng: Đánh số lại idx cho các Material bị ảnh hưởng để tránh "hổng" thứ tự
+        // 4. Quan trọng: Đánh số lại idx cho các Material bị ảnh hưởng để tránh "hổng"
+        // thứ tự
         for (Material material : materialsToUpdate) {
             List<Blocks> remainingBlocks = blockRepository
                     .findAllByMaterial_MaterialIdOrderByIdxAsc(material.getMaterialId());
@@ -285,7 +284,8 @@ public class BlockService {
 
     /**
      * Bulk Update blocks của một Material:
-     * 1. Xóa các block trong deleteBlockList (xóa session_material_block trước, sau đó xóa block)
+     * 1. Xóa các block trong deleteBlockList (xóa session_material_block trước, sau
+     * đó xóa block)
      * 2. Upsert danh sách blocks: nếu có blockId → update, không có → create mới
      */
     @Transactional

@@ -1,6 +1,5 @@
 package com.example.smd.controller;
 
-import com.example.smd.realtime.NotificationTopicRegistry;
 import com.example.smd.realtime.RealtimePayload;
 import com.example.smd.realtime.RealtimePublisher;
 import lombok.RequiredArgsConstructor;
@@ -10,7 +9,6 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestMapping;
 
 /**
  * STOMP Inbound Controller
@@ -39,8 +37,7 @@ public class RealtimeInboundController {
         log.info("Received ping from account: {}", accountId);
         return RealtimePayload.notification(
                 "Pong - Connection alive",
-                java.util.Map.of("ping_time", java.time.Instant.now())
-        );
+                java.util.Map.of("ping_time", java.time.Instant.now()));
     }
 
     /**
@@ -51,12 +48,11 @@ public class RealtimeInboundController {
     @MessageMapping("/notification/test/{accountId}")
     public void sendTestNotification(@DestinationVariable String accountId, String message) {
         log.info("Test notification request from account: {}", accountId);
-        
+
         RealtimePayload payload = RealtimePayload.notification(
                 "Test notification - " + message,
-                java.util.Map.of("test_time", java.time.Instant.now())
-        );
-        
+                java.util.Map.of("test_time", java.time.Instant.now()));
+
         realtimePublisher.publishToAccount(accountId, payload);
     }
 
@@ -68,13 +64,12 @@ public class RealtimeInboundController {
     @PreAuthorize("hasAuthority('NOTIFICATION_CREATE')")
     public void broadcastToDepartment(@DestinationVariable String departmentId, String message) {
         log.info("Broadcast request to department: {}", departmentId);
-        
+
         RealtimePayload payload = RealtimePayload.event(
                 "BROADCAST_DEPARTMENT",
                 "Thông báo cho khoa: " + message,
-                java.util.Map.of("department_id", departmentId, "broadcast_time", java.time.Instant.now())
-        );
-        
+                java.util.Map.of("department_id", departmentId, "broadcast_time", java.time.Instant.now()));
+
         realtimePublisher.broadcastToDepartment(departmentId, payload);
     }
 
@@ -86,13 +81,12 @@ public class RealtimeInboundController {
     @PreAuthorize("hasAuthority('NOTIFICATION_CREATE')")
     public void broadcastToSystem(String message) {
         log.info("System broadcast requested: {}", message);
-        
+
         RealtimePayload payload = RealtimePayload.event(
                 "BROADCAST_SYSTEM",
                 "Thông báo hệ thống: " + message,
-                java.util.Map.of("broadcast_time", java.time.Instant.now())
-        );
-        
+                java.util.Map.of("broadcast_time", java.time.Instant.now()));
+
         realtimePublisher.broadcastToSystem(payload);
     }
 
@@ -102,9 +96,9 @@ public class RealtimeInboundController {
      * Phản hồi để log subscription
      */
     @MessageMapping("/subscription/ack/{topicType}/{resourceId}")
-    public void subscriptionAck(@DestinationVariable String topicType, 
-                                @DestinationVariable String resourceId,
-                                String data) {
+    public void subscriptionAck(@DestinationVariable String topicType,
+            @DestinationVariable String resourceId,
+            String data) {
         log.info("Subscription acknowledged: type={}, resourceId={}", topicType, resourceId);
     }
 }

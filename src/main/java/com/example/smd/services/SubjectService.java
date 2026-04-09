@@ -8,7 +8,6 @@ import com.example.smd.dto.response.subject.ImportSubjectResponse;
 import com.example.smd.dto.response.subject.ImportSubjectResult;
 import com.example.smd.entities.Department;
 import com.example.smd.entities.Subject;
-import com.example.smd.enums.PloStatus;
 import com.example.smd.enums.RoleName;
 import com.example.smd.enums.SubjectStatus;
 import com.example.smd.exception.AppException;
@@ -62,7 +61,7 @@ public class SubjectService {
 
         Subject subject = subjectMapper.toSubject(request);
 
-        //Check Department có tồn tại hay không
+        // Check Department có tồn tại hay không
         Department department = departmentRepository.findById(request.getDepartmentId())
                 .orElseThrow(() -> new AppException(ErrorCode.DEPARTMENT_NOT_FOUND));
         subject.setDepartment(department);
@@ -76,7 +75,8 @@ public class SubjectService {
     }
 
     @Transactional
-    public Page<SubjectResponse> getAll(String search, String searchBy, String status, UUID departmentId, Pageable pageable, String accountId) {
+    public Page<SubjectResponse> getAll(String search, String searchBy, String status, UUID departmentId,
+            Pageable pageable, String accountId) {
 
         // 1. Lấy Account và xử lý phân quyền NGAY TẠI ĐẦU HÀM (Ngoài Specification)
         var account = accountService.getAccountById(accountId);
@@ -84,7 +84,8 @@ public class SubjectService {
 
         // Chuẩn hóa status
         String finalStatus = (status == null || status.trim().isEmpty() || status.equalsIgnoreCase("all"))
-                ? null : status.trim().toUpperCase();
+                ? null
+                : status.trim().toUpperCase();
 
         // Ép buộc Role thấp chỉ được xem PUBLISHED
         if (RoleName.STUDENT.toString().equals(roleName) || RoleName.LECTURER.toString().equals(roleName)) {
@@ -116,8 +117,7 @@ public class SubjectService {
                     // Mặc định search cả 2 nếu searchBy không xác định
                     predicates.add(cb.or(
                             cb.like(cb.lower(root.get("subjectName")), searchPattern),
-                            cb.like(cb.lower(root.get("subjectCode")), searchPattern)
-                    ));
+                            cb.like(cb.lower(root.get("subjectCode")), searchPattern)));
                 }
             }
 
@@ -139,7 +139,8 @@ public class SubjectService {
             SubjectResponse response = subjectMapper.toSubjectResponse(subject);
 
             // 3. Xử lý Prerequisites (Vẫn dùng repository hiện tại của bạn)
-            List<PrerequisiteResponse> prerequisites = prerequisiteRepository.findBySubject_SubjectId(subject.getSubjectId())
+            List<PrerequisiteResponse> prerequisites = prerequisiteRepository
+                    .findBySubject_SubjectId(subject.getSubjectId())
                     .stream()
                     .map(prerequisiteMapper::toResponse)
                     .toList();
@@ -151,14 +152,14 @@ public class SubjectService {
 
     @Transactional
     public SubjectResponse update(UUID id, SubjectRequest request, String accountId) {
-        //Kiểm tra Role tạo
+        // Kiểm tra Role tạo
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
         if (!RoleName.HOCFDC.toString().equals(roleName)) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
-        //Check Department có tồn tại hay không
+        // Check Department có tồn tại hay không
         Department department = departmentRepository.findById(request.getDepartmentId())
                 .orElseThrow(() -> new AppException(ErrorCode.DEPARTMENT_NOT_FOUND));
 
@@ -176,7 +177,7 @@ public class SubjectService {
 
     @Transactional
     public void delete(UUID id, String accountId) {
-        //Kiểm tra Role tạo
+        // Kiểm tra Role tạo
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
         if (!RoleName.HOCFDC.toString().equals(roleName)) {
@@ -200,9 +201,10 @@ public class SubjectService {
         Subject subject = subjectRepository.findDetailById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.SUBJECT_NOT_FOUND));
 
-        //Phân quyền ROLE Student + Lecture chỉ xem được PUBLISHED
+        // Phân quyền ROLE Student + Lecture chỉ xem được PUBLISHED
         var account = accountService.getAccountById(accountId);
-        if (RoleName.STUDENT.toString().equals(account.getRole().getRoleName()) || RoleName.LECTURER.toString().equals(account.getRole().getRoleName())) {
+        if (RoleName.STUDENT.toString().equals(account.getRole().getRoleName())
+                || RoleName.LECTURER.toString().equals(account.getRole().getRoleName())) {
             if (!SubjectStatus.COMPLETED.toString().equals(subject.getStatus())) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
@@ -254,7 +256,8 @@ public class SubjectService {
         SubjectResponse response = subjectMapper.toSubjectResponse(subject);
 
         // 4. Lấy danh sách môn tiên quyết (Prerequisites)
-        List<PrerequisiteResponse> prerequisites = prerequisiteRepository.findBySubject_SubjectId(subject.getSubjectId())
+        List<PrerequisiteResponse> prerequisites = prerequisiteRepository
+                .findBySubject_SubjectId(subject.getSubjectId())
                 .stream()
                 .map(prerequisiteMapper::toResponse)
                 .toList();
@@ -270,10 +273,10 @@ public class SubjectService {
                 .orElseThrow(() -> new AppException(ErrorCode.SUBJECT_NOT_FOUND));
 
         // 2. Cập nhật các trường liên quan đến việc ban hành
-        subject.setDecisionNo(decisionNo);       // Gán số quyết định ban hành
-        subject.setIsApproved(true);             // Đánh dấu đã phê duyệt
-        subject.setStatus(SubjectStatus.COMPLETED.toString());                 // Chuyển từ Draft (null) sang Active (true)
-        subject.setApprovedDate(Instant.now());  // Lưu ngày phê duyệt (nếu có field này)
+        subject.setDecisionNo(decisionNo); // Gán số quyết định ban hành
+        subject.setIsApproved(true); // Đánh dấu đã phê duyệt
+        subject.setStatus(SubjectStatus.COMPLETED.toString()); // Chuyển từ Draft (null) sang Active (true)
+        subject.setApprovedDate(Instant.now()); // Lưu ngày phê duyệt (nếu có field này)
 
         // 3. Lưu và trả về response
         SubjectResponse response = subjectMapper.toSubjectResponse(subjectRepository.save(subject));
@@ -318,7 +321,8 @@ public class SubjectService {
     }
 
     @Transactional
-    public int updateAllSubjectStatusInCurriculum(UUID curriculumId, UUID departmentId, String newStatus, String oldStatus) {
+    public int updateAllSubjectStatusInCurriculum(UUID curriculumId, UUID departmentId, String newStatus,
+            String oldStatus) {
 
         // 1. Kiểm tra Curriculum có tồn tại không
         if (!curriculumRepository.existsById(curriculumId)) {
@@ -355,32 +359,28 @@ public class SubjectService {
         // oldStatus có thể có hoặc không
         if (departmentId != null) {
             if (normalizedOldStatus != null) {
-            return subjectRepository.updateStatusByCurriculumAndDepartmentWithCondition(
-                newSubjectStatus.toString(),
-                normalizedOldStatus,
-                curriculumId,
-                departmentId
-            );
+                return subjectRepository.updateStatusByCurriculumAndDepartmentWithCondition(
+                        newSubjectStatus.toString(),
+                        normalizedOldStatus,
+                        curriculumId,
+                        departmentId);
             }
             return subjectRepository.updateStatusByCurriculumAndDepartment(
-                newSubjectStatus.toString(),
-                curriculumId,
-                departmentId
-            );
+                    newSubjectStatus.toString(),
+                    curriculumId,
+                    departmentId);
         }
 
         if (normalizedOldStatus != null) {
             return subjectRepository.updateStatusByCurriculumWithCondition(
-                newSubjectStatus.toString(),
-                normalizedOldStatus,
-                curriculumId
-            );
+                    newSubjectStatus.toString(),
+                    normalizedOldStatus,
+                    curriculumId);
         }
 
         return subjectRepository.updateStatusByCurriculum(
-            newSubjectStatus.toString(),
-            curriculumId
-        );
+                newSubjectStatus.toString(),
+                curriculumId);
     }
 
     @Transactional
@@ -405,8 +405,7 @@ public class SubjectService {
                 decisionNo.trim(),
                 java.time.Instant.now(),
                 curriculumId,
-                departmentId
-        );
+                departmentId);
     }
 
     @Transactional
@@ -552,7 +551,8 @@ public class SubjectService {
         // 2. Phân quyền truy vấn
         if (RoleName.STUDENT.toString().equals(roleName) || RoleName.LECTURER.toString().equals(roleName)) {
             // Chỉ lấy những môn đã COMPLETED cho học sinh/giáo viên
-            subjects = subjectRepository.findAllByDepartment_DepartmentIdAndStatus(departmentId, SubjectStatus.COMPLETED.toString());
+            subjects = subjectRepository.findAllByDepartment_DepartmentIdAndStatus(departmentId,
+                    SubjectStatus.COMPLETED.toString());
         } else {
             // Các Role khác (HOCFDC, VP, ADMIN) lấy toàn bộ môn của phòng ban đó
             subjects = subjectRepository.findAllByDepartment_DepartmentId(departmentId);
@@ -564,7 +564,8 @@ public class SubjectService {
                     SubjectResponse response = subjectMapper.toSubjectResponse(subject);
 
                     // Lấy môn tiên quyết
-                    List<PrerequisiteResponse> prerequisites = prerequisiteRepository.findBySubject_SubjectId(subject.getSubjectId())
+                    List<PrerequisiteResponse> prerequisites = prerequisiteRepository
+                            .findBySubject_SubjectId(subject.getSubjectId())
                             .stream()
                             .map(prerequisiteMapper::toResponse)
                             .toList();
