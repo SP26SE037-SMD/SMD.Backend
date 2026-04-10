@@ -154,6 +154,12 @@
 			<version>5.2.5</version>
 		</dependency>
 
+		<!-- RestTemplate -->
+		<dependency>
+			<groupId>org.apache.httpcomponents.client5</groupId>
+			<artifactId>httpclient5</artifactId>
+		</dependency>
+
 	</dependencies>
 
 	<build>
