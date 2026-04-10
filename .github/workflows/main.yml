@@ -85,7 +85,7 @@ jobs:
               -e REFRESH_TOKEN="$REFRESH_TOKEN" \
               -e SENDER_EMAIL="$SENDER_EMAIL" \
               -e GEMINI_API_KEY="$GEMINI_API_KEY" \
-              -e APPSCRIPT_DEPLOY_URL="APPSCRIPT_DEPLOY_URL" \
+              -e APPSCRIPT_DEPLOY_URL="$APPSCRIPT_DEPLOY_URL" \
               --restart unless-stopped \
               taikt2004/smd:$IMAGE_TAG
 
