@@ -37,7 +37,7 @@ public class Curriculum {
     private List<Curriculum_Group_Subject> curriculumGroupSubjects;
 
     @OneToMany(mappedBy = "curriculum", fetch = FetchType.LAZY)
-    List<FeedbackSubmissions> feedbackSubmissions;
+    List<FeedbackSubmission> feedbackSubmissions;
 
 
     @ManyToOne(fetch = FetchType.LAZY)

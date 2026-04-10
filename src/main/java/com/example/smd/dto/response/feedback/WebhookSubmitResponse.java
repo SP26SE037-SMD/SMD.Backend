@@ -8,11 +8,8 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class FeedbackAnswerResponse {
-    String id;
-    String questionId;
-    String questionText;
-    String selectedOptionId;
-    String selectedOptionText;
-    String answerText;
+public class WebhookSubmitResponse {
+    Boolean success;
+    String submissionId;
+    Integer answersProcessed;
 }

@@ -34,6 +34,9 @@ public class SecurityConfig {
             "/api/auth/logout",
             "/api/auth/me",
             "/api/auth/password-reset",
+            "/api/v1/forms/*/schema",
+            "/api/v1/forms/webhook/submit",
+            "/api/v1/forms/*/google-form-created",
             "/websocket-test.html",
             "/ws/**"
     };

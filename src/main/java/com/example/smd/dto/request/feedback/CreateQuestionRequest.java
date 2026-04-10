@@ -3,12 +3,16 @@ package com.example.smd.dto.request.feedback;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.util.List;
+
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class FeedbackOptionRequest {
-    Integer optionNo;
-    String optionText;
+public class CreateQuestionRequest {
+    String content;
+    String type;
+    Boolean isRequired;
+    List<CreateOptionRequest> options;
 }

@@ -1,15 +1,14 @@
-package com.example.smd.dto.request.feedback;
+package com.example.smd.dto.response.feedback;
 
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-
-import java.util.List;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class FeedbackQuestionBatchRequest {
-    List<FeedbackQuestionRequest> questions;
+public class TriggerBuildResponse {
+    Boolean success;
+    String message;
 }

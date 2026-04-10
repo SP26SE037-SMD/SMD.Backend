@@ -99,6 +99,12 @@ gemini:
     url: https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent
   vector-embedding:
     url: https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent
+
+app:
+  webhook:
+    secret: ${WEBHOOK_SECRET:smd-webhook-secret-2026}
+  appscript:
+    deploy-url: ${APPSCRIPT_DEPLOY_URL}
 ---
 # ==========================================
 # DEVELOPMENT PROFILE

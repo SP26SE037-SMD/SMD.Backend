@@ -1,4 +1,5 @@
 package com.example.smd.entities;
+
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -15,7 +16,7 @@ import java.util.UUID;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
 @Table(name = "feedback_submissions")
-public class FeedbackSubmissions {
+public class FeedbackSubmission {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "submission_id")
@@ -29,8 +30,8 @@ public class FeedbackSubmissions {
     @JoinColumn(name = "curriculum_id")
     Curriculum curriculum;
 
-    @OneToMany(mappedBy = "feedbackSubmission", fetch = FetchType.LAZY)
-    List<FeedbackAnswers> feedbackAnswers;
+    @OneToMany(mappedBy = "submission", fetch = FetchType.LAZY)
+    List<FeedbackAnswer> feedbackAnswers;
 
     @Column(name = "created_at")
     Instant submittedAt;
