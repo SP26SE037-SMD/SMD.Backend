@@ -5,7 +5,6 @@ import com.example.smd.dto.request.plo.PLOsRequest;
 import com.example.smd.dto.response.PLOsResponse;
 import com.example.smd.entities.Curriculum;
 import com.example.smd.entities.PLOs;
-import com.example.smd.entities.PO;
 import com.example.smd.enums.PloStatus;
 import com.example.smd.enums.RoleName;
 import com.example.smd.exception.AppException;
@@ -38,9 +37,10 @@ public class PLOsService {
 
     @Transactional
     public List<PLOsResponse> createBulkPlos(String curriculumId, List<PLOsCreateRequest> requests, String accountId) {
-        if (requests == null || requests.isEmpty()) return Collections.emptyList();
+        if (requests == null || requests.isEmpty())
+            return Collections.emptyList();
 
-        //Kiểm tra Role tạo
+        // Kiểm tra Role tạo
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
         if (!RoleName.HOCFDC.toString().equals(roleName)) {
@@ -51,7 +51,6 @@ public class PLOsService {
         UUID uuidCurriculumId = UUID.fromString(curriculumId);
         Curriculum curriculum = curriculumRepository.findById(uuidCurriculumId)
                 .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));
-
 
         // 2. Check trùng mã nội bộ trong JSON gửi lên (Local Check)
         Set<String> uniqueCodes = new HashSet<>();
@@ -82,7 +81,7 @@ public class PLOsService {
 
     @Transactional
     public PLOsResponse updatePlo(String id, PLOsRequest request, String accountId) {
-        //Kiểm tra Role tạo
+        // Kiểm tra Role tạo
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
         if (!RoleName.HOCFDC.toString().equals(roleName)) {
@@ -95,7 +94,8 @@ public class PLOsService {
 
         // Nếu thay đổi code, cần check xem code mới có trùng trong Major hiện tại không
         if (!plo.getPloCode().equals(request.getPloCode()) &&
-                plOsRepository.existsByPloCodeAndCurriculum_CurriculumId(request.getPloCode(), plo.getCurriculum().getCurriculumId())) {
+                plOsRepository.existsByPloCodeAndCurriculum_CurriculumId(request.getPloCode(),
+                        plo.getCurriculum().getCurriculumId())) {
             throw new AppException(ErrorCode.PLO_CODE_EXISTS);
         }
 
@@ -115,9 +115,10 @@ public class PLOsService {
             PLOs plo = plOsRepository.findById(plOsId)
                     .orElseThrow(() -> new AppException(ErrorCode.PO_NOT_FOUND));
 
-            //Phân quyền ROLE Student + Lecture chỉ xem được PUBLISHED
+            // Phân quyền ROLE Student + Lecture chỉ xem được PUBLISHED
             var account = accountService.getAccountById(accountId);
-            if (RoleName.STUDENT.toString().equals(account.getRole().getRoleName()) || RoleName.LECTURER.toString().equals(account.getRole().getRoleName())) {
+            if (RoleName.STUDENT.toString().equals(account.getRole().getRoleName())
+                    || RoleName.LECTURER.toString().equals(account.getRole().getRoleName())) {
                 if (!PloStatus.PUBLISHED.toString().equals(plo.getStatus())) {
                     throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
                 }
@@ -166,7 +167,8 @@ public class PLOsService {
             ploPage = plOsRepository.findByCurriculum_CurriculumIdAndStatus(id, finalStatus, pageable);
         } else {
             // Nhánh lấy tất cả cho VP/Admin (phải check role để bảo mật)
-            if (!RoleName.VP.toString().equals(roleName) && !RoleName.ADMIN.toString().equals(roleName) && !RoleName.HOCFDC.toString().equals(roleName) && !RoleName.HOPDC.toString().equals(roleName)) {
+            if (!RoleName.VP.toString().equals(roleName) && !RoleName.ADMIN.toString().equals(roleName)
+                    && !RoleName.HOCFDC.toString().equals(roleName) && !RoleName.HOPDC.toString().equals(roleName)) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
             ploPage = plOsRepository.findByCurriculum_CurriculumId(id, pageable);
@@ -177,7 +179,7 @@ public class PLOsService {
 
     @Transactional
     public void deletePlo(String id, String accountId) {
-        //Kiểm tra Role tạo
+        // Kiểm tra Role tạo
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
         if (!RoleName.HOCFDC.toString().equals(roleName)) {

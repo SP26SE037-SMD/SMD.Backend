@@ -271,6 +271,9 @@ public enum ErrorCode {
     FEEDBACK_QUESTION_IN_USE(29017, "Cannot delete question because it has feedback answers", HttpStatus.CONFLICT),
     FEEDBACK_OPTION_IN_USE(29018, "Cannot delete option because it has feedback answers", HttpStatus.CONFLICT),
     FEEDBACK_CURRICULUM_ID_REQUIRED(29019, "Curriculum ID is required", HttpStatus.BAD_REQUEST),
+    FEEDBACK_FORM_NOT_FOUND(29020, "Feedback form not found", HttpStatus.NOT_FOUND),
+    FEEDBACK_SECTION_NOT_FOUND(29021, "Feedback form section not found", HttpStatus.NOT_FOUND),
+    APP_SCRIPT_CALL_FAILED(29022, "Failed to call App Script service", HttpStatus.BAD_GATEWAY),
 
     // REVIEW TASK
     REVIEW_TASK_NOT_FOUND(30001, "Review task not found", HttpStatus.NOT_FOUND),

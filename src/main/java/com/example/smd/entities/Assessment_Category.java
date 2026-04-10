@@ -1,8 +1,8 @@
 package com.example.smd.entities;
+
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import java.util.List;
 import java.util.UUID;
 
 @Getter

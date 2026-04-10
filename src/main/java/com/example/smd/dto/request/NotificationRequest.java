@@ -1,7 +1,6 @@
 package com.example.smd.dto.request;
 
 import com.example.smd.enums.NotificationType;
-import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;

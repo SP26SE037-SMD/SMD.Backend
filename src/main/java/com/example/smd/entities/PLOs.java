@@ -1,10 +1,10 @@
 package com.example.smd.entities;
+
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.time.Instant;
-import java.util.List;
 import java.util.UUID;
 
 @Getter
@@ -41,6 +41,6 @@ public class PLOs {
     @JoinColumn(name = "curriculum_id")
     Curriculum curriculum;
 
-//    @OneToMany(mappedBy = "plo", fetch = FetchType.LAZY)
-//    List<CLO_PLO_Mapping> cloPloMappings;
+    // @OneToMany(mappedBy = "plo", fetch = FetchType.LAZY)
+    // List<CLO_PLO_Mapping> cloPloMappings;
 }

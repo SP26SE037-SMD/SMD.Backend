@@ -19,7 +19,6 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.filter.CorsFilter;
 
 import java.util.Arrays;
 
@@ -35,6 +34,9 @@ public class SecurityConfig {
             "/api/auth/logout",
             "/api/auth/me",
             "/api/auth/password-reset",
+            "/api/v1/forms/*/schema",
+            "/api/v1/forms/webhook/submit",
+            "/api/v1/forms/*/google-form-created",
             "/websocket-test.html",
             "/ws/**"
     };
@@ -47,7 +49,7 @@ public class SecurityConfig {
     @Value("${jwt.signer-key}")
     protected String SIGNER_KEY;
 
-    // Cấu hình  Security Filter Chain cho Spring Security
+    // Cấu hình Security Filter Chain cho Spring Security
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests(request -> request
@@ -57,17 +59,14 @@ public class SecurityConfig {
 
         http.exceptionHandling(exception -> exception
                 .authenticationEntryPoint(new JwtAuthenticationEntryPoint())
-                .accessDeniedHandler(new CustomAccessDeniedHandler())
-        );
+                .accessDeniedHandler(new CustomAccessDeniedHandler()));
 
-        http.oauth2ResourceServer(oauth2 ->
-                oauth2.jwt(jwtConfigurer ->
-                                jwtConfigurer.decoder(customJwtDecoder)
-                                        .jwtAuthenticationConverter(jwtAuthenticationConverter()))
-                        .authenticationEntryPoint(new JwtAuthenticationEntryPoint()));
+        http.oauth2ResourceServer(oauth2 -> oauth2.jwt(jwtConfigurer -> jwtConfigurer.decoder(customJwtDecoder)
+                .jwtAuthenticationConverter(jwtAuthenticationConverter()))
+                .authenticationEntryPoint(new JwtAuthenticationEntryPoint()));
 
         http.csrf(AbstractHttpConfigurer::disable)
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()));
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()));
 
         return http.build();
     }
@@ -93,15 +92,15 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration corsConfiguration = new CorsConfiguration();
-         corsConfiguration.setAllowedOrigins(Arrays.asList(
-                 "http://localhost:3000",
-                 "http://localhost:8081/",
-                 "http://localhost:8082/",
-                 "http://localhost:5173",
-                 "http://localhost:3001",
-                 "http://43.207.156.116"
-                 ));
-//        corsConfiguration.addAllowedOriginPattern("*"); // mở rộng cho tất cả các port localhost
+        corsConfiguration.setAllowedOrigins(Arrays.asList(
+                "http://localhost:3000",
+                "http://localhost:8081/",
+                "http://localhost:8082/",
+                "http://localhost:5173",
+                "http://localhost:3001",
+                "http://43.207.156.116"));
+        // corsConfiguration.addAllowedOriginPattern("*"); // mở rộng cho tất cả các
+        // port localhost
         corsConfiguration.setAllowCredentials(true);
         corsConfiguration.addAllowedMethod("*");
         corsConfiguration.addAllowedHeader("*");

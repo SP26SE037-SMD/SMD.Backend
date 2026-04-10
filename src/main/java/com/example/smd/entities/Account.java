@@ -55,7 +55,7 @@ public class Account {
     Department department;
 
     @OneToMany(mappedBy = "account", fetch = FetchType.LAZY)
-    List<FeedbackSubmissions> feedbackSubmissions;
+    List<FeedbackSubmission> feedbackSubmissions;
 
     @OneToMany(mappedBy = "account", fetch = FetchType.LAZY)
     List<Sprint> sprints;

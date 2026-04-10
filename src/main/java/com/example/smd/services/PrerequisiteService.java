@@ -7,7 +7,6 @@ import com.example.smd.dto.response.prerequisite.ImportPrerequisiteResponse;
 import com.example.smd.dto.response.prerequisite.ImportPrerequisiteResult;
 import com.example.smd.entities.Subject;
 import com.example.smd.entities.Subject_Prerequisite;
-import com.example.smd.enums.SubjectStatus;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.PrerequisiteMapper;
@@ -39,7 +38,8 @@ public class PrerequisiteService {
         UUID sId = UUID.fromString(request.getSubjectId());
         UUID pId = UUID.fromString(request.getPrerequisiteSubjectId());
 
-        if (sId.equals(pId)) throw new AppException(ErrorCode.PREREQUISITE_SELF_REFERENCE);
+        if (sId.equals(pId))
+            throw new AppException(ErrorCode.PREREQUISITE_SELF_REFERENCE);
         if (prerequisiteRepository.existsBySubject_SubjectIdAndPrerequisiteSubject_SubjectId(sId, pId))
             throw new AppException(ErrorCode.PREREQUISITE_ALREADY_EXISTS);
 
@@ -74,8 +74,8 @@ public class PrerequisiteService {
             UUID currentId = queue.poll();
 
             // Tìm các môn mà 'currentId' đang đóng vai trò là môn TIÊN QUYẾT của chúng
-            List<Subject_Prerequisite> dependents =
-                    prerequisiteRepository.findByPrerequisiteSubject_SubjectId(currentId);
+            List<Subject_Prerequisite> dependents = prerequisiteRepository
+                    .findByPrerequisiteSubject_SubjectId(currentId);
 
             for (Subject_Prerequisite entity : dependents) {
                 // Lấy môn học phụ thuộc (môn đứng sau)

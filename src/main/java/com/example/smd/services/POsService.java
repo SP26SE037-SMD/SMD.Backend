@@ -20,7 +20,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -37,20 +36,20 @@ public class POsService {
 
     @Transactional
     public List<POsResponse> createBulkPos(String majorId, List<POsCreateRequest> requests, String accountId) {
-        if (requests == null || requests.isEmpty()) return Collections.emptyList();
+        if (requests == null || requests.isEmpty())
+            return Collections.emptyList();
 
         // 1. Kiểm tra Major tồn tại
         UUID uuidMajorId = UUID.fromString(majorId);
         Major major = majorRepository.findById(uuidMajorId)
                 .orElseThrow(() -> new AppException(ErrorCode.MAJOR_NOT_FOUND));
 
-        //Kiểm tra Role tạo
+        // Kiểm tra Role tạo
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
         if (!RoleName.VP.toString().equals(roleName)) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
-
 
         // 2. Check trùng mã nội bộ trong JSON gửi lên
         Set<String> uniqueCodes = new HashSet<>();
@@ -82,7 +81,7 @@ public class POsService {
     @Transactional
     public POsResponse updatePo(String id, POsRequest request, String accountId) {
 
-        //Kiểm tra Role tạo
+        // Kiểm tra Role tạo
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
         if (!RoleName.VP.toString().equals(roleName)) {
@@ -98,7 +97,7 @@ public class POsService {
             throw new AppException(ErrorCode.PO_CODE_EXISTS);
         }
 
-        if(!PloStatus.DRAFT.toString().equals(po.getStatus().toUpperCase())) {
+        if (!PloStatus.DRAFT.toString().equals(po.getStatus().toUpperCase())) {
             throw new AppException(ErrorCode.PO_NOT_DRAFT);
         }
 
@@ -113,16 +112,17 @@ public class POsService {
         PO po = poRepository.findById(poId)
                 .orElseThrow(() -> new AppException(ErrorCode.PO_NOT_FOUND));
 
-        //Phân quyền ROLE Student + Lecture chỉ xem được PUBLISHED
+        // Phân quyền ROLE Student + Lecture chỉ xem được PUBLISHED
         var account = accountService.getAccountById(accountId);
-        if(RoleName.STUDENT.toString().equals(account.getRole().getRoleName()) ||  RoleName.LECTURER.toString().equals(account.getRole().getRoleName())) {
-            if(!PloStatus.PUBLISHED.toString().equals(po.getStatus())) {
+        if (RoleName.STUDENT.toString().equals(account.getRole().getRoleName())
+                || RoleName.LECTURER.toString().equals(account.getRole().getRoleName())) {
+            if (!PloStatus.PUBLISHED.toString().equals(po.getStatus())) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
 
-        if(PloStatus.DRAFT.toString().equals(po.getStatus())) {
-            if(!RoleName.VP.toString().equals(account.getRole().getRoleName())){
+        if (PloStatus.DRAFT.toString().equals(po.getStatus())) {
+            if (!RoleName.VP.toString().equals(account.getRole().getRoleName())) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
@@ -155,7 +155,8 @@ public class POsService {
         } else {
             // Nhánh dành cho ADMIN/VP (Lấy tất cả các trạng thái của Major đó)
             // Lưu ý: Chỉ cho phép vào đây nếu là VP hoặc ADMIN
-            if (!RoleName.VP.toString().equals(roleName) && !RoleName.ADMIN.toString().equals(roleName) && !RoleName.HOCFDC.toString().equals(roleName)) {
+            if (!RoleName.VP.toString().equals(roleName) && !RoleName.ADMIN.toString().equals(roleName)
+                    && !RoleName.HOCFDC.toString().equals(roleName)) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
             poPage = poRepository.findByMajor_MajorId(uuidMajorId, pageable);
@@ -166,7 +167,7 @@ public class POsService {
 
     @Transactional
     public void deletePo(String id, String accountId) {
-        //Kiểm tra Role tạo
+        // Kiểm tra Role tạo
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
         if (!RoleName.VP.toString().equals(roleName)) {
@@ -176,7 +177,7 @@ public class POsService {
         PO po = poRepository.findById(UUID.fromString(id))
                 .orElseThrow(() -> new AppException(ErrorCode.PO_NOT_FOUND));
 
-        if(PloStatus.DRAFT.toString().equals(po.getStatus())) {
+        if (PloStatus.DRAFT.toString().equals(po.getStatus())) {
             poRepository.delete(po);
         } else {
             // Soft Delete (Archive)

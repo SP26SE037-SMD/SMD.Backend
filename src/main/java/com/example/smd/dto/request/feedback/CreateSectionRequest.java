@@ -3,13 +3,15 @@ package com.example.smd.dto.request.feedback;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import java.util.List;
+import java.util.UUID;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class FeedbackSubmissionBatchRequest {
-    List<FeedbackSubmissionRequest> submissions;
+public class CreateSectionRequest {
+    String title;
+    String afterSectionAction;
+    UUID targetSectionId;
 }

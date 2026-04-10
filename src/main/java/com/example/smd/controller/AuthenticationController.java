@@ -12,8 +12,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.jwt.Jwt;
+
 import org.springframework.web.bind.annotation.*;
 
 import java.text.ParseException;
@@ -85,7 +84,8 @@ public class AuthenticationController {
     // API lấy thông tin tài khoản hiện tại bằng token
     @GetMapping("/me")
     @Operation(summary = "Get current account information")
-    public ResponseObject<AccountResponse> getAccountByToken(@RequestParam String jwt)   throws ParseException, JOSEException{
+    public ResponseObject<AccountResponse> getAccountByToken(@RequestParam String jwt)
+            throws ParseException, JOSEException {
         return ResponseObject.<AccountResponse>builder()
                 .status(1000)
                 .data(authenticationService.getAccountByToken(jwt))

@@ -1,10 +1,9 @@
 package com.example.smd.entities;
+
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import java.time.Instant;
-import java.util.List;
 import java.util.UUID;
 
 @Getter
@@ -15,7 +14,7 @@ import java.util.UUID;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
 @Table(name = "feedback_answers")
-public class FeedbackAnswers {
+public class FeedbackAnswer {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "answer_id")
@@ -23,15 +22,15 @@ public class FeedbackAnswers {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "submission_id")
-    FeedbackSubmissions feedbackSubmission;
+    FeedbackSubmission submission;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "question_id")
-    Curriculum_Feedback_Question question;
+    FeedbackFormQuestion question;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "selected_option_id")
-    Options selectedOption;
+    FeedbackFormOption selectedOption;
 
     @Column(name = "answer_text", columnDefinition = "TEXT")
     String answerText;
