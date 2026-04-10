@@ -16,11 +16,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
+import java.net.URI;
 import java.util.*;
 
 @Slf4j
@@ -215,9 +217,16 @@ public class FeedbackFormService {
             headers.setAccept(List.of(MediaType.APPLICATION_JSON, MediaType.TEXT_HTML, MediaType.ALL));
 
             HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(body, headers);
-            ResponseEntity<String> response = restTemplate.exchange(appScriptDeployUrl, org.springframework.http.HttpMethod.POST, requestEntity, String.class);
+            ResponseEntity<String> response = restTemplate.exchange(appScriptDeployUrl, HttpMethod.POST, requestEntity, String.class);
 
-            log.info("App Script build response status={}, body={}", response.getStatusCode(), response.getBody());
+            if (response.getStatusCode().is3xxRedirection() && response.getHeaders().getLocation() != null) {
+                URI redirectUri = response.getHeaders().getLocation();
+                ResponseEntity<String> redirectedResponse = restTemplate.exchange(redirectUri, HttpMethod.GET, HttpEntity.EMPTY, String.class);
+                log.info("App Script redirect status={}, redirectUri={}, finalStatus={}, finalBody={}",
+                        response.getStatusCode(), redirectUri, redirectedResponse.getStatusCode(), redirectedResponse.getBody());
+            } else {
+                log.info("App Script build response status={}, body={}", response.getStatusCode(), response.getBody());
+            }
 
             return TriggerBuildResponse.builder()
                     .success(true)
