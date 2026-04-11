@@ -18,4 +18,5 @@ public class FormRecordResponse {
     String formType;
     Boolean isActive;
     Instant createdAt;
+    Instant closeAt;
 }

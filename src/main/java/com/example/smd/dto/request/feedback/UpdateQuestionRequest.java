@@ -3,16 +3,17 @@ package com.example.smd.dto.request.feedback;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import java.time.Instant;
-import java.util.UUID;
+import java.util.List;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class CreateFormRequest {
-    UUID curriculumId;
-    String formType;
-    Instant closeAt;
+public class UpdateQuestionRequest {
+    String content;
+    String type;
+    Boolean isRequired;
+    Integer orderIndex;
+    List<CreateOptionRequest> options;
 }

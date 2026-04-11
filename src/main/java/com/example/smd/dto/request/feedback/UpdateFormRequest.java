@@ -1,18 +1,16 @@
 package com.example.smd.dto.request.feedback;
 
+import java.time.Instant;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-
-import java.time.Instant;
-import java.util.UUID;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class CreateFormRequest {
-    UUID curriculumId;
+public class UpdateFormRequest {
+    String title; // Cho phép update title nếu cần, backend xử lý linh hoạt
     String formType;
     Instant closeAt;
 }

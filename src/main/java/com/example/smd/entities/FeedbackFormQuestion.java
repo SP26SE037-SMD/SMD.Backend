@@ -41,7 +41,7 @@ public class FeedbackFormQuestion {
     @Column(name = "google_item_id")
     String googleItemId;
 
-    @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @OrderBy("orderIndex ASC")
     List<FeedbackFormOption> options;
 }
