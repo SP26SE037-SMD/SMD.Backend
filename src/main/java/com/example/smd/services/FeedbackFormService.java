@@ -311,17 +311,7 @@ public class FeedbackFormService {
         Map<String, Object> body = new HashMap<>();
         body.put("action", "buildForm");
         body.put("formId", formId.toString());
-        body.put("secret", webhookSecret); //
-
-        // Gửi oldGoogleFormId nếu đã có để App Script thực hiện cập nhật (không tạo file mới)
-        if (record.getGoogleFormId() != null && !record.getGoogleFormId().isBlank()) {
-            body.put("oldGoogleFormId", record.getGoogleFormId().trim());
-        }
-
-        // Gửi thời gian đóng form để App Script lập lịch Trigger thời gian
-        if (record.getClosedAt() != null) {
-            body.put("closedAt", record.getClosedAt().toString());
-        }
+        body.put("secret", webhookSecret);
 
         // 3. Thực hiện gọi App Script trong luồng riêng (Non-blocking)
         CompletableFuture.runAsync(() -> {
@@ -343,11 +333,44 @@ public class FeedbackFormService {
             }
         });
 
+
+
         // 4. Trả về kết quả ngay lập tức để giải phóng kết nối Nginx
         return TriggerBuildResponse.builder()
                 .success(true)
                 .message("Hệ thống đang xử lý tạo/cập nhật Google Form ngầm, vui lòng đợi trong giây lát.")
                 .build();
+    }
+
+    @Transactional
+    public void scheduleFormClose(UUID formId, ScheduleCloseRequest request) {
+        GoogleFormRecord record = findFormRecord(formId);
+        record.setClosedAt(request.getCloseAt());
+        formRecordRepo.save(record);
+
+        if (record.getGoogleFormId() == null || record.getGoogleFormId().isBlank()) return;
+        if (request.getCloseAt() == null) return; // Nếu frontend gửi null => Xóa giờ (cần xử lý riêng bên GAS nếu muốn)
+
+        Map<String, Object> body = Map.of(
+                "action", "scheduleClose",
+                "googleFormId", record.getGoogleFormId().trim(),
+                "closedAt", request.getCloseAt().toString(),
+                "secret", webhookSecret
+        );
+
+        CompletableFuture.runAsync(() -> {
+            try {
+                RestTemplate restTemplate = new RestTemplate();
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.APPLICATION_JSON);
+                headers.setAccept(List.of(MediaType.APPLICATION_JSON, MediaType.ALL));
+
+                HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+                restTemplate.postForEntity(appScriptDeployUrl, requestEntity, String.class);
+            } catch (Exception e) {
+                log.error("Lỗi khi gọi API hẹn giờ đóng sang App Script: {}", e.getMessage(), e);
+            }
+        });
     }
 
     @Transactional
@@ -626,6 +649,8 @@ public class FeedbackFormService {
             return false;
         }
     }
+
+
 
     private static class AggregateQuestion {
         String questionId;
