@@ -38,7 +38,7 @@ public class FeedbackFormSection {
     @Column(name = "target_section_id")
     UUID targetSectionId;
 
-    @OneToMany(mappedBy = "section", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "section", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @OrderBy("orderIndex ASC")
     List<FeedbackFormQuestion> questions;
 }

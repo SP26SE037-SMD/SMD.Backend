@@ -155,6 +155,94 @@ public class FeedbackFormService {
         return toQuestionResponse(question);
     }
 
+    @Transactional
+    public FormRecordResponse updateForm(UUID formId, UpdateFormRequest req) {
+        GoogleFormRecord record = findFormRecord(formId);
+        if (req != null) {
+            if (req.getFormType() != null && !req.getFormType().isBlank()) {
+                record.setFormType(req.getFormType().trim());
+            }
+        }
+        formRecordRepo.save(record);
+        return toFormRecordResponse(record);
+    }
+
+    @Transactional
+    public void deleteForm(UUID formId) {
+        GoogleFormRecord record = findFormRecord(formId);
+        formRecordRepo.delete(record);
+    }
+    
+    @Transactional
+    public SectionResponse updateSection(UUID sectionId, UpdateSectionRequest req) {
+        FeedbackFormSection section = sectionRepo.findById(sectionId)
+                .orElseThrow(() -> new AppException(ErrorCode.FEEDBACK_SECTION_NOT_FOUND));
+                
+        if (req != null) {
+            if (req.getTitle() != null) section.setTitle(req.getTitle());
+            if (req.getOrderIndex() != null) section.setOrderIndex(req.getOrderIndex());
+            if (req.getAfterSectionAction() != null) section.setAfterSectionAction(req.getAfterSectionAction());
+            section.setTargetSectionId(req.getTargetSectionId());
+        }
+        sectionRepo.save(section);
+        return toSectionResponse(section);
+    }
+    
+    @Transactional
+    public void deleteSection(UUID sectionId) {
+        FeedbackFormSection section = sectionRepo.findById(sectionId)
+                .orElseThrow(() -> new AppException(ErrorCode.FEEDBACK_SECTION_NOT_FOUND));
+        sectionRepo.delete(section);
+    }
+    
+    @Transactional
+    public QuestionResponse updateQuestion(UUID questionId, UpdateQuestionRequest req) {
+        FeedbackFormQuestion question = questionRepo.findById(questionId)
+                .orElseThrow(() -> new AppException(ErrorCode.FEEDBACK_QUESTION_NOT_FOUND));
+                
+        if (req != null) {
+            if (req.getContent() != null && !req.getContent().isBlank()) {
+                question.setContent(req.getContent().trim());
+            }
+            if (req.getType() != null) question.setType(req.getType());
+            if (req.getIsRequired() != null) question.setIsRequired(req.getIsRequired());
+            if (req.getOrderIndex() != null) question.setOrderIndex(req.getOrderIndex());
+            
+            // Xóa option cũ
+            optionRepo.deleteAll(optionRepo.findByQuestion_QuestionIdOrderByOrderIndexAsc(questionId));
+            if (question.getOptions() != null) {
+                question.getOptions().clear();
+            }
+            
+            // Chèn option mới
+            if (req.getOptions() != null && !req.getOptions().isEmpty()) {
+                int optionNo = 1;
+                for (CreateOptionRequest optReq : req.getOptions()) {
+                    FeedbackFormOption formOption = FeedbackFormOption.builder()
+                            .question(question)
+                            .optionText(optReq.getOptionText())
+                            .orderIndex(optionNo)
+                            .nextSectionId(optReq.getNextSectionId())
+                            .build();
+                    optionRepo.save(formOption);
+                    if (question.getOptions() != null) {
+                        question.getOptions().add(formOption);
+                    }
+                    optionNo++;
+                }
+            }
+        }
+        questionRepo.save(question);
+        return toQuestionResponse(question);
+    }
+    
+    @Transactional
+    public void deleteQuestion(UUID questionId) {
+        FeedbackFormQuestion question = questionRepo.findById(questionId)
+                .orElseThrow(() -> new AppException(ErrorCode.FEEDBACK_QUESTION_NOT_FOUND));
+        questionRepo.delete(question);
+    }
+
     @Transactional(readOnly = true)
     public FormSchemaResponse buildFormSchema(UUID formId) {
         GoogleFormRecord record = findFormRecord(formId);
@@ -207,14 +295,14 @@ public class FeedbackFormService {
         Map<String, Object> body = Map.of(
                 "action", "buildForm",
                 "formId", formId.toString(),
-                "secret", webhookSecret
+                "secret", webhookSecret,
+                "oldGoogleFormId", record.getGoogleFormId() != null ? record.getGoogleFormId().trim() : null
         );
 
 //        // Nếu đã có form cũ, gửi ID để App Script xóa trên Google Drive
 //        if (record.getGoogleFormId() != null && !record.getGoogleFormId().isBlank()) {
 //            body.put("oldGoogleFormId", record.getGoogleFormId().trim());
 //        }
-
 
         try {
             RestTemplate restTemplate = new RestTemplate();

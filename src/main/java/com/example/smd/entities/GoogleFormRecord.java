@@ -45,8 +45,12 @@ public class GoogleFormRecord {
     @Column(name = "created_at")
     Instant createdAt;
 
-    @OneToMany(mappedBy = "formRecord", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "formRecord", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     List<FormQuestionMapping> questionMappings;
+
+    @OneToMany(mappedBy = "formRecord", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OrderBy("orderIndex ASC")
+    List<FeedbackFormSection> sections;
 
     @PrePersist
     protected void onCreate() {

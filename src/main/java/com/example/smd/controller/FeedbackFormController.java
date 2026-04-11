@@ -66,6 +66,51 @@ public class FeedbackFormController {
         return ResponseEntity.status(201).body(feedbackFormService.addQuestion(sectionId, request));
     }
 
+    @PutMapping("/{formId}")
+//    @PreAuthorize("hasAuthority('FEEDBACK_MANAGE')")
+    @Operation(summary = "Cap nhat thong tin form (formType, title)")
+    public ResponseEntity<FormRecordResponse> updateForm(@PathVariable UUID formId, @RequestBody UpdateFormRequest request) {
+        return ResponseEntity.ok(feedbackFormService.updateForm(formId, request));
+    }
+
+    @DeleteMapping("/{formId}")
+//    @PreAuthorize("hasAuthority('FEEDBACK_MANAGE')")
+    @Operation(summary = "Xoa form va toan bo mapping, thong tin lien quan")
+    public ResponseEntity<Void> deleteForm(@PathVariable UUID formId) {
+        feedbackFormService.deleteForm(formId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/sections/{sectionId}")
+//    @PreAuthorize("hasAuthority('FEEDBACK_MANAGE')")
+    @Operation(summary = "Cap nhat noi dung Section")
+    public ResponseEntity<SectionResponse> updateSection(@PathVariable UUID sectionId, @RequestBody UpdateSectionRequest request) {
+        return ResponseEntity.ok(feedbackFormService.updateSection(sectionId, request));
+    }
+
+    @DeleteMapping("/sections/{sectionId}")
+//    @PreAuthorize("hasAuthority('FEEDBACK_MANAGE')")
+    @Operation(summary = "Xoa Section khoi Form")
+    public ResponseEntity<Void> deleteSection(@PathVariable UUID sectionId) {
+        feedbackFormService.deleteSection(sectionId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/questions/{questionId}")
+//    @PreAuthorize("hasAuthority('FEEDBACK_MANAGE')")
+    @Operation(summary = "Cap nhat thong tin Cau hoi va Options")
+    public ResponseEntity<QuestionResponse> updateQuestion(@PathVariable UUID questionId, @RequestBody UpdateQuestionRequest request) {
+        return ResponseEntity.ok(feedbackFormService.updateQuestion(questionId, request));
+    }
+
+    @DeleteMapping("/questions/{questionId}")
+//    @PreAuthorize("hasAuthority('FEEDBACK_MANAGE')")
+    @Operation(summary = "Xoa Cau hoi khoi Section")
+    public ResponseEntity<Void> deleteQuestion(@PathVariable UUID questionId) {
+        feedbackFormService.deleteQuestion(questionId);
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/{formId}/trigger-build")
 //    @PreAuthorize("hasAuthority('FEEDBACK_MANAGE')")
     @Operation(summary = "Kich hoat App Script tao Google Form")
