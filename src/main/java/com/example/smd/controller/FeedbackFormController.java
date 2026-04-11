@@ -118,6 +118,17 @@ public class FeedbackFormController {
         return ResponseEntity.ok(feedbackFormService.triggerAppScriptBuild(formId));
     }
 
+    @PostMapping("/{formId}/schedule-close")
+    @PreAuthorize("hasAuthority('FEEDBACK_MANAGE')")
+    @Operation(summary = "Hẹn giờ tự động tắt Google Form")
+    public ResponseEntity<Void> scheduleFormClose(
+            @PathVariable UUID formId,
+            @RequestBody ScheduleCloseRequest request) {
+
+        feedbackFormService.scheduleFormClose(formId, request);
+        return ResponseEntity.ok().build();
+    }
+
     @GetMapping("/{formId}/submissions")
 //    @PreAuthorize("hasAuthority('FEEDBACK_VIEW')")
     @Operation(summary = "Lay submissions cua form")
