@@ -70,6 +70,7 @@ public class FeedbackFormService {
         GoogleFormRecord record = GoogleFormRecord.builder()
                 .curriculum(curriculum)
                 .formType(req.getFormType().trim())
+                .closedAt(req.getCloseAt())
                 .isActive(false)
                 .build();
 
@@ -95,6 +96,7 @@ public class FeedbackFormService {
                 .googleFormId(record.getGoogleFormId())
                 .formUrl(record.getFormUrl())
                 .isActive(record.getIsActive())
+                .closeAt(record.getClosedAt())
                 .sections(sections.stream().map(this::toSectionResponse).toList())
                 .build();
     }
@@ -162,6 +164,9 @@ public class FeedbackFormService {
             if (req.getFormType() != null && !req.getFormType().isBlank()) {
                 record.setFormType(req.getFormType().trim());
             }
+            if (req.getCloseAt() != null) {
+                record.setClosedAt(req.getCloseAt());
+            }
         }
         formRecordRepo.save(record);
         return toFormRecordResponse(record);
@@ -172,48 +177,54 @@ public class FeedbackFormService {
         GoogleFormRecord record = findFormRecord(formId);
         formRecordRepo.delete(record);
     }
-    
+
     @Transactional
     public SectionResponse updateSection(UUID sectionId, UpdateSectionRequest req) {
         FeedbackFormSection section = sectionRepo.findById(sectionId)
                 .orElseThrow(() -> new AppException(ErrorCode.FEEDBACK_SECTION_NOT_FOUND));
-                
+
         if (req != null) {
-            if (req.getTitle() != null) section.setTitle(req.getTitle());
-            if (req.getOrderIndex() != null) section.setOrderIndex(req.getOrderIndex());
-            if (req.getAfterSectionAction() != null) section.setAfterSectionAction(req.getAfterSectionAction());
+            if (req.getTitle() != null)
+                section.setTitle(req.getTitle());
+            if (req.getOrderIndex() != null)
+                section.setOrderIndex(req.getOrderIndex());
+            if (req.getAfterSectionAction() != null)
+                section.setAfterSectionAction(req.getAfterSectionAction());
             section.setTargetSectionId(req.getTargetSectionId());
         }
         sectionRepo.save(section);
         return toSectionResponse(section);
     }
-    
+
     @Transactional
     public void deleteSection(UUID sectionId) {
         FeedbackFormSection section = sectionRepo.findById(sectionId)
                 .orElseThrow(() -> new AppException(ErrorCode.FEEDBACK_SECTION_NOT_FOUND));
         sectionRepo.delete(section);
     }
-    
+
     @Transactional
     public QuestionResponse updateQuestion(UUID questionId, UpdateQuestionRequest req) {
         FeedbackFormQuestion question = questionRepo.findById(questionId)
                 .orElseThrow(() -> new AppException(ErrorCode.FEEDBACK_QUESTION_NOT_FOUND));
-                
+
         if (req != null) {
             if (req.getContent() != null && !req.getContent().isBlank()) {
                 question.setContent(req.getContent().trim());
             }
-            if (req.getType() != null) question.setType(req.getType());
-            if (req.getIsRequired() != null) question.setIsRequired(req.getIsRequired());
-            if (req.getOrderIndex() != null) question.setOrderIndex(req.getOrderIndex());
-            
+            if (req.getType() != null)
+                question.setType(req.getType());
+            if (req.getIsRequired() != null)
+                question.setIsRequired(req.getIsRequired());
+            if (req.getOrderIndex() != null)
+                question.setOrderIndex(req.getOrderIndex());
+
             // Xóa option cũ
             optionRepo.deleteAll(optionRepo.findByQuestion_QuestionIdOrderByOrderIndexAsc(questionId));
             if (question.getOptions() != null) {
                 question.getOptions().clear();
             }
-            
+
             // Chèn option mới
             if (req.getOptions() != null && !req.getOptions().isEmpty()) {
                 int optionNo = 1;
@@ -235,7 +246,7 @@ public class FeedbackFormService {
         questionRepo.save(question);
         return toQuestionResponse(question);
     }
-    
+
     @Transactional
     public void deleteQuestion(UUID questionId) {
         FeedbackFormQuestion question = questionRepo.findById(questionId)
@@ -249,18 +260,20 @@ public class FeedbackFormService {
         List<FeedbackFormSection> sections = sectionRepo.findByFormRecord_IdOrderByOrderIndexAsc(formId);
 
         List<FormSchemaResponse.SectionSchema> sectionSchemas = sections.stream().map(sec -> {
-            List<FeedbackFormQuestion> questions = questionRepo.findBySection_SectionIdOrderByOrderIndexAsc(sec.getSectionId());
+            List<FeedbackFormQuestion> questions = questionRepo
+                    .findBySection_SectionIdOrderByOrderIndexAsc(sec.getSectionId());
 
             List<FormSchemaResponse.QuestionSchema> questionSchemas = questions.stream().map(q -> {
-                List<FeedbackFormOption> options = optionRepo.findByQuestion_QuestionIdOrderByOrderIndexAsc(q.getQuestionId());
+                List<FeedbackFormOption> options = optionRepo
+                        .findByQuestion_QuestionIdOrderByOrderIndexAsc(q.getQuestionId());
 
-                List<FormSchemaResponse.OptionSchema> optionSchemas = options.stream().map(o ->
-                        FormSchemaResponse.OptionSchema.builder()
+                List<FormSchemaResponse.OptionSchema> optionSchemas = options.stream()
+                        .map(o -> FormSchemaResponse.OptionSchema.builder()
                                 .optionId(o.getOptionId().toString())
                                 .text(o.getOptionText())
                                 .goToSectionId(o.getNextSectionId() != null ? o.getNextSectionId().toString() : null)
-                                .build()
-                ).toList();
+                                .build())
+                        .toList();
 
                 return FormSchemaResponse.QuestionSchema.builder()
                         .questionId(q.getQuestionId().toString())
@@ -292,17 +305,19 @@ public class FeedbackFormService {
     public TriggerBuildResponse triggerAppScriptBuild(UUID formId) {
         GoogleFormRecord record = findFormRecord(formId);
 
-        Map<String, Object> body = Map.of(
-                "action", "buildForm",
-                "formId", formId.toString(),
-                "secret", webhookSecret,
-                "oldGoogleFormId", record.getGoogleFormId() != null ? record.getGoogleFormId().trim() : null
-        );
+        Map<String, Object> body = new HashMap<>();
+        body.put("action", "buildForm");
+        body.put("formId", formId.toString());
+        body.put("secret", webhookSecret);
+        body.put("oldGoogleFormId", record.getGoogleFormId() != null ? record.getGoogleFormId().trim() : null);
+        body.put("closedAt", record.getClosedAt() != null ?
+                record.getClosedAt().toString() : null);
 
-//        // Nếu đã có form cũ, gửi ID để App Script xóa trên Google Drive
-//        if (record.getGoogleFormId() != null && !record.getGoogleFormId().isBlank()) {
-//            body.put("oldGoogleFormId", record.getGoogleFormId().trim());
-//        }
+        // // Nếu đã có form cũ, gửi ID để App Script xóa trên Google Drive
+        // if (record.getGoogleFormId() != null && !record.getGoogleFormId().isBlank())
+        // {
+        // body.put("oldGoogleFormId", record.getGoogleFormId().trim());
+        // }
 
         try {
             RestTemplate restTemplate = new RestTemplate();
@@ -311,13 +326,16 @@ public class FeedbackFormService {
             headers.setAccept(List.of(MediaType.APPLICATION_JSON, MediaType.TEXT_HTML, MediaType.ALL));
 
             HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(body, headers);
-            ResponseEntity<String> response = restTemplate.exchange(appScriptDeployUrl, HttpMethod.POST, requestEntity, String.class);
+            ResponseEntity<String> response = restTemplate.exchange(appScriptDeployUrl, HttpMethod.POST, requestEntity,
+                    String.class);
 
             if (response.getStatusCode().is3xxRedirection() && response.getHeaders().getLocation() != null) {
                 URI redirectUri = response.getHeaders().getLocation();
-                ResponseEntity<String> redirectedResponse = restTemplate.exchange(redirectUri, HttpMethod.GET, HttpEntity.EMPTY, String.class);
+                ResponseEntity<String> redirectedResponse = restTemplate.exchange(redirectUri, HttpMethod.GET,
+                        HttpEntity.EMPTY, String.class);
                 log.info("App Script redirect status={}, redirectUri={}, finalStatus={}, finalBody={}",
-                        response.getStatusCode(), redirectUri, redirectedResponse.getStatusCode(), redirectedResponse.getBody());
+                        response.getStatusCode(), redirectUri, redirectedResponse.getStatusCode(),
+                        redirectedResponse.getBody());
             } else {
                 log.info("App Script build response status={}, body={}", response.getStatusCode(), response.getBody());
             }
@@ -343,6 +361,9 @@ public class FeedbackFormService {
         record.setFormUrl(req.getFormUrl());
         record.setEditUrl(req.getEditUrl());
         record.setIsActive(true);
+        if (req.getCloseAt() != null) {
+            record.setClosedAt(req.getCloseAt());
+        }
         formRecordRepo.save(record);
 
         questionMappingRepo.deleteByFormRecord_Id(formId);
@@ -407,13 +428,15 @@ public class FeedbackFormService {
 
                 String answerValue = answerPayload.getAnswerValue();
                 if (answerValue != null && !answerValue.isBlank()) {
-                    String itemType = answerPayload.getItemType() == null ? "" : answerPayload.getItemType().trim().toUpperCase();
+                    String itemType = answerPayload.getItemType() == null ? ""
+                            : answerPayload.getItemType().trim().toUpperCase();
 
                     if (isCheckboxPayload(answerValue)) {
                         answer.setAnswerText(answerValue);
                     } else if (isChoiceType(itemType)) {
                         optionRepo.findByQuestion_QuestionIdAndOptionTextIgnoreCase(questionId, answerValue.trim())
-                                .ifPresentOrElse(answer::setSelectedOption, () -> answer.setAnswerText(answerValue.trim()));
+                                .ifPresentOrElse(answer::setSelectedOption,
+                                        () -> answer.setAnswerText(answerValue.trim()));
                     } else {
                         answer.setAnswerText(answerValue.trim());
                     }
@@ -446,7 +469,8 @@ public class FeedbackFormService {
     @Transactional(readOnly = true)
     public FeedbackReportResponse generateReport(UUID formId) {
         GoogleFormRecord record = findFormRecord(formId);
-        List<FeedbackSubmission> submissions = submissionRepo.findByCurriculum_CurriculumId(record.getCurriculum().getCurriculumId());
+        List<FeedbackSubmission> submissions = submissionRepo
+                .findByCurriculum_CurriculumId(record.getCurriculum().getCurriculumId());
 
         Map<UUID, AggregateQuestion> aggregates = new LinkedHashMap<>();
 
@@ -463,8 +487,7 @@ public class FeedbackFormService {
                 AggregateQuestion aggregate = aggregates.computeIfAbsent(qid, k -> new AggregateQuestion(
                         qid.toString(),
                         answer.getQuestion().getContent(),
-                        answer.getQuestion().getType()
-                ));
+                        answer.getQuestion().getType()));
 
                 if (answer.getSelectedOption() != null && answer.getSelectedOption().getOptionText() != null) {
                     String key = answer.getSelectedOption().getOptionText();
@@ -515,7 +538,8 @@ public class FeedbackFormService {
     }
 
     private String buildFormTitle(GoogleFormRecord record) {
-        String curriculumName = record.getCurriculum() != null ? record.getCurriculum().getCurriculumName() : "Curriculum";
+        String curriculumName = record.getCurriculum() != null ? record.getCurriculum().getCurriculumName()
+                : "Curriculum";
         return curriculumName + " - Feedback " + record.getFormType();
     }
 
@@ -546,31 +570,37 @@ public class FeedbackFormService {
                 .formType(record.getFormType())
                 .isActive(record.getIsActive())
                 .createdAt(record.getCreatedAt())
+                .closeAt(record.getClosedAt())
                 .build();
     }
 
     private FormSubmissionResponse toSubmissionResponse(FeedbackSubmission submission) {
         List<FormSubmissionAnswerResponse> answers = submission.getFeedbackAnswers() == null
                 ? List.of()
-                : submission.getFeedbackAnswers().stream().map(answer ->
-                FormSubmissionAnswerResponse.builder()
+                : submission.getFeedbackAnswers().stream().map(answer -> FormSubmissionAnswerResponse.builder()
                         .id(answer.getId() != null ? answer.getId().toString() : null)
                         .questionId(answer.getQuestion() != null && answer.getQuestion().getQuestionId() != null
-                                ? answer.getQuestion().getQuestionId().toString() : null)
+                                ? answer.getQuestion().getQuestionId().toString()
+                                : null)
                         .questionText(answer.getQuestion() != null ? answer.getQuestion().getContent() : null)
-                        .selectedOptionId(answer.getSelectedOption() != null && answer.getSelectedOption().getOptionId() != null
-                                ? answer.getSelectedOption().getOptionId().toString() : null)
-                        .selectedOptionText(answer.getSelectedOption() != null ? answer.getSelectedOption().getOptionText() : null)
+                        .selectedOptionId(
+                                answer.getSelectedOption() != null && answer.getSelectedOption().getOptionId() != null
+                                        ? answer.getSelectedOption().getOptionId().toString()
+                                        : null)
+                        .selectedOptionText(
+                                answer.getSelectedOption() != null ? answer.getSelectedOption().getOptionText() : null)
                         .answerText(answer.getAnswerText())
                         .build())
-                .toList();
+                        .toList();
 
         return FormSubmissionResponse.builder()
                 .id(submission.getId() != null ? submission.getId().toString() : null)
                 .accountId(submission.getAccount() != null && submission.getAccount().getAccountId() != null
-                        ? submission.getAccount().getAccountId().toString() : null)
+                        ? submission.getAccount().getAccountId().toString()
+                        : null)
                 .curriculumId(submission.getCurriculum() != null && submission.getCurriculum().getCurriculumId() != null
-                        ? submission.getCurriculum().getCurriculumId().toString() : null)
+                        ? submission.getCurriculum().getCurriculumId().toString()
+                        : null)
                 .submittedAt(submission.getSubmittedAt())
                 .answers(answers)
                 .build();
@@ -589,7 +619,8 @@ public class FeedbackFormService {
             return false;
         }
         try {
-            objectMapper.readValue(trimmed, new TypeReference<List<String>>() {});
+            objectMapper.readValue(trimmed, new TypeReference<List<String>>() {
+            });
             return true;
         } catch (Exception e) {
             return false;

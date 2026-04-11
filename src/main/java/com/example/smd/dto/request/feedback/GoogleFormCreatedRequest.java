@@ -2,7 +2,7 @@ package com.example.smd.dto.request.feedback;
 
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-
+import java.time.Instant;
 import java.util.List;
 
 @Data
@@ -14,6 +14,7 @@ public class GoogleFormCreatedRequest {
     String googleFormId;
     String formUrl;
     String editUrl;
+    Instant closeAt;
     List<QuestionMappingItem> questionMapping;
 
     @Data

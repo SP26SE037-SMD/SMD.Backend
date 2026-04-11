@@ -45,6 +45,9 @@ public class GoogleFormRecord {
     @Column(name = "created_at")
     Instant createdAt;
 
+    @Column(name = "closed_at")
+    Instant closedAt;
+
     @OneToMany(mappedBy = "formRecord", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     List<FormQuestionMapping> questionMappings;
 

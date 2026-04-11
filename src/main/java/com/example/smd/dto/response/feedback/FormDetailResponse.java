@@ -3,6 +3,7 @@ package com.example.smd.dto.response.feedback;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.time.Instant;
 import java.util.List;
 
 @Data
@@ -15,5 +16,6 @@ public class FormDetailResponse {
     String googleFormId;
     String formUrl;
     Boolean isActive;
+    Instant closeAt;
     List<SectionResponse> sections;
 }

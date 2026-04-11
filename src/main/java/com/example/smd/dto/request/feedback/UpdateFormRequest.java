@@ -1,5 +1,6 @@
 package com.example.smd.dto.request.feedback;
 
+import java.time.Instant;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -11,4 +12,5 @@ import lombok.experimental.FieldDefaults;
 public class UpdateFormRequest {
     String title; // Cho phép update title nếu cần, backend xử lý linh hoạt
     String formType;
+    Instant closeAt;
 }
