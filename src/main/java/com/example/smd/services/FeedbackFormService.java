@@ -202,13 +202,19 @@ public class FeedbackFormService {
 
     @Transactional
     public TriggerBuildResponse triggerAppScriptBuild(UUID formId) {
-        findFormRecord(formId);
+        GoogleFormRecord record = findFormRecord(formId);
 
         Map<String, Object> body = Map.of(
                 "action", "buildForm",
                 "formId", formId.toString(),
                 "secret", webhookSecret
         );
+
+        // Nếu đã có form cũ, gửi ID để App Script xóa trên Google Drive
+        if (record.getGoogleFormId() != null && !record.getGoogleFormId().isBlank()) {
+            body.put("oldGoogleFormId", record.getGoogleFormId().trim());
+        }
+
 
         try {
             RestTemplate restTemplate = new RestTemplate();
