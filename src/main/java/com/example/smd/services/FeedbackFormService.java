@@ -210,10 +210,10 @@ public class FeedbackFormService {
                 "secret", webhookSecret
         );
 
-        // Nếu đã có form cũ, gửi ID để App Script xóa trên Google Drive
-        if (record.getGoogleFormId() != null && !record.getGoogleFormId().isBlank()) {
-            body.put("oldGoogleFormId", record.getGoogleFormId().trim());
-        }
+//        // Nếu đã có form cũ, gửi ID để App Script xóa trên Google Drive
+//        if (record.getGoogleFormId() != null && !record.getGoogleFormId().isBlank()) {
+//            body.put("oldGoogleFormId", record.getGoogleFormId().trim());
+//        }
 
 
         try {
