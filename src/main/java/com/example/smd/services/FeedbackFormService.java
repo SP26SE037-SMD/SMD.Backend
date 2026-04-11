@@ -24,6 +24,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.net.URI;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Service
@@ -303,51 +304,50 @@ public class FeedbackFormService {
 
     @Transactional
     public TriggerBuildResponse triggerAppScriptBuild(UUID formId) {
+        // 1. Lấy thông tin record từ Database
         GoogleFormRecord record = findFormRecord(formId);
 
+        // 2. Chuẩn bị Payload linh hoạt (sử dụng HashMap để bổ sung các trường tùy chọn)
         Map<String, Object> body = new HashMap<>();
         body.put("action", "buildForm");
         body.put("formId", formId.toString());
-        body.put("secret", webhookSecret);
-        body.put("oldGoogleFormId", record.getGoogleFormId() != null ? record.getGoogleFormId().trim() : null);
-        body.put("closedAt", record.getClosedAt() != null ?
-                record.getClosedAt().toString() : null);
+        body.put("secret", webhookSecret); //
 
-        // // Nếu đã có form cũ, gửi ID để App Script xóa trên Google Drive
-        // if (record.getGoogleFormId() != null && !record.getGoogleFormId().isBlank())
-        // {
-        // body.put("oldGoogleFormId", record.getGoogleFormId().trim());
-        // }
-
-        try {
-            RestTemplate restTemplate = new RestTemplate();
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.setAccept(List.of(MediaType.APPLICATION_JSON, MediaType.TEXT_HTML, MediaType.ALL));
-
-            HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(body, headers);
-            ResponseEntity<String> response = restTemplate.exchange(appScriptDeployUrl, HttpMethod.POST, requestEntity,
-                    String.class);
-
-            if (response.getStatusCode().is3xxRedirection() && response.getHeaders().getLocation() != null) {
-                URI redirectUri = response.getHeaders().getLocation();
-                ResponseEntity<String> redirectedResponse = restTemplate.exchange(redirectUri, HttpMethod.GET,
-                        HttpEntity.EMPTY, String.class);
-                log.info("App Script redirect status={}, redirectUri={}, finalStatus={}, finalBody={}",
-                        response.getStatusCode(), redirectUri, redirectedResponse.getStatusCode(),
-                        redirectedResponse.getBody());
-            } else {
-                log.info("App Script build response status={}, body={}", response.getStatusCode(), response.getBody());
-            }
-
-            return TriggerBuildResponse.builder()
-                    .success(true)
-                    .message("App Script dang xay dung Google Form")
-                    .build();
-        } catch (Exception e) {
-            log.error("Trigger App Script failed: {}", e.getMessage(), e);
-            throw new AppException(ErrorCode.APP_SCRIPT_CALL_FAILED);
+        // Gửi oldGoogleFormId nếu đã có để App Script thực hiện cập nhật (không tạo file mới)
+        if (record.getGoogleFormId() != null && !record.getGoogleFormId().isBlank()) {
+            body.put("oldGoogleFormId", record.getGoogleFormId().trim());
         }
+
+        // Gửi thời gian đóng form để App Script lập lịch Trigger thời gian
+        if (record.getClosedAt() != null) {
+            body.put("closedAt", record.getClosedAt().toString());
+        }
+
+        // 3. Thực hiện gọi App Script trong luồng riêng (Non-blocking)
+        CompletableFuture.runAsync(() -> {
+            try {
+                RestTemplate restTemplate = new RestTemplate();
+
+                // Thiết lập Headers để đảm bảo Google nhận diện đúng định dạng JSON
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.APPLICATION_JSON);
+                headers.setAccept(List.of(MediaType.APPLICATION_JSON, MediaType.ALL));
+
+                HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+
+                log.info("Bắt đầu đồng bộ Google Form (Async) cho Form ID: {}", formId);
+                ResponseEntity<String> response = restTemplate.postForEntity(appScriptDeployUrl, requestEntity, String.class); //
+                log.info("App Script phản hồi: {}", response.getBody()); //
+            } catch (Exception e) {
+                log.error("Lỗi đồng bộ Google Form (Async): {}", e.getMessage(), e); //
+            }
+        });
+
+        // 4. Trả về kết quả ngay lập tức để giải phóng kết nối Nginx
+        return TriggerBuildResponse.builder()
+                .success(true)
+                .message("Hệ thống đang xử lý tạo/cập nhật Google Form ngầm, vui lòng đợi trong giây lát.")
+                .build();
     }
 
     @Transactional
