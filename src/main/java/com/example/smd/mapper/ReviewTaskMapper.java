@@ -34,6 +34,7 @@ public interface ReviewTaskMapper {
 
     @Mapping(target = "task.taskId", source = "task.taskId")
     @Mapping(target = "task.taskName", source = "task.taskName")
+    @Mapping(target = "task.assignedToId", source = "task.account.accountId")
     @Mapping(target = "reviewer.reviewerId", source = "reviewer.accountId")
     @Mapping(target = "reviewer.fullName", source = "reviewer.fullName")
     @Mapping(target = "reviewer.email", source = "reviewer.email")
