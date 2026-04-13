@@ -59,6 +59,12 @@ public class FeedbackFormController {
         return ResponseEntity.status(201).body(feedbackFormService.addSection(formId, request));
     }
 
+    @GetMapping("/{formId}/sections")
+    @Operation(summary = "Lay danh sach cac sections cua form")
+    public ResponseEntity<List<SectionResponse>> getSections(@PathVariable UUID formId) {
+        return ResponseEntity.ok(feedbackFormService.getSectionsByForm(formId));
+    }
+
     @PostMapping("/sections/{sectionId}/questions")
 //    @PreAuthorize("hasAuthority('FEEDBACK_MANAGE')")
     @Operation(summary = "Them cau hoi vao section")

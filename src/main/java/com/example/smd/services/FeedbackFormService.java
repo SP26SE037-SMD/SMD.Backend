@@ -102,6 +102,15 @@ public class FeedbackFormService {
                 .build();
     }
 
+    @Transactional(readOnly = true)
+    public List<SectionResponse> getSectionsByForm(UUID formId) {
+        findFormRecord(formId); // Ensure form exists
+        return sectionRepo.findByFormRecord_IdOrderByOrderIndexAsc(formId)
+                .stream()
+                .map(this::toSectionResponse)
+                .toList();
+    }
+
     @Transactional
     public SectionResponse addSection(UUID formId, CreateSectionRequest req) {
         GoogleFormRecord record = findFormRecord(formId);
@@ -571,7 +580,10 @@ public class FeedbackFormService {
                 .sectionId(section.getSectionId().toString())
                 .title(section.getTitle())
                 .orderIndex(section.getOrderIndex())
-                .afterSectionAction(section.getAfterSectionAction())
+                .actionAfter(section.getAfterSectionAction())
+                .targetSectionId(section.getTargetSectionId() != null 
+                        ? section.getTargetSectionId().toString() 
+                        : null)
                 .build();
     }
 
