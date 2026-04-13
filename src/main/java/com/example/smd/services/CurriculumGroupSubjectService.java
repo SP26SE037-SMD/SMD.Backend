@@ -64,6 +64,7 @@ public class CurriculumGroupSubjectService {
     private final CurriculumRepository curriculumRepository;
     private final GroupRepository groupRepository;
     private final SubjectRepository subjectRepository;
+    private final PrerequisiteRepository prerequisiteRepository;
     private final CurriculumGroupSubjectMapper mapper;
     private final AccountService accountService;
 
@@ -602,6 +603,22 @@ public class CurriculumGroupSubjectService {
         List<Curriculum_Group_Subject> mappings =
                 curriculumGroupSubjectRepository.findAllByCurriculumIdOrderBySemester(curriculumUUID);
 
+        // Batch fetch prerequisites to avoid N+1
+        List<UUID> subjectIds = mappings.stream()
+                .map(m -> m.getSubject().getSubjectId())
+                .distinct()
+                .toList();
+
+        List<Subject_Prerequisite> allPrereqs = prerequisiteRepository.findBySubject_SubjectIdIn(subjectIds);
+        Map<UUID, List<String>> prereqCodesMap = allPrereqs.stream()
+                .collect(java.util.stream.Collectors.groupingBy(
+                        p -> p.getSubject().getSubjectId(),
+                        java.util.stream.Collectors.mapping(
+                                p -> p.getPrerequisiteSubject().getSubjectCode(),
+                                java.util.stream.Collectors.toList()
+                        )
+                ));
+
         Map<Integer, List<Curriculum_Group_Subject>> groupedBySemester = new LinkedHashMap<>();
         for (Curriculum_Group_Subject mapping : mappings) {
             Integer semesterNo = mapping.getSemester();
@@ -623,10 +640,11 @@ public class CurriculumGroupSubjectService {
                                         .subjectName(subject.getSubjectName())
                                         .groupId(group != null ? group.getGroupId() : null)
                                         .credit(subject.getCredits())
+                                        .prerequisiteSubjectCodes(prereqCodesMap.getOrDefault(subject.getSubjectId(), Collections.emptyList()))
                                         .build();
                             })
                             .sorted(Comparator.comparing(CurriculumSemesterMappingsResponse.SubjectMappingItem::getSubjectCode,
-                                    Comparator.nullsLast(String::compareToIgnoreCase)))
+                                     Comparator.nullsLast(String::compareToIgnoreCase)))
                             .toList();
 
             semesterMappings.add(CurriculumSemesterMappingsResponse.SemesterMappingItem.builder()
