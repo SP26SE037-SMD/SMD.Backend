@@ -80,9 +80,6 @@ public class ReviewTaskService {
         if (reviewTask.getStatus() == null || reviewTask.getStatus().isBlank()) {
             reviewTask.setStatus(ReviewStatus.PENDING.name());
         }
-        if (reviewTask.getIsAccepted() == null) {
-            reviewTask.setIsAccepted(Boolean.FALSE);
-        }
 
         reviewTask = reviewTaskRepository.save(reviewTask);
 
@@ -267,52 +264,18 @@ public class ReviewTaskService {
             String reviewTaskStatus = reviewTask.getStatus();
 
             if (isAccepted && ReviewStatus.REVISION_REQUESTED.name().equals(reviewTaskStatus)) {
-                // Syllabus → IN_PROGRESS
-                // Material, Session, Assessment → DRAFT
-                syllabus.setStatus(SyllabusStatus.IN_PROGRESS.name());
+                //True
+                // Syllabus → REVISION_REQUESTED
+                syllabus.setStatus(SyllabusStatus.REVISION_REQUESTED.name());
                 syllabusRepository.save(syllabus);
 
-                materialRepository.findBySyllabus_SyllabusId(syllabus.getSyllabusId())
-                        .forEach(m -> {
-                            m.setStatus(SyllabusStatus.DRAFT.name());
-                            materialRepository.save(m);
-                        });
-
-                sessionRepository.findBySyllabus_SyllabusId(syllabus.getSyllabusId())
-                        .forEach(s -> {
-                            s.setStatus(SyllabusStatus.DRAFT.name());
-                            sessionRepository.save(s);
-                        });
-
-                assessmentRepository.findBySyllabus_SyllabusId(syllabus.getSyllabusId())
-                        .forEach(a -> {
-                            a.setStatus(SyllabusStatus.DRAFT.name());
-                            assessmentRepository.save(a);
-                        });
             } else if (isAccepted && ReviewStatus.APPROVED.name().equals(reviewTaskStatus)) {
-                // Syllabus, Material, Session, Assessment → APPROVED
+                //True
+                // Syllabus → APPROVED
                 // Subject → PENDING_REVIEW
                 // Task → DONE
                 syllabus.setStatus(SyllabusStatus.APPROVED.name());
                 syllabusRepository.save(syllabus);
-
-                materialRepository.findBySyllabus_SyllabusId(syllabus.getSyllabusId())
-                        .forEach(m -> {
-                            m.setStatus(SyllabusStatus.APPROVED.name());
-                            materialRepository.save(m);
-                        });
-
-                sessionRepository.findBySyllabus_SyllabusId(syllabus.getSyllabusId())
-                        .forEach(s -> {
-                            s.setStatus(SyllabusStatus.APPROVED.name());
-                            sessionRepository.save(s);
-                        });
-
-                assessmentRepository.findBySyllabus_SyllabusId(syllabus.getSyllabusId())
-                        .forEach(a -> {
-                            a.setStatus(SyllabusStatus.APPROVED.name());
-                            assessmentRepository.save(a);
-                        });
 
                 if (syllabus.getSubject() != null) {
                     syllabus.getSubject().setStatus(SubjectStatus.PENDING_REVIEW.name());
@@ -322,29 +285,18 @@ public class ReviewTaskService {
                 task.setStatus(TaskStatus.DONE.name());
                 taskRepository.save(task);
             } else if (!isAccepted && ReviewStatus.REVISION_REQUESTED.name().equals(reviewTaskStatus)) {
-                // Syllabus, Material, Session, Assessment → APPROVED
+                //False
+                //Review Task → APPROVED
+                // Syllabus → APPROVED
                 // Subject → PENDING_REVIEW
                 // Task → DONE
+
+                reviewTask.setStatus(ReviewStatus.APPROVED.name());
+                reviewTaskRepository.save(reviewTask);
+
                 syllabus.setStatus(SyllabusStatus.APPROVED.name());
                 syllabusRepository.save(syllabus);
 
-                materialRepository.findBySyllabus_SyllabusId(syllabus.getSyllabusId())
-                        .forEach(m -> {
-                            m.setStatus(SyllabusStatus.APPROVED.name());
-                            materialRepository.save(m);
-                        });
-
-                sessionRepository.findBySyllabus_SyllabusId(syllabus.getSyllabusId())
-                        .forEach(s -> {
-                            s.setStatus(SyllabusStatus.APPROVED.name());
-                            sessionRepository.save(s);
-                        });
-
-                assessmentRepository.findBySyllabus_SyllabusId(syllabus.getSyllabusId())
-                        .forEach(a -> {
-                            a.setStatus(SyllabusStatus.APPROVED.name());
-                            assessmentRepository.save(a);
-                        });
 
                 if (syllabus.getSubject() != null) {
                     syllabus.getSubject().setStatus(SubjectStatus.PENDING_REVIEW.name());
@@ -353,6 +305,17 @@ public class ReviewTaskService {
 
                 task.setStatus(TaskStatus.DONE.name());
                 taskRepository.save(task);
+            } else if (!isAccepted && ReviewStatus.APPROVED.name().equals(reviewTaskStatus)) {
+                //False
+                //Review Task → REVISION_REQUESTED
+                // Syllabus → REVISION_REQUESTED
+
+                reviewTask.setStatus(ReviewStatus.REVISION_REQUESTED.name());
+                reviewTaskRepository.save(reviewTask);
+
+                syllabus.setStatus(SyllabusStatus.REVISION_REQUESTED.name());
+                syllabusRepository.save(syllabus);
+
             }
         }
 

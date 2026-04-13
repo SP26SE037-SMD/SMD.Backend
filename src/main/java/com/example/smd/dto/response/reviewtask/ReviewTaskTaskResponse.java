@@ -17,4 +17,6 @@ import java.util.UUID;
 public class ReviewTaskTaskResponse {
     UUID taskId;
     String taskName;
+    UUID assignedToId;
+
 }
