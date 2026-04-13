@@ -42,5 +42,6 @@ public class CurriculumSemesterMappingsResponse {
         String subjectName;
         Integer credit;
         UUID groupId;
+        List<String> prerequisiteSubjectCodes;
     }
 }

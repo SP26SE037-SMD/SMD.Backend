@@ -19,4 +19,7 @@ public interface PrerequisiteRepository extends JpaRepository<Subject_Prerequisi
     List<Subject_Prerequisite> findByPrerequisiteSubject_SubjectId(UUID prerequisiteId);
 
     boolean existsBySubject_SubjectIdAndPrerequisiteSubject_SubjectId(UUID sId, UUID pId);
+
+    @EntityGraph(attributePaths = {"subject", "prerequisiteSubject"})
+    List<Subject_Prerequisite> findBySubject_SubjectIdIn(java.util.Collection<UUID> subjectIds);
 }

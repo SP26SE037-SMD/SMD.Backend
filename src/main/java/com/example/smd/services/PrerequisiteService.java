@@ -130,6 +130,20 @@ public class PrerequisiteService {
         return flatList;
     }
 
+    @Transactional
+    public List<PrerequisiteResponse> getDependentsByCode(String subjectCode) {
+        Subject subject = subjectRepository.findBySubjectCode(subjectCode)
+                .orElseThrow(() -> new AppException(ErrorCode.SUBJECT_NOT_FOUND));
+        return getDependents(subject.getSubjectId().toString());
+    }
+
+    @Transactional
+    public List<PrerequisiteResponse> getPrerequisitesByCode(String subjectCode) {
+        Subject subject = subjectRepository.findBySubjectCode(subjectCode)
+                .orElseThrow(() -> new AppException(ErrorCode.SUBJECT_NOT_FOUND));
+        return getPrerequisites(subject.getSubjectId().toString());
+    }
+
     public void delete(UUID id) {
         if (!prerequisiteRepository.existsById(id))
             throw new AppException(ErrorCode.PREREQUISITE_NOT_FOUND);

@@ -51,12 +51,33 @@ public class PrerequisiteController {
                 .build();
     }
 
+    @GetMapping("/dependents/code/{subjectCode}/dependents")
+    @Operation(summary = "Find subjects that depend on this subject by code",
+            description = "Returns a list of subjects that require the given subject code as a prerequisite")
+    public ResponseObject<List<PrerequisiteResponse>> getDependentsByCode(@PathVariable String subjectCode) {
+        return ResponseObject.<List<PrerequisiteResponse>>builder()
+                .status(1000)
+                .data(prerequisiteService.getDependentsByCode(subjectCode))
+                .message("Get dependent subjects successfully")
+                .build();
+    }
+
     @GetMapping("/{subjectId}/requirements")
     @Operation(summary = "Get all prerequisites that this subject requires")
     public ResponseObject<List<PrerequisiteResponse>> getPrerequisites(@PathVariable String subjectId) {
         return ResponseObject.<List<PrerequisiteResponse>>builder()
                 .status(1000)
                 .data(prerequisiteService.getPrerequisites(subjectId))
+                .message("Get prerequisites successfully")
+                .build();
+    }
+
+    @GetMapping("/code/{subjectCode}/requirements")
+    @Operation(summary = "Get all prerequisites that this subject requires by code")
+    public ResponseObject<List<PrerequisiteResponse>> getPrerequisitesByCode(@PathVariable String subjectCode) {
+        return ResponseObject.<List<PrerequisiteResponse>>builder()
+                .status(1000)
+                .data(prerequisiteService.getPrerequisitesByCode(subjectCode))
                 .message("Get prerequisites successfully")
                 .build();
     }
