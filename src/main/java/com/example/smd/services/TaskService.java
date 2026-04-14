@@ -148,7 +148,6 @@ public class TaskService {
                 .orElseThrow(() -> new AppException(ErrorCode.SUBJECT_NOT_FOUND));
 
             boolean hasSyllabus = !syllabusRepository.findBySubject_SubjectId(subjectId).isEmpty();
-
             Task task = Task.builder()
                 .taskName(subject.getSubjectCode() + " - " + subject.getSubjectName())
                 .description("Auto-generated task for subject " + subject.getSubjectCode())
@@ -158,21 +157,23 @@ public class TaskService {
             task.setSprint(sprint);
             task.setSubject(subject);
             task.setStatus(TaskStatus.TO_DO.toString());
+            var syllabus =
+                    syllabusRepository.findBySubject_SubjectIdAndStatus(subjectId, "PUBLISHED");
 
-            if (hasSyllabus) {
+            if(syllabus != null) {
                 if (hopdcAccount == null) {
                     throw new AppException(
-                        ErrorCode.ACCOUNT_NOT_FOUND,
-                        "No HoPDC account found in this department"
+                            ErrorCode.ACCOUNT_NOT_FOUND,
+                            "No HoPDC account found in this department"
                     );
                 }
                 task.setType("REUSED_SUBJECT");
+                task.setSyllabus(syllabus.get(0)); // Assuming the first syllabus is the one to link
                 task.setAccount(hopdcAccount);
-            } else {
+            }else {
                 task.setType("NEW_SUBJECT");
                 task.setAccount(null);
             }
-
             tasksToSave.add(task);
         }
 
