@@ -76,12 +76,14 @@ public class POsController {
             @PathVariable String majorId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "poCode") String sortBy,
+            @RequestParam(defaultValue = "asc") String direction,
             @AuthenticationPrincipal Jwt jwt
             ) {
         String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<PagedResponse<POsResponse>>builder()
                 .status(1000)
-                .data(PagedResponse.of(poService.getPosByMajor(majorId, page, size, userId)))
+                .data(PagedResponse.of(poService.getPosByMajor(majorId, page, size, sortBy, direction, userId)))
                 .message("Get POs by major successfully")
                 .build();
     }
