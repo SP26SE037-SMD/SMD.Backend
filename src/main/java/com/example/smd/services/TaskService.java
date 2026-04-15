@@ -157,8 +157,10 @@ public class TaskService {
             task.setSprint(sprint);
             task.setSubject(subject);
             task.setStatus(TaskStatus.TO_DO.toString());
-            var syllabus =
+            var list =
                     syllabusRepository.findBySubject_SubjectIdAndStatus(subjectId, "PUBLISHED");
+
+            Syllabus syllabus = list.isEmpty() ? null : list.get(0);
 
             if(syllabus != null) {
                 if (hopdcAccount == null) {
@@ -168,7 +170,7 @@ public class TaskService {
                     );
                 }
                 task.setType("REUSED_SUBJECT");
-                task.setSyllabus(syllabus.get(0)); // Assuming the first syllabus is the one to link
+                task.setSyllabus(syllabus); // Assuming the first syllabus is the one to link
                 task.setAccount(hopdcAccount);
             }else {
                 task.setType("NEW_SUBJECT");
