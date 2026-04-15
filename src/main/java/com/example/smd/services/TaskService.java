@@ -147,7 +147,6 @@ public class TaskService {
             Subject subject = subjectRepository.findById(subjectId)
                 .orElseThrow(() -> new AppException(ErrorCode.SUBJECT_NOT_FOUND));
 
-            boolean hasSyllabus = !syllabusRepository.findBySubject_SubjectId(subjectId).isEmpty();
             Task task = Task.builder()
                 .taskName(subject.getSubjectCode() + " - " + subject.getSubjectName())
                 .description("Auto-generated task for subject " + subject.getSubjectCode())
@@ -157,8 +156,10 @@ public class TaskService {
             task.setSprint(sprint);
             task.setSubject(subject);
             task.setStatus(TaskStatus.TO_DO.toString());
-            var syllabus =
+            var list =
                     syllabusRepository.findBySubject_SubjectIdAndStatus(subjectId, "PUBLISHED");
+
+            Syllabus syllabus = list.isEmpty() ? null : list.get(0);
 
             if(syllabus != null) {
                 if (hopdcAccount == null) {
@@ -168,7 +169,7 @@ public class TaskService {
                     );
                 }
                 task.setType("REUSED_SUBJECT");
-                task.setSyllabus(syllabus.get(0)); // Assuming the first syllabus is the one to link
+                task.setSyllabus(syllabus); // Assuming the first syllabus is the one to link
                 task.setAccount(hopdcAccount);
             }else {
                 task.setType("NEW_SUBJECT");
@@ -195,7 +196,6 @@ public class TaskService {
                 " for HoPDC account: " + sprint.getAccount().getEmail());
         }
 
-//        return savedTasks.stream().map(taskMapper::toTaskResponse).toList();
         return true;
     }
 
