@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -131,9 +132,11 @@ public class POsService {
                 .orElseThrow(() -> new AppException(ErrorCode.PO_NOT_FOUND));
     }
 
-    public Page<POsResponse> getPosByMajor(String majorId, int page, int size, String accountId) {
-        // 1. Khởi tạo Pageable
-        Pageable pageable = PageRequest.of(page, size);
+    public Page<POsResponse> getPosByMajor(String majorId, int page, int size, String sortBy, String direction, String accountId) {
+        // 1. Khởi tạo Pageable với Sort
+        Sort sort = direction.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending()
+                : Sort.by(sortBy).ascending();
+        Pageable pageable = PageRequest.of(page, size, sort);
         UUID uuidMajorId = UUID.fromString(majorId);
 
         // 2. Lấy thông tin Account và Role
