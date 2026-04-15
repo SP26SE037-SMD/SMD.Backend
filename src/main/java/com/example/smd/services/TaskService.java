@@ -147,7 +147,6 @@ public class TaskService {
             Subject subject = subjectRepository.findById(subjectId)
                 .orElseThrow(() -> new AppException(ErrorCode.SUBJECT_NOT_FOUND));
 
-            boolean hasSyllabus = !syllabusRepository.findBySubject_SubjectId(subjectId).isEmpty();
             Task task = Task.builder()
                 .taskName(subject.getSubjectCode() + " - " + subject.getSubjectName())
                 .description("Auto-generated task for subject " + subject.getSubjectCode())
@@ -197,7 +196,6 @@ public class TaskService {
                 " for HoPDC account: " + sprint.getAccount().getEmail());
         }
 
-//        return savedTasks.stream().map(taskMapper::toTaskResponse).toList();
         return true;
     }
 
