@@ -8,11 +8,15 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 @Repository
 public interface CurriculumRepository extends JpaRepository<Curriculum, UUID> {
+
+    // Tìm curriculum theo major id
+    List<Curriculum> findByMajor_MajorId(UUID majorId);
 
     // Kiểm tra tồn tại theo mã chương trình
     boolean existsByCurriculumCode(String curriculumCode);

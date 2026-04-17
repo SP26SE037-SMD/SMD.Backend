@@ -2,14 +2,11 @@ package com.example.smd.services;
 
 import com.example.smd.dto.request.task.TaskCreateRequest;
 import com.example.smd.dto.request.task.TaskUpdateRequest;
+import com.example.smd.dto.request.task.TaskVPRequest;
 import com.example.smd.dto.response.task.TaskListResponse;
 import com.example.smd.dto.response.task.TaskResponse;
-import com.example.smd.entities.Account;
-import com.example.smd.entities.Sprint;
-import com.example.smd.entities.Curriculum_Group_Subject;
-import com.example.smd.entities.Subject;
-import com.example.smd.entities.Syllabus;
-import com.example.smd.entities.Task;
+import com.example.smd.dto.response.task.TaskVPResponse;
+import com.example.smd.entities.*;
 import com.example.smd.enums.Priority;
 import com.example.smd.enums.RoleName;
 import com.example.smd.enums.TaskStatus;
@@ -21,6 +18,7 @@ import com.example.smd.repositories.CurriculumGroupSubjectRepository;
 import com.example.smd.repositories.SprintRepository;
 import com.example.smd.repositories.SubjectRepository;
 import com.example.smd.repositories.SyllabusRepository;
+import com.example.smd.repositories.MajorRepository;
 import com.example.smd.repositories.TaskRepository;
 import com.example.smd.repositories.TaskSpecification;
 import lombok.AccessLevel;
@@ -51,6 +49,7 @@ public class TaskService {
     SyllabusRepository syllabusRepository;
     SubjectRepository subjectRepository;
     CurriculumGroupSubjectRepository curriculumGroupSubjectRepository;
+    MajorRepository majorRepository;
     AccountService accountService;
     TaskMapper taskMapper;
 
@@ -83,6 +82,27 @@ public class TaskService {
 
         task = taskRepository.save(task);
         return taskMapper.toTaskResponse(task);
+    }
+
+    @Transactional
+    public TaskVPResponse createByVP(TaskVPRequest request) {
+        Task task = taskMapper.toTask(request);
+
+        if (request.getAccountId() != null) {
+            Account account = accountRepository.findById(request.getAccountId())
+                    .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND));
+            task.setAccount(account);
+        }
+
+        if (request.getMajorId() != null) {
+            Major major = majorRepository.findById(request.getMajorId())
+                    .orElseThrow(() -> new AppException(ErrorCode.MAJOR_NOT_FOUND));
+            task.setMajor(major);
+        }
+
+        task.setStatus(TaskStatus.TO_DO.name());
+        task = taskRepository.save(task);
+        return taskMapper.toTaskVPResponse(task);
     }
 
     @Transactional
@@ -251,6 +271,30 @@ public class TaskService {
 
         task = taskRepository.save(task);
         return taskMapper.toTaskResponse(task);
+    }
+
+    @Transactional
+    public TaskVPResponse updateByVP(UUID id, TaskVPRequest request) {
+        Task task = taskRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.TASK_NOT_FOUND));
+
+        taskMapper.updateTaskByVP(task, request);
+
+        if (request.getAccountId() != null) {
+            Account account = accountRepository.findById(request.getAccountId())
+                    .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND));
+            task.setAccount(account);
+        }
+
+        if (request.getMajorId() != null) {
+            Major major = majorRepository.findById(request.getMajorId())
+                    .orElseThrow(() -> new AppException(ErrorCode.MAJOR_NOT_FOUND));
+            task.setMajor(major);
+        }
+
+        applyCompletedAtByStatus(task);
+        task = taskRepository.save(task);
+        return taskMapper.toTaskVPResponse(task);
     }
 
     @Transactional
