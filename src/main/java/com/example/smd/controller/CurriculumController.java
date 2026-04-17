@@ -2,6 +2,7 @@ package com.example.smd.controller;
 
 import com.example.smd.dto.request.curriculum.CurriculumCreateRequest;
 import com.example.smd.dto.response.CurriculumResponse;
+import com.example.smd.dto.response.CurriculumShortResponse;
 import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.services.CurriculumService;
@@ -19,6 +20,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -123,6 +125,25 @@ public class CurriculumController {
                 .status(1000)
                 .data(curriculumService.getCurriculumDetail(id, userId))
                 .message("Get curriculum detail successfully")
+                .build();
+    }
+
+    /**
+     * API lấy danh sách curriculum theo Major ID
+     */
+    @GetMapping("/major/{majorId}")
+    @Operation(
+            summary = "Get curriculums by Major ID",
+            description = "Retrieve a list of curriculums associated with a specific major. Returns basic curriculum info without major details."
+    )
+    public ResponseObject<List<CurriculumShortResponse>> getCurriculumsByMajor(
+            @Parameter(description = "Major ID (UUID)")
+            @PathVariable UUID majorId
+    ) {
+        return ResponseObject.<List<CurriculumShortResponse>>builder()
+                .status(1000)
+                .data(curriculumService.getCurriculumsByMajor(majorId))
+                .message("Get curriculums by major successfully")
                 .build();
     }
 

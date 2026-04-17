@@ -2,6 +2,7 @@ package com.example.smd.services;
 
 import com.example.smd.dto.request.curriculum.CurriculumCreateRequest;
 import com.example.smd.dto.response.CurriculumResponse;
+import com.example.smd.dto.response.CurriculumShortResponse;
 import com.example.smd.entities.Curriculum;
 import com.example.smd.entities.Major;
 import com.example.smd.entities.Subject;
@@ -22,6 +23,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -119,6 +121,28 @@ public class CurriculumService {
         }
 
         return curriculumPage.map(curriculumMapper::toCurriculumResponse);
+    }
+
+    /**
+     * Lấy danh sách curriculum theo majorId
+     *
+     * @param majorId - ID của Major
+     * @return List<CurriculumShortResponse>
+     */
+    @Transactional(readOnly = true)
+    public List<CurriculumShortResponse> getCurriculumsByMajor(UUID majorId) {
+        log.info("Fetching curriculums for major ID: {}", majorId);
+
+        // Kiểm tra Major tồn tại
+        if (!majorRepository.existsById(majorId)) {
+            throw new AppException(ErrorCode.MAJOR_NOT_FOUND);
+        }
+
+        List<Curriculum> curriculums = curriculumRepository.findByMajor_MajorId(majorId);
+
+        return curriculums.stream()
+                .map(curriculumMapper::toCurriculumShortResponse)
+                .toList();
     }
 
     /**

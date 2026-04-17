@@ -3,6 +3,7 @@ package com.example.smd.mapper;
 import com.example.smd.dto.request.curriculum.CurriculumCreateRequest;
 import com.example.smd.dto.request.curriculum.CurriculumRequest;
 import com.example.smd.dto.response.CurriculumResponse;
+import com.example.smd.dto.response.CurriculumShortResponse;
 import com.example.smd.entities.Curriculum;
 import com.example.smd.entities.Major;
 import org.mapstruct.Mapper;
@@ -26,6 +27,8 @@ public interface CurriculumMapper {
     // Chuyển đổi từ Entity sang Response
     @Mapping(source = "major", target = "major", qualifiedByName = "mapMajorInfo")
     CurriculumResponse toCurriculumResponse(Curriculum curriculum);
+
+    CurriculumShortResponse toCurriculumShortResponse(Curriculum curriculum);
 
     // Custom mapping cho Major -> MajorInfo
     @Named("mapMajorInfo")
