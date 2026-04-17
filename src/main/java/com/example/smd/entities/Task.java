@@ -66,10 +66,13 @@ public class Task {
     @JoinColumn(name = "subject_id")
     Subject subject;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "major_id")
+    Major major;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDate.now();
     }
-
 
 }

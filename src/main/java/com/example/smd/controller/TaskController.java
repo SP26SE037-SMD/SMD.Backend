@@ -2,10 +2,12 @@ package com.example.smd.controller;
 
 import com.example.smd.dto.request.task.TaskCreateRequest;
 import com.example.smd.dto.request.task.TaskUpdateRequest;
+import com.example.smd.dto.request.task.TaskVPRequest;
 import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.dto.response.task.TaskListResponse;
 import com.example.smd.dto.response.task.TaskResponse;
+import com.example.smd.dto.response.task.TaskVPResponse;
 import com.example.smd.services.TaskService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -140,6 +142,26 @@ public class TaskController {
                 return ResponseObject.<TaskResponse>builder()
                                 .data(taskService.updateStatus(id, status))
                                 .message("Task status updated successfully")
+                                .build();
+        }
+
+        @PostMapping("/byVP")
+        @Operation(summary = "Create a new task (Specialized for VP)")
+        public ResponseObject<TaskVPResponse> createByVP(@RequestBody @Valid TaskVPRequest request) {
+                return ResponseObject.<TaskVPResponse>builder()
+                                .data(taskService.createByVP(request))
+                                .message("Task created successfully (VP)")
+                                .build();
+        }
+
+        @PutMapping("/{id}/byVP")
+        @Operation(summary = "Update task information (Specialized for VP)")
+        public ResponseObject<TaskVPResponse> updateByVP(
+                        @PathVariable UUID id,
+                        @RequestBody @Valid TaskVPRequest request) {
+                return ResponseObject.<TaskVPResponse>builder()
+                                .data(taskService.updateByVP(id, request))
+                                .message("Task updated successfully (VP)")
                                 .build();
         }
 

@@ -281,6 +281,11 @@ public enum ErrorCode {
     REVIEW_TASK_TASK_ID_REQUIRED(30003, "Task ID is required", HttpStatus.BAD_REQUEST),
     REVIEW_TASK_STATUS_REQUIRED(30004, "Review task status is required", HttpStatus.BAD_REQUEST),
 
+    // REQUEST
+    REQUEST_NOT_FOUND(31001, "Request not found", HttpStatus.NOT_FOUND),
+    REQUEST_TITLE_REQUIRED(31002, "Request title is required", HttpStatus.BAD_REQUEST),
+    REQUEST_TITLE_TOO_LONG(31003, "Request title must not exceed 50 characters", HttpStatus.BAD_REQUEST),
+
     // General
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),
     INVALID_KEY(1000, "Invalid message key", HttpStatus.BAD_REQUEST),
