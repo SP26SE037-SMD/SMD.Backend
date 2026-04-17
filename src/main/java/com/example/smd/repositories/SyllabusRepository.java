@@ -26,4 +26,12 @@ public interface SyllabusRepository extends JpaRepository<Syllabus, UUID> {
             @Param("departmentId") UUID departmentId,
             @Param("status") String status
     );
+
+    @Query("""
+    SELECT s FROM Syllabus s 
+    WHERE s.subject.subjectId = :subjectId 
+    AND s.status IN ('PUBLISHED', 'ARCHIVED') 
+    ORDER BY s.createdAt DESC
+    """)
+    List<Syllabus> findActiveAndArchivedSyllabus(@Param("subjectId") UUID subjectId);
 }
