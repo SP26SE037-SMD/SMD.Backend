@@ -25,6 +25,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+import static org.apache.logging.log4j.ThreadContext.isEmpty;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -136,7 +138,7 @@ public class SyllabusService {
 
         // 2. Phân quyền: Student/Lecturer chỉ được xem PUBLISHED
         if (RoleName.STUDENT.toString().equals(roleName) || RoleName.LECTURER.toString().equals(roleName)) {
-            if (!(SyllabusStatus.PUBLISHED.toString().equals(finalStatus))) {
+            if (finalStatus != null && !finalStatus.isBlank() && !SyllabusStatus.PUBLISHED.name().equals(finalStatus)) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
@@ -150,11 +152,15 @@ public class SyllabusService {
         List<Syllabus> syllabuses;
 
         // 3. Truy vấn dựa trên bộ lọc cuối cùng
-        if (finalStatus != null) {
+        if (finalStatus == null) {
             // Tìm theo Subject ID và Status (AND)
-            syllabuses = syllabusRepository.findBySubject_SubjectIdAndStatus(subjectId, finalStatus);
+            if(RoleName.STUDENT.toString().equals(roleName) || RoleName.LECTURER.toString().equals(roleName)){
+                syllabuses = syllabusRepository.findActiveAndArchivedSyllabus(subjectId);
+            } else {
+                syllabuses = syllabusRepository.findBySubject_SubjectId(subjectId);
+            }
         } else {
-            syllabuses = syllabusRepository.findBySubject_SubjectId(subjectId);
+            syllabuses = syllabusRepository.findBySubject_SubjectIdAndStatus(subjectId, finalStatus);
         }
 
         return syllabuses.stream()
