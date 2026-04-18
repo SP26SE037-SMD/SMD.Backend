@@ -12,8 +12,6 @@ import java.util.UUID;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class TaskVPRequest {
-    UUID taskId;
-    UUID accountId;
     UUID majorId;
     String taskName;
     String description;
