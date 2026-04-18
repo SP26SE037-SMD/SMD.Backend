@@ -88,11 +88,9 @@ public class TaskService {
     public TaskVPResponse createByVP(TaskVPRequest request) {
         Task task = taskMapper.toTask(request);
 
-        if (request.getAccountId() != null) {
-            Account account = accountRepository.findById(request.getAccountId())
-                    .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND));
-            task.setAccount(account);
-        }
+        Account account = accountRepository.findFirstByRole_RoleName(RoleName.HOCFDC.name())
+                .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND, "No account with role HoCFDC found"));
+        task.setAccount(account);
 
         if (request.getMajorId() != null) {
             Major major = majorRepository.findById(request.getMajorId())
@@ -280,12 +278,9 @@ public class TaskService {
 
         taskMapper.updateTaskByVP(task, request);
 
-        if (request.getAccountId() != null) {
-            Account account = accountRepository.findById(request.getAccountId())
-                    .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND));
-            task.setAccount(account);
-        }
-
+        Account account = accountRepository.findFirstByRole_RoleName(RoleName.HOCFDC.name())
+                .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND, "No account with role HoCFDC found"));
+        task.setAccount(account);
         if (request.getMajorId() != null) {
             Major major = majorRepository.findById(request.getMajorId())
                     .orElseThrow(() -> new AppException(ErrorCode.MAJOR_NOT_FOUND));

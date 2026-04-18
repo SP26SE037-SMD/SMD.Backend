@@ -77,10 +77,11 @@ public interface AccountRepository extends JpaRepository<Account, java.util.UUID
 """)
     List<AccountExportDTO> exportAccounts();
 
-    @Query("SELECT a FROM Account a " +
-            "JOIN FETCH a.role " +
+    @Query("SELECT a FROM Account a JOIN FETCH a.role " +
             "JOIN FETCH a.department "+
             "WHERE a.department.departmentId = :deptId")
     List<Account> findAllByDepartmentId(@Param("deptId") UUID deptId);
+
+    Optional<Account> findFirstByRole_RoleName(String roleName);
 
 }
