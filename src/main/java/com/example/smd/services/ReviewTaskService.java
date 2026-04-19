@@ -19,6 +19,7 @@ import com.example.smd.repositories.AccountRepository;
 import com.example.smd.repositories.AssessmentRepository;
 import com.example.smd.repositories.MaterialRepository;
 import com.example.smd.repositories.ReviewTaskRepository;
+import com.example.smd.repositories.ReviewTaskSpecification;
 import com.example.smd.repositories.SessionRepository;
 import com.example.smd.repositories.SubjectRepository;
 import com.example.smd.repositories.SyllabusRepository;
@@ -180,19 +181,8 @@ public class ReviewTaskService {
 
     public Page<ReviewTaskResponse> getAll(String search, String status, UUID taskId, UUID reviewerId,
             Pageable pageable) {
-        Page<ReviewTask> pageData;
-
-        if (search != null && !search.isBlank()) {
-            pageData = reviewTaskRepository.findByTitleTaskContainingIgnoreCase(search, pageable);
-        } else if (status != null && !status.isBlank()) {
-            pageData = reviewTaskRepository.findByStatusIgnoreCase(status, pageable);
-        } else if (taskId != null) {
-            pageData = reviewTaskRepository.findByTask_TaskId(taskId, pageable);
-        } else if (reviewerId != null) {
-            pageData = reviewTaskRepository.findByReviewer_AccountId(reviewerId, pageable);
-        } else {
-            pageData = reviewTaskRepository.findAll(pageable);
-        }
+        var spec = ReviewTaskSpecification.withFilters(search, status, taskId, reviewerId);
+        Page<ReviewTask> pageData = reviewTaskRepository.findAll(spec, pageable);
 
         return pageData.map(reviewTaskMapper::toReviewTaskResponse);
     }
