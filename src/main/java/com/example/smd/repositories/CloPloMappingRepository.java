@@ -34,4 +34,17 @@ public interface CloPloMappingRepository extends JpaRepository<CLO_PLO_Mapping, 
     @Query("DELETE FROM CLO_PLO_Mapping m WHERE m.clo.cloId = :cloId AND " +
             "m.plo.ploId = :ploId")
     int deleteByClo_CloIdAndPlo_PloId(@Param("cloId") UUID cloId, @Param("ploId") UUID ploId);
+
+    @Query("""
+        SELECT m FROM CLO_PLO_Mapping m 
+        JOIN FETCH m.clo c 
+        JOIN FETCH m.plo p 
+        WHERE c.subject.subjectId = :subjectId 
+        AND p.curriculum.curriculumId = :curriculumId
+        ORDER BY c.cloCode ASC, p.ploCode ASC
+    """)
+    List<CLO_PLO_Mapping> findMappingsWithDetails(
+            @Param("subjectId") UUID subjectId,
+            @Param("curriculumId") UUID curriculumId
+    );
 }
