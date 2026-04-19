@@ -107,10 +107,9 @@ public class MaterialService {
         material.setStatus(status.toString());
         Material savedMaterial = materialRepository.save(material);
 
-        // Nếu status mới là REVISION_REQUESTED, cập nhật tất cả Sessions liên quan
-        if (status == SyllabusStatus.REVISION_REQUESTED) {
-            sessionRepository.updateStatusByMaterialId(id, SyllabusStatus.REVISION_REQUESTED.toString());
-        }
+        // Nếu status mới , cập nhật tất cả Sessions liên quan
+        sessionRepository.updateStatusByMaterialId(id,
+                savedMaterial.getStatus());
 
         return materialMapper.toResponse(savedMaterial);
     }
