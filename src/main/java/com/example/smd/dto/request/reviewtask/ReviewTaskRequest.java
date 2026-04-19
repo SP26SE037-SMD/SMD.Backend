@@ -20,6 +20,7 @@ public class ReviewTaskRequest {
     String commentMaterial;
     String commentSession;
     String commentAssessment;
+    String comment;
     Instant reviewDate;
     Instant dueDate;
     String status;
