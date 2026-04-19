@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -34,8 +35,22 @@ public interface SessionRepository extends JpaRepository<Session, UUID>, JpaSpec
     );
 
     @Modifying
+    @Transactional
     @Query("UPDATE Session s SET s.status = :status WHERE s.syllabus.syllabusId = :syllabusId")
     int updateStatusBySyllabusId(@Param("status") String status, @Param("syllabusId") UUID syllabusId);
+
+    @Modifying
+    @Transactional
+    @Query("""
+        UPDATE Session s
+        SET s.status = :status
+        WHERE s.sessionId IN (
+            SELECT smb.session.sessionId
+            FROM Session_Material_Block smb
+            WHERE smb.material.materialId = :materialId
+        )
+    """)
+    int updateStatusByMaterialId(@Param("materialId") UUID materialId, @Param("status") String status);
 
     Page<Session> findBySyllabus_SyllabusId(UUID syllabusId, Pageable pageable);
 }
