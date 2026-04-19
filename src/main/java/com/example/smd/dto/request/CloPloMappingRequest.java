@@ -5,6 +5,8 @@ import jakarta.validation.constraints.Pattern;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.util.UUID;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -12,10 +14,10 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class CloPloMappingRequest {
     @NotNull(message = "CLO ID is required")
-    String cloId;
+    UUID cloId;
 
     @NotNull(message = "PLO ID is required")
-    String ploId;
+    UUID ploId;
 
     @Pattern(regexp = "Low|Medium|High", message = "Level must be Low, Medium, or High")
     String contributionLevel;

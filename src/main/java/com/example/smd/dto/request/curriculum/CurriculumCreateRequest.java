@@ -25,4 +25,6 @@ public class CurriculumCreateRequest {
 
     @NotNull(message = "MAJOR_ID_REQUIRED")
     String majorId;
+
+    String description;
 }

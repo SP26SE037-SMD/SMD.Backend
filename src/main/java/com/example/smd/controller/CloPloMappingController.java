@@ -1,6 +1,8 @@
 package com.example.smd.controller;
 
+import com.example.smd.dto.request.CloPloMappingBulkRequest;
 import com.example.smd.dto.request.CloPloMappingRequest;
+import com.example.smd.dto.response.clo.CloPloMappingBulkResponse;
 import com.example.smd.dto.response.clo.CloPloMappingResponse;
 import com.example.smd.dto.response.ResponseObject;
 
@@ -34,6 +36,17 @@ public class CloPloMappingController {
                 .status(1000)
                 .data(service.createMapping(request))
                 .message("Mapping created successfully")
+                .build();
+    }
+
+    @PostMapping("/bulk-configure")
+    @PreAuthorize("hasAuthority('MAPPING_CREATE')")
+    @Operation(summary = "Bulk configure CLO-PLO mappings")
+    public ResponseObject<CloPloMappingBulkResponse> bulkConfigure(@RequestBody @Valid CloPloMappingBulkRequest request) {
+        return ResponseObject.<CloPloMappingBulkResponse>builder()
+                .status(1000)
+                .data(service.bulkConfigureMappings(request))
+                .message("CLO-PLO mappings configured successfully")
                 .build();
     }
 

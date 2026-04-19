@@ -150,7 +150,6 @@ public class CurriculumService {
      */
     @Transactional
     public CurriculumResponse createCurriculum(CurriculumCreateRequest request, String accountId) {
-        log.info("Creating curriculum with code: {}", request.getCurriculumCode());
 
         //Kiểm tra Role tạo
         var account = accountService.getAccountById(accountId);
