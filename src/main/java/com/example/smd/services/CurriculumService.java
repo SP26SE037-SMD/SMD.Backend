@@ -333,7 +333,7 @@ public class CurriculumService {
         return curriculumMapper.toCurriculumResponse(updatedCurriculum);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public void delete(UUID id, String accountId) {
         //Kiểm tra Role tạo
         var account = accountService.getAccountById(accountId);
@@ -351,6 +351,5 @@ public class CurriculumService {
             curriculum.setStatus(CurriculumStatus.ARCHIVED.toString());
             curriculumRepository.save(curriculum);
         }
-
     }
 }
