@@ -323,6 +323,7 @@ public class SessionMaterialBlockService {
                 .duration(session.getDuration())
                 .material(new ArrayList<>(materialMap.values()))
                 .block(new ArrayList<>(blockMap.values()))
+                .status(session.getStatus())
                 .build();
     }
 
