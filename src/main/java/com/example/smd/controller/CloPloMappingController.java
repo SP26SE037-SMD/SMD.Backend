@@ -18,6 +18,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/clo-plo-mappings")
@@ -50,12 +51,12 @@ public class CloPloMappingController {
                 .build();
     }
 
-    @GetMapping("/subject/{subjectId}")
-    @Operation(summary = "Get all mappings for a specific Subject")
-    public ResponseObject<List<CloPloMappingResponse>> getBySubject(@PathVariable String subjectId) {
+    @GetMapping("/subject/{subjectId}/curriculum/{curriculumId}")
+    @Operation(summary = "Get all mappings for a specific Subject and Curiculum")
+    public ResponseObject<List<CloPloMappingResponse>> getBySubject(@PathVariable UUID subjectId, @PathVariable UUID curriculumId) {
         return ResponseObject.<List<CloPloMappingResponse>>builder()
                 .status(1000)
-                .data(service.getBySubject(subjectId))
+                .data(service.getFullMappingDetails(subjectId, curriculumId))
                 .message("Get subject mappings successfully")
                 .build();
     }

@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -61,6 +62,22 @@ public class CloPloMappingService {
         // 2. Truy vấn và map sang Response
         return repository.findByClo_Subject_SubjectId(UUID.fromString(subjectId))
                 .stream()
+                .map(mapper::toResponse)
+                .toList();
+    }
+
+    @Transactional
+    public List<CloPloMappingResponse> getFullMappingDetails(UUID subjectId, UUID curriculumId) {
+        // 1. Lấy dữ liệu Mapping kèm theo CLO và PLO entity
+        List<CLO_PLO_Mapping> mappings = repository
+                .findMappingsWithDetails(subjectId, curriculumId);
+
+        if (mappings.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // 2. Chuyển đổi sang Response DTO (Nơi chứa thông tin cloName, ploCode,...)
+        return mappings.stream()
                 .map(mapper::toResponse)
                 .toList();
     }

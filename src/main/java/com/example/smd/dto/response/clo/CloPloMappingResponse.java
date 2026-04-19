@@ -14,9 +14,11 @@ import java.time.Instant;
 public class CloPloMappingResponse {
     String id;
     String cloId;
-    String cloName;
+    String cloCode;
+    String cloDescription;
     String ploId;
-    String ploName;
+    String ploCode;
+    String ploDescription;
     String contributionLevel;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+7")
     Instant createdAt;
