@@ -38,8 +38,16 @@ public class Request {
     Account createdBy;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "received_by")
+    Account receivedBy;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "curriculum_id")
     Curriculum curriculum;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "task_id")
+    Task task;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "major_id")

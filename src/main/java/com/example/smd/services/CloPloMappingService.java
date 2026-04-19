@@ -1,6 +1,8 @@
 package com.example.smd.services;
 
+import com.example.smd.dto.request.CloPloMappingBulkRequest;
 import com.example.smd.dto.request.CloPloMappingRequest;
+import com.example.smd.dto.response.clo.CloPloMappingBulkResponse;
 import com.example.smd.dto.response.clo.CloPloMappingResponse;
 import com.example.smd.entities.CLO_PLO_Mapping;
 import com.example.smd.exception.AppException;
@@ -17,6 +19,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -34,14 +37,14 @@ public class CloPloMappingService {
 
     @Transactional
     public CloPloMappingResponse createMapping(CloPloMappingRequest request) {
-        if (repository.existsByClo_CloIdAndPlo_PloId(UUID.fromString(request.getCloId()), UUID.fromString(request.getPloId()))) {
+        if (repository.existsByClo_CloIdAndPlo_PloId(request.getCloId(), request.getPloId())) {
             throw new AppException(ErrorCode.MAPPING_ALREADY_EXISTS);
         }
 
         CLO_PLO_Mapping mapping = new CLO_PLO_Mapping();
-        mapping.setClo(cloRepository.findById(UUID.fromString(request.getCloId()))
+        mapping.setClo(cloRepository.findById(request.getCloId())
                 .orElseThrow(() -> new AppException(ErrorCode.CLO_NOT_FOUND)));
-        mapping.setPlo(ploRepository.findById(UUID.fromString(request.getPloId()))
+        mapping.setPlo(ploRepository.findById(request.getPloId())
                 .orElseThrow(() -> new AppException(ErrorCode.PLO_NOT_FOUND)));
         mapping.setContributionLevel(request.getContributionLevel());
 
@@ -101,5 +104,57 @@ public class CloPloMappingService {
     @Transactional
     public void deleteMapping(String id) {
         repository.deleteById(UUID.fromString(id));
+    }
+
+    @Transactional
+    public CloPloMappingBulkResponse bulkConfigureMappings(CloPloMappingBulkRequest request) {
+        List<String> warnings = new ArrayList<>();
+        int deletedCount = 0;
+        int addedCount = 0;
+
+        if (request.getDeletedMappings() != null) {
+            for (CloPloMappingRequest item : request.getDeletedMappings()) {
+                int affectedRows = repository.deleteByClo_CloIdAndPlo_PloId(item.getCloId(), item.getPloId());
+                if (affectedRows > 0) {
+                    deletedCount += affectedRows;
+                } else {
+                    warnings.add("Mapping not found for delete: cloId=" + item.getCloId() + ", ploId=" + item.getPloId());
+                }
+            }
+        }
+
+        if (request.getAddedMappings() != null) {
+            for (CloPloMappingRequest item : request.getAddedMappings()) {
+
+                if (repository.existsByClo_CloIdAndPlo_PloId(item.getCloId(), item.getPloId())) {
+                    warnings.add("Mapping already exists: cloId=" + item.getCloId() + ", ploId=" + item.getPloId());
+                    continue;
+                }
+
+                CLO_PLO_Mapping mapping = new CLO_PLO_Mapping();
+                mapping.setClo(cloRepository.findById(item.getCloId())
+                        .orElseThrow(() -> new AppException(ErrorCode.CLO_NOT_FOUND)));
+                mapping.setPlo(ploRepository.findById(item.getPloId())
+                        .orElseThrow(() -> new AppException(ErrorCode.PLO_NOT_FOUND)));
+                mapping.setContributionLevel(item.getContributionLevel());
+
+                repository.save(mapping);
+                addedCount++;
+            }
+        }
+
+        return CloPloMappingBulkResponse.builder()
+                .deletedCount(deletedCount)
+                .addedCount(addedCount)
+                .warnings(warnings.isEmpty() ? null : warnings)
+                .build();
+    }
+
+    private UUID parseUuid(String value) {
+        try {
+            return UUID.fromString(value);
+        } catch (IllegalArgumentException | NullPointerException e) {
+            throw new AppException(ErrorCode.INVALID_KEY);
+        }
     }
 }

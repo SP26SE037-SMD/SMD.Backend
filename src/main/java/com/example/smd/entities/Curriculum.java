@@ -33,6 +33,9 @@ public class Curriculum {
     @Column(length = 20)
     String status; // Có thể dùng Enum nếu muốn
 
+    @Column(name = "description", columnDefinition = "TEXT")
+    String description;
+
     @OneToMany(mappedBy = "curriculum", fetch = FetchType.LAZY)
     private List<Curriculum_Group_Subject> curriculumGroupSubjects;
 

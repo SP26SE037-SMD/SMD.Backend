@@ -26,6 +26,8 @@ public class CurriculumResponse {
 
     String status;
 
+    String description;
+
     // Thông tin Major (nested object)
     MajorInfo major;
 
