@@ -23,6 +23,7 @@ public class ReviewTaskResponse {
     String commentSession;
     String commentAssessment;
     Boolean isAccepted;
+    String comment;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+7")
     Instant reviewDate;
