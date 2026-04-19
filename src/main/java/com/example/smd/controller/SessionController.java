@@ -25,7 +25,7 @@ import java.util.UUID;
 @RequestMapping("/api/sessions")
 @RequiredArgsConstructor
 @SecurityRequirement(name = "bearerAuth")
-public class SessionController {
+public class  SessionController {
 
     private final SessionService sessionService;
 
