@@ -13,6 +13,7 @@ import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.MaterialMapper;
 import com.example.smd.repositories.MaterialRepository;
+import com.example.smd.repositories.SessionRepository;
 import com.example.smd.repositories.SyllabusRepository;
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
@@ -30,6 +31,7 @@ import java.util.UUID;
 public class MaterialService {
     MaterialRepository materialRepository;
     SyllabusRepository syllabusRepository;
+    SessionRepository sessionRepository;
     AccountService accountService;
     MaterialMapper materialMapper;
 
@@ -103,7 +105,14 @@ public class MaterialService {
         }
 
         material.setStatus(status.toString());
-        return materialMapper.toResponse(materialRepository.save(material));
+        Material savedMaterial = materialRepository.save(material);
+
+        // Nếu status mới là REVISION_REQUESTED, cập nhật tất cả Sessions liên quan
+        if (status == SyllabusStatus.REVISION_REQUESTED) {
+            sessionRepository.updateStatusByMaterialId(id, SyllabusStatus.REVISION_REQUESTED.toString());
+        }
+
+        return materialMapper.toResponse(savedMaterial);
     }
 
     // 4. Delete

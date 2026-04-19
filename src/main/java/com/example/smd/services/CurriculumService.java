@@ -351,6 +351,5 @@ public class CurriculumService {
             curriculum.setStatus(CurriculumStatus.ARCHIVED.toString());
             curriculumRepository.save(curriculum);
         }
-
     }
 }

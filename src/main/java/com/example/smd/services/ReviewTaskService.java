@@ -75,8 +75,8 @@ public class ReviewTaskService {
         reviewTask.setTask(task);
         reviewTask.setReviewer(reviewer);
 
-        if (reviewTask.getReviewDate() == null) {
-            reviewTask.setReviewDate(Instant.now());
+        if (reviewTask.getDueDate() == null) {
+            reviewTask.setDueDate(Instant.now());
         }
         if (reviewTask.getStatus() == null || reviewTask.getStatus().isBlank()) {
             reviewTask.setStatus(ReviewStatus.PENDING.name());
