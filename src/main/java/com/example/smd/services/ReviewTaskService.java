@@ -1,5 +1,6 @@
 package com.example.smd.services;
 
+import com.example.smd.dto.request.reviewtask.ReviewTaskAcceptanceRequest;
 import com.example.smd.dto.request.reviewtask.ReviewTaskCreateHoCFDC;
 import com.example.smd.dto.request.reviewtask.ReviewTaskCreateRequest;
 import com.example.smd.dto.request.reviewtask.ReviewTaskRequest;
@@ -240,11 +241,14 @@ public class ReviewTaskService {
     }
 
     @Transactional
-    public ReviewTaskResponse updateAcceptance(UUID id, Boolean isAccepted) {
+    public ReviewTaskResponse updateAcceptance(UUID id,
+                                               ReviewTaskAcceptanceRequest request) {
         ReviewTask reviewTask = reviewTaskRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.REVIEW_TASK_NOT_FOUND));
-
-        reviewTask.setIsAccepted(isAccepted);
+        reviewTask.setIsAccepted(request.getIsAccepted());
+        if(request.getComment() != null) {
+            reviewTask.setComment(request.getComment());
+        }
         reviewTask = reviewTaskRepository.save(reviewTask);
 
         // Trigger cascading updates based on acceptance status and current status
@@ -253,13 +257,13 @@ public class ReviewTaskService {
             Syllabus syllabus = task.getSyllabus();
             String reviewTaskStatus = reviewTask.getStatus();
 
-            if (isAccepted && ReviewStatus.REVISION_REQUESTED.name().equals(reviewTaskStatus)) {
+            if (request.getIsAccepted() && ReviewStatus.REVISION_REQUESTED.name().equals(reviewTaskStatus)) {
                 //True
                 // Syllabus → REVISION_REQUESTED
                 syllabus.setStatus(SyllabusStatus.REVISION_REQUESTED.name());
                 syllabusRepository.save(syllabus);
 
-            } else if (isAccepted && ReviewStatus.APPROVED.name().equals(reviewTaskStatus)) {
+            } else if (request.getIsAccepted() && ReviewStatus.APPROVED.name().equals(reviewTaskStatus)) {
                 //True
                 // Syllabus → APPROVED
                 // Subject → PENDING_REVIEW
@@ -274,7 +278,7 @@ public class ReviewTaskService {
 
                 task.setStatus(TaskStatus.DONE.name());
                 taskRepository.save(task);
-            } else if (!isAccepted && ReviewStatus.REVISION_REQUESTED.name().equals(reviewTaskStatus)) {
+            } else if (!request.getIsAccepted() && ReviewStatus.REVISION_REQUESTED.name().equals(reviewTaskStatus)) {
                 //False
                 //Review Task → APPROVED
                 // Syllabus → APPROVED
@@ -295,7 +299,7 @@ public class ReviewTaskService {
 
                 task.setStatus(TaskStatus.DONE.name());
                 taskRepository.save(task);
-            } else if (!isAccepted && ReviewStatus.APPROVED.name().equals(reviewTaskStatus)) {
+            } else if (!request.getIsAccepted() && ReviewStatus.APPROVED.name().equals(reviewTaskStatus)) {
                 //False
                 //Review Task → REVISION_REQUESTED
                 // Syllabus → REVISION_REQUESTED

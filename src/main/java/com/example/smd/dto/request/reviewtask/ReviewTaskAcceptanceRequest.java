@@ -16,4 +16,5 @@ import lombok.experimental.FieldDefaults;
 public class ReviewTaskAcceptanceRequest {
     @NotNull(message = "IS_ACCEPTED_REQUIRED")
     Boolean isAccepted;
+    String comment;
 }
