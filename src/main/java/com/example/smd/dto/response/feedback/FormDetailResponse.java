@@ -15,6 +15,7 @@ public class FormDetailResponse {
     String id;
     String googleFormId;
     String formUrl;
+    String formEditUrl;
     Boolean isActive;
     Instant closeAt;
     List<SectionResponse> sections;

@@ -15,6 +15,7 @@ public class FormRecordResponse {
     String curriculumId;
     String googleFormId;
     String formUrl;
+    String formEditUrl;
     String formType;
     Boolean isActive;
     Instant createdAt;
