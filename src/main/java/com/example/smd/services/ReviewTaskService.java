@@ -88,7 +88,9 @@ public class ReviewTaskService {
         return reviewTaskMapper.toReviewTaskResponse(reviewTask);
     }
 
-    private void applyHoCFDCCascadeStatuses(Task task, Boolean isAccepted) {
+    private void applyHoCFDCCascadeStatuses(Task task,
+                                            Boolean isAccepted,
+                                            Boolean isAffectedSyllabus) {
         if (task == null) {
             return;
         }
@@ -103,38 +105,47 @@ public class ReviewTaskService {
             return;
         }
 
-        task.setStatus(TaskStatus.IN_PROGRESS.name());
-        taskRepository.save(task);
 
-        if (syllabus == null) {
-            return;
+
+        if (isAffectedSyllabus) {
+
+            task.setStatus(TaskStatus.TO_DO.name());
+            task.setAccount(null);
+            taskRepository.save(task);
+
+            if (syllabus == null) {
+                return;
+            }
+
+            if (syllabus.getSubject() != null) {
+                syllabus.getSubject().setStatus(SubjectStatus.WAITING_SYLLABUS.name());
+                subjectRepository.save(syllabus.getSubject());
+            }
+
+                syllabus.setStatus(SyllabusStatus.DRAFT.name());
+                syllabusRepository.save(syllabus);
+
+                materialRepository.findBySyllabus_SyllabusId(syllabus.getSyllabusId())
+                        .forEach(m -> {
+                            m.setStatus(SyllabusStatus.DRAFT.name());
+                            materialRepository.save(m);
+                        });
+
+                sessionRepository.findBySyllabus_SyllabusId(syllabus.getSyllabusId())
+                        .forEach(s -> {
+                            s.setStatus(SyllabusStatus.DRAFT.name());
+                            sessionRepository.save(s);
+                        });
+
+                assessmentRepository.findBySyllabus_SyllabusId(syllabus.getSyllabusId())
+                        .forEach(a -> {
+                            a.setStatus(SyllabusStatus.DRAFT.name());
+                            assessmentRepository.save(a);
+                        });
+        }else{
+            task.setStatus(TaskStatus.IN_PROGRESS.name());
+            taskRepository.save(task);
         }
-
-        if (syllabus.getSubject() != null) {
-            syllabus.getSubject().setStatus(SubjectStatus.WAITING_SYLLABUS.name());
-            subjectRepository.save(syllabus.getSubject());
-        }
-
-        syllabus.setStatus(SyllabusStatus.REVISION_REQUESTED.name());
-        syllabusRepository.save(syllabus);
-
-        materialRepository.findBySyllabus_SyllabusId(syllabus.getSyllabusId())
-                .forEach(m -> {
-                    m.setStatus(SyllabusStatus.REVISION_REQUESTED.name());
-                    materialRepository.save(m);
-                });
-
-        sessionRepository.findBySyllabus_SyllabusId(syllabus.getSyllabusId())
-                .forEach(s -> {
-                    s.setStatus(SyllabusStatus.REVISION_REQUESTED.name());
-                    sessionRepository.save(s);
-                });
-
-        assessmentRepository.findBySyllabus_SyllabusId(syllabus.getSyllabusId())
-                .forEach(a -> {
-                    a.setStatus(SyllabusStatus.REVISION_REQUESTED.name());
-                    assessmentRepository.save(a);
-                });
     }
 
     @Transactional
@@ -175,7 +186,8 @@ public class ReviewTaskService {
 
         reviewTask = reviewTaskRepository.save(reviewTask);
 
-        applyHoCFDCCascadeStatuses(reviewTask.getTask(), reviewTask.getIsAccepted());
+        applyHoCFDCCascadeStatuses(reviewTask.getTask(),
+                reviewTask.getIsAccepted(), request.getIsAffectedSyllabus());
 
         return reviewTaskMapper.toReviewTaskResponse(reviewTask);
     }

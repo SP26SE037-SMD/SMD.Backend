@@ -59,7 +59,7 @@ public class Subject {
     Integer minToPass;
 
     @Column(name = "is_approved")
-    Boolean isApproved = false;
+    Boolean isApproved;
 
     @Column(name = "status")
     String status;
