@@ -134,7 +134,7 @@ public class ReviewTaskController {
             @RequestBody @Valid ReviewTaskAcceptanceRequest request
     ) {
         return ResponseObject.<ReviewTaskResponse>builder()
-                .data(reviewTaskService.updateAcceptance(id, request.getIsAccepted()))
+                .data(reviewTaskService.updateAcceptance(id, request))
                 .message("Review task acceptance updated successfully with cascading status changes")
                 .build();
     }
