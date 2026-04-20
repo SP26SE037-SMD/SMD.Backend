@@ -21,4 +21,5 @@ public class ReviewTaskCreateHoCFDC {
     UUID taskId;
     UUID reviewerId;
     Boolean isAccepted;
+    Boolean isAffectedSyllabus;
 }
