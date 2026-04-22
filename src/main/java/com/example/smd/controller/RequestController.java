@@ -88,9 +88,9 @@ public class RequestController {
 
     @PatchMapping("/{id}/status")
     @Operation(summary = "Update request status")
-    public ResponseObject<RequestResponse> updateStatus(@PathVariable UUID id, @RequestParam String status) {
+    public ResponseObject<RequestResponse> updateStatus(@PathVariable UUID id, @RequestParam String status, @RequestParam String comment) {
         return ResponseObject.<RequestResponse>builder()
-                .data(requestService.updateStatus(id, status))
+                .data(requestService.updateStatus(id, status, comment))
                 .message("Request status updated successfully")
                 .build();
     }
