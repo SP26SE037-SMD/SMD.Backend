@@ -18,6 +18,7 @@ public interface RequestMapper {
     @Mapping(target = "updatedAt", ignore = true)
     Request toRequest(RequestRequest request);
 
+    @Mapping(target = "createdBy", source = "createdBy.accountId")
     RequestResponse toRequestResponse(Request request);
 
     @Mapping(target = "requestId", ignore = true)

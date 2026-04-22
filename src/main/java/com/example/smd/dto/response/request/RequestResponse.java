@@ -22,7 +22,7 @@ public class RequestResponse {
     String comment;
     String status;
 
-    AccountResponse createdBy;
+    UUID createdBy;
     CurriculumResponse curriculum;
     MajorResponse major;
 
