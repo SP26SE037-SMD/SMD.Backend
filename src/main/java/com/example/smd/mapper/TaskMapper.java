@@ -36,6 +36,7 @@ public interface TaskMapper {
     @Mapping(target = "syllabus.syllabusName", source = "syllabus.syllabusName")
     @Mapping(target = "subjectId", source = "subject.subjectId")
     @Mapping(target = "subjectStatus", source = "subject.status")
+    @Mapping(target = "majorId", source = "major.majorId")
     TaskListResponse toTaskListResponse(Task task);
 
     @Mapping(target = "taskId", ignore = true)

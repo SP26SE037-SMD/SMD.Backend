@@ -23,6 +23,7 @@ public class TaskListResponse {
     TaskSyllabusResponse syllabus;
     UUID subjectId;
     String subjectStatus;
+    UUID majorId;
     String taskName;
     String description;
     String status;
