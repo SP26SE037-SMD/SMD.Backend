@@ -98,9 +98,10 @@ public class RequestService {
     }
 
     @Transactional
-    public RequestResponse updateStatus(UUID id, String status) {
+    public RequestResponse updateStatus(UUID id, String status, String comment) {
         Request request = requestRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.REQUEST_NOT_FOUND));
+        request.setComment(comment);
         request.setStatus(status);
         request = requestRepository.save(request);
         return requestMapper.toRequestResponse(request);
