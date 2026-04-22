@@ -2,7 +2,9 @@ package com.example.smd.services;
 
 import com.example.smd.dto.request.request.RequestRequest;
 import com.example.smd.dto.response.request.RequestResponse;
+import com.example.smd.entities.Curriculum;
 import com.example.smd.entities.Request;
+import com.example.smd.enums.CurriculumStatus;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.RequestMapper;
@@ -104,6 +106,15 @@ public class RequestService {
         request.setComment(comment);
         request.setStatus(status);
         request = requestRepository.save(request);
+
+        Curriculum curriculum = curriculumRepository.findById(request.getCurriculum().getCurriculumId())
+                .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));
+        if("REJECTED".equalsIgnoreCase(status)) {
+            curriculum.setStatus(CurriculumStatus.DRAFT.toString());
+        } else if("APPROVED".equalsIgnoreCase(status)){
+            curriculum.setStatus(CurriculumStatus.STRUCTURE_APPROVED.toString());
+        }
+        curriculumRepository.save(curriculum);
         return requestMapper.toRequestResponse(request);
     }
 }
