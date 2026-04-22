@@ -98,7 +98,11 @@ public class SecurityConfig {
                 "http://localhost:8082/",
                 "http://localhost:5173",
                 "http://localhost:3001",
-                "http://43.207.156.116"));
+                "http://43.207.156.116",
+                "https://smd-syllabus-ebon.vercel.app",
+                "https://smdview.vercel.app"
+        ));
+
         // corsConfiguration.addAllowedOriginPattern("*"); // mở rộng cho tất cả các
         // port localhost
         corsConfiguration.setAllowCredentials(true);
