@@ -28,7 +28,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                         "http://localhost:8082",
                         "http://43.207.156.116",
                         "https://smd-syllabus-ebon.vercel.app",
-                        "https://smdview.vercel.app"
+                        "https://smdview.vercel.app",
+                        "https://syllabus.io.vn"
                 )
                 .withSockJS();
 
