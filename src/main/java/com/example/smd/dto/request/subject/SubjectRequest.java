@@ -1,5 +1,6 @@
 package com.example.smd.dto.request.subject;
 
+import jakarta.persistence.Column;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -28,4 +29,8 @@ public class SubjectRequest {
     Integer minToPass;
     String tool;
     UUID departmentId;
+
+    Integer theoryPeriods; // Số tiết lý thuyết (a)
+    Integer practicalPeriods; // Số tiết thực hành/thảo luận (b)
+    Integer selfStudyPeriods; // Số tiết tự học (c)
 }

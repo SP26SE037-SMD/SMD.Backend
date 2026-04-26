@@ -10,6 +10,8 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.AccessLevel;
 
+import java.util.UUID;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -24,9 +26,9 @@ public class RegulationRequest {
     @NotBlank(message = "REGULATION_NAME_REQUIRED")
     @Size(max = 100, message = "REGULATION_NAME_INVALID")
     String name;
-
-    String description;
-
     @NotNull(message = "REGULATION_VALUE_REQUIRED")
-    Integer value;
+    String value;
+
+    @NotNull(message = "MAJOR_ID_REQUIRED")
+    UUID majorId;
 }

@@ -30,6 +30,15 @@ public class Subject {
     @Column(nullable = false)
     Integer credits;
 
+    @Column(name = "theory_periods")
+    Integer theoryPeriods; // Số tiết lý thuyết (a)
+
+    @Column(name = "practical_periods")
+    Integer practicalPeriods; // Số tiết thực hành/thảo luận (b)
+
+    @Column(name = "self_study_periods")
+    Integer selfStudyPeriods; // Số tiết tự học (c)
+
     @Column(name = "degree_level", length = 20)
     String degreeLevel;
 

@@ -27,11 +27,12 @@ public class Regulation {
     @Column(name = "name_regulation", length = 100)
     String name;
 
-    @Column(name = "description", columnDefinition = "TEXT")
-    String description;
+    @Column(name = "value", columnDefinition = "TEXT")
+    String value; 
 
-    @Column(name = "value")
-    Integer value;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "major_id", nullable = false)
+    Major major;
 
     @Column(name = "created_at")
     Instant createdAt;

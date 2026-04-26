@@ -17,7 +17,6 @@ public class RegulationMapper {
                 .regulationId(entity.getRegulationId())
                 .code(entity.getCode())
                 .name(entity.getName())
-                .description(entity.getDescription())
                 .value(entity.getValue())
                 .createdAt(entity.getCreatedAt())
                 .build();
@@ -31,7 +30,6 @@ public class RegulationMapper {
         return Regulation.builder()
                 .code(request.getCode())
                 .name(request.getName())
-                .description(request.getDescription())
                 .value(request.getValue())
                 .build();
     }
@@ -43,7 +41,6 @@ public class RegulationMapper {
         if (request.getName() != null) {
             entity.setName(request.getName());
         }
-        entity.setDescription(request.getDescription());
         if (request.getValue() != null) {
             entity.setValue(request.getValue());
         }

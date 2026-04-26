@@ -2,10 +2,13 @@ package com.example.smd.services;
 
 import com.example.smd.dto.request.RegulationRequest;
 import com.example.smd.dto.response.RegulationResponse;
+import com.example.smd.entities.Major;
 import com.example.smd.entities.Regulation;
+import com.example.smd.entities.Subject;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.RegulationMapper;
+import com.example.smd.repositories.MajorRepository;
 import com.example.smd.repositories.RegulationRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -26,6 +29,7 @@ public class RegulationService {
 
     private final RegulationRepository regulationRepository;
     private final RegulationMapper regulationMapper;
+    private final MajorRepository majorRepository;
 
     @Transactional(readOnly = true)
     public Page<RegulationResponse> getAll(String search, int page, int size, String[] sort) {
@@ -70,7 +74,11 @@ public class RegulationService {
             throw new AppException(ErrorCode.INVALID_KEY, "Regulation code already exists");
         }
 
+        Major major = majorRepository.findById(request.getMajorId())
+                .orElseThrow(() -> new AppException(ErrorCode.MAJOR_NOT_FOUND));
+
         Regulation regulation = regulationMapper.toEntity(request);
+        regulation.setMajor(major);
         regulation = regulationRepository.save(regulation);
         return regulationMapper.toResponse(regulation);
     }
