@@ -1,7 +1,10 @@
 spring:
   application:
     name: SMD
-
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
   # ==========================================
   # DATABASE CONFIGURATION
   # ==========================================
@@ -99,6 +102,10 @@ gemini:
     url: https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent
   vector-embedding:
     url: https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent
+  upload-file:
+    url: https://generativelanguage.googleapis.com/upload/v1beta/files
+  analyze-pdf:
+    url: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent
 
 app:
   webhook:

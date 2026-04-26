@@ -137,7 +137,9 @@ public class BlockService {
                 .build();
 
         Blocks savedBlock = blockRepository.save(newBlock);
-
+        if (savedBlock.getContentText() != null && !savedBlock.getContentText().isBlank()) {
+            embeddingService.createEmbedding(savedBlock.getContentText(), savedBlock);
+        }
         return blockMapper.toResponse(savedBlock);
     }
 

@@ -6,19 +6,28 @@ import com.example.smd.dto.request.clo.CloCheckRequest;
 import com.example.smd.dto.request.clo.CloGenerationRequest;
 import com.example.smd.dto.response.ComparisonResult;
 import com.example.smd.dto.response.ImpactResponse;
+import com.example.smd.dto.response.ProgramRegulationResponse;
 import com.example.smd.dto.response.clo.CLOsGenerationResponse;
 import com.example.smd.dto.response.clo.CloCheckResponse;
 import com.example.smd.dto.response.syllabus.SyllabusStructureResponse;
 import com.example.smd.entities.Vector_Embeddings;
+import com.example.smd.enums.PromptKey;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Arrays;
 import java.util.List;
@@ -29,6 +38,9 @@ public class GeminiService {
 
     @Autowired
     private GeminiConfig gemini;
+
+    @Autowired
+    private PromptTemplateService promptTemplateService;
 
     @Autowired
     private AccountService accountService;
@@ -45,6 +57,17 @@ public class GeminiService {
     @Value("${gemini.vector-embedding.url}")
     private String apiEmbeddingUrl;
 
+    @Value("${gemini.upload-file.url}")
+    private String apiUploadFileUrl;
+
+    @Value("${gemini.analyze-pdf.url}")
+    private String apiAnalyzePdfUrl;
+
+    private final RestTemplate restTemplate = new RestTemplate();
+
+    /**
+     * Dùng AI để generate ra CLO
+     */
     public CLOsGenerationResponse generateClo(CloGenerationRequest req, String accountId) {
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
@@ -53,7 +76,7 @@ public class GeminiService {
         }
 
         // 1. Ghép dữ liệu vào Prompt bằng hàm format đã chuẩn bị
-        String finalPrompt = String.format(PromptTemplateService.CLO_GENERATOR,
+        String finalPrompt = String.format(promptTemplateService.get(PromptKey.CLO_GENERATOR),
                 req.getSubjectName(),
                 req.getTopicName(),
                 req.getBloomLevel(),
@@ -78,6 +101,9 @@ public class GeminiService {
         }
     }
 
+    /**
+     * Dùng AI để Check ra CLO
+     */
     public CloCheckResponse checkClo(CloCheckRequest req, String accountId) {
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
@@ -87,7 +113,7 @@ public class GeminiService {
 
         // 1. Tạo Prompt từ Template
         // Trong GeminiService.java
-        String prompt = String.format(PromptTemplateService.VALIDATOR_PROMPT,
+        String prompt = String.format(promptTemplateService.get(PromptKey.VALIDATOR_PROMPT),
                 req.getTargetLevel(),  // (1)
                 req.getTargetLevel(),  // (2)
                 req.getCloName(),      // (3)
@@ -127,6 +153,9 @@ public class GeminiService {
                 .trim();
     }
 
+    /**
+     * Phân ra các khối block bằng model-embedding
+     */
     @Transactional
     public List<Double> getEmbeddingVector(String text) {
         try {
@@ -137,6 +166,9 @@ public class GeminiService {
         }
     }
 
+    /**
+     * So sánh điểm khác biệt giữa 2 syllabus
+     */
     @Transactional
     public ComparisonResult compareSyllabus(SyllabusStructureResponse oldStruct, SyllabusStructureResponse newStruct) {
         try {
@@ -145,7 +177,7 @@ public class GeminiService {
             String newJson = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(newStruct);
 
             // 3. Tạo Prompt
-            String prompt = String.format(PromptTemplateService.COMPARISON_PROMPT,
+            String prompt = String.format(promptTemplateService.get(PromptKey.COMPARISON_PROMPT),
                     oldJson,
                     newJson);
 
@@ -161,11 +193,59 @@ public class GeminiService {
         }
     }
 
+    /**
+     * Phân tích sự ảnh hưởng từ nội dung bị lược bỏ với môn ảnh hưởng
+     */
     public String determineImapact(String gapConcept, String contextText){
-        String prompt = String.format(PromptTemplateService.DETERMINE_IMPACT,
+        String prompt = String.format(promptTemplateService.get(PromptKey.DETERMINE_IMPACT),
                 gapConcept,
                 contextText);
         return gemini.prompt(prompt, apiGenerateUrl);
+    }
+
+    /**
+     * Upload file PDF lên Google Cloud và lấy file_uri
+     */
+    public ProgramRegulationResponse extractMasterDataFromPdf(MultipartFile file, String accountId) {
+        // 0. Phân quyền (Tùy chọn theo logic của bạn)
+        var account = accountService.getAccountById(accountId);
+        String roleName = account.getRole().getRoleName();
+
+        if (!"HOCFDC".equals(roleName)) { // Hoặc role Admin
+            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+        }
+
+        // 1. Upload File lên Google Cloud lấy file_uri
+        String fileUri = gemini.uploadFile(file, apiUploadFileUrl); // gemini chính là GeminiConfig
+        if (fileUri == null) {
+            throw new AppException(ErrorCode.FILE_UPLOAD_FAILED); // Tạo thêm ErrorCode tương ứng
+        }
+
+        // 2. Chuẩn bị Prompt và gọi AI
+        String finalPrompt = promptTemplateService.get(PromptKey.MASTER_DATA_EXTRACTOR_PROMPT);
+        String mimeType = file.getContentType() != null ? file.getContentType() : "application/pdf";
+
+        // Gọi hàm prompt hỗ trợ file
+        String response = gemini.promptWithFile(finalPrompt, fileUri, mimeType, apiGenerateUrl);
+
+        // Nếu API trả về chuỗi báo lỗi do Exception catch ở config
+        if (response.startsWith("Lỗi gọi") || response.startsWith("Không có phản hồi")) {
+            log.error("AI Generation failed. Message: {}", response);
+            throw new AppException(ErrorCode.AI_GENERATION_FAILED);
+        }
+
+        // 3. Xử lý Parse JSON
+        try {
+            // Làm sạch chuỗi JSON (xóa các dấu ```json nếu có)
+            String cleanJson = response.replaceAll("(?s)```json(.*?)```|```", "$1").trim();
+
+            // Parse trực tiếp sang Object DTO (Ví dụ class chứa danh sách Môn học, Tín chỉ, PLOs)
+            return objectMapper.readValue(cleanJson, ProgramRegulationResponse.class);
+
+        } catch (JsonProcessingException e) {
+            log.error("Failed to parse Gemini response for Master Data: {}", response);
+            throw new AppException(ErrorCode.AI_GENERATION_FAILED);
+        }
     }
 
     private String cleanJsonBlock(String response) {
