@@ -2,24 +2,25 @@ package com.example.smd.controller;
 
 import com.example.smd.dto.request.RegulationRequest;
 import com.example.smd.dto.response.PagedResponse;
+import com.example.smd.dto.response.ProgramRegulationResponse;
 import com.example.smd.dto.response.RegulationResponse;
 import com.example.smd.dto.response.ResponseObject;
+import com.example.smd.exception.AppException;
+import com.example.smd.exception.ErrorCode;
+import com.example.smd.services.GeminiService;
 import com.example.smd.services.RegulationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.UUID;
 
@@ -31,6 +32,7 @@ import java.util.UUID;
 public class RegulationController {
 
     private final RegulationService regulationService;
+    private final GeminiService geminiService;
 
     @GetMapping
     @Operation(summary = "Get all regulations with pagination")
@@ -91,5 +93,26 @@ public class RegulationController {
                 .data(regulationService.delete(id))
                 .message("Delete regulation successfully")
                 .build();
+    }
+
+    @PostMapping(value = "/extract", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ProgramRegulationResponse> extractMasterDataFromPdf(
+            @RequestParam("file") MultipartFile file,
+            @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
+        // 1. Validate file đầu vào (Basic)
+        if (file.isEmpty()) {
+            throw new AppException(ErrorCode.FILE_UPLOAD_FAILED, "File tải lên không được để trống.");
+        }
+
+//        if (file.getContentType() == null || !file.getContentType().equals("application/pdf")) {
+//            throw new AppException(ErrorCode.INVALID_FILE_FORMAT, "Hệ thống chỉ hỗ trợ định dạng PDF.");
+//        }
+
+        // 2. Gọi Service xử lý luồng AI (Upload -> Prompt -> Parse JSON)
+        ProgramRegulationResponse response = geminiService.extractMasterDataFromPdf(file, userId);
+
+        // 3. Trả về kết quả cho Frontend
+        return ResponseEntity.ok(response);
     }
 }
