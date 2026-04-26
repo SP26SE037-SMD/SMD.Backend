@@ -90,11 +90,11 @@ public class SessionMaterialBlockService {
 
         List<String> warnings = new ArrayList<>();
         if (session == null) {
-            sessionRegulationValidationService.validateDurationByRegulation(
-                request.getSyllabusId(),
-                request.getDuration(),
-                null
-            );
+//            sessionRegulationValidationService.validateDurationByRegulation(
+//                request.getSyllabusId(),
+//                request.getDuration(),
+//                null
+//            );
 
             session = Session.builder()
                     .syllabus(syllabus)
@@ -220,11 +220,11 @@ public class SessionMaterialBlockService {
             throw new AppException(ErrorCode.SESSION_NUMBER_EXISTS);
         }
 
-        sessionRegulationValidationService.validateDurationByRegulation(
-            syllabusId,
-            request.getDuration(),
-            session.getSessionId()
-        );
+//        sessionRegulationValidationService.validateDurationByRegulation(
+//            syllabusId,
+//            request.getDuration(),
+//            session.getSessionId()
+//        );
 
         session.setSessionNumber(request.getSessionNumber());
         session.setSessionTitle(request.getSessionTitle());

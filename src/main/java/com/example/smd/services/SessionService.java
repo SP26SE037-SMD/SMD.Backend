@@ -156,11 +156,11 @@ public class SessionService {
             throw new AppException(ErrorCode.SESSION_NUMBER_EXISTS);
         }
 
-        sessionRegulationValidationService.validateDurationByRegulation(
-            request.getSyllabusId(),
-            request.getDuration(),
-            null
-        );
+//        sessionRegulationValidationService.validateDurationByRegulation(
+//            request.getSyllabusId(),
+//            request.getDuration(),
+//            null
+//        );
 
         Session session = sessionMapper.toEntity(request);
         session.setSyllabus(syllabus);
@@ -193,11 +193,11 @@ public class SessionService {
             throw new AppException(ErrorCode.SESSION_NUMBER_EXISTS);
         }
 
-        sessionRegulationValidationService.validateDurationByRegulation(
-            request.getSyllabusId(),
-            request.getDuration(),
-            sessionId
-        );
+//        sessionRegulationValidationService.validateDurationByRegulation(
+//            request.getSyllabusId(),
+//            request.getDuration(),
+//            sessionId
+//        );
 
         session.setSyllabus(syllabus);
         sessionMapper.updateEntity(session, request);

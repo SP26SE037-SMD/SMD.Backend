@@ -28,6 +28,10 @@ public class SubjectResponse {
     Integer minToPass;
     Integer minBloomLevel;
 
+    Integer theoryPeriods; // Số tiết lý thuyết (a)
+    Integer practicalPeriods; // Số tiết thực hành/thảo luận (b)
+    Integer selfStudyPeriods; // Số tiết tự học (c)
+
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+7")
     Instant approvedDate; // Dùng Instant để đồng bộ với Entity
 

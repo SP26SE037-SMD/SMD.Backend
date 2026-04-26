@@ -20,9 +20,8 @@ public class RegulationResponse {
     UUID regulationId;
     String code;
     String name;
-    String description;
-    Integer value;
-
+    String value;
+    
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+7")
     Instant createdAt;
 }

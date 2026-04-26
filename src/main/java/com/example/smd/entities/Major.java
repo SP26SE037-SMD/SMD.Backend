@@ -42,6 +42,9 @@ public class Major {
     @OneToMany(mappedBy = "major", fetch = FetchType.LAZY)
     List<Curriculum> curriculums;
 
+    @OneToMany(mappedBy = "major", fetch = FetchType.LAZY)
+    List<Regulation> regulations;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = Instant.now();
