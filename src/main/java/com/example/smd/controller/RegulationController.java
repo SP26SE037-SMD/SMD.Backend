@@ -1,10 +1,7 @@
 package com.example.smd.controller;
 
 import com.example.smd.dto.request.RegulationRequest;
-import com.example.smd.dto.response.PagedResponse;
-import com.example.smd.dto.response.ProgramRegulationResponse;
-import com.example.smd.dto.response.RegulationResponse;
-import com.example.smd.dto.response.ResponseObject;
+import com.example.smd.dto.response.*;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.services.GeminiService;
@@ -32,19 +29,19 @@ import java.util.UUID;
 public class RegulationController {
 
     private final RegulationService regulationService;
-    private final GeminiService geminiService;
 
-    @GetMapping
+    @GetMapping("/major/{majorId}")
     @Operation(summary = "Get all regulations with pagination")
     public ResponseObject<PagedResponse<RegulationResponse>> getAll(
             @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "createdAt,desc") String[] sort
+            @RequestParam(defaultValue = "createdAt,desc") String[] sort,
+            @PathVariable UUID majorId
     ) {
         return ResponseObject.<PagedResponse<RegulationResponse>>builder()
                 .status(1000)
-                .data(PagedResponse.of(regulationService.getAll(search, page, size, sort)))
+                .data(PagedResponse.of(regulationService.getAll(search, page, size, sort, majorId)))
                 .message("Get regulations successfully")
                 .build();
     }
@@ -96,7 +93,7 @@ public class RegulationController {
     }
 
     @PostMapping(value = "/extract", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ProgramRegulationResponse> extractMasterDataFromPdf(
+    public ResponseEntity<MajorResponse> extractMasterDataFromPdf(
             @RequestParam("file") MultipartFile file,
             @AuthenticationPrincipal Jwt jwt) {
         String userId = jwt.getClaimAsString("accountId");
@@ -105,12 +102,8 @@ public class RegulationController {
             throw new AppException(ErrorCode.FILE_UPLOAD_FAILED, "File tải lên không được để trống.");
         }
 
-//        if (file.getContentType() == null || !file.getContentType().equals("application/pdf")) {
-//            throw new AppException(ErrorCode.INVALID_FILE_FORMAT, "Hệ thống chỉ hỗ trợ định dạng PDF.");
-//        }
-
         // 2. Gọi Service xử lý luồng AI (Upload -> Prompt -> Parse JSON)
-        ProgramRegulationResponse response = geminiService.extractMasterDataFromPdf(file, userId);
+        var response = regulationService.importMajorAndAddRegulation(file, userId);
 
         // 3. Trả về kết quả cho Frontend
         return ResponseEntity.ok(response);

@@ -25,7 +25,10 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -68,6 +71,11 @@ public class GeminiService {
     /**
      * Dùng AI để generate ra CLO
      */
+    @Retryable(
+            retryFor = { HttpServerErrorException.class },
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 2000) // Thử lại sau 2 giây, tối đa 3 lần
+    )
     public CLOsGenerationResponse generateClo(CloGenerationRequest req, String accountId) {
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
@@ -104,6 +112,11 @@ public class GeminiService {
     /**
      * Dùng AI để Check ra CLO
      */
+    @Retryable(
+            retryFor = { HttpServerErrorException.class },
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 2000) // Thử lại sau 2 giây, tối đa 3 lần
+    )
     public CloCheckResponse checkClo(CloCheckRequest req, String accountId) {
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
@@ -156,6 +169,11 @@ public class GeminiService {
     /**
      * Phân ra các khối block bằng model-embedding
      */
+    @Retryable(
+            retryFor = { HttpServerErrorException.class },
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 2000) // Thử lại sau 2 giây, tối đa 3 lần
+    )
     @Transactional
     public List<Double> getEmbeddingVector(String text) {
         try {
@@ -170,6 +188,11 @@ public class GeminiService {
      * So sánh điểm khác biệt giữa 2 syllabus
      */
     @Transactional
+    @Retryable(
+            retryFor = { HttpServerErrorException.class },
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 2000) // Thử lại sau 2 giây, tối đa 3 lần
+    )
     public ComparisonResult compareSyllabus(SyllabusStructureResponse oldStruct, SyllabusStructureResponse newStruct) {
         try {
             // 2. Convert sang JSON String để nhét vào Prompt
@@ -196,6 +219,11 @@ public class GeminiService {
     /**
      * Phân tích sự ảnh hưởng từ nội dung bị lược bỏ với môn ảnh hưởng
      */
+    @Retryable(
+            retryFor = { HttpServerErrorException.class },
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 2000) // Thử lại sau 2 giây, tối đa 3 lần
+    )
     public String determineImapact(String gapConcept, String contextText){
         String prompt = String.format(promptTemplateService.get(PromptKey.DETERMINE_IMPACT),
                 gapConcept,
@@ -206,6 +234,11 @@ public class GeminiService {
     /**
      * Upload file PDF lên Google Cloud và lấy file_uri
      */
+    @Retryable(
+            retryFor = { HttpServerErrorException.class },
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 2000) // Thử lại sau 2 giây, tối đa 3 lần
+    )
     public ProgramRegulationResponse extractMasterDataFromPdf(MultipartFile file, String accountId) {
         // 0. Phân quyền (Tùy chọn theo logic của bạn)
         var account = accountService.getAccountById(accountId);
@@ -213,6 +246,10 @@ public class GeminiService {
 
         if (!"HOCFDC".equals(roleName)) { // Hoặc role Admin
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+        }
+
+        if (file.getContentType() == null || !file.getContentType().equals("application/pdf")) {
+            throw new AppException(ErrorCode.INVALID_FILE_FORMAT);
         }
 
         // 1. Upload File lên Google Cloud lấy file_uri

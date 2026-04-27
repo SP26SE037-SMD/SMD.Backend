@@ -77,6 +77,7 @@ public enum ErrorCode {
     AI_QUOTA_EXCEEDED(9005, "AI API rate limit exceeded", HttpStatus.TOO_MANY_REQUESTS),
     EMBEDDING_FAILED(9006, "Vector embedding generation failed", HttpStatus.UNPROCESSABLE_ENTITY),
     FILE_UPLOAD_FAILED(9007, "Error uploading file to Google Cloud. Please try again later!", HttpStatus.INTERNAL_SERVER_ERROR),
+    INVALID_FILE_FORMAT(9008, "Format PDF supports only system" ,HttpStatus.INTERNAL_SERVER_ERROR),
 
     // Elective
     ELECTIVE_CODE_REQUIRED(11001, "Elective code cannot be blank", HttpStatus.BAD_REQUEST),

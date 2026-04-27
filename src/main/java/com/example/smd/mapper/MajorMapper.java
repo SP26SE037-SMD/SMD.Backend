@@ -4,6 +4,7 @@ import com.example.smd.dto.request.MajorRequest;
 import com.example.smd.dto.response.MajorResponse;
 import com.example.smd.entities.Major;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface MajorMapper {
@@ -11,5 +12,6 @@ public interface MajorMapper {
     Major toMajor(MajorRequest majorRequest);
 
     // Chuyển đổi từ Entity Major sang DTO MajorResponse
+    @Mapping(target = "regulations", ignore = true)
     MajorResponse toMajorResponse(Major major);
 }
