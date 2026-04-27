@@ -19,6 +19,9 @@ public class ProgramRegulationResponse {
     @JsonProperty("major_name")
     private String majorName;
 
+    @JsonProperty("major_description")
+    private String majorDescription;
+
     @JsonProperty("training_level")
     private String trainingLevel;
 

@@ -5,6 +5,7 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.time.Instant;
+import java.util.List;
 
 @Data // Tự động tạo Getter, Setter, toString...
 @Builder
@@ -21,4 +22,5 @@ public class MajorResponse {
     Instant createdAt;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+7")
     Instant updatedAt;
+    List<RegulationResponse> regulations;
 }
