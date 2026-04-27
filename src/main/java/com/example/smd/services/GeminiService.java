@@ -5,6 +5,7 @@ import com.example.smd.dto.request.BlockRequest;
 import com.example.smd.dto.request.clo.CloCheckRequest;
 import com.example.smd.dto.request.clo.CloGenerationRequest;
 import com.example.smd.dto.response.ComparisonResult;
+import com.example.smd.dto.response.ComplianceCheckResponse;
 import com.example.smd.dto.response.ImpactResponse;
 import com.example.smd.dto.response.ProgramRegulationResponse;
 import com.example.smd.dto.response.clo.CLOsGenerationResponse;
@@ -34,6 +35,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -73,7 +75,7 @@ public class GeminiService {
      */
     @Retryable(
             retryFor = { HttpServerErrorException.class },
-            maxAttempts = 3,
+            maxAttempts = 10,
             backoff = @Backoff(delay = 2000) // Thử lại sau 2 giây, tối đa 3 lần
     )
     public CLOsGenerationResponse generateClo(CloGenerationRequest req, String accountId) {
@@ -114,7 +116,7 @@ public class GeminiService {
      */
     @Retryable(
             retryFor = { HttpServerErrorException.class },
-            maxAttempts = 3,
+            maxAttempts = 10,
             backoff = @Backoff(delay = 2000) // Thử lại sau 2 giây, tối đa 3 lần
     )
     public CloCheckResponse checkClo(CloCheckRequest req, String accountId) {
@@ -281,6 +283,48 @@ public class GeminiService {
 
         } catch (JsonProcessingException e) {
             log.error("Failed to parse Gemini response for Master Data: {}", response);
+            throw new AppException(ErrorCode.AI_GENERATION_FAILED);
+        }
+    }
+
+    /*
+    * Validate PO simularity và regulation rule
+     */
+    @Retryable(
+            retryFor = { HttpServerErrorException.class },
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 2000) // Thử lại sau 2 giây, tối đa 3 lần
+    )
+    public ComplianceCheckResponse checkPoPloCompliance(String masterRule, String userList) {
+        // 1. Lấy ĐÚNG Template dành cho việc Check Compliance
+        String template = promptTemplateService.get(PromptKey.PO_PLO_COMPLIANCE_CHECKER_PROMPT);
+
+        // 2. Dùng replace để an toàn với ký tự đặc biệt (%)
+        String prompt = template.replace("{masterRule}", masterRule)
+                .replace("{userList}", userList);
+
+        // 3. Gọi AI
+        String response = gemini.prompt(prompt, apiGenerateUrl);
+
+        if (response == null || response.isBlank()) {
+            throw new AppException(ErrorCode.AI_GENERATION_FAILED);
+        }
+
+        try {
+            // 4. Cách làm sạch JSON "lỳ đòn" nhất: Tìm cặp dấu { } ngoài cùng
+            int start = response.indexOf("{");
+            int end = response.lastIndexOf("}");
+            if (start == -1 || end == -1) {
+                log.error("AI không trả về JSON hợp lệ: {}", response);
+                throw new AppException(ErrorCode.AI_GENERATION_FAILED);
+            }
+            String cleanJson = response.substring(start, end + 1);
+
+            // 5. Parse dữ liệu
+            return objectMapper.readValue(cleanJson, ComplianceCheckResponse.class);
+
+        } catch (JsonProcessingException e) {
+            log.error("Failed to parse Gemini response: {}", response);
             throw new AppException(ErrorCode.AI_GENERATION_FAILED);
         }
     }

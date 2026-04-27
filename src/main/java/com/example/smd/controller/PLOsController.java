@@ -2,6 +2,7 @@ package com.example.smd.controller;
 
 import com.example.smd.dto.request.plo.PLOsCreateRequest;
 import com.example.smd.dto.request.plo.PLOsRequest;
+import com.example.smd.dto.response.ComplianceCheckResponse;
 import com.example.smd.dto.response.PLOsResponse;
 import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.ResponseObject;
@@ -19,6 +20,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/plos")
@@ -118,6 +120,18 @@ public class PLOsController {
         return ResponseObject.<PLOsResponse>builder()
                 .status(1000)
                 .message("Cập nhật trạng thái PLO thành công")
+                .build();
+    }
+
+    @PostMapping(value = "/curriculum/{curriculumId}/validate-plo")
+    public ResponseObject<ComplianceCheckResponse> validatePlo(
+            @PathVariable("curriculumId") UUID curriculumId
+    ) {
+        var response = ploService.validatePloCheck(curriculumId);
+        return ResponseObject.<ComplianceCheckResponse>builder()
+                .status(1000)
+                .data(response)
+                .message("POs status validate successfully for Major: " + curriculumId)
                 .build();
     }
 }

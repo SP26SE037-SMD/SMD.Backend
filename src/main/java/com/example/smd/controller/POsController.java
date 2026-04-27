@@ -2,9 +2,9 @@ package com.example.smd.controller;
 
 import com.example.smd.dto.request.po.POsCreateRequest;
 import com.example.smd.dto.request.po.POsRequest;
-import com.example.smd.dto.response.POsResponse;
-import com.example.smd.dto.response.PagedResponse;
-import com.example.smd.dto.response.ResponseObject;
+import com.example.smd.dto.response.*;
+import com.example.smd.exception.AppException;
+import com.example.smd.exception.ErrorCode;
 import com.example.smd.services.POsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -13,12 +13,16 @@ import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/pos")
@@ -121,6 +125,18 @@ public class POsController {
         return ResponseObject.<Void>builder()
                 .status(1000)
                 .message("POs status updated successfully for Major: " + majorId)
+                .build();
+    }
+
+    @PostMapping(value = "/major/{majorId}/validate-po")
+    public ResponseObject<ComplianceCheckResponse> validatePo(
+            @PathVariable("majorId") UUID majorId
+    ) {
+        var response = poService.validatePoCheck(majorId);
+        return ResponseObject.<ComplianceCheckResponse>builder()
+                .status(1000)
+                .data(response)
+                .message("POs status validate successfully for Major: " + majorId)
                 .build();
     }
 }

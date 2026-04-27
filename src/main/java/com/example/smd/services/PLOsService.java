@@ -2,9 +2,12 @@ package com.example.smd.services;
 
 import com.example.smd.dto.request.plo.PLOsCreateRequest;
 import com.example.smd.dto.request.plo.PLOsRequest;
+import com.example.smd.dto.response.ComplianceCheckResponse;
 import com.example.smd.dto.response.PLOsResponse;
 import com.example.smd.entities.Curriculum;
 import com.example.smd.entities.PLOs;
+import com.example.smd.entities.PO;
+import com.example.smd.entities.Regulation;
 import com.example.smd.enums.PloStatus;
 import com.example.smd.enums.RoleName;
 import com.example.smd.exception.AppException;
@@ -12,6 +15,7 @@ import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.PLOsMapper;
 import com.example.smd.repositories.CurriculumRepository;
 import com.example.smd.repositories.PLOsRepository;
+import com.example.smd.repositories.RegulationRepository;
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +28,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -33,7 +38,9 @@ public class PLOsService {
     AccountService accountService;
     PLOsRepository plOsRepository;
     CurriculumRepository curriculumRepository;
+    RegulationRepository regulationRepository;
     PLOsMapper plOsMapper;
+    GeminiService geminiService;
 
     @Transactional
     public List<PLOsResponse> createBulkPlos(String curriculumId, List<PLOsCreateRequest> requests, String accountId) {
@@ -225,5 +232,21 @@ public class PLOsService {
         if (affectedRows == 0) {
             throw new AppException(ErrorCode.PLO_NOT_FOUND);
         }
+    }
+
+    public ComplianceCheckResponse validatePloCheck(UUID curriculumId) {
+        Curriculum curriculum = curriculumRepository.findById(curriculumId)
+                .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));
+
+        List<PLOs> poList = plOsRepository.findByCurriculum_CurriculumId(curriculumId);
+        String userPoList = poList.stream()
+                .map(plo -> plo.getPloCode() + ": " + plo.getDescription())
+                .collect(Collectors.joining("\n"));
+
+        // 2. Lấy Master Rule từ Regulation
+        Regulation regulation = regulationRepository.findByCodeAndMajor_MajorId("PO_PLO_RULE", curriculum.getMajor().getMajorId())
+                .orElseThrow(() -> new AppException(ErrorCode.REGULATION_NOT_FOUND));
+
+        return geminiService.checkPoPloCompliance(regulation.getValue(), userPoList);
     }
 }

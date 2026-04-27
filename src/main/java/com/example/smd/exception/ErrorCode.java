@@ -288,11 +288,16 @@ public enum ErrorCode {
     REQUEST_TITLE_REQUIRED(31002, "Request title is required", HttpStatus.BAD_REQUEST),
     REQUEST_TITLE_TOO_LONG(31003, "Request title must not exceed 50 characters", HttpStatus.BAD_REQUEST),
 
+    //REGULATION
+    REGULATION_NOT_FOUND(32001, "Regulation not found", HttpStatus.NOT_FOUND),
+
     // General
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),
     INVALID_KEY(1000, "Invalid message key", HttpStatus.BAD_REQUEST),
     ACCESS_DENIED_FOR_ROLE(8888, "Your role does not have permission to view this content", HttpStatus.FORBIDDEN),
     ;
+
+
 
     private final int code;
     private final String message;
