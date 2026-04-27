@@ -93,7 +93,7 @@ public class RegulationController {
     }
 
     @PostMapping(value = "/extract", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<MajorResponse> extractMasterDataFromPdf(
+    public ResponseObject<MajorResponse> extractMasterDataFromPdf(
             @RequestParam("file") MultipartFile file,
             @AuthenticationPrincipal Jwt jwt) {
         String userId = jwt.getClaimAsString("accountId");
@@ -106,6 +106,10 @@ public class RegulationController {
         var response = regulationService.importMajorAndAddRegulation(file, userId);
 
         // 3. Trả về kết quả cho Frontend
-        return ResponseEntity.ok(response);
+        return ResponseObject.<MajorResponse>builder()
+                .status(1000)
+                .data(response)
+                .message("Create major and import rule successfully")
+                .build();
     }
 }

@@ -1,6 +1,7 @@
 package com.example.smd.repositories;
 
 import com.example.smd.entities.PLOs;
+import com.example.smd.entities.PO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -34,4 +35,6 @@ public interface PLOsRepository extends JpaRepository<PLOs, UUID> {
 
     // Lấy PLO của Curriculum theo Status (Dành cho Student/Lecturer)
     Page<PLOs> findByCurriculum_CurriculumIdAndStatus(UUID curriculumId, String status, Pageable pageable);
+
+    List<PLOs> findByCurriculum_CurriculumId(UUID curriculumId);
 }

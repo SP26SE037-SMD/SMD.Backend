@@ -15,4 +15,6 @@ public interface RegulationRepository extends JpaRepository<Regulation, UUID>, J
     boolean existsByCode(String code);
 
     boolean existsByCodeAndRegulationIdNot(String code, UUID regulationId);
+
+    Optional<Regulation> findByCodeAndMajor_MajorId(String code, UUID majorId);
 }

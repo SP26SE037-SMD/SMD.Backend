@@ -2,9 +2,11 @@ package com.example.smd.services;
 
 import com.example.smd.dto.request.po.POsCreateRequest;
 import com.example.smd.dto.request.po.POsRequest;
+import com.example.smd.dto.response.ComplianceCheckResponse;
 import com.example.smd.dto.response.POsResponse;
 import com.example.smd.entities.Major;
 import com.example.smd.entities.PO;
+import com.example.smd.entities.Regulation;
 import com.example.smd.enums.RoleName;
 import com.example.smd.mapper.POsMapper;
 import com.example.smd.enums.PloStatus;
@@ -12,6 +14,7 @@ import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.repositories.MajorRepository;
 import com.example.smd.repositories.POsRepository;
+import com.example.smd.repositories.RegulationRepository;
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +27,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -34,6 +38,8 @@ public class POsService {
     POsRepository poRepository;
     MajorRepository majorRepository;
     POsMapper poMapper;
+    RegulationRepository regulationRepository;
+    GeminiService geminiService;
 
     @Transactional
     public List<POsResponse> createBulkPos(String majorId, List<POsCreateRequest> requests, String accountId) {
@@ -48,7 +54,7 @@ public class POsService {
         // Kiểm tra Role tạo
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (!RoleName.VP.toString().equals(roleName)) {
+        if (!RoleName.HOCFDC.toString().equals(roleName)) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
@@ -207,5 +213,23 @@ public class POsService {
         if (affectedRows == 0) {
             throw new AppException(ErrorCode.PO_NOT_FOUND);
         }
+    }
+
+    public ComplianceCheckResponse validatePoCheck(UUID majorId) {
+        if (!majorRepository.existsById(majorId)) {
+            throw new AppException(ErrorCode.MAJOR_NOT_FOUND);
+        }
+
+        List<PO> poList = poRepository.findByMajor_MajorId(majorId);
+
+        String userPoList = poList.stream()
+                .map(po -> po.getPoCode() + ": " + po.getDescription())
+                .collect(Collectors.joining("\n"));
+
+        // 2. Lấy Master Rule từ Regulation
+        Regulation regulation = regulationRepository.findByCodeAndMajor_MajorId("PO_PLO_RULE", majorId)
+                .orElseThrow(() -> new AppException(ErrorCode.REGULATION_NOT_FOUND));
+        return geminiService.checkPoPloCompliance(regulation.getValue(), userPoList);
+
     }
 }
