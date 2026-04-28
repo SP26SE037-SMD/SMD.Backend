@@ -99,14 +99,14 @@ public class SessionMaterialBlockController {
                 .build();
     }
 
-    @PostMapping("/subject/{subjectId}/validate")
+    @PostMapping("/syllabus/{syllabusId}/validate")
     @Operation(summary = "Get session-material-block detail by sessionId")
     public ResponseObject<SessionValidationResult> validateSession(
             @RequestBody List<SessionMaterialBlockBulkRequest> inputs,
-            @PathVariable("subjectId") UUID subjectId) {
+            @PathVariable("syllabusId") UUID syllabusId) {
         return ResponseObject.<SessionValidationResult>builder()
                 .status(1000)
-                .data(sessionMaterialBlockService.validate(inputs, subjectId))
+                .data(sessionMaterialBlockService.validate(inputs, syllabusId))
                 .message("Validate session-material-block successfully")
                 .build();
     }

@@ -95,7 +95,7 @@ public class RegulationController {
     @PostMapping(value = "/extract", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseObject<MajorResponse> extractMasterDataFromPdf(
             @RequestParam("file") MultipartFile file,
-            @AuthenticationPrincipal Jwt jwt) {
+            @AuthenticationPrincipal Jwt jwt) throws InterruptedException {
         String userId = jwt.getClaimAsString("accountId");
         // 1. Validate file đầu vào (Basic)
         if (file.isEmpty()) {

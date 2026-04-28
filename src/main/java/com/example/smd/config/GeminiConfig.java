@@ -22,10 +22,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.http.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 @Slf4j
 @Component
@@ -161,6 +158,24 @@ public class GeminiConfig {
             return "Lỗi gọi Gemini: " + e.getMessage();
         }
         return "Không có phản hồi từ Gemini";
+    }
+
+    public String getFileState(String fileUri) {
+        // fileUri có dạng: https://generativelanguage.googleapis.com/v1beta/files/abc123
+        // Ta cần đính kèm API Key vào URL để GET
+        String urlWithKey = fileUri + "?key=" + apiKey;
+
+        try {
+            // Gọi GET tới Google
+            Map<String, Object> response = restTemplate.getForObject(urlWithKey, Map.class);
+
+            if (response != null && response.containsKey("state")) {
+                return response.get("state").toString(); // Trả về: "PROCESSING", "ACTIVE", hoặc "FAILED"
+            }
+        } catch (Exception e) {
+            log.error("Lỗi khi kiểm tra trạng thái file: {}", e.getMessage());
+        }
+        return "UNKNOWN";
     }
 
     // =========================================================
