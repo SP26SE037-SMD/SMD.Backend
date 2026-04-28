@@ -5,6 +5,7 @@ import com.example.smd.dto.response.MajorResponse;
 import com.example.smd.dto.response.PLOsResponse;
 import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.ResponseObject;
+import com.example.smd.dto.response.major.ImportMajorResponse;
 import com.example.smd.entities.Major;
 import com.example.smd.services.MajorService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -19,11 +20,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.UUID;
 
@@ -178,6 +181,35 @@ public class MajorController {
                 .status(1000)
                 .data(majorService.updateStatus(id, newStatus))
                 .message("Cập nhật trạng thái Major thành công")
+                .build();
+    }
+
+    @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+//    @PreAuthorize("hasAuthority('MAJOR_CREATE')")
+    @Operation(
+            summary = "Import Majors from Excel",
+            description = "Import Major records (with POs) from an Excel file.\n\n" +
+                    "**Sheet name:** `Major`\n\n" +
+                    "**Column headers (row 1):**\n" +
+                    "| Column | Required | Description |\n" +
+                    "| :--- | :--- | :--- |\n" +
+                    "| **Major Code** | Yes | Unique code for the major (e.g. SE, AI) |\n" +
+                    "| **Name** | Yes | Full name of the major |\n" +
+                    "| **Description** | No | Description of the major |\n" +
+                    "| **PO Code** | Yes | Unique PO code (e.g. PO1, PO2). Each row represents one PO. |\n" +
+                    "| **PO Description** | No | Description of the PO |\n\n" +
+                    "**Notes:**\n" +
+                    "- One Major can have multiple POs — repeat the Major Code on each row.\n" +
+                    "- If a Major Code already exists in the system, all rows for that Major will be rejected.\n" +
+                    "- PO Code must be globally unique across all Majors."
+    )
+    public ResponseObject<ImportMajorResponse> importMajors(
+            @RequestParam("file") MultipartFile file
+    ) {
+        return ResponseObject.<ImportMajorResponse>builder()
+                .status(1000)
+                .data(majorService.importMajors(file))
+                .message("Import majors completed")
                 .build();
     }
 }

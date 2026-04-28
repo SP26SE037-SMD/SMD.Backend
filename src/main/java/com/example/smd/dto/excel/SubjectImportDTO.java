@@ -10,39 +10,39 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class SubjectImportDTO {
 
-    @ExcelColumn(name = "subjectCode", order = 0, required = true)
+    @ExcelColumn(name = "Subject Code", order = 0, required = true)
     String subjectCode;
 
-    @ExcelColumn(name = "subjectName", order = 1, required = true)
+    @ExcelColumn(name = "Subject Name", order = 1, required = true)
     String subjectName;
 
-    @ExcelColumn(name = "credits", order = 2, required = true)
-    String credits;
-
-    @ExcelColumn(name = "degreeLevel", order = 3)
-    String degreeLevel;
-
-    @ExcelColumn(name = "timeAllocation", order = 4)
-    String timeAllocation;
-
-    @ExcelColumn(name = "description", order = 5)
+    @ExcelColumn(name = "Description", order = 2)
     String description;
 
-    @ExcelColumn(name = "departmentCode", order = 6, required = true)
+    @ExcelColumn(name = "Department Code", order = 3, required = true)
     String departmentCode;
 
-    @ExcelColumn(name = "mintopass", order = 7)
+    @ExcelColumn(name = "Credits", order = 4, required = true)
+    String credits;
+
+    @ExcelColumn(name = "Degree Level", order = 5)
+    String degreeLevel;
+
+    @ExcelColumn(name = "Time Allocation", order = 6)
+    String timeAllocation;
+
+    @ExcelColumn(name = "Min To Pass", order = 7)
     String minToPass;
 
-    @ExcelColumn(name = "studentLimit", order = 8)
+    @ExcelColumn(name = "Student Limit", order = 8)
     String studentLimit;
 
-    @ExcelColumn(name = "studentTasks", order = 9)
+    @ExcelColumn(name = "Student Tasks", order = 9)
     String studentTasks;
 
-    @ExcelColumn(name = "scoringScale", order = 10)
+    @ExcelColumn(name = "Scoring Scale", order = 10)
     String scoringScale;
 
-    @ExcelColumn(name = "minBloomLevel", order = 11)
+    @ExcelColumn(name = "Min Bloom Level", order = 11)
     String minBloomLevel;
 }

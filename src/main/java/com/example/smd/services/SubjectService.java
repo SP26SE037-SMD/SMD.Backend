@@ -22,6 +22,9 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -410,12 +413,23 @@ public class SubjectService {
 
     @Transactional
     public ImportSubjectResponse importSubjects(MultipartFile file) {
+        try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
+            Sheet sheet = workbook.getSheet("Subject");
+            if (sheet == null) sheet = workbook.getSheetAt(0); // fallback
+            return importSubjectFromSheet(sheet);
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION, "Import subjects failed: " + e.getMessage());
+        }
+    }
+
+    @Transactional
+    public ImportSubjectResponse importSubjectFromSheet(Sheet sheet) {
         List<ImportSubjectResult> details = new ArrayList<>();
         List<Subject> subjectsToSave = new ArrayList<>();
         Set<String> subjectCodesInFile = new HashSet<>();
 
         try {
-            List<SubjectImportDTO> rows = ExcelImporter.importFromExcel(file, SubjectImportDTO.class);
+            List<SubjectImportDTO> rows = ExcelImporter.importFromSheet(sheet, SubjectImportDTO.class);
 
             for (SubjectImportDTO row : rows) {
                 String subjectCode = trim(row.getSubjectCode());

@@ -1,17 +1,27 @@
 package com.example.smd.services;
 
+import com.example.smd.dto.excel.CurriculumImportDTO;
 import com.example.smd.dto.request.curriculum.CurriculumCreateRequest;
 import com.example.smd.dto.response.CurriculumResponse;
 import com.example.smd.dto.response.CurriculumShortResponse;
+import com.example.smd.dto.response.curriculum.ImportCurriculumResponse;
+import com.example.smd.dto.response.curriculum.ImportCurriculumResult;
 import com.example.smd.entities.Curriculum;
 import com.example.smd.entities.Major;
-import com.example.smd.entities.Subject;
+import com.example.smd.entities.PLOs;
+import com.example.smd.entities.PO;
+import com.example.smd.entities.PO_PLO_Mapping;
 import com.example.smd.enums.*;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.CurriculumMapper;
 import com.example.smd.repositories.CurriculumRepository;
 import com.example.smd.repositories.MajorRepository;
+import com.example.smd.repositories.PLOsRepository;
+import com.example.smd.repositories.POsRepository;
+import com.example.smd.repositories.PoPloMappingRepository;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -22,8 +32,14 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 @Slf4j
@@ -36,6 +52,9 @@ public class CurriculumService {
     MajorRepository majorRepository;
     CurriculumMapper curriculumMapper;
     AccountService accountService;
+    PLOsRepository plOsRepository;
+    POsRepository poRepository;
+    PoPloMappingRepository poPloMappingRepository;
 
     /**
      * Lấy danh sách curriculum với phân trang và bộ lọc
@@ -351,5 +370,238 @@ public class CurriculumService {
             curriculum.setStatus(CurriculumStatus.ARCHIVED.toString());
             curriculumRepository.save(curriculum);
         }
+    }
+
+    /**
+     * Import Curriculum + PLOs từ Excel.
+     * Mỗi dòng gồm: Curriculum Code, Name, Start Year, Description, Major Code, PLO Code, PLO Description.
+     * Một Curriculum có thể có nhiều dòng (nhiều PLO). Curriculum Code dùng để nhóm các PLO.
+     * Validate:
+     *   - Curriculum Code đã tồn tại trong DB → báo lỗi, skip toàn bộ dòng có Curriculum Code đó.
+     *   - PLO Code phải duy nhất (global) → validate trong file và trong DB.
+     */
+    @Transactional
+    public ImportCurriculumResponse importCurriculums(MultipartFile file) {
+        try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
+            Sheet sheet = workbook.getSheet("Curriculum");
+            if (sheet == null) sheet = workbook.getSheetAt(0); // fallback
+            return importCurriculumFromSheet(sheet);
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION, "Import curriculum failed: " + e.getMessage());
+        }
+    }
+
+    @Transactional
+    public ImportCurriculumResponse importCurriculumFromSheet(Sheet sheet) {
+        List<ImportCurriculumResult> details = new ArrayList<>();
+        DataFormatter formatter = new DataFormatter();
+        UUID parsedCurriculumId = null;
+
+        try {
+            int curCodeCol = -1, curNameCol = -1, curYearCol = -1, curDescCol = -1, majorCodeCol = -1;
+            int ploCodeCol = -1, ploDescCol = -1, poMappingCol = -1;
+            
+            String parsedCurCode = null;
+            String parsedCurName = null;
+            Integer parsedStartYear = null;
+            String parsedCurDesc = null;
+            String parsedMajorCode = null;
+            
+            // Temporary class to hold PLO data
+            class PLORowData {
+                String ploCode;
+                String ploDesc;
+                List<PO> mappedPOs = new ArrayList<>();
+            }
+            
+            List<PLORowData> ploList = new ArrayList<>();
+            Set<String> ploCodesInFile = new HashSet<>();
+
+            int state = 0; // 0 = find cur header, 1 = read cur data, 2 = find plo header, 3 = read plo data
+
+            for (int i = 0; i <= sheet.getLastRowNum(); i++) {
+                Row row = sheet.getRow(i);
+                if (row == null) continue;
+
+                if (state == 0) { // find curriculum header
+                    for (int c = 0; c < row.getLastCellNum(); c++) {
+                        String cellVal = getCellValue(row, c, formatter);
+                        if (cellVal.equalsIgnoreCase("Curriculum Code")) curCodeCol = c;
+                        else if (cellVal.equalsIgnoreCase("Name") || cellVal.equalsIgnoreCase("Curriculum Name")) curNameCol = c;
+                        else if (cellVal.equalsIgnoreCase("Start Year")) curYearCol = c;
+                        else if (cellVal.equalsIgnoreCase("Description")) curDescCol = c;
+                        else if (cellVal.equalsIgnoreCase("Major Code")) majorCodeCol = c;
+                    }
+                    if (curCodeCol != -1 && majorCodeCol != -1) {
+                        state = 1;
+                    }
+                } else if (state == 1) { // read curriculum data
+                    String code = getCellValue(row, curCodeCol, formatter);
+                    if (code != null && !code.isEmpty()) {
+                        parsedCurCode = code;
+                        parsedCurName = curNameCol != -1 ? getCellValue(row, curNameCol, formatter) : null;
+                        parsedMajorCode = majorCodeCol != -1 ? getCellValue(row, majorCodeCol, formatter) : null;
+                        parsedCurDesc = curDescCol != -1 ? getCellValue(row, curDescCol, formatter) : null;
+                        
+                        if (curYearCol != -1) {
+                            String yearRaw = getCellValue(row, curYearCol, formatter);
+                            try { parsedStartYear = Integer.parseInt(yearRaw); } catch (Exception ignored) {}
+                        }
+                        state = 2;
+                    }
+                } else if (state == 2) { // find plo header
+                    for (int c = 0; c < row.getLastCellNum(); c++) {
+                        String cellVal = getCellValue(row, c, formatter);
+                        if (cellVal.equalsIgnoreCase("PLO Code")) ploCodeCol = c;
+                        else if (cellVal.equalsIgnoreCase("Description") || cellVal.equalsIgnoreCase("PLO Description")) ploDescCol = c;
+                        else if (cellVal.equalsIgnoreCase("PO Code Mapping")) poMappingCol = c;
+                    }
+                    if (ploCodeCol != -1) {
+                        state = 3;
+                    }
+                } else if (state == 3) { // read plo data
+                    String ploCode = getCellValue(row, ploCodeCol, formatter);
+                    if (ploCode != null && !ploCode.isEmpty()) {
+                        String ploDesc = ploDescCol != -1 ? getCellValue(row, ploDescCol, formatter) : null;
+                        String poMappingRaw = poMappingCol != -1 ? getCellValue(row, poMappingCol, formatter) : "";
+                        
+                        if (!ploCodesInFile.add(ploCode.toUpperCase())) {
+                            details.add(ImportCurriculumResult.builder()
+                                    .curriculumCode(parsedCurCode)
+                                    .ploCode(ploCode)
+                                    .status("FAILED")
+                                    .message("Duplicate PLO code in file: " + ploCode)
+                                    .build());
+                            continue;
+                        }
+                        
+                        PLORowData ploData = new PLORowData();
+                        ploData.ploCode = ploCode;
+                        ploData.ploDesc = ploDesc;
+                        
+                        boolean poMappingOk = true;
+                        if (!poMappingRaw.isEmpty()) {
+                            String[] poCodesArray = poMappingRaw.split(",");
+                            for (String pc : poCodesArray) {
+                                String cleanPoCode = pc.trim();
+                                if (cleanPoCode.isEmpty()) continue;
+                                // validate PO Code exists within the current Major
+                                java.util.Optional<PO> foundPO = poRepository.findByPoCodeAndMajor_MajorCode(cleanPoCode, parsedMajorCode);
+                                if (foundPO.isEmpty()) {
+                                    poMappingOk = false;
+                                    details.add(ImportCurriculumResult.builder()
+                                            .curriculumCode(parsedCurCode)
+                                            .ploCode(ploCode)
+                                            .status("FAILED")
+                                            .message("PO Code for mapping not found in DB: " + cleanPoCode)
+                                            .build());
+                                    break;
+                                } else {
+                                    ploData.mappedPOs.add(foundPO.get());
+                                }
+                            }
+                        }
+                        
+                        if (poMappingOk) {
+                            ploList.add(ploData);
+                            details.add(ImportCurriculumResult.builder()
+                                    .curriculumCode(parsedCurCode)
+                                    .ploCode(ploCode)
+                                    .status("SUCCESS")
+                                    .message("Will be created")
+                                    .build());
+                        }
+                    }
+                }
+            }
+
+            if (parsedCurCode == null) {
+                details.add(ImportCurriculumResult.builder()
+                        .status("FAILED")
+                        .message("Curriculum Data not found in sheet")
+                        .build());
+            } else if (curriculumRepository.existsByCurriculumCode(parsedCurCode)) {
+                details.add(ImportCurriculumResult.builder()
+                        .curriculumCode(parsedCurCode)
+                        .status("FAILED")
+                        .message("Curriculum code already exists: " + parsedCurCode)
+                        .build());
+            } else if (parsedMajorCode == null || !majorRepository.existsByMajorCode(parsedMajorCode)) {
+                details.add(ImportCurriculumResult.builder()
+                        .curriculumCode(parsedCurCode)
+                        .status("FAILED")
+                        .message("Major code not found or missing: " + parsedMajorCode)
+                        .build());
+            } else {
+                // Determine if all PLOs are valid
+                boolean hasErrors = details.stream().anyMatch(d -> "FAILED".equals(d.getStatus()));
+                if (!hasErrors) {
+                    Major major = majorRepository.findByMajorCode(parsedMajorCode).orElseThrow();
+                    
+                    Curriculum curriculum = Curriculum.builder()
+                            .curriculumCode(parsedCurCode)
+                            .curriculumName(parsedCurName)
+                            .description(parsedCurDesc)
+                            .startYear(parsedStartYear)
+                            .major(major)
+                            .status(CurriculumStatus.DRAFT.toString())
+                            .build();
+                    Curriculum savedCurriculum = curriculumRepository.save(curriculum);
+                    parsedCurriculumId = savedCurriculum.getCurriculumId();
+
+                    for (PLORowData pData : ploList) {
+                        PLOs plo = PLOs.builder()
+                                .ploCode(pData.ploCode)
+                                .description(pData.ploDesc)
+                                .curriculum(savedCurriculum)
+                                .status(PloStatus.DRAFT.toString())
+                                .build();
+                        PLOs savedPlo = plOsRepository.save(plo);
+                        
+                        // Save mappings
+                        for (PO po : pData.mappedPOs) {
+                            PO_PLO_Mapping mapping = new PO_PLO_Mapping();
+                            mapping.setPo(po);
+                            mapping.setPlo(savedPlo);
+                            poPloMappingRepository.save(mapping);
+                        }
+                    }
+                } else {
+                    details.add(ImportCurriculumResult.builder()
+                            .curriculumCode(parsedCurCode)
+                            .status("FAILED")
+                            .message("Curriculum not saved due to PLO or PO Mapping errors")
+                            .build());
+                }
+            }
+
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION, "Import curriculum from sheet failed: " + e.getMessage());
+        }
+
+        int total = details.size();
+        int success = (int) details.stream().filter(d -> "SUCCESS".equals(d.getStatus())).count();
+        int failed = total - success;
+
+        return ImportCurriculumResponse.builder()
+                .curriculumId(parsedCurriculumId)
+                .total(total)
+                .success(success)
+                .failed(failed)
+                .details(details)
+                .build();
+    }
+
+    private String getCellValue(Row row, int cellIndex, DataFormatter formatter) {
+        if (row == null) return "";
+        Cell cell = row.getCell(cellIndex);
+        if (cell == null) return "";
+        return formatter.formatCellValue(cell).trim();
+    }
+
+    private String trim(String value) {
+        if (value == null) return null;
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }

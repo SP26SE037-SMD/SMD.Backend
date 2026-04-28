@@ -23,6 +23,9 @@ public interface PLOsRepository extends JpaRepository<PLOs, UUID> {
     @Query("SELECT p FROM PLOs p WHERE p.ploId = :id") // Hibernate sẽ tự động LEFT JOIN bảng Major
     Optional<PLOs> findById(UUID id);
 
+    // Kiểm tra trùng mã PLO toàn hệ thống (dùng cho import)
+    boolean existsByPloCode(String ploCode);
+
     // Kiểm tra trùng mã PLO trong cùng một Khung chương trình
     boolean existsByPloCodeAndCurriculum_CurriculumId(String ploCode, UUID curriculumId);
 

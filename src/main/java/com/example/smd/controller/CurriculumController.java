@@ -5,7 +5,10 @@ import com.example.smd.dto.response.CurriculumResponse;
 import com.example.smd.dto.response.CurriculumShortResponse;
 import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.ResponseObject;
+import com.example.smd.dto.response.curriculum.ImportCurriculumResponse;
+import com.example.smd.dto.response.curriculum.ImportFullCurriculumResponse;
 import com.example.smd.services.CurriculumService;
+import com.example.smd.services.FullImportService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -15,10 +18,12 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.data.domain.Page;
+import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
@@ -32,6 +37,7 @@ import java.util.UUID;
 public class CurriculumController {
 
         CurriculumService curriculumService;
+        FullImportService fullImportService;
 
         /**
          * API lấy danh sách curriculum với phân trang và bộ lọc
@@ -222,6 +228,60 @@ public class CurriculumController {
                 curriculumService.delete(id, userId);
                 return ResponseObject.<Void>builder()
                                 .message("Curriculum deleted successfully")
+                                .build();
+        }
+
+        @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+        @PreAuthorize("hasAuthority('CURRICULUM_CREATE')")
+        @Operation(
+                summary = "Import Curriculums from Excel",
+                description = "Import Curriculum records (with PLOs) from an Excel file.\n\n" +
+                        "**Sheet name:** `Curriculum`\n\n" +
+                        "**Column headers (row 1):**\n" +
+                        "| Column | Required | Description |\n" +
+                        "| :--- | :--- | :--- |\n" +
+                        "| **Curriculum Code** | Yes | Unique code for the curriculum (e.g. SE1901) |\n" +
+                        "| **Name** | Yes | Full name of the curriculum |\n" +
+                        "| **Start Year** | No | Year the curriculum starts (e.g. 2019) |\n" +
+                        "| **Description** | No | Description of the curriculum |\n" +
+                        "| **Major Code** | Yes | Existing Major Code the curriculum belongs to |\n" +
+                        "| **PLO Code** | Yes | Unique PLO code (e.g. PLO1, PLO2). Each row = one PLO. |\n" +
+                        "| **PLO Description** | No | Description of the PLO |\n\n" +
+                        "**Notes:**\n" +
+                        "- One Curriculum can have multiple PLOs — repeat the Curriculum Code on each row.\n" +
+                        "- If a Curriculum Code already exists in the system, all rows for that Curriculum will be rejected.\n" +
+                        "- PLO Code must be globally unique across all Curriculums.\n" +
+                        "- Major Code must already exist in the system."
+        )
+        public ResponseObject<ImportCurriculumResponse> importCurriculums(
+                @RequestParam("file") MultipartFile file
+        ) {
+                return ResponseObject.<ImportCurriculumResponse>builder()
+                                .status(1000)
+                                .data(curriculumService.importCurriculums(file))
+                                .message("Import curriculums completed")
+                                .build();
+        }
+
+        @PostMapping(value = "/import-full", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+        @PreAuthorize("hasAuthority('CURRICULUM_CREATE')")
+        @Operation(
+                summary = "Import Full Curriculum from Excel",
+                description = "Imports an entire curriculum system from a single Excel file with multiple sheets.\n\n" +
+                        "**Expected Sheets:**\n" +
+                        "- `Major`: Major data and POs.\n" +
+                        "- `Curriculum`: Curriculum data, PLOs, and PO mapping.\n" +
+                        "- `Subject`: Subjects list.\n" +
+                        "- `Group`: Elective groups.\n" +
+                        "- `Semester Mapping`: Mapping between Curriculum, Group, Subject, and Semester."
+        )
+        public ResponseObject<ImportFullCurriculumResponse> importFullCurriculum(
+                @RequestParam("file") MultipartFile file
+        ) {
+                return ResponseObject.<ImportFullCurriculumResponse>builder()
+                                .status(1000)
+                                .data(fullImportService.importFullCurriculum(file))
+                                .message("Full curriculum import completed")
                                 .build();
         }
 }

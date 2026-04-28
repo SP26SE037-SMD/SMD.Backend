@@ -175,12 +175,23 @@ public class GroupService {
 
     @Transactional
     public ImportGroupResponse importGroups(MultipartFile file) {
+        try (org.apache.poi.ss.usermodel.Workbook workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook(file.getInputStream())) {
+            org.apache.poi.ss.usermodel.Sheet sheet = workbook.getSheet("Group");
+            if (sheet == null) sheet = workbook.getSheetAt(0); // fallback
+            return importGroupFromSheet(sheet);
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION, "Import group failed: " + e.getMessage());
+        }
+    }
+
+    @Transactional
+    public ImportGroupResponse importGroupFromSheet(org.apache.poi.ss.usermodel.Sheet sheet) {
         List<ImportGroupResult> details = new ArrayList<>();
         List<Group> groupsToSave = new ArrayList<>();
         Set<String> groupCodesInFile = new HashSet<>();
 
         try {
-            List<GroupImportDTO> rows = ExcelImporter.importFromExcel(file, GroupImportDTO.class);
+            List<GroupImportDTO> rows = ExcelImporter.importFromSheet(sheet, GroupImportDTO.class);
 
             for (GroupImportDTO row : rows) {
                 String groupCode = trim(row.getGroupCode());
