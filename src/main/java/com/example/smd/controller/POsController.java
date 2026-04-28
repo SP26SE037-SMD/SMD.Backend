@@ -3,8 +3,9 @@ package com.example.smd.controller;
 import com.example.smd.dto.request.po.POsCreateRequest;
 import com.example.smd.dto.request.po.POsRequest;
 import com.example.smd.dto.response.*;
-import com.example.smd.exception.AppException;
-import com.example.smd.exception.ErrorCode;
+import com.example.smd.dto.response.validate.ComplianceCheckResponse;
+import com.example.smd.entities.PLOs;
+import com.example.smd.entities.PO;
 import com.example.smd.services.POsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -13,13 +14,10 @@ import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
@@ -128,11 +126,12 @@ public class POsController {
                 .build();
     }
 
-    @PostMapping(value = "/major/{majorId}/validate-po")
+    @PostMapping(value = "/validate-po")
     public ResponseObject<ComplianceCheckResponse> validatePo(
-            @PathVariable("majorId") UUID majorId
+            @PathVariable("majorId") UUID majorId,
+            @RequestBody List<PO> poList
     ) {
-        var response = poService.validatePoCheck(majorId);
+        var response = poService.validatePoCheck(poList, majorId);
         return ResponseObject.<ComplianceCheckResponse>builder()
                 .status(1000)
                 .data(response)

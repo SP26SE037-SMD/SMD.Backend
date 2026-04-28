@@ -1,9 +1,12 @@
 package com.example.smd.controller;
 
 import com.example.smd.dto.request.AssessmentRequest;
+import com.example.smd.dto.request.session.SessionMaterialBlockBulkRequest;
 import com.example.smd.dto.response.AssessmentResponse;
 import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.ResponseObject;
+import com.example.smd.dto.response.validate.AssessmentValidationResult;
+import com.example.smd.dto.response.validate.SessionValidationResult;
 import com.example.smd.services.AssessmentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -159,6 +162,17 @@ public class AssessmentController {
         return ResponseObject.<Void>builder()
                 .status(1000)
                 .message("All materials in syllabus " + syllabusId + " updated to " + newStatus)
+                .build();
+    }
+
+    @PostMapping("/subject/{subjectId}/validate")
+    @Operation(summary = "Get session-material-block detail by sessionId")
+    public ResponseObject<AssessmentValidationResult> validateAssessment(
+            @RequestBody List<AssessmentRequest> inputs) {
+        return ResponseObject.<AssessmentValidationResult>builder()
+                .status(1000)
+                .data(assessmentService.validate(inputs))
+                .message("Validate assessment successfully")
                 .build();
     }
 }

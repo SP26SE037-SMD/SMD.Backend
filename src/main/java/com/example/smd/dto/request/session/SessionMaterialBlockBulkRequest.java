@@ -39,6 +39,8 @@ public class SessionMaterialBlockBulkRequest {
     @Min(value = 0, message = "SESSION_DURATION_INVALID")
     Integer duration;
 
+    String sessionType;
+
     @NotEmpty(message = "SESSION_LIST_REQUIRED")
     List<UUID> material;
 

@@ -2,7 +2,7 @@ package com.example.smd.services;
 
 import com.example.smd.dto.request.po.POsCreateRequest;
 import com.example.smd.dto.request.po.POsRequest;
-import com.example.smd.dto.response.ComplianceCheckResponse;
+import com.example.smd.dto.response.validate.ComplianceCheckResponse;
 import com.example.smd.dto.response.POsResponse;
 import com.example.smd.entities.Major;
 import com.example.smd.entities.PO;
@@ -215,12 +215,10 @@ public class POsService {
         }
     }
 
-    public ComplianceCheckResponse validatePoCheck(UUID majorId) {
+    public ComplianceCheckResponse validatePoCheck(List<PO> poList, UUID majorId) {
         if (!majorRepository.existsById(majorId)) {
             throw new AppException(ErrorCode.MAJOR_NOT_FOUND);
         }
-
-        List<PO> poList = poRepository.findByMajor_MajorId(majorId);
 
         String userPoList = poList.stream()
                 .map(po -> po.getPoCode() + ": " + po.getDescription())

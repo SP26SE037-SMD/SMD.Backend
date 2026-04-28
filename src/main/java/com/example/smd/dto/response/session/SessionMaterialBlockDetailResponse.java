@@ -22,6 +22,7 @@ public class SessionMaterialBlockDetailResponse {
     String teachingMethods;
     Integer duration;
     String status;
+    String sessionType;
     List<MaterialItem> material;
     List<BlockItem> block;
 

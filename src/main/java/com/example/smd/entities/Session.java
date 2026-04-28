@@ -30,6 +30,9 @@ public class Session {
     @Column(name = "chapter_title", nullable = false, length = 200)
     String sessionTitle;
 
+    @Column(name = "session_type", nullable = false, length = 200)
+    String sessionType;
+
     @Column(name = "teaching_methods", columnDefinition = "TEXT")
     String teachingMethods;
 
