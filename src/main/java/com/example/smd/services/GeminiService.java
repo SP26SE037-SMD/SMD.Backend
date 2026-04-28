@@ -5,6 +5,7 @@ import com.example.smd.dto.request.clo.CloCheckRequest;
 import com.example.smd.dto.request.clo.CloGenerationRequest;
 import com.example.smd.dto.response.ComparisonResult;
 import com.example.smd.dto.response.validate.ComplianceCheckResponse;
+import com.example.smd.dto.response.validate.MappingCheckResponse;
 import com.example.smd.dto.response.validate.ProgramRegulationResponse;
 import com.example.smd.dto.response.clo.CLOsGenerationResponse;
 import com.example.smd.dto.response.clo.CloCheckResponse;
@@ -29,7 +30,7 @@ import java.util.List;
 
 @Slf4j
 @Service
-public class GeminiService {
+public class GeminiService  {
 
     @Autowired
     private GeminiConfig gemini;
@@ -229,9 +230,9 @@ public class GeminiService {
     @Retryable(
             retryFor = { HttpServerErrorException.class },
             maxAttempts = 3,
-            backoff = @Backoff(delay = 2000) // Thử lại sau 2 giây, tối đa 3 lần
+            backoff = @Backoff(delay = 5000) // Thử lại sau 2 giây, tối đa 3 lần
     )
-    public ProgramRegulationResponse extractMasterDataFromPdf(MultipartFile file, String accountId) {
+    public ProgramRegulationResponse extractMasterDataFromPdf(MultipartFile file, String accountId) throws InterruptedException{
         // 0. Phân quyền (Tùy chọn theo logic của bạn)
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
@@ -248,6 +249,40 @@ public class GeminiService {
         String fileUri = gemini.uploadFile(file, apiUploadFileUrl); // gemini chính là GeminiConfig
         if (fileUri == null) {
             throw new AppException(ErrorCode.FILE_UPLOAD_FAILED); // Tạo thêm ErrorCode tương ứng
+        }
+
+        // 1.5. Đợi cho đến khi file ACTIVE (Tránh lỗi 503)
+        boolean isReady = false;
+        int attempts = 0;
+        int maxAttempts = 10;
+
+        log.info("Bắt đầu kiểm tra trạng thái file cho URI: {}", fileUri);
+
+        while (!isReady && attempts < maxAttempts) {
+            // Gọi hàm GET để lấy trạng thái
+            String state = gemini.getFileState(fileUri);
+            attempts++;
+
+            if ("ACTIVE".equals(state)) {
+                isReady = true;
+                log.info("File đã sẵn sàng (ACTIVE) sau {} lần thử.", attempts);
+            } else {
+                log.warn("File chưa sẵn sàng. Trạng thái hiện tại: {} (Lần thử: {}/{})", state, attempts, maxAttempts);
+
+                try {
+                    // Đợi 2 giây trước khi check lại
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
+                    log.error("Tiến trình bị ngắt quãng khi đang đợi file ACTIVE: {}", e.getMessage());
+                    Thread.currentThread().interrupt(); // Khôi phục trạng thái interrupt
+                    break; // Thoát vòng lặp nếu bị ngắt
+                }
+            }
+        }
+
+        if (!isReady) {
+            log.error("Quá thời gian chờ xử lý file (Timeout). URI: {}", fileUri);
+            throw new AppException(ErrorCode.FILE_PROCESSING_TIMEOUT);
         }
 
         // 2. Chuẩn bị Prompt và gọi AI
@@ -312,6 +347,46 @@ public class GeminiService {
 
             // 5. Parse dữ liệu
             return objectMapper.readValue(cleanJson, ComplianceCheckResponse.class);
+
+        } catch (JsonProcessingException e) {
+            log.error("Failed to parse Gemini response: {}", response);
+            throw new AppException(ErrorCode.AI_GENERATION_FAILED);
+        }
+    }
+
+    @Retryable(
+            retryFor = { HttpServerErrorException.class },
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 5000) // Thử lại sau 2 giây, tối đa 3 lần
+    )
+    public MappingCheckResponse checkPoPloMapping(String poList, String ploList, String currentMapping) {
+        // 1. Lấy ĐÚNG Template dành cho việc Check Compliance
+        String template = promptTemplateService.get(PromptKey.PO_PLO_MAPPING_CHECKER_PROMPT);
+
+        // 2. Dùng replace để an toàn với ký tự đặc biệt (%)
+        String prompt = template.replace("{PO_LIST}", poList)
+                .replace("{PLO_LIST}", ploList)
+                .replace("{CURRENT_MAPPING}", currentMapping);
+
+        // 3. Gọi AI
+        String response = gemini.prompt(prompt, apiGenerateUrl);
+
+        if (response == null || response.isBlank()) {
+            throw new AppException(ErrorCode.AI_GENERATION_FAILED);
+        }
+
+        try {
+            // 4. Cách làm sạch JSON "lỳ đòn" nhất: Tìm cặp dấu { } ngoài cùng
+            int start = response.indexOf("{");
+            int end = response.lastIndexOf("}");
+            if (start == -1 || end == -1) {
+                log.error("AI không trả về JSON hợp lệ: {}", response);
+                throw new AppException(ErrorCode.AI_GENERATION_FAILED);
+            }
+            String cleanJson = response.substring(start, end + 1);
+
+            // 5. Parse dữ liệu
+            return objectMapper.readValue(cleanJson, MappingCheckResponse.class);
 
         } catch (JsonProcessingException e) {
             log.error("Failed to parse Gemini response: {}", response);

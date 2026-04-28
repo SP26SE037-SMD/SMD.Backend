@@ -215,11 +215,12 @@ public class POsService {
         }
     }
 
-    public ComplianceCheckResponse validatePoCheck(List<PO> poList, UUID majorId) {
+    public ComplianceCheckResponse validatePoCheck(UUID majorId) {
         if (!majorRepository.existsById(majorId)) {
             throw new AppException(ErrorCode.MAJOR_NOT_FOUND);
         }
 
+        List<PO> poList = poRepository.findByMajor_MajorId(majorId);
         String userPoList = poList.stream()
                 .map(po -> po.getPoCode() + ": " + po.getDescription())
                 .collect(Collectors.joining("\n"));

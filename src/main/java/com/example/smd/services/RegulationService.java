@@ -134,7 +134,7 @@ public class RegulationService {
     }
 
     @Transactional
-    public MajorResponse importMajorAndAddRegulation(MultipartFile file, String accountId) {
+    public MajorResponse importMajorAndAddRegulation(MultipartFile file, String accountId) throws InterruptedException {
         var programRegulationResponse = geminiService.extractMasterDataFromPdf(file, accountId);
 
         var major = new Major();

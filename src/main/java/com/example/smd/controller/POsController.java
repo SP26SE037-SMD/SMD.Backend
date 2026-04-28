@@ -126,12 +126,11 @@ public class POsController {
                 .build();
     }
 
-    @PostMapping(value = "/validate-po")
+    @PostMapping(value = "/major/{majorId}/validate-po")
     public ResponseObject<ComplianceCheckResponse> validatePo(
-            @PathVariable("majorId") UUID majorId,
-            @RequestBody List<PO> poList
+            @PathVariable("majorId") UUID majorId
     ) {
-        var response = poService.validatePoCheck(poList, majorId);
+        var response = poService.validatePoCheck(majorId);
         return ResponseObject.<ComplianceCheckResponse>builder()
                 .status(1000)
                 .data(response)
