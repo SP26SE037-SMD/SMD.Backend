@@ -47,6 +47,8 @@ public class SessionMaterialBlockBulkListRequest {
 
         String teachingMethods;
 
+        String sessionType;
+
         @Min(value = 0, message = "SESSION_DURATION_INVALID")
         Integer duration;
 

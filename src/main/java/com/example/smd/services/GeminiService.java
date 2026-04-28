@@ -1,31 +1,23 @@
 package com.example.smd.services;
 
 import com.example.smd.config.GeminiConfig;
-import com.example.smd.dto.request.BlockRequest;
 import com.example.smd.dto.request.clo.CloCheckRequest;
 import com.example.smd.dto.request.clo.CloGenerationRequest;
 import com.example.smd.dto.response.ComparisonResult;
-import com.example.smd.dto.response.ComplianceCheckResponse;
-import com.example.smd.dto.response.ImpactResponse;
-import com.example.smd.dto.response.ProgramRegulationResponse;
+import com.example.smd.dto.response.validate.ComplianceCheckResponse;
+import com.example.smd.dto.response.validate.ProgramRegulationResponse;
 import com.example.smd.dto.response.clo.CLOsGenerationResponse;
 import com.example.smd.dto.response.clo.CloCheckResponse;
 import com.example.smd.dto.response.syllabus.SyllabusStructureResponse;
-import com.example.smd.entities.Vector_Embeddings;
 import com.example.smd.enums.PromptKey;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
@@ -33,9 +25,7 @@ import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @Service

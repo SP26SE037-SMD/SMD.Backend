@@ -5,10 +5,7 @@ import com.example.smd.dto.request.session.SessionNumberListRequest;
 import com.example.smd.dto.response.SessionResponse;
 import com.example.smd.entities.Session;
 import com.example.smd.entities.Syllabus;
-import com.example.smd.enums.MaterialStatus;
-import com.example.smd.enums.PloStatus;
-import com.example.smd.enums.RoleName;
-import com.example.smd.enums.SyllabusStatus;
+import com.example.smd.enums.*;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.SessionMapper;
@@ -156,13 +153,17 @@ public class SessionService {
             throw new AppException(ErrorCode.SESSION_NUMBER_EXISTS);
         }
 
-//        sessionRegulationValidationService.validateDurationByRegulation(
-//            request.getSyllabusId(),
-//            request.getDuration(),
-//            null
-//        );
+        String newType = "";
+        if (SessionType.THEORY.toString().equals(request.getSessionType())) {
+            newType = SessionType.THEORY.toString();
+        } else if (SessionType.PRACTICE.toString().equals(request.getSessionType())) {
+            newType = SessionType.PRACTICE.toString();
+        } else if (SessionType.SELF_STUDY.toString().equals(request.getSessionType())) {
+            newType = SessionType.SELF_STUDY.toString();
+        }
 
         Session session = sessionMapper.toEntity(request);
+        session.setSessionType(newType);
         session.setSyllabus(syllabus);
         session.setStatus(DEFAULT_STATUS);
 
@@ -188,6 +189,15 @@ public class SessionService {
             throw new AppException(ErrorCode.SESSION_NOT_EDITABLE);
         }
 
+        String newType = "";
+        if (SessionType.THEORY.toString().equals(request.getSessionType())) {
+            newType = SessionType.THEORY.toString();
+        } else if (SessionType.PRACTICE.toString().equals(request.getSessionType())) {
+            newType = SessionType.PRACTICE.toString();
+        } else if (SessionType.SELF_STUDY.toString().equals(request.getSessionType())) {
+            newType = SessionType.SELF_STUDY.toString();
+        }
+
         if (sessionRepository.existsBySyllabus_SyllabusIdAndSessionNumberAndSessionIdNot(
                 request.getSyllabusId(), request.getSessionNumber(), sessionId)) {
             throw new AppException(ErrorCode.SESSION_NUMBER_EXISTS);
@@ -200,6 +210,7 @@ public class SessionService {
 //        );
 
         session.setSyllabus(syllabus);
+        session.setSessionType(newType);
         sessionMapper.updateEntity(session, request);
 
         session = sessionRepository.save(session);

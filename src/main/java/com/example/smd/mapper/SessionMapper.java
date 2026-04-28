@@ -19,6 +19,7 @@ public class SessionMapper {
                 .sessionNumber(session.getSessionNumber())
                 .sessionTitle(session.getSessionTitle())
                 .teachingMethods(session.getTeachingMethods())
+                .sessionType(session.getSessionType())
                 .duration(session.getDuration())
                 .status(session.getStatus())
                 .createdAt(session.getCreatedAt())

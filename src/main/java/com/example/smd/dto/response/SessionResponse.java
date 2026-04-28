@@ -27,6 +27,8 @@ public class SessionResponse {
     Integer duration;
     String status;
 
+    String sessionType;
+
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+7")
     Instant createdAt;
 }

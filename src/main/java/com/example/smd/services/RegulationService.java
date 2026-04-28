@@ -2,11 +2,10 @@ package com.example.smd.services;
 
 import com.example.smd.dto.request.RegulationRequest;
 import com.example.smd.dto.response.MajorResponse;
-import com.example.smd.dto.response.ProgramRegulationResponse;
+import com.example.smd.dto.response.validate.ProgramRegulationResponse;
 import com.example.smd.dto.response.RegulationResponse;
 import com.example.smd.entities.Major;
 import com.example.smd.entities.Regulation;
-import com.example.smd.entities.Subject;
 import com.example.smd.enums.PloStatus;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;

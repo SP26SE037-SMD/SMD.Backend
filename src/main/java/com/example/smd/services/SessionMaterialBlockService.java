@@ -4,21 +4,15 @@ import com.example.smd.dto.request.session.SessionMaterialBlockBulkRequest;
 import com.example.smd.dto.request.session.SessionMaterialBlockBulkListRequest;
 import com.example.smd.dto.request.session.SessionMaterialBlockUpdateRequest;
 import com.example.smd.dto.response.PagedResponse;
+import com.example.smd.dto.response.validate.SessionValidationResult;
 import com.example.smd.dto.response.session.BulkSessionMaterialBlockResponse;
 import com.example.smd.dto.response.session.SessionMaterialBlockDetailResponse;
-import com.example.smd.entities.Blocks;
-import com.example.smd.entities.Material;
-import com.example.smd.entities.Session;
-import com.example.smd.entities.Session_Material_Block;
-import com.example.smd.entities.Syllabus;
+import com.example.smd.entities.*;
+import com.example.smd.enums.SessionType;
 import com.example.smd.enums.SyllabusStatus;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
-import com.example.smd.repositories.BlockRepository;
-import com.example.smd.repositories.MaterialRepository;
-import com.example.smd.repositories.SessionMaterialBlockRepository;
-import com.example.smd.repositories.SessionRepository;
-import com.example.smd.repositories.SyllabusRepository;
+import com.example.smd.repositories.*;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -46,6 +40,7 @@ public class SessionMaterialBlockService {
     SyllabusRepository syllabusRepository;
     MaterialRepository materialRepository;
     BlockRepository blockRepository;
+    SubjectRepository subjectRepository;
     SessionMaterialBlockRepository sessionMaterialBlockRepository;
     SessionRegulationValidationService sessionRegulationValidationService;
 
@@ -56,12 +51,22 @@ public class SessionMaterialBlockService {
         List<BulkSessionMaterialBlockResponse> responses = new ArrayList<>();
 
         for (SessionMaterialBlockBulkListRequest.SessionItem item : request.getSessions()) {
+            String newType = "";
+            if (SessionType.THEORY.toString().equals(item.getSessionType())) {
+                newType = SessionType.THEORY.toString();
+            } else if (SessionType.PRACTICE.toString().equals(item.getSessionType())) {
+                newType = SessionType.PRACTICE.toString();
+            } else if (SessionType.SELF_STUDY.toString().equals(item.getSessionType())) {
+                newType = SessionType.SELF_STUDY.toString();
+            }
+
             SessionMaterialBlockBulkRequest singleRequest = SessionMaterialBlockBulkRequest.builder()
                     .syllabusId(request.getSyllabusId())
                     .sessionNumber(item.getSessionNumber())
                     .sessionTitle(item.getSessionTitle())
                     .teachingMethods(item.getTeachingMethods())
                     .duration(item.getDuration())
+                    .sessionType(newType)
                     .material(item.getMaterial())
                     .block(item.getBlock())
                     .build();
@@ -90,11 +95,14 @@ public class SessionMaterialBlockService {
 
         List<String> warnings = new ArrayList<>();
         if (session == null) {
-//            sessionRegulationValidationService.validateDurationByRegulation(
-//                request.getSyllabusId(),
-//                request.getDuration(),
-//                null
-//            );
+            String newType = "";
+            if (SessionType.THEORY.toString().equals(session.getSessionType())) {
+                newType = SessionType.THEORY.toString();
+            } else if (SessionType.PRACTICE.toString().equals(session.getSessionType())) {
+                newType = SessionType.PRACTICE.toString();
+            } else if (SessionType.SELF_STUDY.toString().equals(session.getSessionType())) {
+                newType = SessionType.SELF_STUDY.toString();
+            }
 
             session = Session.builder()
                     .syllabus(syllabus)
@@ -102,6 +110,7 @@ public class SessionMaterialBlockService {
                     .sessionTitle(request.getSessionTitle())
                     .teachingMethods(request.getTeachingMethods())
                     .duration(request.getDuration())
+                    .sessionType(newType)
                     .status(SyllabusStatus.DRAFT.name())
                     .build();
             session = sessionRepository.save(session);
@@ -226,10 +235,20 @@ public class SessionMaterialBlockService {
 //            session.getSessionId()
 //        );
 
+        String newType = "";
+        if (SessionType.THEORY.toString().equals(request.getSessionType())) {
+            newType = SessionType.THEORY.toString();
+        } else if (SessionType.PRACTICE.toString().equals(request.getSessionType())) {
+            newType = SessionType.PRACTICE.toString();
+        } else if (SessionType.SELF_STUDY.toString().equals(request.getSessionType())) {
+            newType = SessionType.SELF_STUDY.toString();
+        }
+
         session.setSessionNumber(request.getSessionNumber());
         session.setSessionTitle(request.getSessionTitle());
         session.setTeachingMethods(request.getTeachingMethods());
         session.setDuration(request.getDuration());
+        session.setSessionType(newType);
         sessionRepository.save(session);
 
         sessionMaterialBlockRepository.deleteBySession_SessionId(session.getSessionId());
@@ -290,6 +309,15 @@ public class SessionMaterialBlockService {
         Map<UUID, SessionMaterialBlockDetailResponse.MaterialItem> materialMap = new LinkedHashMap<>();
         Map<UUID, SessionMaterialBlockDetailResponse.BlockItem> blockMap = new LinkedHashMap<>();
 
+        String newType = "";
+        if (SessionType.THEORY.toString().equals(session.getSessionType())) {
+            newType = SessionType.THEORY.toString();
+        } else if (SessionType.PRACTICE.toString().equals(session.getSessionType())) {
+            newType = SessionType.PRACTICE.toString();
+        } else if (SessionType.SELF_STUDY.toString().equals(session.getSessionType())) {
+            newType = SessionType.SELF_STUDY.toString();
+        }
+
         for (Session_Material_Block mapping : mappings) {
             Material material = mapping.getMaterial();
             if (material != null && material.getMaterialId() != null) {
@@ -320,6 +348,7 @@ public class SessionMaterialBlockService {
                 .sessionNumber(session.getSessionNumber())
                 .sessionTitle(session.getSessionTitle())
                 .teachingMethods(session.getTeachingMethods())
+                .sessionType(newType)
                 .duration(session.getDuration())
                 .material(new ArrayList<>(materialMap.values()))
                 .block(new ArrayList<>(blockMap.values()))
@@ -369,5 +398,77 @@ public class SessionMaterialBlockService {
                 .idx(idx)
                 .details(details)
                 .build();
+    }
+
+    public SessionValidationResult validate(List<SessionMaterialBlockBulkRequest> inputs, UUID subjectId) {
+        SessionValidationResult result = new SessionValidationResult();
+
+        Subject masterSubject = subjectRepository.findById(subjectId)
+                .orElseThrow(() -> new AppException(ErrorCode.SUBJECT_NOT_FOUND));
+
+        // 1. Tính quỹ Lý thuyết (Quy đổi an toàn từ Giờ -> Tiết)
+        double totalTheoryHours = inputs.stream()
+                .filter(s -> "THEORY".equalsIgnoreCase(s.getSessionType()))
+                .mapToDouble(s -> s.getDuration() != null ? s.getDuration() : 0.0) // Dùng Double để nhận số lẻ 1.5, 2.25
+                .sum();
+
+        int totalTheoryPeriods = (int) Math.round(totalTheoryHours / 45);
+        int remainingTheory = masterSubject.getTheoryPeriods() - totalTheoryPeriods;
+
+        // 2. Tính quỹ Thực hành (Tương tự)
+        double totalPracticeHours = inputs.stream()
+                .filter(s -> "PRACTICE".equalsIgnoreCase(s.getSessionType()))
+                .mapToDouble(s -> s.getDuration() != null ? s.getDuration() : 0.0)
+                .sum();
+
+        int totalPracticePeriods = (int) Math.round(totalPracticeHours / 45);
+        int remainingPractice = masterSubject.getPracticalPeriods() - totalPracticePeriods;
+
+        // (Tùy chọn) Tính tổng giờ tự học nếu có bắt validate
+        int totalSelfStudyHours = inputs.stream()
+                .filter(s -> "SELF_STUDY".equalsIgnoreCase(s.getSessionType()))
+                .mapToInt(s -> s.getDuration() != null ? s.getDuration() : 0)
+                .sum();
+
+        int remainingSelfStudy = masterSubject.getSelfStudyPeriods() - totalSelfStudyHours;
+        // Set vào DTO
+        result.setRemainingQuotas(new SessionValidationResult.RemainingQuota(remainingTheory, remainingPractice, 0));
+
+        // 2. Viết Logic Check Lỗi
+
+        // -- Validate Lý thuyết (Theory) --
+        if (remainingTheory > 0) {
+            // Trường hợp THIẾU (Allocated < Quota)
+            result.addError("THEORY_SHORTAGE",
+                    "Theory allocation is short by " + remainingTheory + " period(s).");
+        } else if (remainingTheory < 0) {
+            // Trường hợp DƯ (Allocated > Quota)
+            result.addError("THEORY_SURPLUS",
+                    "Theory allocation exceeded by " + Math.abs(remainingTheory) + " period(s).");
+        }
+
+        // -- Validate Thực hành (Practice) --
+        if (remainingPractice > 0) {
+            // Trường hợp THIẾU
+            result.addError("PRACTICE_SHORTAGE",
+                    "Practice allocation is short by " + remainingPractice + " period(s).");
+        } else if (remainingPractice < 0) {
+            // Trường hợp DƯ
+            result.addError("PRACTICE_SURPLUS",
+                    "Practice allocation exceeded by " + Math.abs(remainingPractice) + " period(s).");
+        }
+
+        // -- Validate Tự học (Self-study) --
+        if (remainingSelfStudy > 0) {
+            // Trường hợp THIẾU
+            result.addError("SELF_STUDY_SHORTAGE",
+                    "Self-study allocation is short by " + remainingSelfStudy + " hour(s).");
+        } else if (remainingSelfStudy < 0) {
+            // Trường hợp DƯ
+            result.addError("SELF_STUDY_SURPLUS",
+                    "Self-study allocation exceeded by " + Math.abs(remainingSelfStudy) + " hour(s).");
+        }
+
+        return result;
     }
 }

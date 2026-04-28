@@ -5,6 +5,7 @@ import com.example.smd.dto.request.session.SessionMaterialBlockBulkListRequest;
 import com.example.smd.dto.request.session.SessionMaterialBlockUpdateRequest;
 import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.ResponseObject;
+import com.example.smd.dto.response.validate.SessionValidationResult;
 import com.example.smd.dto.response.session.BulkSessionMaterialBlockResponse;
 import com.example.smd.dto.response.session.SessionMaterialBlockDetailResponse;
 import com.example.smd.services.SessionMaterialBlockService;
@@ -15,13 +16,7 @@ import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 import java.util.List;
@@ -101,6 +96,18 @@ public class SessionMaterialBlockController {
                 .status(1000)
                 .data(sessionMaterialBlockService.getSessionDetail(sessionId))
                 .message("Get session-material-block detail successfully")
+                .build();
+    }
+
+    @PostMapping("/subject/{subjectId}/validate")
+    @Operation(summary = "Get session-material-block detail by sessionId")
+    public ResponseObject<SessionValidationResult> validateSession(
+            @RequestBody List<SessionMaterialBlockBulkRequest> inputs,
+            @PathVariable("subjectId") UUID subjectId) {
+        return ResponseObject.<SessionValidationResult>builder()
+                .status(1000)
+                .data(sessionMaterialBlockService.validate(inputs, subjectId))
+                .message("Validate session-material-block successfully")
                 .build();
     }
 }

@@ -2,11 +2,9 @@ package com.example.smd.services;
 
 import com.example.smd.dto.request.AssessmentRequest;
 import com.example.smd.dto.response.AssessmentResponse;
+import com.example.smd.dto.response.validate.AssessmentValidationResult;
 import com.example.smd.entities.*;
-import com.example.smd.enums.MaterialStatus;
-import com.example.smd.enums.PloStatus;
-import com.example.smd.enums.RoleName;
-import com.example.smd.enums.SyllabusStatus;
+import com.example.smd.enums.*;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.AssessmentMapper;
@@ -25,9 +23,8 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -302,5 +299,84 @@ public class AssessmentService {
         // 3. Cập nhật hàng loạt trạng thái các Materials thuộc Syllabus này
         // Lưu ý: Material đi theo Syllabus nên ta dùng updateStatusBySyllabusId
         int affectedRows = assessmentRepository.updateStatusBySyllabusId(status.toString(), uuidSyllabusId);
+    }
+
+    public AssessmentValidationResult validate(List<AssessmentRequest> inputs) {
+        AssessmentValidationResult result = new AssessmentValidationResult();
+
+        // 1. ĐẾM SỐ LƯỢNG (Counting)
+        long totalCount = inputs.size();
+
+        // 1. Lấy tất cả categoryId mà Frontend gửi lên (Dùng Set để loại bỏ ID trùng lặp)
+        Set<UUID> categoryIds = inputs.stream()
+                .map(AssessmentRequest::getCategoryId)
+                .collect(Collectors.toSet());
+
+        // 2. Gọi Database ĐÚNG 1 LẦN để lấy thông tin các Category này
+        // Giả sử bạn đã tiêm (inject) assessmentCategoryRepository vào Service
+        List<Assessment_Category> categoriesFromDb = assessmentCategoryRepository.findAllById(categoryIds);
+
+        // 3. Đưa vào Map<UUID, Tên Category> để tra cứu siêu tốc trong RAM
+        Map<UUID, String> categoryNameMap = categoriesFromDb.stream()
+                .collect(Collectors.toMap(Assessment_Category::getCategoryId, Assessment_Category::getCategoryName));
+
+        // 4. Bây giờ thì đếm thoải mái dựa vào TÊN của Category
+        // Dùng ignoreCase để phòng hờ DB lưu chữ HOA/thường khác nhau
+        long finalCount = inputs.stream()
+                .filter(a -> "Summative".equalsIgnoreCase(categoryNameMap.get(a.getCategoryId())))
+                .count();
+
+        long formativeCount = inputs.stream()
+                .filter(a -> "Formative".equalsIgnoreCase(categoryNameMap.get(a.getCategoryId())))
+                .count();
+
+        // 3. LOGIC VALIDATE DỰA TRÊN SỐ LƯỢNG BÀI
+        // Ràng buộc A: Không được có nhiều hơn 1 bài Cuối kỳ
+        if (finalCount == 0) {
+            result.addError("MISSING_FINAL_ASSESSMENT",
+                    "Syllabus must include at least one Summative assessment (Final Exam, Project, etc.).");
+        }
+
+        if (finalCount > 2) {
+            result.addError("MULTIPLE_FINAL_ASSESSMENTS",
+                    "You cannot have more than 1 final assessment. Currently, there are " + finalCount + ".");
+        }
+
+        // Ràng buộc B: (Tùy chọn) Khống chế số lượng cột điểm tối đa (Ví dụ: Tối đa 6 bài)
+        if (totalCount > 6) {
+            result.addError("TOO_MANY_ASSESSMENTS",
+                    "Syllabus can have a maximum of 6 assessments to avoid overloading students. You have created " + totalCount + ".");
+        }
+
+        // 1. Tính toán các thông số
+        double totalWeight = inputs.stream()
+                .mapToDouble(a -> a.getWeight() != null ? a.getWeight() : 0.0)
+                .sum();
+
+        // Ràng buộc C: (Tùy chọn) Phải có ít nhất 1 bài quá trình nếu môn học không phải là Đồ án 100%
+        if (formativeCount == 0 && totalWeight < 100) {
+            result.addError("MISSING_FORMATIVE_ASSESSMENT",
+                    "Please add at least 1 formative assessment (e.g., QUIZ, ASSIGNMENT).");
+        }
+
+        result.setSummary(AssessmentValidationResult.AssessmentSummary.builder()
+                .currentTotalWeight(totalWeight)
+                .hasFinalAssessment(finalCount > 0)
+                .hasFormativeAssessment(formativeCount > 0)
+                .totalAssessmentCount(totalCount)
+                .formativeCount(formativeCount)
+                .finalCount(finalCount)
+                .build()); // Lệnh build() sẽ đóng gói tất cả lại thành object
+
+        // 3. Viết các câu IF bắt lỗi (Giống đoạn code tin nhắn trước)
+        if (totalWeight < 100) {
+            result.addError("WEIGHT_SHORTAGE",
+                    "Total weight is short by " + (100 - totalWeight) + "%. It must be exactly 100%.");
+        } else if (totalWeight > 100) {
+            result.addError("WEIGHT_SURPLUS",
+                    "Total weight exceeded by " + (totalWeight - 100) + "%. It must be exactly 100%.");
+        }
+
+        return result;
     }
 }

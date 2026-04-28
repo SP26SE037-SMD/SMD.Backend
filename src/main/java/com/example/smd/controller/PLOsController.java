@@ -2,10 +2,11 @@ package com.example.smd.controller;
 
 import com.example.smd.dto.request.plo.PLOsCreateRequest;
 import com.example.smd.dto.request.plo.PLOsRequest;
-import com.example.smd.dto.response.ComplianceCheckResponse;
+import com.example.smd.dto.response.validate.ComplianceCheckResponse;
 import com.example.smd.dto.response.PLOsResponse;
 import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.ResponseObject;
+import com.example.smd.entities.PLOs;
 import com.example.smd.services.PLOsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -125,13 +126,14 @@ public class PLOsController {
 
     @PostMapping(value = "/curriculum/{curriculumId}/validate-plo")
     public ResponseObject<ComplianceCheckResponse> validatePlo(
-            @PathVariable("curriculumId") UUID curriculumId
+            @PathVariable("curriculumId") UUID curriculumId,
+            @RequestBody List<PLOs> ploList
     ) {
-        var response = ploService.validatePloCheck(curriculumId);
+        var response = ploService.validatePloCheck(ploList, curriculumId);
         return ResponseObject.<ComplianceCheckResponse>builder()
                 .status(1000)
                 .data(response)
-                .message("POs status validate successfully for Major: " + curriculumId)
+                .message("PLOs status validate successfully for Curriculum: " + curriculumId)
                 .build();
     }
 }

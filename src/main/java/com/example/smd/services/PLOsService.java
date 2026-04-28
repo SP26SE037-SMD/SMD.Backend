@@ -2,11 +2,10 @@ package com.example.smd.services;
 
 import com.example.smd.dto.request.plo.PLOsCreateRequest;
 import com.example.smd.dto.request.plo.PLOsRequest;
-import com.example.smd.dto.response.ComplianceCheckResponse;
+import com.example.smd.dto.response.validate.ComplianceCheckResponse;
 import com.example.smd.dto.response.PLOsResponse;
 import com.example.smd.entities.Curriculum;
 import com.example.smd.entities.PLOs;
-import com.example.smd.entities.PO;
 import com.example.smd.entities.Regulation;
 import com.example.smd.enums.PloStatus;
 import com.example.smd.enums.RoleName;
@@ -234,11 +233,10 @@ public class PLOsService {
         }
     }
 
-    public ComplianceCheckResponse validatePloCheck(UUID curriculumId) {
+    public ComplianceCheckResponse validatePloCheck(List<PLOs> poList, UUID curriculumId) {
         Curriculum curriculum = curriculumRepository.findById(curriculumId)
                 .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));
-
-        List<PLOs> poList = plOsRepository.findByCurriculum_CurriculumId(curriculumId);
+        
         String userPoList = poList.stream()
                 .map(plo -> plo.getPloCode() + ": " + plo.getDescription())
                 .collect(Collectors.joining("\n"));
