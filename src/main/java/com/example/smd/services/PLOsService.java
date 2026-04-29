@@ -233,10 +233,11 @@ public class PLOsService {
         }
     }
 
-    public ComplianceCheckResponse validatePloCheck(List<PLOs> poList, UUID curriculumId) {
+    public ComplianceCheckResponse validatePloCheck(UUID curriculumId) {
         Curriculum curriculum = curriculumRepository.findById(curriculumId)
                 .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));
-        
+
+        List<PLOs> poList = plOsRepository.findByCurriculum_CurriculumId(curriculumId);
         String userPoList = poList.stream()
                 .map(plo -> plo.getPloCode() + ": " + plo.getDescription())
                 .collect(Collectors.joining("\n"));

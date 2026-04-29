@@ -126,10 +126,9 @@ public class PLOsController {
 
     @PostMapping(value = "/curriculum/{curriculumId}/validate-plo")
     public ResponseObject<ComplianceCheckResponse> validatePlo(
-            @PathVariable("curriculumId") UUID curriculumId,
-            @RequestBody List<PLOs> ploList
+            @PathVariable("curriculumId") UUID curriculumId
     ) {
-        var response = ploService.validatePloCheck(ploList, curriculumId);
+        var response = ploService.validatePloCheck(curriculumId);
         return ResponseObject.<ComplianceCheckResponse>builder()
                 .status(1000)
                 .data(response)

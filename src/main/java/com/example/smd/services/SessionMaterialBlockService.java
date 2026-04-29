@@ -400,10 +400,13 @@ public class SessionMaterialBlockService {
                 .build();
     }
 
-    public SessionValidationResult validate(List<SessionMaterialBlockBulkRequest> inputs, UUID subjectId) {
+    public SessionValidationResult validate(List<SessionMaterialBlockBulkRequest> inputs, UUID syllabusId) {
         SessionValidationResult result = new SessionValidationResult();
 
-        Subject masterSubject = subjectRepository.findById(subjectId)
+        Syllabus syllabus = syllabusRepository.findById(syllabusId)
+                .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
+
+        Subject masterSubject = subjectRepository.findById(syllabus.getSubject().getSubjectId())
                 .orElseThrow(() -> new AppException(ErrorCode.SUBJECT_NOT_FOUND));
 
         // 1. Tính quỹ Lý thuyết (Quy đổi an toàn từ Giờ -> Tiết)

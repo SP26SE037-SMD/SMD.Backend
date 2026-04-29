@@ -7,6 +7,7 @@ import com.example.smd.dto.response.PoPloCurriculumResponse;
 import com.example.smd.dto.response.PoPloMappingBulkResponse;
 import com.example.smd.dto.response.PoPloMappingResponse;
 import com.example.smd.dto.response.ResponseObject;
+import com.example.smd.dto.response.validate.PoPloMappingCheckResponse;
 import com.example.smd.services.PoPloMappingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -19,6 +20,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/po-plo-mappings")
@@ -95,6 +97,19 @@ public class PoPloMappingController {
         return ResponseObject.<Void>builder()
                 .status(1000)
                 .message("PO-PLO Mapping deleted successfully")
+                .build();
+    }
+
+    @PostMapping("/curriculum/{curriculumId}/validate")
+    public ResponseObject<PoPloMappingCheckResponse> validatePo(
+            @RequestBody List<PoPloMappingRequest> request,
+            @PathVariable("curriculumId") UUID curriculumId
+    ) {
+        var response = service.checkMapping(request, curriculumId);
+        return ResponseObject.<PoPloMappingCheckResponse>builder()
+                .status(1000)
+                .data(response)
+                .message("PO-PLO-Mapping validate successfully")
                 .build();
     }
 }
