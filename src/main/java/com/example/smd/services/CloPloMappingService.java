@@ -2,16 +2,17 @@ package com.example.smd.services;
 
 import com.example.smd.dto.request.CloPloMappingBulkRequest;
 import com.example.smd.dto.request.CloPloMappingRequest;
+import com.example.smd.dto.request.PoPloMappingRequest;
 import com.example.smd.dto.response.clo.CloPloMappingBulkResponse;
 import com.example.smd.dto.response.clo.CloPloMappingResponse;
-import com.example.smd.entities.CLO_PLO_Mapping;
+import com.example.smd.dto.response.validate.CloPloMappingCheckResponse;
+import com.example.smd.dto.response.validate.PoPloMappingCheckResponse;
+import com.example.smd.entities.*;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.CloPloMappingMapper;
-import com.example.smd.repositories.CLOsRepository;
-import com.example.smd.repositories.CloPloMappingRepository;
-import com.example.smd.repositories.PLOsRepository;
-import com.example.smd.repositories.SubjectRepository;
+import com.example.smd.repositories.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -19,10 +20,8 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -35,6 +34,8 @@ public class CloPloMappingService {
     CLOsRepository cloRepository;
     PLOsRepository ploRepository;
     SubjectRepository subjectRepository;
+    CurriculumRepository curriculumRepository;
+    GeminiService geminiService;
 
     @Transactional
     public CloPloMappingResponse createMapping(CloPloMappingRequest request) {
@@ -172,6 +173,69 @@ public class CloPloMappingService {
             return UUID.fromString(value);
         } catch (IllegalArgumentException | NullPointerException e) {
             throw new AppException(ErrorCode.INVALID_KEY);
+        }
+    }
+
+    public CloPloMappingCheckResponse checkMapping(List<CloPloMappingRequest> request, UUID curriculumId, UUID subjectId) {
+
+        Subject subject = subjectRepository.findById(subjectId)
+                .orElseThrow(() -> new AppException(ErrorCode.SUBJECT_NOT_FOUND));
+        List<CLOs> cloList = cloRepository.findBySubject_SubjectId(subject.getSubjectId());
+        String userCloList = cloList.stream()
+                .map(clo -> clo.getCloCode() + ": " + clo.getDescription())
+                .collect(Collectors.joining("\n"));
+
+        Curriculum curriculum = curriculumRepository.findById(curriculumId)
+                .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));
+
+        List<PLOs> ploList = ploRepository.findByCurriculum_CurriculumId(curriculum.getCurriculumId());
+        String userPloList = ploList.stream()
+                .map(plo -> plo.getPloCode() + ": " + plo.getDescription())
+                .collect(Collectors.joining("\n"));
+
+        String currentMapping = buildCurrentMappingForAI(request);
+        log.info("Không tìm thấy: " + currentMapping);
+
+        return geminiService.checkPloCloMapping(userPloList, userCloList, currentMapping);
+    }
+
+    public String buildCurrentMappingForAI(List<CloPloMappingRequest> requests) {
+
+        // 1. LẤY UUID (Giả sử getCloId() và getPloId() đang trả về UUID)
+        Set<UUID> cloIds = requests.stream()
+                .map(CloPloMappingRequest::getCloId)
+                .collect(Collectors.toSet());
+
+        Set<UUID> ploIds = requests.stream()
+                .map(CloPloMappingRequest::getPloId)
+                .collect(Collectors.toSet());
+
+        // 2. GỌI DATABASE 1 LẦN
+        List<CLOs> closFromDb = cloRepository.findAllById(cloIds);
+        List<PLOs> plosFromDb = ploRepository.findAllById(ploIds);
+
+        // 3. TẠO MAP: KEY = UUID String, VALUE = Code String
+        Map<String, String> cloIdToCodeMap = closFromDb.stream()
+                .collect(Collectors.toMap(clo -> clo.getCloId().toString(), CLOs::getCloCode));
+
+        Map<String, String> ploIdToCodeMap = plosFromDb.stream()
+                .collect(Collectors.toMap(plo -> plo.getPloId().toString(), PLOs::getPloCode));
+
+        // 4. GOM NHÓM DỮ LIỆU (Đã sửa lỗi .toString())
+        Map<String, List<String>> mappingResult = requests.stream()
+                .filter(req -> ploIdToCodeMap.containsKey(req.getPloId().toString())
+                        && cloIdToCodeMap.containsKey(req.getCloId().toString()))
+                .collect(Collectors.groupingBy(
+                        req -> ploIdToCodeMap.get(req.getPloId().toString()),
+                        Collectors.mapping(req -> cloIdToCodeMap.get(req.getCloId().toString()), Collectors.toList())
+                ));
+
+        // 5. PARSE SANG JSON STRING
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            return objectMapper.writeValueAsString(mappingResult);
+        } catch (Exception e) {
+            throw new RuntimeException("Lỗi khi parse mapping data cho AI Prompt", e);
         }
     }
 }

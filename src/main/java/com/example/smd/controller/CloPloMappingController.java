@@ -2,10 +2,13 @@ package com.example.smd.controller;
 
 import com.example.smd.dto.request.CloPloMappingBulkRequest;
 import com.example.smd.dto.request.CloPloMappingRequest;
+import com.example.smd.dto.request.PoPloMappingRequest;
 import com.example.smd.dto.response.clo.CloPloMappingBulkResponse;
 import com.example.smd.dto.response.clo.CloPloMappingResponse;
 import com.example.smd.dto.response.ResponseObject;
 
+import com.example.smd.dto.response.validate.CloPloMappingCheckResponse;
+import com.example.smd.dto.response.validate.PoPloMappingCheckResponse;
 import com.example.smd.services.CloPloMappingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -97,5 +100,19 @@ public class CloPloMappingController {
     public ResponseObject<Void> delete(@PathVariable String id) {
         service.deleteMapping(id);
         return ResponseObject.<Void>builder().status(1000).message("Deleted successfully").build();
+    }
+
+    @PostMapping("/curriculum/{curriculumId}/subject/{subjectId}/validate")
+    public ResponseObject<CloPloMappingCheckResponse> validatePo(
+            @RequestBody List<CloPloMappingRequest> request,
+            @PathVariable("curriculumId") UUID curriculumId,
+            @PathVariable("subjectId") UUID subjectId
+    ) {
+        var response = service.checkMapping(request, curriculumId, subjectId);
+        return ResponseObject.<CloPloMappingCheckResponse>builder()
+                .status(1000)
+                .data(response)
+                .message("CLO-PLO-Mapping validate successfully")
+                .build();
     }
 }

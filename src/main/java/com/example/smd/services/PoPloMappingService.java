@@ -5,7 +5,7 @@ import com.example.smd.dto.request.PoPloMappingRequest;
 import com.example.smd.dto.response.PoPloCurriculumResponse;
 import com.example.smd.dto.response.PoPloMappingBulkResponse;
 import com.example.smd.dto.response.PoPloMappingResponse;
-import com.example.smd.dto.response.validate.MappingCheckResponse;
+import com.example.smd.dto.response.validate.PoPloMappingCheckResponse;
 import com.example.smd.entities.*;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
@@ -169,7 +169,7 @@ public class PoPloMappingService {
         }
     }
 
-    public MappingCheckResponse checkMapping(List<PoPloMappingRequest> request, UUID curriculumId) {
+    public PoPloMappingCheckResponse checkMapping(List<PoPloMappingRequest> request, UUID curriculumId) {
         Curriculum curriculum = curriculumRepository.findById(curriculumId)
                 .orElseThrow(() -> new AppException(ErrorCode.DEPARTMENT_NOT_FOUND));
 
@@ -184,7 +184,6 @@ public class PoPloMappingService {
                 .collect(Collectors.joining("\n"));
 
         String currentMapping = buildCurrentMappingForAI(request);
-        log.error("Không tìm thấy: " + currentMapping);
 
         return geminiService.checkPoPloMapping(userPoList, userPloList, currentMapping);
     }
