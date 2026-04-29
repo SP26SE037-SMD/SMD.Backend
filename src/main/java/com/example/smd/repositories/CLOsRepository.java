@@ -1,6 +1,7 @@
 package com.example.smd.repositories;
 
 import com.example.smd.entities.CLOs;
+import com.example.smd.entities.PLOs;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -34,4 +35,6 @@ public interface CLOsRepository extends JpaRepository<CLOs, UUID> {
 
     // Thêm hàm này để lọc theo status cho Role thấp
     Page<CLOs> findBySubject_SubjectIdAndStatus(UUID subjectId, String status, Pageable pageable);
+
+    List<CLOs> findBySubject_SubjectId(UUID subjectId);
 }

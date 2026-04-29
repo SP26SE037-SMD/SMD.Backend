@@ -7,8 +7,7 @@ import com.example.smd.dto.response.PoPloCurriculumResponse;
 import com.example.smd.dto.response.PoPloMappingBulkResponse;
 import com.example.smd.dto.response.PoPloMappingResponse;
 import com.example.smd.dto.response.ResponseObject;
-import com.example.smd.dto.response.validate.ComplianceCheckResponse;
-import com.example.smd.dto.response.validate.MappingCheckResponse;
+import com.example.smd.dto.response.validate.PoPloMappingCheckResponse;
 import com.example.smd.services.PoPloMappingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -102,12 +101,12 @@ public class PoPloMappingController {
     }
 
     @PostMapping("/curriculum/{curriculumId}/validate")
-    public ResponseObject<MappingCheckResponse> validatePo(
+    public ResponseObject<PoPloMappingCheckResponse> validatePo(
             @RequestBody List<PoPloMappingRequest> request,
             @PathVariable("curriculumId") UUID curriculumId
     ) {
         var response = service.checkMapping(request, curriculumId);
-        return ResponseObject.<MappingCheckResponse>builder()
+        return ResponseObject.<PoPloMappingCheckResponse>builder()
                 .status(1000)
                 .data(response)
                 .message("PO-PLO-Mapping validate successfully")

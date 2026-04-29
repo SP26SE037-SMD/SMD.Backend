@@ -14,7 +14,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder // Thêm để hỗ trợ tạo object nhanh
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class MappingCheckResponse {
+public class PoPloMappingCheckResponse {
     @JsonProperty("is_compliant")
     private boolean compliant;
 
