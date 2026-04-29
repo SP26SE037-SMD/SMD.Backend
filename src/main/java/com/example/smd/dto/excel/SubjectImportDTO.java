@@ -45,4 +45,13 @@ public class SubjectImportDTO {
 
     @ExcelColumn(name = "Min Bloom Level", order = 11)
     String minBloomLevel;
+
+    @ExcelColumn(name = "Theory Period", order = 12)
+    String theoryPeriods;
+
+    @ExcelColumn(name = "Practical Period", order = 13)
+    String practicalPeriods;
+
+    @ExcelColumn(name = "Self Study Period", order = 14)
+    String selfStudyPeriods;
 }

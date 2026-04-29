@@ -497,6 +497,9 @@ public class SubjectService {
                             .studentLimit(parseInteger(row.getStudentLimit(), "studentLimit"))
                             .studentTasks(trim(row.getStudentTasks()))
                             .scoringScale(parseInteger(row.getScoringScale(), "scoringScale"))
+                            .theoryPeriods(parseInteger(row.getTheoryPeriods(), "theoryPeriods"))
+                            .practicalPeriods(parseInteger(row.getPracticalPeriods(), "practicalPeriods"))
+                            .selfStudyPeriods(parseInteger(row.getSelfStudyPeriods(), "selfStudyPeriods"))
                             .status(SubjectStatus.DRAFT.toString())
                             .createdAt(Instant.now())
                             .build();
