@@ -49,6 +49,7 @@ public class FullImportService {
     SubjectRepository subjectRepository;
     DepartmentRepository departmentRepository;
     GroupRepository groupRepository;
+    RegulationRepository regulationRepository;
     CurriculumGroupSubjectRepository curriculumGroupSubjectRepository;
 
     @Transactional
@@ -79,10 +80,22 @@ public class FullImportService {
                 response.setCurriculumResult(buildCurriculumResponse(curContext));
             }
 
+            // Initialize Zero-Layer Validation Map
+            Map<String, SubjectRegulationDTO> regulationMap = new HashMap<>();
+            if (majorContext.parsedMajorCode != null) {
+                regulationMap = initZeroLayerValidation(majorContext.parsedMajorCode);
+            }
+
+            // 👉 THÊM 3 DÒNG NÀY ĐỂ DEBUG:
+            log.info("=== KIỂM TRA DỮ LIỆU REGULATION MAP ===");
+            log.info("Số lượng môn học trong Map: " + regulationMap.size());
+            log.info("Danh sách các Mã môn (Keys) trong Map: " + regulationMap.keySet());
+// ===========================================
+
             // 3. Parse and Validate Subject
             Sheet subjectSheet = workbook.getSheet("Subject");
             if (subjectSheet != null) {
-                hasErrors |= parseAndValidateSubject(subjectSheet, subContext);
+                hasErrors |= parseAndValidateSubject(subjectSheet, subContext, regulationMap);
                 response.setSubjectResult(buildSubjectResponse(subContext));
             }
 
@@ -96,7 +109,7 @@ public class FullImportService {
             // 5. Parse and Validate Semester Mapping
             Sheet semesterSheet = workbook.getSheet("Semester Mapping");
             if (semesterSheet != null) {
-                hasErrors |= parseAndValidateSemesterMapping(semesterSheet, semContext, subContext, groupContext, curContext);
+                hasErrors |= parseAndValidateSemesterMapping(semesterSheet, semContext, subContext, groupContext, curContext, regulationMap);
                 response.setSemesterMappingResult(buildSemesterResponse(semContext));
             }
 
@@ -327,7 +340,7 @@ public class FullImportService {
         for (int i = 0; i <= sheet.getLastRowNum(); i++) {
             Row row = sheet.getRow(i);
             if (row == null) continue;
-
+            // STATE 0: Tìm Header của Curriculum
             if (state == 0) { 
                 for (int c = 0; c < row.getLastCellNum(); c++) {
                     String cellVal = getCellValue(row, c, formatter);
@@ -338,12 +351,35 @@ public class FullImportService {
                     else if (cellVal.equalsIgnoreCase("Major Code")) majorCodeCol = c;
                 }
                 if (curCodeCol != -1 && majorCodeCol != -1) state = 1;
-            } else if (state == 1) { 
+            }
+            // STATE 1: Đọc thông tin Curriculum và Validate Major Code
+            else if (state == 1) {
                 String code = getCellValue(row, curCodeCol, formatter);
                 if (code != null && !code.isEmpty()) {
                     ctx.parsedCurCode = code;
-                    ctx.parsedCurName = curNameCol != -1 ? getCellValue(row, curNameCol, formatter) : null;
                     ctx.parsedMajorCode = majorCodeCol != -1 ? getCellValue(row, majorCodeCol, formatter) : null;
+                    if (majorContext.parsedMajorCode == null) {
+                        ctx.details.add(ImportCurriculumResult.builder()
+                                .status("FAILED")
+                                .message("Lỗi hệ thống: Không tìm thấy dữ liệu từ sheet Major để đối chiếu")
+                                .build());
+                        return true; // Dừng toàn bộ sheet này
+                    }
+
+                    // So sánh mã ngành giữa 2 sheet
+                    if (!majorContext.parsedMajorCode.equalsIgnoreCase(ctx.parsedMajorCode)) {
+                        ctx.details.add(ImportCurriculumResult.builder()
+                                .curriculumCode(ctx.parsedCurCode)
+                                .status("FAILED")
+                                .message("Major Code bên sheet Curriculum [" + ctx.parsedMajorCode +
+                                        "] không khớp với Major Code bên sheet Major [" + majorContext.parsedMajorCode + "]")
+                                .build());
+
+                        // Theo yêu cầu: Không khớp thì không cần check PO mapping
+                        return true; // Thoát hàm validate sheet Curriculum ngay lập tức
+                    }
+
+                    ctx.parsedCurName = curNameCol != -1 ? getCellValue(row, curNameCol, formatter) : null;
                     ctx.parsedCurDesc = curDescCol != -1 ? getCellValue(row, curDescCol, formatter) : null;
                     if (curYearCol != -1) {
                         String yearRaw = getCellValue(row, curYearCol, formatter);
@@ -456,7 +492,8 @@ public class FullImportService {
         return hasErrors;
     }
 
-    private boolean parseAndValidateSubject(Sheet sheet, SubjectImportContext ctx) {
+    private boolean parseAndValidateSubject(Sheet sheet, SubjectImportContext ctx, Map<String, SubjectRegulationDTO> regulationMap) {
+
         boolean hasErrors = false;
         Set<String> subjectCodesInFile = new HashSet<>();
         
@@ -466,12 +503,25 @@ public class FullImportService {
                 String subjectCode = trim(row.getSubjectCode());
                 String subjectName = trim(row.getSubjectName());
                 String departmentCode = trim(row.getDepartmentCode());
-                
+
                 List<String> missingCols = new ArrayList<>();
-                if (subjectCode == null) missingCols.add("Subject Code");
+                if (subjectCode == null) {
+                    missingCols.add("Subject Code");
+                } else{
+                    if (subjectCode.equalsIgnoreCase("N/A")) {
+                        subjectCode = generateNASubjectCode(subjectName);
+                    }
+                    ctx.fileSubjectCodes.add(subjectCode.toUpperCase());
+                }
                 if (subjectName == null) missingCols.add("Subject Name");
                 if (departmentCode == null) missingCols.add("Department Code");
                 if (trim(row.getCredits()) == null) missingCols.add("Credits");
+                if (trim(row.getTimeAllocation()) == null) missingCols.add("Time Allocation");
+                if (trim(row.getMinToPass()) == null) missingCols.add("Min to pass");
+                if (trim(row.getStudentLimit()) == null) missingCols.add("Student Limit");
+                if (trim(row.getStudentTasks()) == null) missingCols.add("Student Tasks");
+                if (trim(row.getScoringScale()) == null) missingCols.add("Scoring Scale");
+                if (trim(row.getMinBloomLevel()) == null) missingCols.add("Min Bloom Level");
 
                 if (!missingCols.isEmpty()) {
                     ctx.details.add(ImportSubjectResult.builder()
@@ -483,6 +533,52 @@ public class FullImportService {
                     continue;
                 }
 
+                if (subjectCode.equalsIgnoreCase("N/A")) {
+                    subjectCode = generateNASubjectCode(subjectName);
+                }
+
+                if (!regulationMap.containsKey(subjectCode.toUpperCase())) {
+                    ctx.details.add(ImportSubjectResult.builder()
+                            .subjectCode(subjectCode)
+                            .status("FAILED")
+                            .message("Mã môn học [" + subjectCode + "] không nằm trong chương trình khung quy định")
+                            .build());
+                    hasErrors = true;
+                    continue;
+                }
+
+                SubjectRegulationDTO regDto = regulationMap.get(subjectCode.toUpperCase());
+                Integer excelCredits = parseIntegerSafe(row.getCredits());
+                Integer theory = parseIntegerSafe(row.getTheoryPeriods());
+                Integer practical = parseIntegerSafe(row.getPracticalPeriods());
+                Integer selfStudy = parseIntegerSafe(row.getSelfStudyPeriods());
+
+                List<String> mismatchErrors = new ArrayList<>();
+                if (regDto.credit != null && !regDto.credit.equals(excelCredits)) {
+                    mismatchErrors.add("Credit (Chuẩn: " + regDto.credit + ", Excel: " + excelCredits + ")");
+                }
+                if (regDto.theoryPeriod != null && !regDto.theoryPeriod.equals(theory)) {
+                    mismatchErrors.add("Theory (Chuẩn: " + regDto.theoryPeriod + ", Excel: " + theory + ")");
+                }
+                if (regDto.practicalPeriod != null && !regDto.practicalPeriod.equals(practical)) {
+                    mismatchErrors.add("Practical (Chuẩn: " + regDto.practicalPeriod + ", Excel: " + practical + ")");
+                }
+                if (regDto.selfStudyPeriod != null && !regDto.selfStudyPeriod.equals(selfStudy)) {
+                    mismatchErrors.add("SelfStudy (Chuẩn: " + regDto.selfStudyPeriod + ", Excel: " + selfStudy + ")");
+                }
+
+                if (!mismatchErrors.isEmpty()) {
+                    ctx.details.add(ImportSubjectResult.builder()
+                            .subjectCode(subjectCode)
+                            .status("FAILED")
+                            .message("Sai thông số quy định: " + String.join(", ", mismatchErrors))
+                            .build());
+                    hasErrors = true;
+                    continue;
+                }
+
+               //comment do thử để chỗ khác
+//                ctx.fileSubjectCodes.add(subjectCode.toUpperCase());
                 if (!subjectCodesInFile.add(subjectCode.toUpperCase())) {
                     ctx.details.add(ImportSubjectResult.builder()
                             .subjectCode(subjectCode).status("FAILED").message("Duplicate subjectCode in file").build());
@@ -490,7 +586,6 @@ public class FullImportService {
                     continue;
                 }
 
-                ctx.fileSubjectCodes.add(subjectCode.toUpperCase());
                 if (subjectRepository.existsBySubjectCode(subjectCode)) {
                     ctx.details.add(ImportSubjectResult.builder()
                             .subjectCode(subjectCode).status("SUCCESS").message("Skipped: Already exists in DB").build());
@@ -573,6 +668,7 @@ public class FullImportService {
                     hasErrors = true;
                     continue;
                 }
+                ctx.fileGroupCodes.add(groupCode.toUpperCase());
 
                 if (groupRepository.existsByGroupCode(groupCode)) {
                     ctx.details.add(ImportGroupResult.builder()
@@ -589,7 +685,6 @@ public class FullImportService {
                         .build();
 
                 ctx.groupsToSave.add(group);
-                ctx.fileGroupCodes.add(groupCode.toUpperCase());
                 ctx.details.add(ImportGroupResult.builder()
                         .groupCode(groupCode).status("SUCCESS").message("Validated").build());
             }
@@ -600,7 +695,7 @@ public class FullImportService {
         return hasErrors;
     }
 
-    private boolean parseAndValidateSemesterMapping(Sheet sheet, SemesterImportContext ctx, SubjectImportContext subCtx, GroupImportContext grpCtx, CurriculumImportContext curCtx) {
+    private boolean parseAndValidateSemesterMapping(Sheet sheet, SemesterImportContext ctx, SubjectImportContext subCtx, GroupImportContext grpCtx, CurriculumImportContext curCtx, Map<String, SubjectRegulationDTO> regulationMap) {
         boolean hasErrors = false;
         Set<String> subjectCodesInFile = new HashSet<>();
         
@@ -622,6 +717,7 @@ public class FullImportService {
                     hasErrors = true;
                     continue;
                 }
+
 
                 if (!subjectCodesInFile.add(subjectCode.toUpperCase())) {
                     ctx.details.add(buildSemFail(rowNumber, groupCode, subjectCode, semesterRaw, "Duplicate subject in mapping file"));
@@ -655,6 +751,16 @@ public class FullImportService {
                     }
                 }
 
+                // ZERO-LAYER VALIDATION for Semester
+                if (regulationMap.containsKey(subjectCode.toUpperCase())) {
+                    SubjectRegulationDTO regDto = regulationMap.get(subjectCode.toUpperCase());
+                    if (regDto.semester != null && !regDto.semester.equals(semesterNo)) {
+                        ctx.details.add(buildSemFail(rowNumber, groupCode, subjectCode, semesterRaw, "Sai học kỳ quy định (Chuẩn: " + regDto.semester + ", Excel: " + semesterNo + ")"));
+                        hasErrors = true;
+                        continue;
+                    }
+                }
+
                 Curriculum_Group_Subject mapping = Curriculum_Group_Subject.builder()
                         .semester(semesterNo)
                         // Temporary dummy subjects/groups to hold the code, replaced during insertion phase
@@ -677,6 +783,56 @@ public class FullImportService {
     // ==========================================
     // UTILS & RESPONSE BUILDERS
     // ==========================================
+
+    private Map<String, SubjectRegulationDTO> initZeroLayerValidation(String majorCode) {
+        Map<String, SubjectRegulationDTO> map = new HashMap<>();
+        if (majorCode == null || majorCode.isEmpty()) return map;
+
+        Major major = majorRepository.findByMajorCode(majorCode).orElse(null);
+        if (major == null) return map;
+
+        Regulation regulation = regulationRepository.findByCodeAndMajor_MajorId("COURSE_MAPPING", major.getMajorId()).orElse(null);
+        if (regulation == null || regulation.getValue() == null) return map;
+
+        String value = regulation.getValue();
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("(.*?)\\s*\\(([^)]+)\\)");
+        java.util.regex.Matcher matcher = pattern.matcher(value);
+        while (matcher.find()) {
+            String namePart = matcher.group(1).trim();
+            if (namePart.startsWith(",")) {
+                namePart = namePart.substring(1).trim();
+            }
+            String dataPart = matcher.group(2).trim();
+            String[] dataFields = dataPart.split("\\|");
+            if (dataFields.length >= 5) {
+                String code = dataFields[0].trim();
+                Integer credit = parseIntegerSafe(dataFields[1]);
+                Integer theory = parseIntegerSafe(dataFields[2]);
+                Integer practical = parseIntegerSafe(dataFields[3]);
+                Integer selfStudy = parseIntegerSafe(dataFields[4]);
+                Integer semester = null;
+                if (dataFields.length >= 6) {
+                    semester = parseIntegerSafe(dataFields[5]);
+                }
+                
+                if (code.equalsIgnoreCase("N/A")) {
+                    code = generateNASubjectCode(namePart);
+                }
+                
+                SubjectRegulationDTO dto = new SubjectRegulationDTO(code, namePart, semester, credit, theory, practical, selfStudy);
+                map.put(code.toUpperCase(), dto);
+            }
+        }
+        return map;
+    }
+
+    private String generateNASubjectCode(String subjectName) {
+        if (subjectName == null || subjectName.trim().isEmpty()) return "N/A_UNKNOWN";
+        String normalized = java.text.Normalizer.normalize(subjectName.trim(), java.text.Normalizer.Form.NFD);
+        String noDiacritics = normalized.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
+        String noSpaces = noDiacritics.replaceAll("[^a-zA-Z0-9]", "");
+        return "N/A_" + noSpaces;
+    }
 
     private ImportCurriculumGroupSubjectResult buildSemFail(int rowNumber, String groupCode, String subjectCode, String semester, String message) {
         return ImportCurriculumGroupSubjectResult.builder()
@@ -736,6 +892,26 @@ public class FullImportService {
     // ==========================================
     // INTERNAL CONTEXT CLASSES
     // ==========================================
+
+    private static class SubjectRegulationDTO {
+        String subjectCode;
+        String subjectName;
+        Integer semester;
+        Integer credit;
+        Integer theoryPeriod;
+        Integer practicalPeriod;
+        Integer selfStudyPeriod;
+
+        public SubjectRegulationDTO(String subjectCode, String subjectName, Integer semester, Integer credit, Integer theoryPeriod, Integer practicalPeriod, Integer selfStudyPeriod) {
+            this.subjectCode = subjectCode;
+            this.subjectName = subjectName;
+            this.semester = semester;
+            this.credit = credit;
+            this.theoryPeriod = theoryPeriod;
+            this.practicalPeriod = practicalPeriod;
+            this.selfStudyPeriod = selfStudyPeriod;
+        }
+    }
 
     private static class MajorImportContext {
         String parsedMajorCode;
