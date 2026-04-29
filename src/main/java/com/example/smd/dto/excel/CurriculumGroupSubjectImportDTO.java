@@ -10,7 +10,7 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class CurriculumGroupSubjectImportDTO {
 
-    @ExcelColumn(name = "Group Code", order = 0, required = true)
+    @ExcelColumn(name = "Group Code", order = 0, required = false)
     String groupCode;
 
     @ExcelColumn(name = "Subject Code", order = 1)

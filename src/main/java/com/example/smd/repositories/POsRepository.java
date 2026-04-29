@@ -15,6 +15,8 @@ import java.util.UUID;
 @Repository
 public interface POsRepository extends JpaRepository<PO, UUID> {
 
+    boolean existsByPoCode(String poCode);
+
     boolean existsByPoCodeAndMajor_MajorId(String poCode, UUID majorId);
 
     boolean existsByPoCodeInAndMajor_MajorId(List<String> poCodes, UUID majorId);
@@ -22,6 +24,8 @@ public interface POsRepository extends JpaRepository<PO, UUID> {
     Page<PO> findByMajor_MajorId(UUID majorId, Pageable pageable);
 
     List<PO> findByMajor_MajorId(UUID majorId);
+
+    java.util.Optional<PO> findByPoCodeAndMajor_MajorCode(String poCode, String majorCode);
 
     // Tìm PO của Major theo Status (Để phục vụ phân quyền Role)
     Page<PO> findByMajor_MajorIdAndStatus(UUID majorId, String status, Pageable pageable);

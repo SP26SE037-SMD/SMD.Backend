@@ -328,6 +328,20 @@ public class CurriculumGroupSubjectService {
             MultipartFile file,
             UUID curriculumId
     ) {
+        try (org.apache.poi.ss.usermodel.Workbook workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook(file.getInputStream())) {
+            org.apache.poi.ss.usermodel.Sheet sheet = workbook.getSheet("Semester Mapping");
+            if (sheet == null) sheet = workbook.getSheetAt(0); // fallback
+            return importCurriculumGroupSubjectFromSheet(sheet, curriculumId);
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION, "Import mapping failed: " + e.getMessage());
+        }
+    }
+
+    @Transactional
+    public ImportCurriculumGroupSubjectResponse importCurriculumGroupSubjectFromSheet(
+            Sheet sheet,
+            UUID curriculumId
+    ) {
 
         Curriculum curriculum = curriculumRepository
                 .findById(curriculumId)
@@ -345,7 +359,7 @@ public class CurriculumGroupSubjectService {
 
         try {
             List<CurriculumGroupSubjectImportDTO> rows =
-                    ExcelImporter.importFromExcel(file, CurriculumGroupSubjectImportDTO.class);
+                    ExcelImporter.importFromSheet(sheet, CurriculumGroupSubjectImportDTO.class);
 
             for (int index = 0; index < rows.size(); index++) {
 

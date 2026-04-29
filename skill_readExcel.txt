@@ -1,0 +1,352 @@
+---
+name: excel-public-reader
+description: >
+  Dùng skill này BẤT CỨ KHI NÀO người dùng gửi file Excel (.xlsx, .xls, .xlsm, .csv)
+  và muốn Claude ĐỌC HIỂU nội dung bên trong — không phải tạo hay sửa file.
+  Trigger ngay khi người dùng nói: "đọc file excel này", "file này nói gì",
+  "hãy đọc và giải thích", "bạn hiểu gì từ file này", "phân tích file excel",
+  "tóm tắt nội dung", "file này chứa gì", "đọc sheet", hoặc upload file
+  .xlsx/.xls/.csv mà không có yêu cầu chỉnh sửa.
+  Skill này xử lý mọi loại layout Excel: bảng dữ liệu thông thường, workflow
+  diagram trải phẳng thành cột, lifecycle state machine, ma trận, báo cáo
+  nhiều sheet, file merge cell phức tạp. Luôn đọc tọa độ ô để hiểu layout
+  không gian trước khi kết luận.
+compatibility: bash, python3, openpyxl
+---
+
+# Excel Public Reader
+
+Skill đọc và hiểu nội dung file Excel từ người dùng upload — không sửa, không tạo mới.
+Mục tiêu: Claude đọc đúng layout, hiểu đúng ý nghĩa, trả lời đúng câu hỏi.
+
+---
+
+## 1. Xác định file
+
+File upload từ người dùng nằm tại:
+```
+/mnt/user-data/uploads/<tên-file>.xlsx
+```
+
+Kiểm tra file trước khi đọc:
+```bash
+# Kiểm tra file tồn tại và kích thước
+stat /mnt/user-data/uploads/<file>.xlsx
+
+# Kiểm tra định dạng thực tế
+file /mnt/user-data/uploads/<file>.xlsx
+```
+
+---
+
+## 2. Quy trình đọc chuẩn (4 bước bắt buộc)
+
+### Bước 1 — Khảo sát cấu trúc tổng thể
+
+```python
+from openpyxl import load_workbook
+
+wb = load_workbook("/mnt/user-data/uploads/<file>.xlsx", read_only=True)
+print("Sheets:", wb.sheetnames)
+print("Số sheets:", len(wb.sheetnames))
+```
+
+Nếu có nhiều sheets → đọc từng sheet. Nếu chỉ có 1 → đọc luôn.
+
+---
+
+### Bước 2 — Đọc với tọa độ ô (QUAN TRỌNG)
+
+**Không bao giờ đọc values_only=True trước khi hiểu layout.**
+Luôn đọc kèm tọa độ ô (`cell.coordinate`) để hiểu cấu trúc không gian:
+
+```python
+from openpyxl import load_workbook
+
+wb = load_workbook("/mnt/user-data/uploads/<file>.xlsx", read_only=True)
+
+for sheet_name in wb.sheetnames:
+    ws = wb[sheet_name]
+    print(f"\n=== Sheet: [{sheet_name}] ===")
+    
+    for row in ws.iter_rows(values_only=False):
+        for cell in row:
+            if cell.value is not None:
+                val = str(cell.value).strip()
+                if val:
+                    print(f"  [{cell.coordinate}] = {val!r}")
+```
+
+---
+
+### Bước 3 — Phân tích layout
+
+Nhìn vào tọa độ, nhận dạng loại layout (xem Mục 3).
+
+---
+
+### Bước 4 — Trả lời câu hỏi của người dùng
+
+Dùng template trả lời phù hợp với loại file (xem Mục 4).
+
+---
+
+## 3. Nhận dạng loại layout
+
+Đây là bước quan trọng nhất. File Excel thường có 7 dạng:
+
+### Layout A — Bảng dữ liệu chuẩn
+**Dấu hiệu:** Row 1 là header, các row còn lại là data. Các cột liên tục từ A.
+
+```
+[A1] "ID"   [B1] "Tên"   [C1] "Trạng thái"
+[A2] "001"  [B2] "Alice" [C2] "Active"
+[A3] "002"  [B3] "Bob"   [C3] "Inactive"
+```
+
+**Cách đọc:** `pd.read_excel()` bình thường.
+
+---
+
+### Layout B — Workflow diagram trải phẳng (PHỨC TẠP)
+**Dấu hiệu:** Nhiều cột song song, mỗi cột là một "lane" hoặc entity. Có nhiều ô trống xen kẽ. Tọa độ phân tán.
+
+```
+[A1] "Bước 1"           [D1] "Entity A"   [G1] "Entity B"
+[A3] "→ hành động"      [D3] "DRAFT"       [G3] "TO_DO"
+[A7] "Bước 2"           [D7] "REVIEW"      [G7] "IN_PROGRESS"
+```
+
+**Cách đọc:** Phân tích spatial. Nhóm theo hàng gần nhau. Đọc tham khảo `references/layout-patterns.md`.
+
+---
+
+### Layout C — State Machine / Lifecycle
+**Dấu hiệu:** Có các cột "Status Before" → "Action" → "Status After". Hoặc nhiều entity với danh sách trạng thái dọc.
+
+**Cách đọc:** Nhận dạng entity, vẽ ra vòng đời trạng thái.
+
+---
+
+### Layout D — Ma trận mapping
+**Dấu hiệu:** Row header và Column header. Ô giao nhau có giá trị (✓, X, số, %)
+
+```
+[A1] ""      [B1] "Team A"  [C1] "Team B"
+[A2] "Task1" [B2] "✓"       [C2] ""
+[A3] "Task2" [B3] ""        [C3] "✓"
+```
+
+**Cách đọc:** Đọc như pivot table. Nêu rõ ai có/ ai không có.
+
+---
+
+### Layout E — Báo cáo nhiều vùng trên cùng sheet
+**Dấu hiệu:** Có nhiều "bảng nhỏ" cách nhau bởi hàng trống. Tọa độ bắt đầu không từ A1.
+
+**Cách đọc:** Tìm các "khối" ô (block), phân tích từng khối riêng.
+
+---
+
+### Layout F — Nhiều sheets liên kết
+**Dấu hiệu:** Sheet đầu là summary/overview, sheet sau là chi tiết. Hoặc mỗi sheet là một entity.
+
+**Cách đọc:** Đọc từng sheet, nêu rõ mối quan hệ giữa các sheet.
+
+---
+
+### Layout G — File merge cell
+**Dấu hiệu:** Nhiều ô có cùng giá trị theo hàng/cột, thường là tiêu đề nhóm.
+
+```python
+# Đọc merged cells
+for merged_range in ws.merged_cells.ranges:
+    print(f"Merged: {merged_range}")
+```
+
+**Cách đọc:** Unmerge logic trong đầu, coi merged cell là header của nhóm bên dưới/bên phải.
+
+---
+
+## 4. Templates trả lời
+
+### Template A — Bảng dữ liệu thông thường
+
+```
+## Nội dung file: [Tên file]
+
+**Tổng quan:** [N] dòng dữ liệu, [M] cột, [K] sheets
+
+### Cấu trúc
+| Cột | Kiểu dữ liệu | Mô tả |
+|-----|-------------|-------|
+| Tên cột | text/number/date | ý nghĩa |
+
+### Thông tin nổi bật
+- [Nhận xét về dữ liệu: phân phối, giá trị đặc biệt, pattern]
+
+### Trả lời câu hỏi người dùng
+[Câu trả lời cụ thể]
+```
+
+---
+
+### Template B — Workflow diagram
+
+```
+## Nội dung file: [Tên file]
+
+File này là **workflow diagram trải phẳng thành bảng Excel**.
+Tác giả dùng từng cột như "lane" để mô tả trạng thái entity song song theo từng bước.
+
+### Tổng quan
+- [N] bước trong workflow
+- Actors: [danh sách]
+- Entities được track: [danh sách]
+
+### Các bước chi tiết
+
+**Bước [N] — [Tên bước]**
+| Entity | Trạng thái |
+|--------|-----------|
+| Task | IN_PROGRESS |
+| Syllabus | DRAFT |
+
+[Mô tả bước làm gì]
+
+### Các nhánh (branch)
+- **Trường hợp A:** [Mô tả]
+- **Trường hợp B:** [Mô tả]
+
+### Business Rules phát hiện
+- [Rule 1 rút ra từ nội dung file]
+- [Rule 2]
+```
+
+---
+
+### Template C — State Machine
+
+```
+## Vòng đời trạng thái: [Tên entity]
+
+**Trạng thái:**
+[DRAFT] → [REVIEW] → [APPROVED] → [PUBLISHED] → [ARCHIVED]
+                  ↘ [REJECTED] → (sửa lại) → [REVIEW]
+
+### Chi tiết từng chuyển đổi
+| Từ | Đến | Điều kiện / Hành động |
+|----|-----|----------------------|
+| DRAFT | REVIEW | Creator submit |
+```
+
+---
+
+### Template D — Ma trận
+
+```
+## Ma trận: [Tiêu đề]
+
+**Đọc cách:** Hàng = [entity A], Cột = [entity B]
+✓ = có quan hệ/quyền/mapping
+
+### Tóm tắt
+- [A] có quan hệ với: [B1], [B3], [B5]
+- [C] không có quan hệ với: [B2], [B4]
+```
+
+---
+
+## 5. Xử lý lỗi thường gặp
+
+### File không đọc được với openpyxl
+```bash
+# Thử kiểm tra format
+file /mnt/user-data/uploads/<file>.xlsx
+
+# Nếu là .xls (legacy) → dùng xlrd qua pandas
+python3 -c "
+import pandas as pd
+df = pd.read_excel('/mnt/user-data/uploads/<file>.xlsx', engine='xlrd')
+print(df.head())
+"
+
+# Nếu là .csv
+python3 -c "
+import pandas as pd
+# Thử UTF-8 trước
+try:
+    df = pd.read_csv('/mnt/user-data/uploads/<file>.csv', encoding='utf-8')
+except:
+    df = pd.read_csv('/mnt/user-data/uploads/<file>.csv', encoding='utf-8-sig')
+print(df.head(10))
+print(df.shape)
+"
+```
+
+### File quá lớn (>10MB)
+```python
+# Chỉ đọc N dòng đầu để khảo sát
+import pandas as pd
+df = pd.read_excel('/mnt/user-data/uploads/<file>.xlsx', nrows=50)
+print(df.info())
+print(df.head(20))
+```
+
+### Nhiều ô trống, tọa độ phân tán
+```python
+# Đọc toàn bộ sheet kèm vùng tọa độ thực
+from openpyxl import load_workbook
+
+wb = load_workbook("/mnt/user-data/uploads/<file>.xlsx", read_only=True)
+ws = wb.active
+
+# Tìm vùng data thực sự (bỏ qua trailing empty)
+data_cells = []
+for row in ws.iter_rows(values_only=False):
+    for cell in row:
+        if cell.value is not None and str(cell.value).strip():
+            data_cells.append((cell.coordinate, str(cell.value).strip()))
+
+for coord, val in data_cells:
+    print(f"  [{coord}] {val!r}")
+```
+
+### File có nhiều sheet
+```python
+from openpyxl import load_workbook
+
+wb = load_workbook("/mnt/user-data/uploads/<file>.xlsx", read_only=True)
+
+for sheet_name in wb.sheetnames:
+    ws = wb[sheet_name]
+    print(f"\n{'='*50}")
+    print(f"Sheet: [{sheet_name}]")
+    print(f"{'='*50}")
+    
+    count = 0
+    for row in ws.iter_rows(values_only=False):
+        for cell in row:
+            if cell.value is not None and str(cell.value).strip():
+                print(f"  [{cell.coordinate}] = {str(cell.value).strip()!r}")
+                count += 1
+    print(f"→ {count} ô có dữ liệu")
+```
+
+---
+
+## 6. Quy tắc bắt buộc
+
+- **Đọc tọa độ trước** — không dùng `values_only=True` trước khi hiểu layout
+- **Không suy đoán** — nếu không hiểu layout, in ra tọa độ raw và hỏi người dùng
+- **Nhận dạng layout trước khi kết luận** — cùng dữ liệu nhưng bảng thông thường vs workflow diagram có ý nghĩa hoàn toàn khác
+- **Trả lời trực tiếp câu hỏi** — nếu người dùng hỏi "bạn hiểu gì", dùng template phù hợp; nếu hỏi cụ thể thì trả lời cụ thể
+- **Tiếng Việt** — trả lời bằng tiếng Việt trừ khi file tiếng Anh và người dùng hỏi bằng tiếng Anh
+
+---
+
+## 7. Tham khảo thêm
+
+Đọc khi cần:
+- `references/layout-patterns.md` — ví dụ chi tiết từng loại layout với code xử lý
+- `references/encoding-guide.md` — xử lý encoding tiếng Việt trong Excel
