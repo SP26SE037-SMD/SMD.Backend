@@ -52,11 +52,11 @@ public class POsService {
                 .orElseThrow(() -> new AppException(ErrorCode.MAJOR_NOT_FOUND));
 
         // Kiểm tra Role tạo
-        var account = accountService.getAccountById(accountId);
-        String roleName = account.getRole().getRoleName();
-        if (!RoleName.HOCFDC.toString().equals(roleName)) {
-            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
-        }
+//        var account = accountService.getAccountById(accountId);
+//        String roleName = account.getRole().getRoleName();
+//        if (!RoleName.HOCFDC.toString().equals(roleName)) {
+//            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+//        }
 
         // 2. Check trùng mã nội bộ trong JSON gửi lên
         Set<String> uniqueCodes = new HashSet<>();
