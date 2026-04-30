@@ -32,10 +32,10 @@ public class DocumentController {
     @Autowired
     private DocumentService documentService;
 
-    @GetMapping("/major/{majorId}")
+    @GetMapping
     @Operation(summary = "Get all documents with pagination and search")
     public ResponseObject<List<DocumentResponse>> getAll(
-            @RequestParam UUID majorId,
+            @RequestParam(required = false) UUID majorId,
             @Parameter(description = "Trạng thái của tài liệu. Các giá trị hợp lệ: ACTIVE, DELETED",
                     example = "ACTIVE")
             @RequestParam(required = false) String status) {

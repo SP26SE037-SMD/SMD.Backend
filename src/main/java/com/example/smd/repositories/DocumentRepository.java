@@ -13,8 +13,9 @@ import java.util.UUID;
 
 @Repository
 public interface DocumentRepository extends JpaRepository<Document, UUID>, JpaSpecificationExecutor<Document> {
-    @Query("SELECT d FROM Document d WHERE d.major.majorId = :majorId " +
-            "AND (:status IS NULL OR d.status = :status)")
-    List<Document> findByMajorAndOptionalStatus(@Param("majorId") UUID majorId,
-                                                @Param("status") String status);
+    @Query("SELECT d FROM Document d WHERE " +
+            "(:majorId IS NULL OR d.major.majorId = :majorId) AND " +
+            "(:status IS NULL OR d.status = :status)")
+    List<Document> findAllWithFilters(@Param("majorId") UUID majorId,
+                                      @Param("status") String status);
 }
