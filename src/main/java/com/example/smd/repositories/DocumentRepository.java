@@ -18,4 +18,8 @@ public interface DocumentRepository extends JpaRepository<Document, UUID>, JpaSp
             "(:status IS NULL OR d.status = :status)")
     List<Document> findAllWithFilters(@Param("majorId") UUID majorId,
                                       @Param("status") String status);
+
+    List<Document> findAllByMajorIsNullAndStatus(String status);
+
+    List<Document> findAllByMajorIsNull();
 }

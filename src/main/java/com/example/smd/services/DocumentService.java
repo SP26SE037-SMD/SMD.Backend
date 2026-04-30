@@ -32,6 +32,11 @@ public class DocumentService {
     @Transactional
     public List<DocumentResponse> getAll(UUID majorId, String status) {
         List<Document> documents = repository.findAllWithFilters(majorId, status);
+        if(majorId == null && status == null){
+            documents = repository.findAllByMajorIsNull();
+        } else if (majorId == null && status != null){
+            documents = repository.findAllByMajorIsNullAndStatus(status);
+        }
         return mapper.toResponseList(documents);
     }
 
