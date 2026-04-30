@@ -45,6 +45,9 @@ public class Major {
     @OneToMany(mappedBy = "major", fetch = FetchType.LAZY)
     List<Regulation> regulations;
 
+    @OneToMany(mappedBy = "major", fetch = FetchType.LAZY)
+    List<Document> documents;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = Instant.now();
