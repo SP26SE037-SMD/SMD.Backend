@@ -10,6 +10,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -27,59 +28,74 @@ import java.util.*;
 @Slf4j
 @Component
 public class GeminiConfig {
-    @Value("${gemini.api-key}")
-    private String apiKey;
+
+    @Autowired
+    private ApiKeyManager apiKeyManager;
 
     private final RestTemplate restTemplate = new RestTemplate();
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public List<Double> getEmbedding(String text, String apiUrl) {
-        String url = apiUrl + "?key=" + apiKey;
+        int maxAttempts = apiKeyManager.getTotalKeys();
+        int attempts = 0;
+        // 1. Tạo JSON Body theo chuẩn của Google
+        // Cấu trúc: { "model": "...", "content": { "parts": [{ "text": "..." }] } }
+        String jsonBody = objectMapper.createObjectNode()
+                .put("model", "models/text-embedding-004")
+                .set("content", objectMapper.createObjectNode()
+                        .set("parts", objectMapper.createArrayNode()
+                                .add(objectMapper.createObjectNode().put("text", text))))
+                .toString();
 
-        try {
-            // 1. Tạo JSON Body theo chuẩn của Google
-            // Cấu trúc: { "model": "...", "content": { "parts": [{ "text": "..." }] } }
-            String jsonBody = objectMapper.createObjectNode()
-                    .put("model", "models/text-embedding-004")
-                    .set("content", objectMapper.createObjectNode()
-                            .set("parts", objectMapper.createArrayNode()
-                                    .add(objectMapper.createObjectNode().put("text", text))))
-                    .toString();
+        // 2. Tạo Header
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<String> request = new HttpEntity<>(jsonBody, headers);
+        while (attempts < maxAttempts) {
 
-            // 2. Tạo Header
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            HttpEntity<String> request = new HttpEntity<>(jsonBody, headers);
+            String currentKey = apiKeyManager.getCurrentKey();
+            String url = apiUrl + "?key=" + currentKey;
 
-            // 3. Gọi API (POST)
-            String response = restTemplate.postForObject(url, request, String.class);
+            try {
+                // 3. Gọi API (POST)
+                String response = restTemplate.postForObject(url, request, String.class);
 
-            // 4. Parse kết quả trả về để lấy mảng số
-            JsonNode rootNode = objectMapper.readTree(response);
-            JsonNode valuesNode = rootNode.path("embedding").path("values");
+                // 4. Parse kết quả trả về để lấy mảng số
+                JsonNode rootNode = objectMapper.readTree(response);
+                JsonNode valuesNode = rootNode.path("embedding").path("values");
 
-            List<Double> vector = new ArrayList<>();
-            if (valuesNode.isArray()) {
-                for (JsonNode val : valuesNode) {
-                    vector.add(val.asDouble());
+                List<Double> vector = new ArrayList<>();
+                if (valuesNode.isArray()) {
+                    for (JsonNode val : valuesNode) {
+                        vector.add(val.asDouble());
+                    }
                 }
-            }
-            return vector;
+                return vector;
 
-        } catch (HttpClientErrorException.TooManyRequests e) {
-            throw new AppException(ErrorCode.AI_QUOTA_EXCEEDED);
-        } catch (Exception e) {
-            log.error("Gemini AI Provider Error. Detail: ", e);
-            throw new AppException(ErrorCode.AI_PROVIDER_ERROR);
+            } catch (HttpClientErrorException.TooManyRequests e) {
+                log.warn("Key hiện tại bị lỗi 429. Đang chuyển đổi sang key khác...");
+                apiKeyManager.rotateKey(currentKey);
+                attempts++;
+
+                try {
+                    Thread.sleep(1000); // Tạm dừng 1s để giảm tải trước khi thử lại
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt(); // Khôi phục trạng thái ngắt luồng chuẩn của Java
+                    throw new AppException(ErrorCode.AI_PROVIDER_ERROR);
+                }
+            } catch (Exception e) {
+                log.error("Gemini AI Provider Error. Detail: ", e);
+                throw new AppException(ErrorCode.AI_PROVIDER_ERROR);
+            }
         }
+        return null;
     }
 
     public String prompt(String prompt, String apiUrl) {
-        // 1. Tạo URL có chứa API Key (Gemini dùng key trên URL)
-        String finalUrl = apiUrl + "?key=" + apiKey;
-
-        // 2. Tạo Header
+        int maxAttempts = apiKeyManager.getTotalKeys();
+        int attempts = 0;
+        // 1. Tạo Header
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
@@ -92,46 +108,81 @@ public class GeminiConfig {
                 ))
         ));
 
-        // 4. Gọi API
+        // 2. Gọi API
         HttpEntity<GeminiRequest> entity = new HttpEntity<>(requestBody, headers);
-        try {
-            ResponseEntity<GeminiResponse> response = restTemplate.postForEntity(finalUrl, entity, GeminiResponse.class);
+        // 3. Tạo URL có chứa API Key (Gemini dùng key trên URL)
+        while (attempts < maxAttempts) {
+            String currentKey = apiKeyManager.getCurrentKey();
+            String finalUrl = apiUrl + "?key=" + currentKey;
+            try {
+                ResponseEntity<GeminiResponse> response = restTemplate.postForEntity(finalUrl, entity, GeminiResponse.class);
 
-            // 5. Lấy kết quả
-            if (response.getBody() != null && !response.getBody().getCandidates().isEmpty()) {
-                return response.getBody().getCandidates().get(0).getContent().getParts().get(0).getText();
+                // 5. Lấy kết quả
+                if (response.getBody() != null && !response.getBody().getCandidates().isEmpty()) {
+                    return response.getBody().getCandidates().get(0).getContent().getParts().get(0).getText();
+                }
+            } catch (HttpClientErrorException.TooManyRequests e) {
+                // 5. Bắt lỗi 429: Thực hiện xoay key
+                log.warn("Key hiện tại bị lỗi 429. Đang chuyển đổi sang key khác...");
+                apiKeyManager.rotateKey(currentKey);
+                attempts++;
+
+                try {
+                    Thread.sleep(1000); // Tạm dừng 1s để giảm tải trước khi thử lại
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt(); // Khôi phục trạng thái ngắt luồng chuẩn của Java
+                    throw new AppException(ErrorCode.AI_PROVIDER_ERROR);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                return "Lỗi gọi Gemini: " + e.getMessage();
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            return "Lỗi gọi Gemini: " + e.getMessage();
         }
         return "Không có phản hồi từ Gemini";
     }
 
     public String uploadFile(MultipartFile file, String apiUrl) {
         // URL dùng để upload file nhị phân (chú ý uploadType=media)
-        String uploadUrl = apiUrl + "?uploadType=media&key=" + apiKey;
+        int maxAttempts = apiKeyManager.getTotalKeys();
+        int attempts = 0;
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.valueOf(file.getContentType() != null ? file.getContentType() : "application/pdf"));
+        while (attempts < maxAttempts) {
+            String currentKey = apiKeyManager.getCurrentKey();
+            String uploadUrl = apiUrl + "?uploadType=media&key=" + currentKey;
+            try {
+                HttpEntity<byte[]> requestEntity = new HttpEntity<>(file.getBytes(), headers);
+                ResponseEntity<String> response = restTemplate.postForEntity(uploadUrl, requestEntity, String.class);
 
-        try {
-            HttpEntity<byte[]> requestEntity = new HttpEntity<>(file.getBytes(), headers);
-            ResponseEntity<String> response = restTemplate.postForEntity(uploadUrl, requestEntity, String.class);
+                if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                    JsonNode rootNode = objectMapper.readTree(response.getBody());
+                    return rootNode.path("file").path("uri").asText();
+                }
+            } catch (HttpClientErrorException.TooManyRequests e) {
+                // 5. Bắt lỗi 429: Thực hiện xoay key
+                log.warn("Key hiện tại bị lỗi 429. Đang chuyển đổi sang key khác...");
+                apiKeyManager.rotateKey(currentKey);
+                attempts++;
 
-            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                JsonNode rootNode = objectMapper.readTree(response.getBody());
-                return rootNode.path("file").path("uri").asText();
+                try {
+                    Thread.sleep(1000); // Tạm dừng 1s để giảm tải trước khi thử lại
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt(); // Khôi phục trạng thái ngắt luồng chuẩn của Java
+                    throw new AppException(ErrorCode.AI_PROVIDER_ERROR);
+                }
+            } catch (Exception e) {
+                log.error("Lỗi Upload file lên Gemini: {}", e.getMessage());
+                return null;
             }
-        } catch (Exception e) {
-            log.error("Lỗi Upload file lên Gemini: {}", e.getMessage());
-            return null;
         }
         return null;
     }
 
     public String promptWithFile(String prompt, String fileUri, String mimeType, String apiUrl) {
-        String finalUrl = apiUrl + "?key=" + apiKey;
+        int maxAttempts = apiKeyManager.getTotalKeys();
+        int attempts = 0;
+
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -147,15 +198,31 @@ public class GeminiConfig {
         ));
 
         HttpEntity<GeminiRequest> entity = new HttpEntity<>(requestBody, headers);
-        try {
-            ResponseEntity<GeminiResponse> response = restTemplate.postForEntity(finalUrl, entity, GeminiResponse.class);
+        while (attempts < maxAttempts) {
+            String currentKey = apiKeyManager.getCurrentKey();
+            String finalUrl = apiUrl + "?key=" + currentKey;
+            try {
+                ResponseEntity<GeminiResponse> response = restTemplate.postForEntity(finalUrl, entity, GeminiResponse.class);
 
-            if (response.getBody() != null && !response.getBody().getCandidates().isEmpty()) {
-                return response.getBody().getCandidates().get(0).getContent().getParts().get(0).getText();
+                if (response.getBody() != null && !response.getBody().getCandidates().isEmpty()) {
+                    return response.getBody().getCandidates().get(0).getContent().getParts().get(0).getText();
+                }
+            } catch (HttpClientErrorException.TooManyRequests e) {
+                // 5. Bắt lỗi 429: Thực hiện xoay key
+                log.warn("Key hiện tại bị lỗi 429. Đang chuyển đổi sang key khác...");
+                apiKeyManager.rotateKey(currentKey);
+                attempts++;
+
+                try {
+                    Thread.sleep(1000); // Tạm dừng 1s để giảm tải trước khi thử lại
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt(); // Khôi phục trạng thái ngắt luồng chuẩn của Java
+                    throw new AppException(ErrorCode.AI_PROVIDER_ERROR);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                return "Lỗi gọi Gemini: " + e.getMessage();
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            return "Lỗi gọi Gemini: " + e.getMessage();
         }
         return "Không có phản hồi từ Gemini";
     }
@@ -163,17 +230,35 @@ public class GeminiConfig {
     public String getFileState(String fileUri) {
         // fileUri có dạng: https://generativelanguage.googleapis.com/v1beta/files/abc123
         // Ta cần đính kèm API Key vào URL để GET
-        String urlWithKey = fileUri + "?key=" + apiKey;
 
-        try {
-            // Gọi GET tới Google
-            Map<String, Object> response = restTemplate.getForObject(urlWithKey, Map.class);
+        int maxAttempts = apiKeyManager.getTotalKeys();
+        int attempts = 0;
+        while (attempts < maxAttempts) {
+            String currentKey = apiKeyManager.getCurrentKey();
+            String urlWithKey = fileUri + "?key=" + currentKey;
 
-            if (response != null && response.containsKey("state")) {
-                return response.get("state").toString(); // Trả về: "PROCESSING", "ACTIVE", hoặc "FAILED"
+            try {
+                // Gọi GET tới Google
+                Map<String, Object> response = restTemplate.getForObject(urlWithKey, Map.class);
+
+                if (response != null && response.containsKey("state")) {
+                    return response.get("state").toString(); // Trả về: "PROCESSING", "ACTIVE", hoặc "FAILED"
+                }
+            } catch (HttpClientErrorException.TooManyRequests e) {
+                // 5. Bắt lỗi 429: Thực hiện xoay key
+                log.warn("Key hiện tại bị lỗi 429. Đang chuyển đổi sang key khác...");
+                apiKeyManager.rotateKey(currentKey);
+                attempts++;
+
+                try {
+                    Thread.sleep(1000); // Tạm dừng 1s để giảm tải trước khi thử lại
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt(); // Khôi phục trạng thái ngắt luồng chuẩn của Java
+                    throw new AppException(ErrorCode.AI_PROVIDER_ERROR);
+                }
+            } catch (Exception e) {
+                log.error("Lỗi khi kiểm tra trạng thái file: {}", e.getMessage());
             }
-        } catch (Exception e) {
-            log.error("Lỗi khi kiểm tra trạng thái file: {}", e.getMessage());
         }
         return "UNKNOWN";
     }
