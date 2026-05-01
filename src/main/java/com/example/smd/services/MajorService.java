@@ -213,12 +213,6 @@ public class MajorService {
             }
         }
 
-        if (PloStatus.DRAFT.toString().equals(major.getStatus())) {
-            if (!RoleName.VP.toString().equals(account.getRole().getRoleName())) {
-                throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
-            }
-        }
-
         return majorMapper.toMajorResponse(major);
     }
 
