@@ -4,10 +4,7 @@ import com.example.smd.config.GeminiConfig;
 import com.example.smd.dto.request.clo.CloCheckRequest;
 import com.example.smd.dto.request.clo.CloGenerationRequest;
 import com.example.smd.dto.response.ComparisonResult;
-import com.example.smd.dto.response.validate.CloPloMappingCheckResponse;
-import com.example.smd.dto.response.validate.ComplianceCheckResponse;
-import com.example.smd.dto.response.validate.PoPloMappingCheckResponse;
-import com.example.smd.dto.response.validate.ProgramRegulationResponse;
+import com.example.smd.dto.response.validate.*;
 import com.example.smd.dto.response.clo.CLOsGenerationResponse;
 import com.example.smd.dto.response.clo.CloCheckResponse;
 import com.example.smd.dto.response.syllabus.SyllabusStructureResponse;
@@ -440,6 +437,47 @@ public class GeminiService  {
             log.info(cleanJson); // HÃY NHÌN VÀO LOG NÀY
             // 5. Parse dữ liệu
             return objectMapper.readValue(cleanJson, CloPloMappingCheckResponse.class);
+
+        } catch (JsonProcessingException e) {
+            log.error("Failed to parse Gemini response: {}", response);
+            throw new AppException(ErrorCode.AI_GENERATION_FAILED);
+        }
+    }
+
+    @Retryable(
+            retryFor = { HttpServerErrorException.class },
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 2000) // Thử lại sau 2 giây, tối đa 3 lần
+    )
+    public AssessmentCloMappingValidationResult checkAssessmentCloMapping(String assessmentList, String cloList, String currentMapping) {
+        // 1. Lấy ĐÚNG Template dành cho việc Check Compliance
+        String template = promptTemplateService.get(PromptKey.ASSESSMENT_CLO_MAPPING_PROMPT);
+
+        // 2. Dùng replace để an toàn với ký tự đặc biệt (%)
+        String prompt = template.replace("{ASSESSMENT_LIST}", assessmentList)
+                .replace("{CLO_LIST}", cloList)
+                .replace("{CURRENT_MAPPING}", currentMapping);
+
+        // 3. Gọi AI
+        String response = gemini.prompt(prompt, apiGenerateUrl);
+
+        if (response == null || response.isBlank()) {
+            throw new AppException(ErrorCode.AI_GENERATION_FAILED);
+        }
+
+        try {
+            // 4. Cách làm sạch JSON "lỳ đòn" nhất: Tìm cặp dấu { } ngoài cùng
+            int start = response.indexOf("{");
+            int end = response.lastIndexOf("}");
+            if (start == -1 || end == -1) {
+                log.error("AI không trả về JSON hợp lệ: {}", response);
+                throw new AppException(ErrorCode.AI_GENERATION_FAILED);
+            }
+            String cleanJson = response.substring(start, end + 1);
+            log.info("=== RAW JSON TỪ AI TRẢ VỀ ===");
+            log.info(cleanJson); // HÃY NHÌN VÀO LOG NÀY
+            // 5. Parse dữ liệu
+            return objectMapper.readValue(cleanJson, AssessmentCloMappingValidationResult.class);
 
         } catch (JsonProcessingException e) {
             log.error("Failed to parse Gemini response: {}", response);
