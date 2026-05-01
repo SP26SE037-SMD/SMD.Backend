@@ -82,6 +82,18 @@ public class AssessmentController {
                 .build();
     }
 
+    @PostMapping("/bluk")
+    @PreAuthorize("hasAuthority('SYLLABUS_UPDATE')")
+    @Operation(summary = "Create new assessment")
+    public ResponseObject<List<AssessmentResponse>> createAssessmentBluk(@Valid @RequestBody List<AssessmentRequest> request, @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
+        return ResponseObject.<List<AssessmentResponse>>builder()
+                .status(1000)
+                .data(assessmentService.createAssessmentsBluk(request, userId))
+                .message("Create assessment successfully")
+                .build();
+    }
+
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('SYLLABUS_UPDATE')")
     @Operation(summary = "Update assessment by ID")
@@ -165,13 +177,13 @@ public class AssessmentController {
                 .build();
     }
 
-    @PostMapping("/subject/{subjectId}/validate")
+    @PostMapping("/syllabus/{syllabusId}/validate")
     @Operation(summary = "Get session-material-block detail by sessionId")
     public ResponseObject<AssessmentValidationResult> validateAssessment(
-            @RequestBody List<AssessmentRequest> inputs) {
+            @RequestBody List<AssessmentRequest> inputs, UUID syllabusId) {
         return ResponseObject.<AssessmentValidationResult>builder()
                 .status(1000)
-                .data(assessmentService.validate(inputs))
+                .data(assessmentService.validate(inputs, syllabusId))
                 .message("Validate assessment successfully")
                 .build();
     }
