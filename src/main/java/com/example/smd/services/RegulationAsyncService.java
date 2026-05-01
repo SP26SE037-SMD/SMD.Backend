@@ -29,7 +29,6 @@ public class RegulationAsyncService {
     private final RegulationRepository regulationRepository;
     private final RegulationMapper regulationMapper;
     private final MajorRepository majorRepository;
-    private final MajorMapper majorMapper;
     private final GeminiService geminiService;
     private final RealtimePublisher realtimePublisher;
 
@@ -51,7 +50,7 @@ public class RegulationAsyncService {
             @Override
             public void afterCommit() {
                 realtimePublisher.publishToAccount(accountId,
-                        RealtimePayload.status("IMPORT_SUCCESS", "Successfully enrolled in a program."));
+                        RealtimePayload.status("IMPORT_SUCCESS", saveMajor.getMajorId()));
             }
         });
     }
