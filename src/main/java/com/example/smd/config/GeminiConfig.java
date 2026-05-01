@@ -141,18 +141,18 @@ public class GeminiConfig {
         return "Không có phản hồi từ Gemini";
     }
 
-    public String uploadFile(MultipartFile file, String apiUrl) {
+    public String uploadFile(byte[] file, String contentType, String apiUrl) {
         // URL dùng để upload file nhị phân (chú ý uploadType=media)
         int maxAttempts = apiKeyManager.getTotalKeys();
         int attempts = 0;
 
         HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.valueOf(file.getContentType() != null ? file.getContentType() : "application/pdf"));
+        headers.setContentType(MediaType.valueOf(contentType != null ? contentType : "application/pdf"));
         while (attempts < maxAttempts) {
             String currentKey = apiKeyManager.getCurrentKey();
             String uploadUrl = apiUrl + "?uploadType=media&key=" + currentKey;
             try {
-                HttpEntity<byte[]> requestEntity = new HttpEntity<>(file.getBytes(), headers);
+                HttpEntity<byte[]> requestEntity = new HttpEntity<>(file, headers);
                 ResponseEntity<String> response = restTemplate.postForEntity(uploadUrl, requestEntity, String.class);
 
                 if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {

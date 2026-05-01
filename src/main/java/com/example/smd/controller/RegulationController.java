@@ -19,6 +19,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.UUID;
 
 @Tag(name = "Regulation", description = "Regulation Management APIs")
@@ -93,9 +94,9 @@ public class RegulationController {
     }
 
     @PostMapping(value = "/extract", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseObject<MajorResponse> extractMasterDataFromPdf(
+    public ResponseObject<String> extractMasterDataFromPdf(
             @RequestParam("file") MultipartFile file,
-            @AuthenticationPrincipal Jwt jwt) throws InterruptedException {
+            @AuthenticationPrincipal Jwt jwt) throws IOException {
         String userId = jwt.getClaimAsString("accountId");
         // 1. Validate file đầu vào (Basic)
         if (file.isEmpty()) {
@@ -103,13 +104,13 @@ public class RegulationController {
         }
 
         // 2. Gọi Service xử lý luồng AI (Upload -> Prompt -> Parse JSON)
-        var response = regulationService.importMajorAndAddRegulation(file, userId);
+        String response = regulationService.startImportProcess(file, userId);
 
         // 3. Trả về kết quả cho Frontend
-        return ResponseObject.<MajorResponse>builder()
+        return ResponseObject.<String>builder()
                 .status(1000)
-                .data(response)
                 .message("Create major and import rule successfully")
+                .data(response)
                 .build();
     }
 }
