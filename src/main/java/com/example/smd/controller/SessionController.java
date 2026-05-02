@@ -193,7 +193,15 @@ public class  SessionController {
     }
 
     @PostMapping("/syllabus/{syllabusId}/validate")
-    @Operation(summary = "Get session-material-block detail by sessionId")
+    @Operation(
+            summary = "Kiểm tra tính hợp lệ của quỹ thời gian Sessions",
+            description = "Hàm này tính toán và đối chiếu quỹ thời gian dựa trên danh sách Session truyền vào và các Session đã có sẵn trong Database. " +
+                    "Logic xử lý được phân loại chi tiết theo từng `sessionType`:\n\n" +
+                    "* **THEORY (Lý thuyết)**: Tổng thời lượng (giờ) được tính toán, làm tròn và quy đổi sang tiết học (45 phút = 1 tiết). Sau đó đối chiếu với quỹ tiết lý thuyết của Subject.\n" +
+                    "* **PRACTICE (Thực hành)**: Tương tự như Theory, tổng giờ thực hành được quy đổi sang tiết học và đối chiếu với quỹ tiết thực hành của Subject.\n" +
+                    "* **SELF_STUDY (Tự học)**: Tổng thời lượng (giờ) được cộng dồn trực tiếp và đối chiếu với quỹ giờ tự học quy định.\n\n" +
+                    "**Kết quả trả về:** Bao gồm chi tiết số dư quỹ thời gian (`remainingQuotas`) và danh sách các mã lỗi cảnh báo (VD: `THEORY_SHORTAGE`, `PRACTICE_SURPLUS`, `SELF_STUDY_SHORTAGE`...) nếu phát hiện sự phân bổ THIẾU hoặc DƯ so với quy định."
+    )
     public ResponseObject<SessionValidationResult> validateSession(
             @RequestBody List<SessionRequest> inputs,
             @PathVariable("syllabusId") UUID syllabusId) {
