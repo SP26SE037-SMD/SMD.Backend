@@ -26,7 +26,7 @@ public class SessionResponse {
     String teachingMethods;
     Integer duration;
     String status;
-
+    String sessionTopic;
     String sessionType;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+7")

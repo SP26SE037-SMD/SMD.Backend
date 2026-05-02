@@ -23,6 +23,7 @@ public class SessionMapper {
                 .duration(session.getDuration())
                 .status(session.getStatus())
                 .createdAt(session.getCreatedAt())
+                .sessionTopic(session.getSessionTopic())
                 .build();
     }
 
@@ -35,6 +36,7 @@ public class SessionMapper {
                 .sessionNumber(request.getSessionNumber())
                 .sessionTitle(request.getSessionTitle())
                 .teachingMethods(request.getTeachingMethods())
+                .sessionTopic(request.getSessionTopic())
                 .duration(request.getDuration())
                 .build();
     }
@@ -43,6 +45,7 @@ public class SessionMapper {
         session.setSessionNumber(request.getSessionNumber());
         session.setSessionTitle(request.getSessionTitle());
         session.setTeachingMethods(request.getTeachingMethods());
+        session.setSessionTopic(request.getSessionTopic());
         session.setDuration(request.getDuration());
     }
 }

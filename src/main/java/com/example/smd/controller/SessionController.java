@@ -1,10 +1,12 @@
 package com.example.smd.controller;
 
+import com.example.smd.dto.request.session.SessionMaterialBlockBulkRequest;
 import com.example.smd.dto.request.session.SessionRequest;
 import com.example.smd.dto.request.session.SessionNumberListRequest;
 import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.dto.response.SessionResponse;
+import com.example.smd.dto.response.validate.SessionValidationResult;
 import com.example.smd.services.SessionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -78,6 +80,18 @@ public class  SessionController {
         return ResponseObject.<SessionResponse>builder()
                 .status(1000)
                 .data(sessionService.createSession(request, userId))
+                .message("Create session successfully")
+                .build();
+    }
+
+    @PostMapping("/bluk")
+    @PreAuthorize("hasAuthority('SYLLABUS_UPDATE')")
+    @Operation(summary = "Create new session")
+    public ResponseObject<List<SessionResponse>> createSessionBluk(@Valid @RequestBody List<SessionRequest> request, @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
+        return ResponseObject.<List<SessionResponse>>builder()
+                .status(1000)
+                .data(sessionService.createSessionsBluk(request, userId))
                 .message("Create session successfully")
                 .build();
     }
@@ -175,6 +189,18 @@ public class  SessionController {
         return ResponseObject.<Void>builder()
                 .status(1000)
                 .message("All materials in syllabus " + syllabusId + " updated to " + newStatus)
+                .build();
+    }
+
+    @PostMapping("/syllabus/{syllabusId}/validate")
+    @Operation(summary = "Get session-material-block detail by sessionId")
+    public ResponseObject<SessionValidationResult> validateSession(
+            @RequestBody List<SessionRequest> inputs,
+            @PathVariable("syllabusId") UUID syllabusId) {
+        return ResponseObject.<SessionValidationResult>builder()
+                .status(1000)
+                .data(sessionService.validate(inputs, syllabusId))
+                .message("Validate session-material-block successfully")
                 .build();
     }
 }

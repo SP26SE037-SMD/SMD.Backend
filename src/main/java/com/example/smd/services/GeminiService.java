@@ -266,7 +266,7 @@ public class GeminiService  {
             String state = gemini.getFileState(fileUri);
             attempts++;
             realtimePublisher.publishToAccount(accountId,
-                    RealtimePayload.status("PROCESSING", "AI is analyzing the file structure.... (Try time " + attempts + ")"));
+                    RealtimePayload.status("PROCESSING", "AI is analyzing the file structure"));
 
             if ("ACTIVE".equals(state)) {
                 isReady = true;
@@ -478,6 +478,47 @@ public class GeminiService  {
             log.info(cleanJson); // HÃY NHÌN VÀO LOG NÀY
             // 5. Parse dữ liệu
             return objectMapper.readValue(cleanJson, AssessmentCloMappingValidationResult.class);
+
+        } catch (JsonProcessingException e) {
+            log.error("Failed to parse Gemini response: {}", response);
+            throw new AppException(ErrorCode.AI_GENERATION_FAILED);
+        }
+    }
+
+    @Retryable(
+            retryFor = { HttpServerErrorException.class },
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 2000) // Thử lại sau 2 giây, tối đa 3 lần
+    )
+    public SessionCloMappingValidationResult checkSessionCloMapping(String sessionList, String cloList, String currentMapping) {
+        // 1. Lấy ĐÚNG Template dành cho việc Check Compliance
+        String template = promptTemplateService.get(PromptKey.SESSION_CLO_MAPPING_PROMPT);
+
+        // 2. Dùng replace để an toàn với ký tự đặc biệt (%)
+        String prompt = template.replace("{SESSION_LIST}", sessionList)
+                .replace("{CLO_LIST}", cloList)
+                .replace("{CURRENT_MAPPING}", currentMapping);
+
+        // 3. Gọi AI
+        String response = gemini.prompt(prompt, apiGenerateUrl);
+
+        if (response == null || response.isBlank()) {
+            throw new AppException(ErrorCode.AI_GENERATION_FAILED);
+        }
+
+        try {
+            // 4. Cách làm sạch JSON "lỳ đòn" nhất: Tìm cặp dấu { } ngoài cùng
+            int start = response.indexOf("{");
+            int end = response.lastIndexOf("}");
+            if (start == -1 || end == -1) {
+                log.error("AI không trả về JSON hợp lệ: {}", response);
+                throw new AppException(ErrorCode.AI_GENERATION_FAILED);
+            }
+            String cleanJson = response.substring(start, end + 1);
+            log.info("=== RAW JSON TỪ AI TRẢ VỀ ===");
+            log.info(cleanJson); // HÃY NHÌN VÀO LOG NÀY
+            // 5. Parse dữ liệu
+            return objectMapper.readValue(cleanJson, SessionCloMappingValidationResult.class);
 
         } catch (JsonProcessingException e) {
             log.error("Failed to parse Gemini response: {}", response);

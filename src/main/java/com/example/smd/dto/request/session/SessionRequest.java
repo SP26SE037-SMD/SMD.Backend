@@ -33,6 +33,8 @@ public class SessionRequest {
 
     String teachingMethods;
 
+    String sessionTopic;
+
     String sessionType;
 
     @Min(value = 0, message = "SESSION_DURATION_INVALID")
