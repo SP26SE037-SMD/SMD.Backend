@@ -178,7 +178,18 @@ public class AssessmentController {
     }
 
     @PostMapping("/syllabus/{syllabusId}/validate")
-    @Operation(summary = "Get session-material-block detail by sessionId")
+    @Operation(
+            summary = "Kiểm tra tính hợp lệ của cấu trúc Điểm số / Đánh giá (Assessments)",
+            description = "Hàm này tính toán và kiểm tra các ràng buộc của các bài đánh giá dựa trên danh sách Assessment truyền vào và các Assessment đã có sẵn trong Database. " +
+                    "Logic xử lý được phân loại chi tiết dựa trên **Assessment Category** và **Assessment Type**:\n\n" +
+                    "* **Assessment Category (Danh mục đánh giá)**: Hệ thống tra cứu cơ sở dữ liệu để phân loại chính xác các bài đánh giá thành 2 nhóm:\n" +
+                    "  * **Summative (Tổng kết / Cuối kỳ)**: Bắt buộc phải có ít nhất 1 bài đánh giá và không được vượt quá số lượng tối đa cho phép (hiện tại là 2).\n" +
+                    "  * **Formative (Quá trình)**: Bắt buộc phải có ít nhất 1 bài đánh giá quá trình nếu tổng trọng số của môn học chưa đạt mức 100% tuyệt đối.\n" +
+                    "* **Assessment Type (Loại hình đánh giá)**: Thể hiện hình thức kiểm tra cụ thể của từng bài (VD: *Final Exam, Project, PE* thuộc nhóm Summative; *Quiz, Assignment, Lab* thuộc nhóm Formative), giúp hệ thống kiểm soát đúng tính chất của từng cột điểm.\n" +
+                    "* **Trọng số (Weight)**: Tổng trọng số của tất cả bài đánh giá (cũ và mới) phải đạt chính xác 100%. Hệ thống báo lỗi nếu tỷ lệ này bị THIẾU hoặc DƯ.\n" +
+                    "* **Tổng số lượng bài (Total Count)**: Khống chế tối đa 6 bài đánh giá trong một Syllabus để tránh tình trạng quá tải cho sinh viên.\n\n" +
+                    "**Kết quả trả về:** Bao gồm bảng tóm tắt (`summary`) chứa thông tin tổng trọng số, tổng số bài, số lượng theo Category và danh sách mã lỗi cảnh báo (VD: `WEIGHT_SHORTAGE`, `MISSING_FINAL_ASSESSMENT`...) nếu vi phạm quy chế."
+    )
     public ResponseObject<AssessmentValidationResult> validateAssessment(
             @RequestBody List<AssessmentRequest> inputs, UUID syllabusId) {
         return ResponseObject.<AssessmentValidationResult>builder()
