@@ -2,11 +2,8 @@ package com.example.smd.services;
 
 import com.example.smd.dto.request.CloAssessmentMappingBatchRequest;
 import com.example.smd.dto.request.CloAssessmentMappingRequest;
-import com.example.smd.dto.request.CloPloMappingRequest;
-import com.example.smd.dto.request.CloSessionMappingRequest;
 import com.example.smd.dto.response.clo.CloAssessmentMappingResponse;
 import com.example.smd.dto.response.validate.AssessmentCloMappingValidationResult;
-import com.example.smd.dto.response.validate.CloPloMappingCheckResponse;
 import com.example.smd.entities.*;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
@@ -18,7 +15,6 @@ import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.*;

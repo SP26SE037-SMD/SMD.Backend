@@ -4,6 +4,7 @@ import com.example.smd.dto.request.CloSessionMappingBatchRequest;
 import com.example.smd.dto.request.CloSessionMappingRequest;
 import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.dto.response.clo.CloSessionMappingResponse;
+import com.example.smd.dto.response.validate.SessionCloMappingValidationResult;
 import com.example.smd.services.CloSessionMappingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -12,10 +13,10 @@ import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/clo-session-mappings")
@@ -88,6 +89,18 @@ public class CloSessionMappingController {
         service.deleteMapping(id);
         return ResponseObject.<Void>builder()
                 .status(1000)
+                .message("CLO-Session mapping deleted successfully")
+                .build();
+    }
+
+    @PostMapping("/syllabus/{syllabusId}/validate")
+    @Operation(summary = "Check a CLO-Session Mapping")
+    public ResponseObject<SessionCloMappingValidationResult> checkMapping(
+            @PathVariable("syllabusId") UUID syllabusId,
+            @RequestBody List<CloSessionMappingRequest> cloSessionMappingRequest) {
+        return ResponseObject.<SessionCloMappingValidationResult>builder()
+                .status(1000)
+                .data(service.checkMapping(cloSessionMappingRequest, syllabusId))
                 .message("CLO-Session mapping deleted successfully")
                 .build();
     }

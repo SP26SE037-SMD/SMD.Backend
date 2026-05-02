@@ -5,7 +5,6 @@ import com.example.smd.dto.request.CloAssessmentMappingRequest;
 import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.dto.response.clo.CloAssessmentMappingResponse;
 import com.example.smd.dto.response.validate.AssessmentCloMappingValidationResult;
-import com.example.smd.dto.response.validate.CloPloMappingCheckResponse;
 import com.example.smd.services.CloAssessmentMappingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
