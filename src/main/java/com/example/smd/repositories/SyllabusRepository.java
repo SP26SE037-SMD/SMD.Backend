@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -34,4 +35,11 @@ public interface SyllabusRepository extends JpaRepository<Syllabus, UUID> {
     ORDER BY s.createdAt DESC
     """)
     List<Syllabus> findActiveAndArchivedSyllabus(@Param("subjectId") UUID subjectId);
+
+
+    @Query("SELECT s FROM Syllabus s " +
+            "JOIN FETCH s.subject " +
+            "WHERE s.syllabusId = :id")
+    Optional<Syllabus> findByIdWithSubject(@Param("id") UUID id);
+
 }
