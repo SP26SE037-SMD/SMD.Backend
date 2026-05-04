@@ -42,18 +42,6 @@ public class ProgramRegulationResponse {
     private String professionalEducationCredits;
 
     // --- QUY CHẾ ĐÀO TẠO & SESSION ---
-    @JsonProperty("theory_total_limit") // Bổ sung trường này vì Prompt đã có
-    private String theoryTotalLimit;
-
-    @JsonProperty("discussion_total_limit")
-    private String discussionTotalLimit;
-
-    @JsonProperty("max_periods_per_week")
-    private String maxPeriodsPerWeek;
-
-    @JsonProperty("self_study_auto_calc")
-    private String selfStudyAutoCalc;
-
     @JsonProperty("assessment_rule")
     private String assessmentRule;
 
