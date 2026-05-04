@@ -67,10 +67,6 @@ public class RegulationAsyncService {
         regulations.add(createRegulation("EXCLUDED_CREDITS", "Tín chỉ ngoại lệ (GDQP/GDTC)", response.getExcludedCreditsRule(), major));
         regulations.add(createRegulation("GENERAL_EDU_CREDITS", "Tín chỉ giáo dục đại cương", response.getGeneralEducationCredits(), major));
         regulations.add(createRegulation("PROFESSIONAL_EDU_CREDITS", "Tín chỉ giáo dục chuyên nghiệp", response.getProfessionalEducationCredits(), major));
-        regulations.add(createRegulation("THEORY_LIMIT", "Định mức tiết lý thuyết", response.getTheoryTotalLimit(), major));
-        regulations.add(createRegulation("DISCUSSION_LIMIT", "Định mức tiết thảo luận/thực hành", response.getDiscussionTotalLimit(), major));
-        regulations.add(createRegulation("MAX_WEEKLY_PERIODS", "Số tiết tối đa/tuần", response.getMaxPeriodsPerWeek(), major));
-        regulations.add(createRegulation("SELF_STUDY_FORMULA", "Công thức tự học", response.getSelfStudyAutoCalc(), major));
         regulations.add(createRegulation("ASSESSMENT_RATIO", "Tỉ lệ điểm quá trình/cuối kỳ", response.getAssessmentRule(), major));
         regulations.add(createRegulation("COURSE_CATALOG", "Danh mục học phần", response.getCourseCatalogValidation(), major));
         regulations.add(createRegulation("COURSE_MAPPING", "Chi tiết định biên học phần (N|a|b|c)", response.getCourseDetailMapping(), major));
