@@ -48,8 +48,6 @@ public class Session {
     @OneToMany(mappedBy = "session", fetch = FetchType.LAZY)
     List<CLO_Session> cloSessions;
 
-    @OneToMany(mappedBy = "session", fetch = FetchType.LAZY)
-    List<Session_Material_Block> sessionMaterialBlocks;
 
     @PrePersist
     protected void onCreate() {

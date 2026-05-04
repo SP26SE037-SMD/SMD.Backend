@@ -107,9 +107,6 @@ public class MaterialService {
         material.setStatus(status.toString());
         Material savedMaterial = materialRepository.save(material);
 
-        // Nếu status mới , cập nhật tất cả Sessions liên quan
-        sessionRepository.updateStatusByMaterialId(id,
-                savedMaterial.getStatus());
 
         return materialMapper.toResponse(savedMaterial);
     }
