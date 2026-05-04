@@ -36,6 +36,9 @@ public class Session {
     @Column(name = "teaching_methods", columnDefinition = "TEXT")
     String teachingMethods;
 
+    @Column(name = "session_topic", columnDefinition = "TEXT")
+    String sessionTopic;
+
     @Column(name = "duration") // in minutes
     Integer duration;
 

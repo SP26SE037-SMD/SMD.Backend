@@ -1,15 +1,20 @@
 package com.example.smd.services;
 
+import com.example.smd.dto.request.session.SessionMaterialBlockBulkRequest;
 import com.example.smd.dto.request.session.SessionRequest;
 import com.example.smd.dto.request.session.SessionNumberListRequest;
 import com.example.smd.dto.response.SessionResponse;
+import com.example.smd.dto.response.validate.SessionValidationResult;
+import com.example.smd.entities.Assessment;
 import com.example.smd.entities.Session;
+import com.example.smd.entities.Subject;
 import com.example.smd.entities.Syllabus;
 import com.example.smd.enums.*;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.SessionMapper;
 import com.example.smd.repositories.SessionRepository;
+import com.example.smd.repositories.SubjectRepository;
 import com.example.smd.repositories.SyllabusRepository;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -35,6 +41,7 @@ public class SessionService {
     private final SyllabusRepository syllabusRepository;
     private final SessionMapper sessionMapper;
     private final SessionRegulationValidationService sessionRegulationValidationService;
+    private final SubjectRepository subjectRepository;
 
     @Transactional(readOnly = true)
     public Page<SessionResponse> getAllSessions(UUID syllabusId,
@@ -218,6 +225,76 @@ public class SessionService {
     }
 
     @Transactional
+    public List<SessionResponse> createSessionsBluk (List<SessionRequest> requests, String accountId) {
+        // 1. Kiểm tra quyền (Chỉ cần check 1 lần cho toàn bộ request)
+        var account = accountService.getAccountById(accountId);
+        String roleName = account.getRole().getRoleName();
+        if (!(RoleName.PDCM.toString().equals(roleName) || RoleName.COLLABORATOR.toString().equals(roleName))) {
+            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+        }
+
+        List<Session> sessionsToSave = new ArrayList<>();
+
+        // Cache Syllabus lại để tránh gọi DB nhiều lần nếu các session đều thuộc chung 1 Syllabus
+        Map<UUID, Syllabus> syllabusCache = new HashMap<>();
+
+        // Dùng Set để track các session_number đang được tạo trong cùng list này để tránh duplicate
+        Set<String> sessionNumberTracker = new HashSet<>();
+
+        for (SessionRequest request : requests) {
+            // 2. Validate và Cache Syllabus
+            Syllabus syllabus = syllabusCache.computeIfAbsent(request.getSyllabusId(), id -> {
+                Syllabus s = syllabusRepository.findById(id)
+                        .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
+
+                if (!(SyllabusStatus.IN_PROGRESS.toString().equals(s.getStatus()) ||
+                        SyllabusStatus.REVISION_REQUESTED.toString().equals(s.getStatus()))) {
+                    throw new AppException(ErrorCode.SESSION_CANNOT_CREATE);
+                }
+                return s;
+            });
+
+            // 3. Kiểm tra trùng sessionNumber dưới Database
+            if (sessionRepository.existsBySyllabus_SyllabusIdAndSessionNumber(
+                    request.getSyllabusId(), request.getSessionNumber())) {
+                throw new AppException(ErrorCode.SESSION_NUMBER_EXISTS);
+            }
+
+            // 4. Kiểm tra trùng sessionNumber ngay trong list request gửi lên
+            String trackerKey = request.getSyllabusId() + "_" + request.getSessionNumber();
+            if (!sessionNumberTracker.add(trackerKey)) {
+                throw new AppException(ErrorCode.SESSION_NUMBER_EXISTS);
+            }
+
+            // 5. Xử lý Session Type
+            String newType = "";
+            if (SessionType.THEORY.toString().equals(request.getSessionType())) {
+                newType = SessionType.THEORY.toString();
+            } else if (SessionType.PRACTICE.toString().equals(request.getSessionType())) {
+                newType = SessionType.PRACTICE.toString();
+            } else if (SessionType.SELF_STUDY.toString().equals(request.getSessionType())) {
+                newType = SessionType.SELF_STUDY.toString();
+            }
+
+            // 6. Map dữ liệu
+            Session session = sessionMapper.toEntity(request);
+            session.setSessionType(newType);
+            session.setSyllabus(syllabus);
+            session.setStatus(DEFAULT_STATUS); // Chú ý: đảm bảo DEFAULT_STATUS đã được define
+
+            sessionsToSave.add(session);
+        }
+
+        // 7. Save tất cả 1 lần xuống DB để tối ưu performance (Batch Insert)
+        List<Session> savedSessions = sessionRepository.saveAll(sessionsToSave);
+
+        // 8. Map sang Response và trả về
+        return savedSessions.stream()
+                .map(sessionMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
     public SessionResponse updateSessionStatus(UUID sessionId, String status) {
         Session session = sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new AppException(ErrorCode.SESSION_NOT_FOUND));
@@ -313,5 +390,94 @@ public class SessionService {
         // 3. Cập nhật hàng loạt trạng thái các Materials thuộc Syllabus này
         // Lưu ý: Material đi theo Syllabus nên ta dùng updateStatusBySyllabusId
         int affectedRows = sessionRepository.updateStatusBySyllabusId(status.toString(), uuidSyllabusId);
+    }
+
+    public SessionValidationResult validate(List<SessionRequest> inputs, UUID syllabusId) {
+        SessionValidationResult result = new SessionValidationResult();
+
+        Syllabus syllabus = syllabusRepository.findByIdWithSubject(syllabusId)
+                .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
+
+        Subject masterSubject = subjectRepository.findById(syllabus.getSubject().getSubjectId())
+                .orElseThrow(() -> new AppException(ErrorCode.SUBJECT_NOT_FOUND));
+
+        // LẤY DỮ LIỆU HIỆN TẠI TỪ DATABASE
+        List<Session> existingDbSessions = sessionRepository.findBySyllabus_SyllabusId(syllabusId);
+        // 1. Tính quỹ Lý thuyết (Quy đổi an toàn từ Giờ -> Tiết)
+        double inputTotalTheoryHours = inputs.stream()
+                .filter(s -> "THEORY".equalsIgnoreCase(s.getSessionType()))
+                .mapToDouble(s -> s.getDuration() != null ? s.getDuration() : 0.0) // Dùng Double để nhận số lẻ 1.5, 2.25
+                .sum();
+        double dbTotalTheoryHours = existingDbSessions.stream()
+                .filter(s -> "THEORY".equalsIgnoreCase(s.getSessionType()))
+                .mapToDouble(s -> s.getDuration() != null ? s.getDuration() : 0.0) // Dùng Double để nhận số lẻ 1.5, 2.25
+                .sum();
+        int inputTotalTheoryPeriods = (int) Math.round(inputTotalTheoryHours / 50);
+        int dbTotalTheoryPeriods = (int) Math.round(dbTotalTheoryHours / 50);
+        int remainingTheory = (masterSubject.getTheoryPeriods() != null ? masterSubject.getTheoryPeriods() : 0) - inputTotalTheoryPeriods - dbTotalTheoryPeriods;
+
+        // 2. Tính quỹ Thực hành (Tương tự)
+        double inputTotalPracticeHours = inputs.stream()
+                .filter(s -> "PRACTICE".equalsIgnoreCase(s.getSessionType()))
+                .mapToDouble(s -> s.getDuration() != null ? s.getDuration() : 0.0)
+                .sum();
+        double dbTotalPracticeHours = inputs.stream()
+                .filter(s -> "PRACTICE".equalsIgnoreCase(s.getSessionType()))
+                .mapToDouble(s -> s.getDuration() != null ? s.getDuration() : 0.0)
+                .sum();
+        int inputTotalPracticePeriods = (int) Math.round(inputTotalPracticeHours / 50);
+        int dbTotalPracticePeriods = (int) Math.round(dbTotalPracticeHours / 50);
+        int remainingPractice = (masterSubject.getPracticalPeriods() != null ? masterSubject.getPracticalPeriods() : 0) - inputTotalPracticePeriods - dbTotalPracticePeriods;
+
+        // (Tùy chọn) Tính tổng giờ tự học nếu có bắt validate
+        int inputTotalSelfStudyHours = inputs.stream()
+                .filter(s -> "SELF_STUDY".equalsIgnoreCase(s.getSessionType()))
+                .mapToInt(s -> s.getDuration() != null ? s.getDuration() : 0)
+                .sum();
+        int dbTotalSelfStudyHours = inputs.stream()
+                .filter(s -> "SELF_STUDY".equalsIgnoreCase(s.getSessionType()))
+                .mapToInt(s -> s.getDuration() != null ? s.getDuration() : 0)
+                .sum();
+        int remainingSelfStudy = (masterSubject.getSelfStudyPeriods() != null ? masterSubject.getSelfStudyPeriods() : 0) - inputTotalSelfStudyHours - dbTotalSelfStudyHours;
+
+        // Set vào DTO
+        result.setRemainingQuotas(new SessionValidationResult.RemainingQuota(remainingTheory, remainingPractice, 0));
+
+        // 2. Viết Logic Check Lỗi
+
+        // -- Validate Lý thuyết (Theory) --
+        if (remainingTheory > 0) {
+            // Trường hợp THIẾU (Allocated < Quota)
+            result.addError("THEORY_SHORTAGE",
+                    "Theory allocation is short by " + remainingTheory + " period(s).");
+        } else if (remainingTheory < 0) {
+            // Trường hợp DƯ (Allocated > Quota)
+            result.addError("THEORY_SURPLUS",
+                    "Theory allocation exceeded by " + Math.abs(remainingTheory) + " period(s).");
+        }
+
+        // -- Validate Thực hành (Practice) --
+        if (remainingPractice > 0) {
+            // Trường hợp THIẾU
+            result.addError("PRACTICE_SHORTAGE",
+                    "Practice allocation is short by " + remainingPractice + " period(s).");
+        } else if (remainingPractice < 0) {
+            // Trường hợp DƯ
+            result.addError("PRACTICE_SURPLUS",
+                    "Practice allocation exceeded by " + Math.abs(remainingPractice) + " period(s).");
+        }
+
+        // -- Validate Tự học (Self-study) --
+        if (remainingSelfStudy > 0) {
+            // Trường hợp THIẾU
+            result.addError("SELF_STUDY_SHORTAGE",
+                    "Self-study allocation is short by " + remainingSelfStudy + " hour(s).");
+        } else if (remainingSelfStudy < 0) {
+            // Trường hợp DƯ
+            result.addError("SELF_STUDY_SURPLUS",
+                    "Self-study allocation exceeded by " + Math.abs(remainingSelfStudy) + " hour(s).");
+        }
+
+        return result;
     }
 }

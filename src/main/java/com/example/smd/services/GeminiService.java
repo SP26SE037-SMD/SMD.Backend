@@ -4,16 +4,15 @@ import com.example.smd.config.GeminiConfig;
 import com.example.smd.dto.request.clo.CloCheckRequest;
 import com.example.smd.dto.request.clo.CloGenerationRequest;
 import com.example.smd.dto.response.ComparisonResult;
-import com.example.smd.dto.response.validate.CloPloMappingCheckResponse;
-import com.example.smd.dto.response.validate.ComplianceCheckResponse;
-import com.example.smd.dto.response.validate.PoPloMappingCheckResponse;
-import com.example.smd.dto.response.validate.ProgramRegulationResponse;
+import com.example.smd.dto.response.validate.*;
 import com.example.smd.dto.response.clo.CLOsGenerationResponse;
 import com.example.smd.dto.response.clo.CloCheckResponse;
 import com.example.smd.dto.response.syllabus.SyllabusStructureResponse;
 import com.example.smd.enums.PromptKey;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
+import com.example.smd.realtime.RealtimePayload;
+import com.example.smd.realtime.RealtimePublisher;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
@@ -61,6 +60,9 @@ public class GeminiService  {
     private String apiAnalyzePdfUrl;
 
     private final RestTemplate restTemplate = new RestTemplate();
+
+    @Autowired
+    private RealtimePublisher realtimePublisher;
 
     /**
      * Dùng AI để generate ra CLO
@@ -233,7 +235,7 @@ public class GeminiService  {
             maxAttempts = 3,
             backoff = @Backoff(delay = 5000) // Thử lại sau 2 giây, tối đa 3 lần
     )
-    public ProgramRegulationResponse extractMasterDataFromPdf(MultipartFile file, String accountId) throws InterruptedException{
+    public ProgramRegulationResponse extractMasterDataFromPdf(byte[] fileData, String contentType, String accountId) {
         // 0. Phân quyền (Tùy chọn theo logic của bạn)
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
@@ -242,12 +244,12 @@ public class GeminiService  {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
-        if (file.getContentType() == null || !file.getContentType().equals("application/pdf")) {
-            throw new AppException(ErrorCode.INVALID_FILE_FORMAT);
+        if (contentType == null || !contentType.toLowerCase().contains("pdf")) {
+            throw new AppException(ErrorCode.INVALID_FILE_FORMAT, "Format PDF supports only system");
         }
 
         // 1. Upload File lên Google Cloud lấy file_uri
-        String fileUri = gemini.uploadFile(file, apiUploadFileUrl); // gemini chính là GeminiConfig
+        String fileUri = gemini.uploadFile(fileData, contentType, apiUploadFileUrl); // gemini chính là GeminiConfig
         if (fileUri == null) {
             throw new AppException(ErrorCode.FILE_UPLOAD_FAILED); // Tạo thêm ErrorCode tương ứng
         }
@@ -263,13 +265,14 @@ public class GeminiService  {
             // Gọi hàm GET để lấy trạng thái
             String state = gemini.getFileState(fileUri);
             attempts++;
+            realtimePublisher.publishToAccount(accountId,
+                    RealtimePayload.status("PROCESSING", "AI is analyzing the file structure"));
 
             if ("ACTIVE".equals(state)) {
                 isReady = true;
                 log.info("File đã sẵn sàng (ACTIVE) sau {} lần thử.", attempts);
             } else {
                 log.warn("File chưa sẵn sàng. Trạng thái hiện tại: {} (Lần thử: {}/{})", state, attempts, maxAttempts);
-
                 try {
                     // Đợi 2 giây trước khi check lại
                     Thread.sleep(2000);
@@ -282,13 +285,13 @@ public class GeminiService  {
         }
 
         if (!isReady) {
-            log.error("Quá thời gian chờ xử lý file (Timeout). URI: {}", fileUri);
+            realtimePublisher.publishToAccount(accountId, RealtimePayload.error("PDF_TIMEOUT", "Quá thời gian chờ xử lý file"));
             throw new AppException(ErrorCode.FILE_PROCESSING_TIMEOUT);
         }
 
         // 2. Chuẩn bị Prompt và gọi AI
         String finalPrompt = promptTemplateService.get(PromptKey.MASTER_DATA_EXTRACTOR_PROMPT);
-        String mimeType = file.getContentType() != null ? file.getContentType() : "application/pdf";
+        String mimeType = contentType != null ? contentType : "application/pdf";
 
         // Gọi hàm prompt hỗ trợ file
         String response = gemini.promptWithFile(finalPrompt, fileUri, mimeType, apiAnalyzePdfUrl);
@@ -296,6 +299,8 @@ public class GeminiService  {
         // Nếu API trả về chuỗi báo lỗi do Exception catch ở config
         if (response.startsWith("Lỗi gọi") || response.startsWith("Không có phản hồi")) {
             log.error("AI Generation failed. Message: {}", response);
+            realtimePublisher.publishToAccount(accountId,
+                    RealtimePayload.status("PDF_PROCESS_FAIL", "AI failed to generate valid content, please try again!"));
             throw new AppException(ErrorCode.AI_GENERATION_FAILED);
         }
 
@@ -303,12 +308,15 @@ public class GeminiService  {
         try {
             // Làm sạch chuỗi JSON (xóa các dấu ```json nếu có)
             String cleanJson = response.replaceAll("(?s)```json(.*?)```|```", "$1").trim();
-
+            realtimePublisher.publishToAccount(accountId,
+                    RealtimePayload.status("PDF_PROCESS_SUCCESS", "Data extraction successful!"));
             // Parse trực tiếp sang Object DTO (Ví dụ class chứa danh sách Môn học, Tín chỉ, PLOs)
             return objectMapper.readValue(cleanJson, ProgramRegulationResponse.class);
 
         } catch (JsonProcessingException e) {
             log.error("Failed to parse Gemini response for Master Data: {}", response);
+            realtimePublisher.publishToAccount(accountId,
+                    RealtimePayload.status("PDF_PROCESS_FAIL", "AI failed to generate valid content, please try again!"));
             throw new AppException(ErrorCode.AI_GENERATION_FAILED);
         }
     }
@@ -429,6 +437,88 @@ public class GeminiService  {
             log.info(cleanJson); // HÃY NHÌN VÀO LOG NÀY
             // 5. Parse dữ liệu
             return objectMapper.readValue(cleanJson, CloPloMappingCheckResponse.class);
+
+        } catch (JsonProcessingException e) {
+            log.error("Failed to parse Gemini response: {}", response);
+            throw new AppException(ErrorCode.AI_GENERATION_FAILED);
+        }
+    }
+
+    @Retryable(
+            retryFor = { HttpServerErrorException.class },
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 2000) // Thử lại sau 2 giây, tối đa 3 lần
+    )
+    public AssessmentCloMappingValidationResult checkAssessmentCloMapping(String assessmentList, String cloList, String currentMapping) {
+        // 1. Lấy ĐÚNG Template dành cho việc Check Compliance
+        String template = promptTemplateService.get(PromptKey.ASSESSMENT_CLO_MAPPING_PROMPT);
+
+        // 2. Dùng replace để an toàn với ký tự đặc biệt (%)
+        String prompt = template.replace("{ASSESSMENT_LIST}", assessmentList)
+                .replace("{CLO_LIST}", cloList)
+                .replace("{CURRENT_MAPPING}", currentMapping);
+
+        // 3. Gọi AI
+        String response = gemini.prompt(prompt, apiGenerateUrl);
+
+        if (response == null || response.isBlank()) {
+            throw new AppException(ErrorCode.AI_GENERATION_FAILED);
+        }
+
+        try {
+            // 4. Cách làm sạch JSON "lỳ đòn" nhất: Tìm cặp dấu { } ngoài cùng
+            int start = response.indexOf("{");
+            int end = response.lastIndexOf("}");
+            if (start == -1 || end == -1) {
+                log.error("AI không trả về JSON hợp lệ: {}", response);
+                throw new AppException(ErrorCode.AI_GENERATION_FAILED);
+            }
+            String cleanJson = response.substring(start, end + 1);
+            log.info("=== RAW JSON TỪ AI TRẢ VỀ ===");
+            log.info(cleanJson); // HÃY NHÌN VÀO LOG NÀY
+            // 5. Parse dữ liệu
+            return objectMapper.readValue(cleanJson, AssessmentCloMappingValidationResult.class);
+
+        } catch (JsonProcessingException e) {
+            log.error("Failed to parse Gemini response: {}", response);
+            throw new AppException(ErrorCode.AI_GENERATION_FAILED);
+        }
+    }
+
+    @Retryable(
+            retryFor = { HttpServerErrorException.class },
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 2000) // Thử lại sau 2 giây, tối đa 3 lần
+    )
+    public SessionCloMappingValidationResult checkSessionCloMapping(String sessionList, String cloList, String currentMapping) {
+        // 1. Lấy ĐÚNG Template dành cho việc Check Compliance
+        String template = promptTemplateService.get(PromptKey.SESSION_CLO_MAPPING_PROMPT);
+
+        // 2. Dùng replace để an toàn với ký tự đặc biệt (%)
+        String prompt = template.replace("{SESSION_LIST}", sessionList)
+                .replace("{CLO_LIST}", cloList)
+                .replace("{CURRENT_MAPPING}", currentMapping);
+
+        // 3. Gọi AI
+        String response = gemini.prompt(prompt, apiGenerateUrl);
+
+        if (response == null || response.isBlank()) {
+            throw new AppException(ErrorCode.AI_GENERATION_FAILED);
+        }
+
+        try {
+            // 4. Cách làm sạch JSON "lỳ đòn" nhất: Tìm cặp dấu { } ngoài cùng
+            int start = response.indexOf("{");
+            int end = response.lastIndexOf("}");
+            if (start == -1 || end == -1) {
+                log.error("AI không trả về JSON hợp lệ: {}", response);
+                throw new AppException(ErrorCode.AI_GENERATION_FAILED);
+            }
+            String cleanJson = response.substring(start, end + 1);
+            log.info("=== RAW JSON TỪ AI TRẢ VỀ ===");
+            log.info(cleanJson); // HÃY NHÌN VÀO LOG NÀY
+            // 5. Parse dữ liệu
+            return objectMapper.readValue(cleanJson, SessionCloMappingValidationResult.class);
 
         } catch (JsonProcessingException e) {
             log.error("Failed to parse Gemini response: {}", response);

@@ -4,6 +4,7 @@ import com.example.smd.dto.request.CloAssessmentMappingBatchRequest;
 import com.example.smd.dto.request.CloAssessmentMappingRequest;
 import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.dto.response.clo.CloAssessmentMappingResponse;
+import com.example.smd.dto.response.validate.AssessmentCloMappingValidationResult;
 import com.example.smd.services.CloAssessmentMappingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -16,6 +17,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/clo-assessment-mappings")
@@ -88,6 +90,18 @@ public class CloAssessmentMappingController {
         service.deleteMapping(id);
         return ResponseObject.<Void>builder()
                 .status(1000)
+                .message("CLO-Assessment mapping deleted successfully")
+                .build();
+    }
+
+    @PostMapping("/syllabus/{syllabusId}/validate")
+    @Operation(summary = "Check a CLO-Assessment Mapping")
+    public ResponseObject<AssessmentCloMappingValidationResult> checkMapping(
+            @PathVariable("syllabusId") UUID syllabusId,
+            @RequestBody List<CloAssessmentMappingRequest> cloAssessmentMappingRequest) {
+        return ResponseObject.<AssessmentCloMappingValidationResult>builder()
+                .status(1000)
+                .data(service.checkMapping(cloAssessmentMappingRequest, syllabusId))
                 .message("CLO-Assessment mapping deleted successfully")
                 .build();
     }

@@ -169,6 +169,69 @@ public class AssessmentService {
     }
 
     @Transactional
+    public List<AssessmentResponse> createAssessmentsBluk(List<AssessmentRequest> requests, String accountId) {
+        if (requests == null || requests.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // 1. Kiểm tra quyền
+        var account = accountService.getAccountById(accountId);
+        String roleName = account.getRole().getRoleName();
+        if (!(RoleName.COLLABORATOR.toString().equals(roleName) || RoleName.PDCM.toString().equals(roleName))) {
+            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+        }
+
+        // Map để cache lại các entity đã query từ DB
+        Map<UUID, Syllabus> syllabusCache = new HashMap<>();
+        Map<UUID, Assessment_Category> categoryCache = new HashMap<>();
+        Map<UUID, Assessment_Type> typeCache = new HashMap<>();
+
+        List<Assessment> assessmentsToSave = new ArrayList<>();
+
+        // 2. Lặp qua từng request để map sang Entity
+        for (AssessmentRequest request : requests) {
+            UUID syllabusId = request.getSyllabusId();
+
+            // Caching Syllabus & Kiểm tra status
+            Syllabus syllabus = syllabusCache.computeIfAbsent(syllabusId, id -> {
+                Syllabus s = syllabusRepository.findById(id)
+                        .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
+                if (!(SyllabusStatus.IN_PROGRESS.toString().equals(s.getStatus()) ||
+                        SyllabusStatus.REVISION_REQUESTED.toString().equals(s.getStatus()))) {
+                    throw new AppException(ErrorCode.ASSESSMENT_CANNOT_CREATE);
+                }
+                return s;
+            });
+
+            // Caching Category & Type
+            Assessment_Category category = categoryCache.computeIfAbsent(request.getCategoryId(), id ->
+                    assessmentCategoryRepository.findById(id)
+                            .orElseThrow(() -> new AppException(ErrorCode.ASSESSMENT_CATEGORY_NOT_FOUND)));
+
+            Assessment_Type type = typeCache.computeIfAbsent(request.getTypeId(), id ->
+                    assessmentTypeRepository.findById(id)
+                            .orElseThrow(() -> new AppException(ErrorCode.ASSESSMENT_TYPE_NOT_FOUND)));
+
+            // 3. Map data
+            Assessment assessment = assessmentMapper.toEntity(request);
+            assessment.setAssessmentCategory(category);
+            assessment.setAssessmentType(type);
+            assessment.setSyllabus(syllabus);
+            assessment.setStatus(normalizeStatus(request.getStatus()));
+
+            assessmentsToSave.add(assessment);
+        }
+
+        // 4. Save batch
+        List<Assessment> savedAssessments = assessmentRepository.saveAll(assessmentsToSave);
+
+        // 5. Map kết quả trả về
+        return savedAssessments.stream()
+                .map(assessmentMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
     public AssessmentResponse updateAssessment(UUID assessmentId,
                                                AssessmentRequest request, String accountId) {
         var account = accountService.getAccountById(accountId);
@@ -301,11 +364,15 @@ public class AssessmentService {
         int affectedRows = assessmentRepository.updateStatusBySyllabusId(status.toString(), uuidSyllabusId);
     }
 
-    public AssessmentValidationResult validate(List<AssessmentRequest> inputs) {
+    @Transactional
+    public AssessmentValidationResult validate(List<AssessmentRequest> inputs, UUID syllabusId) {
         AssessmentValidationResult result = new AssessmentValidationResult();
 
+        // LẤY DỮ LIỆU HIỆN TẠI TỪ DATABASE
+        List<Assessment> existingDbAssessments = assessmentRepository.findBySyllabus_SyllabusId(syllabusId);
+
         // 1. ĐẾM SỐ LƯỢNG (Counting)
-        long totalCount = inputs.size();
+        long totalCount = inputs.size() + existingDbAssessments.size();
 
         // 1. Lấy tất cả categoryId mà Frontend gửi lên (Dùng Set để loại bỏ ID trùng lặp)
         Set<UUID> categoryIds = inputs.stream()
@@ -322,13 +389,31 @@ public class AssessmentService {
 
         // 4. Bây giờ thì đếm thoải mái dựa vào TÊN của Category
         // Dùng ignoreCase để phòng hờ DB lưu chữ HOA/thường khác nhau
-        long finalCount = inputs.stream()
+        long dbFinalCount = existingDbAssessments.stream()
+                .filter(a -> "Summative".equalsIgnoreCase(a.getAssessmentCategory().getCategoryName()))
+                .count();
+        long inputFinalCount = inputs.stream()
                 .filter(a -> "Summative".equalsIgnoreCase(categoryNameMap.get(a.getCategoryId())))
                 .count();
+        long finalCount = dbFinalCount + inputFinalCount;
 
-        long formativeCount = inputs.stream()
+        // Đếm số lượng bài Formative (Quá trình)
+        long dbFormativeCount = existingDbAssessments.stream()
+                .filter(a -> "Formative".equalsIgnoreCase(a.getAssessmentCategory().getCategoryName()))
+                .count();
+        long inputFormativeCount = inputs.stream()
                 .filter(a -> "Formative".equalsIgnoreCase(categoryNameMap.get(a.getCategoryId())))
                 .count();
+        long formativeCount = dbFormativeCount + inputFormativeCount;
+
+        // Cộng dồn Trọng số (Weight)
+        double dbWeight = existingDbAssessments.stream()
+                .mapToDouble(a -> a.getWeight() != null ? a.getWeight() : 0.0) // Chỉnh kiểu getWeight() cho đúng với entity của bác
+                .sum();
+        double inputWeight = inputs.stream()
+                .mapToDouble(a -> a.getWeight() != null ? a.getWeight() : 0.0)
+                .sum();
+        double totalWeight = dbWeight + inputWeight;
 
         // 3. LOGIC VALIDATE DỰA TRÊN SỐ LƯỢNG BÀI
         // Ràng buộc A: Không được có nhiều hơn 1 bài Cuối kỳ
@@ -348,15 +433,19 @@ public class AssessmentService {
                     "Syllabus can have a maximum of 6 assessments to avoid overloading students. You have created " + totalCount + ".");
         }
 
-        // 1. Tính toán các thông số
-        double totalWeight = inputs.stream()
-                .mapToDouble(a -> a.getWeight() != null ? a.getWeight() : 0.0)
-                .sum();
-
         // Ràng buộc C: (Tùy chọn) Phải có ít nhất 1 bài quá trình nếu môn học không phải là Đồ án 100%
         if (formativeCount == 0 && totalWeight < 100) {
             result.addError("MISSING_FORMATIVE_ASSESSMENT",
                     "Please add at least 1 formative assessment (e.g., QUIZ, ASSIGNMENT).");
+        }
+
+        // 3. Viết các câu IF bắt lỗi (Giống đoạn code tin nhắn trước)
+        if (totalWeight < 100) {
+            result.addError("WEIGHT_SHORTAGE",
+                    "Total weight is short by " + (100 - totalWeight) + "%. It must be exactly 100%.");
+        } else if (totalWeight > 100) {
+            result.addError("WEIGHT_SURPLUS",
+                    "Total weight exceeded by " + (totalWeight - 100) + "%. It must be exactly 100%.");
         }
 
         result.setSummary(AssessmentValidationResult.AssessmentSummary.builder()
@@ -367,15 +456,6 @@ public class AssessmentService {
                 .formativeCount(formativeCount)
                 .finalCount(finalCount)
                 .build()); // Lệnh build() sẽ đóng gói tất cả lại thành object
-
-        // 3. Viết các câu IF bắt lỗi (Giống đoạn code tin nhắn trước)
-        if (totalWeight < 100) {
-            result.addError("WEIGHT_SHORTAGE",
-                    "Total weight is short by " + (100 - totalWeight) + "%. It must be exactly 100%.");
-        } else if (totalWeight > 100) {
-            result.addError("WEIGHT_SURPLUS",
-                    "Total weight exceeded by " + (totalWeight - 100) + "%. It must be exactly 100%.");
-        }
 
         return result;
     }
