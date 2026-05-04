@@ -395,7 +395,7 @@ public class SessionService {
     public SessionValidationResult validate(List<SessionRequest> inputs, UUID syllabusId) {
         SessionValidationResult result = new SessionValidationResult();
 
-        Syllabus syllabus = syllabusRepository.findById(syllabusId)
+        Syllabus syllabus = syllabusRepository.findByIdWithSubject(syllabusId)
                 .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
 
         Subject masterSubject = subjectRepository.findById(syllabus.getSubject().getSubjectId())
@@ -412,9 +412,9 @@ public class SessionService {
                 .filter(s -> "THEORY".equalsIgnoreCase(s.getSessionType()))
                 .mapToDouble(s -> s.getDuration() != null ? s.getDuration() : 0.0) // Dùng Double để nhận số lẻ 1.5, 2.25
                 .sum();
-        int inputTotalTheoryPeriods = (int) Math.round(inputTotalTheoryHours / 45);
-        int dbTotalTheoryPeriods = (int) Math.round(dbTotalTheoryHours / 45);
-        int remainingTheory = masterSubject.getTheoryPeriods() - inputTotalTheoryPeriods - dbTotalTheoryPeriods;
+        int inputTotalTheoryPeriods = (int) Math.round(inputTotalTheoryHours / 50);
+        int dbTotalTheoryPeriods = (int) Math.round(dbTotalTheoryHours / 50);
+        int remainingTheory = (masterSubject.getTheoryPeriods() != null ? masterSubject.getTheoryPeriods() : 0) - inputTotalTheoryPeriods - dbTotalTheoryPeriods;
 
         // 2. Tính quỹ Thực hành (Tương tự)
         double inputTotalPracticeHours = inputs.stream()
@@ -425,9 +425,9 @@ public class SessionService {
                 .filter(s -> "PRACTICE".equalsIgnoreCase(s.getSessionType()))
                 .mapToDouble(s -> s.getDuration() != null ? s.getDuration() : 0.0)
                 .sum();
-        int inputTotalPracticePeriods = (int) Math.round(inputTotalPracticeHours / 45);
-        int dbTotalPracticePeriods = (int) Math.round(dbTotalPracticeHours / 45);
-        int remainingPractice = masterSubject.getPracticalPeriods() - inputTotalPracticePeriods - dbTotalPracticePeriods;
+        int inputTotalPracticePeriods = (int) Math.round(inputTotalPracticeHours / 50);
+        int dbTotalPracticePeriods = (int) Math.round(dbTotalPracticeHours / 50);
+        int remainingPractice = (masterSubject.getPracticalPeriods() != null ? masterSubject.getPracticalPeriods() : 0) - inputTotalPracticePeriods - dbTotalPracticePeriods;
 
         // (Tùy chọn) Tính tổng giờ tự học nếu có bắt validate
         int inputTotalSelfStudyHours = inputs.stream()
@@ -438,7 +438,7 @@ public class SessionService {
                 .filter(s -> "SELF_STUDY".equalsIgnoreCase(s.getSessionType()))
                 .mapToInt(s -> s.getDuration() != null ? s.getDuration() : 0)
                 .sum();
-        int remainingSelfStudy = masterSubject.getSelfStudyPeriods() - inputTotalSelfStudyHours - dbTotalSelfStudyHours;
+        int remainingSelfStudy = (masterSubject.getSelfStudyPeriods() != null ? masterSubject.getSelfStudyPeriods() : 0) - inputTotalSelfStudyHours - dbTotalSelfStudyHours;
 
         // Set vào DTO
         result.setRemainingQuotas(new SessionValidationResult.RemainingQuota(remainingTheory, remainingPractice, 0));
