@@ -39,18 +39,6 @@ public interface SessionRepository extends JpaRepository<Session, UUID>, JpaSpec
     @Query("UPDATE Session s SET s.status = :status WHERE s.syllabus.syllabusId = :syllabusId")
     int updateStatusBySyllabusId(@Param("status") String status, @Param("syllabusId") UUID syllabusId);
 
-    @Modifying
-    @Transactional
-    @Query("""
-        UPDATE Session s
-        SET s.status = :status
-        WHERE s.sessionId IN (
-            SELECT smb.session.sessionId
-            FROM Session_Material_Block smb
-            WHERE smb.material.materialId = :materialId
-        )
-    """)
-    int updateStatusByMaterialId(@Param("materialId") UUID materialId, @Param("status") String status);
 
     Page<Session> findBySyllabus_SyllabusId(UUID syllabusId, Pageable pageable);
 }

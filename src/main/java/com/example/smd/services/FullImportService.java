@@ -806,15 +806,12 @@ public class FullImportService {
             String[] dataFields = dataPart.split("\\|");
             if (dataFields.length >= 5) {
                 String code = dataFields[0].trim();
-                Integer credit = parseIntegerSafe(dataFields[1]);
-                Integer theory = parseIntegerSafe(dataFields[2]);
-                Integer practical = parseIntegerSafe(dataFields[3]);
-                Integer selfStudy = parseIntegerSafe(dataFields[4]);
-                Integer semester = null;
-                if (dataFields.length >= 6) {
-                    semester = parseIntegerSafe(dataFields[5]);
-                }
-                
+                Integer semester = parseIntegerSafe(dataFields[1]);
+                Integer credit = parseIntegerSafe(dataFields[2]);
+                Integer theory = parseIntegerSafe(dataFields[3]);
+                Integer practical = parseIntegerSafe(dataFields[4]);
+                Integer selfStudy = parseIntegerSafe(dataFields[5]);
+
                 if (code.equalsIgnoreCase("N/A")) {
                     code = generateNASubjectCode(namePart);
                 }

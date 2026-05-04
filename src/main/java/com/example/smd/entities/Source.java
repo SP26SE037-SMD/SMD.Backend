@@ -18,6 +18,9 @@ public class Source {
     @GeneratedValue(strategy = GenerationType.UUID)
     UUID sourceId;
 
+    @Column(name = "source_code", length = 50)
+    String sourceCode;
+
     @Column(name = "source_name", columnDefinition = "TEXT")
     String sourceName;
 

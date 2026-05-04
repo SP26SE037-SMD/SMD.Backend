@@ -17,7 +17,6 @@ import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.BlockMapper;
 import com.example.smd.repositories.BlockRepository;
 import com.example.smd.repositories.MaterialRepository;
-import com.example.smd.repositories.SessionMaterialBlockRepository;
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -40,7 +39,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class BlockService {
-    SessionMaterialBlockRepository sessionMaterialBlockRepository;
     BlockRepository blockRepository;
     MaterialRepository materialRepository;
     EmbeddingService embeddingService;
@@ -303,8 +301,6 @@ public class BlockService {
         // --- 1. Xử lý xóa ---
         List<UUID> deleteList = request.getDeleteBlockList();
         if (deleteList != null && !deleteList.isEmpty()) {
-            // Kiểm tra & xóa các bản ghi session_material_block liên quan trước
-            sessionMaterialBlockRepository.deleteByBlock_BlockIdIn(deleteList);
             // Sau đó xóa chính các block
             blockRepository.deleteAllById(deleteList);
         }
