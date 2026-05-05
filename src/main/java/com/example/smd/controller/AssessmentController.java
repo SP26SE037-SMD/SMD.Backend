@@ -7,6 +7,7 @@ import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.dto.response.validate.AssessmentValidationResult;
 import com.example.smd.dto.response.validate.SessionValidationResult;
+import com.example.smd.entities.Assessment;
 import com.example.smd.services.AssessmentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

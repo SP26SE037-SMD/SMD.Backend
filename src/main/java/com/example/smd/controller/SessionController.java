@@ -208,7 +208,7 @@ public class  SessionController {
         return ResponseObject.<SessionValidationResult>builder()
                 .status(1000)
                 .data(sessionService.validate(inputs, syllabusId))
-                .message("Validate session-material-block successfully")
+                .message("Validate session successfully")
                 .build();
     }
 }
