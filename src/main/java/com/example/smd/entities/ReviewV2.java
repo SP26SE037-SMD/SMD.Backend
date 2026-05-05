@@ -30,7 +30,7 @@ public class ReviewV2 {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "task_id", nullable = false)
-    private Task task;
+    private TaskV2 task;
 
     @Column(name = "created_at")
     LocalDate createdAt;

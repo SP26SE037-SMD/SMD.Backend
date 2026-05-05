@@ -20,6 +20,7 @@ import java.util.UUID;
 
 public class TaskV2 {
     @Id
+    @Column(name = "task_v2_id")
     @GeneratedValue(strategy = GenerationType.UUID)
     UUID taskId;
 
@@ -31,6 +32,10 @@ public class TaskV2 {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assigned_to")
     Account account;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by")
+    Account createdBy;
 
     @Column(name = "task_name", nullable = false, length = 150)
     String taskName;
