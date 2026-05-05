@@ -21,4 +21,5 @@ public class ImportFullCurriculumResponse {
     ImportSubjectResponse subjectResult;
     ImportGroupResponse groupResult;
     ImportCurriculumGroupSubjectResponse semesterMappingResult;
+    com.example.smd.dto.response.source.ImportSourceResponse sourceResult;
 }

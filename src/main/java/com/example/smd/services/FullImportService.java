@@ -51,6 +51,8 @@ public class FullImportService {
     GroupRepository groupRepository;
     RegulationRepository regulationRepository;
     CurriculumGroupSubjectRepository curriculumGroupSubjectRepository;
+    SourceRepository sourceRepository;
+    ProposedSourceRepository proposedSourceRepository;
 
     @Transactional
     public ImportFullCurriculumResponse importFullCurriculum(MultipartFile file) {
@@ -65,6 +67,7 @@ public class FullImportService {
             SubjectImportContext subContext = new SubjectImportContext();
             GroupImportContext groupContext = new GroupImportContext();
             SemesterImportContext semContext = new SemesterImportContext();
+            SourceImportContext srcContext = new SourceImportContext();
 
             // 1. Parse and Validate Major
             Sheet majorSheet = workbook.getSheet("Major");
@@ -111,6 +114,23 @@ public class FullImportService {
             if (semesterSheet != null) {
                 hasErrors |= parseAndValidateSemesterMapping(semesterSheet, semContext, subContext, groupContext, curContext, regulationMap);
                 response.setSemesterMappingResult(buildSemesterResponse(semContext));
+            }
+
+            // Initialize Source Zero-Layer Validation Map
+            Map<String, SourceRegulationDTO> sourceRegulationMap = new HashMap<>();
+            if (majorContext.parsedMajorCode != null) {
+                sourceRegulationMap = initSourceZeroLayerValidation(majorContext.parsedMajorCode);
+            }
+            // 👉 THÊM 3 DÒNG NÀY ĐỂ DEBUG:
+            log.info("=== KIỂM TRA DỮ LIỆU REGULATION SOURCE ===");
+            log.info("Số lượng môn học trong Map: " + sourceRegulationMap.size());
+            log.info("Danh sách các Mã môn (Keys) trong Map: " + sourceRegulationMap.keySet());
+
+            // 6. Parse and Validate Source
+            Sheet sourceSheet = workbook.getSheet("Source");
+            if (sourceSheet != null) {
+                hasErrors |= parseAndValidateSource(sourceSheet, srcContext, subContext, sourceRegulationMap);
+                response.setSourceResult(buildSourceResponse(srcContext));
             }
 
             // Check if any errors occurred across all sheets
@@ -216,6 +236,52 @@ public class FullImportService {
                     }
                 }
                 curriculumGroupSubjectRepository.saveAll(semContext.mappingsToSave);
+            }
+
+            // Insert Sources & ProposedSources
+            if (!srcContext.rowsToSave.isEmpty()) {
+                for (com.example.smd.dto.excel.SourceImportDTO row : srcContext.rowsToSave) {
+                    String srcCode = trim(row.getSourceCode());
+                    
+                    Source source;
+                    if (!sourceRepository.existsBySourceCode(srcCode)) {
+                        source = Source.builder()
+                                .sourceCode(srcCode)
+                                .sourceName(trim(row.getSourceName()))
+                                .type(trim(row.getSourceType()))
+                                .author(trim(row.getAuthor()))
+                                .publisher(trim(row.getPublisher()))
+                                .publishedYear(parseIntegerSafe(row.getPublicationYear()) != null ? parseIntegerSafe(row.getPublicationYear()) : 0)
+                                .isbn(trim(row.getIsbn()))
+                                .url(trim(row.getUrl()))
+                                .build();
+                        source = sourceRepository.save(source);
+                    } else {
+                        source = sourceRepository.findBySourceCode(srcCode).orElseThrow();
+                    }
+
+                    // Map to Subjects
+                    String subjectCodeRaw = trim(row.getSubjectCode());
+                    if (subjectCodeRaw != null) {
+                        String[] subjectCodes = subjectCodeRaw.split("[,\\-;\n]+");
+                        for (String sCode : subjectCodes) {
+                            sCode = sCode.trim();
+                            if (sCode.isEmpty()) continue;
+                            
+                            Subject subject = subjectRepository.findBySubjectCode(sCode).orElse(null);
+                            if (subject != null) {
+                                boolean exists = proposedSourceRepository.existsBySource_SourceIdAndSubject_SubjectId(source.getSourceId(), subject.getSubjectId());
+                                if (!exists) {
+                                    ProposedSource ps = ProposedSource.builder()
+                                            .source(source)
+                                            .subject(subject)
+                                            .build();
+                                    proposedSourceRepository.save(ps);
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
             response.setSuccess(true);
@@ -780,6 +846,113 @@ public class FullImportService {
         return hasErrors;
     }
 
+    private boolean parseAndValidateSource(Sheet sheet, SourceImportContext ctx, SubjectImportContext subCtx, Map<String, SourceRegulationDTO> regulationMap) {
+        boolean hasErrors = false;
+        try {
+            List<com.example.smd.dto.excel.SourceImportDTO> rows = ExcelImporter.importFromSheet(sheet, com.example.smd.dto.excel.SourceImportDTO.class);
+            for (com.example.smd.dto.excel.SourceImportDTO row : rows) {
+                String sourceCode = trim(row.getSourceCode());
+                String sourceName = trim(row.getSourceName());
+                String subjectCodeRaw = trim(row.getSubjectCode());
+                
+                List<String> missingCols = new ArrayList<>();
+                if (sourceCode == null) missingCols.add("Source Code");
+                if (sourceName == null) missingCols.add("Source Name");
+                if (subjectCodeRaw == null) missingCols.add("Subject Code");
+
+                if (!missingCols.isEmpty()) {
+                    ctx.details.add(com.example.smd.dto.response.source.ImportSourceResult.builder()
+                            .sourceCode(sourceCode)
+                            .status("FAILED")
+                            .message("Missing columns: " + String.join(", ", missingCols))
+                            .build());
+                    hasErrors = true;
+                    continue;
+                }
+
+                if (!ctx.fileSourceCodes.add(sourceCode.toUpperCase())) {
+                    ctx.details.add(com.example.smd.dto.response.source.ImportSourceResult.builder()
+                            .sourceCode(sourceCode).status("FAILED").message("Duplicate Source Code in file").build());
+                    hasErrors = true;
+                    continue;
+                }
+
+                // Zero-Layer Validation
+                if (!regulationMap.containsKey(sourceCode.toUpperCase())) {
+                    ctx.details.add(com.example.smd.dto.response.source.ImportSourceResult.builder()
+                            .sourceCode(sourceCode)
+                            .status("FAILED")
+                            .message("Mã Source [" + sourceCode + "] không nằm trong quy định SOURCE_DOCUMENTS")
+                            .build());
+                    hasErrors = true;
+                    continue;
+                }
+
+                SourceRegulationDTO regDto = regulationMap.get(sourceCode.toUpperCase());
+                List<String> mismatchErrors = new ArrayList<>();
+
+                if (regDto.sourceName != null && !regDto.sourceName.equalsIgnoreCase(sourceName)) {
+                    mismatchErrors.add("Source Name (Chuẩn: " + regDto.sourceName + ")");
+                }
+                String author = trim(row.getAuthor());
+                if (regDto.author != null && !regDto.author.equalsIgnoreCase(author)) {
+                    mismatchErrors.add("Author (Chuẩn: " + regDto.author + ")");
+                }
+                String publisher = trim(row.getPublisher());
+                if (regDto.publisher != null && !regDto.publisher.equalsIgnoreCase(publisher)) {
+                    mismatchErrors.add("Publisher (Chuẩn: " + regDto.publisher + ")");
+                }
+                Integer pubYear = parseIntegerSafe(row.getPublicationYear());
+                if (regDto.publicationYear != null && !regDto.publicationYear.equals(pubYear)) {
+                    mismatchErrors.add("Publication Year (Chuẩn: " + regDto.publicationYear + ")");
+                }
+
+                if (!mismatchErrors.isEmpty()) {
+                    ctx.details.add(com.example.smd.dto.response.source.ImportSourceResult.builder()
+                            .sourceCode(sourceCode)
+                            .status("FAILED")
+                            .message("Sai thông số quy định: " + String.join(", ", mismatchErrors))
+                            .build());
+                    hasErrors = true;
+                    continue;
+                }
+
+                // Cross-sheet Validation for Subject Code
+                String[] subjectCodes = subjectCodeRaw.split("[,\\-;\n]+");
+                boolean subjectMissing = false;
+                List<String> invalidSubjects = new ArrayList<>();
+                for (String sCode : subjectCodes) {
+                    sCode = sCode.trim();
+                    if (sCode.isEmpty()) continue;
+                    
+                    if (!subCtx.fileSubjectCodes.contains(sCode.toUpperCase())) {
+                        subjectMissing = true;
+                        invalidSubjects.add(sCode);
+                    }
+                }
+
+                if (subjectMissing) {
+                    ctx.details.add(com.example.smd.dto.response.source.ImportSourceResult.builder()
+                            .sourceCode(sourceCode)
+                            .status("FAILED")
+                            .message("Các Subject Code sau không có bên sheet Subject: " + String.join(", ", invalidSubjects))
+                            .build());
+                    hasErrors = true;
+                    continue;
+                }
+
+                // Passed
+                ctx.rowsToSave.add(row);
+                ctx.details.add(com.example.smd.dto.response.source.ImportSourceResult.builder()
+                        .sourceCode(sourceCode).status("SUCCESS").message("Validated").build());
+            }
+        } catch (Exception e) {
+            log.error("Source parse error", e);
+            hasErrors = true;
+        }
+        return hasErrors;
+    }
+
     // ==========================================
     // UTILS & RESPONSE BUILDERS
     // ==========================================
@@ -829,6 +1002,47 @@ public class FullImportService {
         String noDiacritics = normalized.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
         String noSpaces = noDiacritics.replaceAll("[^a-zA-Z0-9]", "");
         return "N/A_" + noSpaces;
+    }
+
+    private Map<String, SourceRegulationDTO> initSourceZeroLayerValidation(String majorCode) {
+        Map<String, SourceRegulationDTO> map = new HashMap<>();
+        if (majorCode == null || majorCode.isEmpty()) return map;
+
+        Major major = majorRepository.findByMajorCode(majorCode).orElse(null);
+        if (major == null) return map;
+
+        Regulation regulation = regulationRepository.findByCodeAndMajor_MajorId("SOURCE_DOCUMENTS", major.getMajorId()).orElse(null);
+        if (regulation == null || regulation.getValue() == null) return map;
+
+        String value = regulation.getValue();
+        // Format: SourceCode/SubjectCode/SourceName/Author/Publisher/PublisherYear
+        // separated by comma. Notice that some names might have commas!
+        // But the example format is: "000100/001535-001264/Giáo trình.../Bộ GD ĐT/NXB.../2016, 000101/..."
+        // If there's a comma in the title, it could break. We split by ", " followed by a number.
+        // Actually, let's split by ", " and check if the part starts with numbers.
+        String[] parts = value.split(",\\s*(?=\\d{5,6}/)"); // Split by comma followed by 5 or 6 digits and a slash
+        if (parts.length == 1 && !value.contains(", ")) {
+            // maybe no comma at all
+            parts = new String[]{value};
+        }
+        
+        for (String part : parts) {
+            String[] fields = part.split("/");
+            if (fields.length >= 6) {
+                String sourceCode = fields[0].trim();
+                String subjectCode = fields[1].trim();
+                String sourceName = fields[2].trim();
+                String author = fields[3].trim();
+                String publisher = fields[4].trim();
+                String yearStr = fields[5].trim();
+                
+                Integer year = parseIntegerSafe(yearStr);
+                
+                SourceRegulationDTO dto = new SourceRegulationDTO(sourceCode, subjectCode, sourceName, author, publisher, year);
+                map.put(sourceCode.toUpperCase(), dto);
+            }
+        }
+        return map;
     }
 
     private ImportCurriculumGroupSubjectResult buildSemFail(int rowNumber, String groupCode, String subjectCode, String semester, String message) {
@@ -886,9 +1100,39 @@ public class FullImportService {
         return ImportCurriculumGroupSubjectResponse.builder().total(total).success(success).failed(total - success).details(ctx.details).build();
     }
 
+    private com.example.smd.dto.response.source.ImportSourceResponse buildSourceResponse(SourceImportContext ctx) {
+        int total = ctx.details.size();
+        int success = (int) ctx.details.stream().filter(d -> "SUCCESS".equals(d.getStatus())).count();
+        return com.example.smd.dto.response.source.ImportSourceResponse.builder().total(total).success(success).failed(total - success).details(ctx.details).build();
+    }
+
     // ==========================================
     // INTERNAL CONTEXT CLASSES
     // ==========================================
+
+    private static class SourceRegulationDTO {
+        String sourceCode;
+        String subjectCode;
+        String sourceName;
+        String author;
+        String publisher;
+        Integer publicationYear;
+
+        public SourceRegulationDTO(String sourceCode, String subjectCode, String sourceName, String author, String publisher, Integer publicationYear) {
+            this.sourceCode = sourceCode;
+            this.subjectCode = subjectCode;
+            this.sourceName = sourceName;
+            this.author = author;
+            this.publisher = publisher;
+            this.publicationYear = publicationYear;
+        }
+    }
+
+    private static class SourceImportContext {
+        Set<String> fileSourceCodes = new HashSet<>();
+        List<com.example.smd.dto.excel.SourceImportDTO> rowsToSave = new ArrayList<>();
+        List<com.example.smd.dto.response.source.ImportSourceResult> details = new ArrayList<>();
+    }
 
     private static class SubjectRegulationDTO {
         String subjectCode;
