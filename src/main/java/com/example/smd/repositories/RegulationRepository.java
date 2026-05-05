@@ -17,4 +17,15 @@ public interface RegulationRepository extends JpaRepository<Regulation, UUID>, J
     boolean existsByCodeAndRegulationIdNot(String code, UUID regulationId);
 
     Optional<Regulation> findByCodeAndMajor_MajorId(String code, UUID majorId);
+
+    /**
+     * Kiểm tra xem mã code đã tồn tại trong cùng một Major hay chưa
+     * (Ngoại trừ chính Regulation đang được cập nhật)
+     *
+     * @param code Mã Regulation cần kiểm tra
+     * @param majorId ID của Major
+     * @param id ID của Regulation đang được update (để loại trừ)
+     * @return true nếu đã bị trùng, false nếu hợp lệ
+     */
+    boolean existsByCodeAndMajor_MajorIdAndRegulationIdNot(String code, UUID majorId, UUID id);
 }

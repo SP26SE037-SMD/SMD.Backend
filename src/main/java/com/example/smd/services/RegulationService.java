@@ -110,9 +110,12 @@ public class RegulationService {
         Regulation regulation = regulationRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.INVALID_KEY, "Regulation not found"));
 
+        UUID currentMajorId = request.getMajorId() != null
+                ? request.getMajorId()
+                : regulation.getMajor().getMajorId();
         if (request.getCode() != null &&
-                regulationRepository.existsByCodeAndRegulationIdNot(request.getCode(), id)) {
-            throw new AppException(ErrorCode.INVALID_KEY, "Regulation code already exists");
+                regulationRepository.existsByCodeAndMajor_MajorIdAndRegulationIdNot(request.getCode(), currentMajorId, id)) {
+            throw new AppException(ErrorCode.INVALID_KEY, "Mã Regulation này đã tồn tại trong chuyên ngành hiện tại!");
         }
 
         regulationMapper.updateEntity(regulation, request);
