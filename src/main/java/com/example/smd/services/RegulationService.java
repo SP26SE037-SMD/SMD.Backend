@@ -115,7 +115,7 @@ public class RegulationService {
                 : regulation.getMajor().getMajorId();
         if (request.getCode() != null &&
                 regulationRepository.existsByCodeAndMajor_MajorIdAndRegulationIdNot(request.getCode(), currentMajorId, id)) {
-            throw new AppException(ErrorCode.INVALID_KEY, "Mã Regulation này đã tồn tại trong chuyên ngành hiện tại!");
+            throw new AppException(ErrorCode.INVALID_KEY, "This Regulation code already exists within the current major!");
         }
 
         regulationMapper.updateEntity(regulation, request);
