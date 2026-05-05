@@ -11,6 +11,8 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class SourceRequest {
+    @NotBlank(message = "SOURCE_CODE_REQUIRED")
+    String sourceCode;
     @NotBlank(message = "SOURCE_NAME_REQUIRED")
     String sourceName;
     String type;

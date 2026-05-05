@@ -10,14 +10,10 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class SourceResponse {
-    String sourceId;
+public class ProposedSourceResponse {
+    String id;
     String sourceCode;
     String sourceName;
-    String type;
-    String author;
-    String publisher;
-    int publishedYear;
-    String isbn;
-    String url;
+    String subjectCode;
+    String subjectName;
 }

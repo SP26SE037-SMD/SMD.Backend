@@ -198,10 +198,15 @@ public enum ErrorCode {
 
     // SOURCE
     SOURCE_NOT_FOUND(24001, "Source not found", HttpStatus.NOT_FOUND),
-    INVALID_SOURCE_TYPE(24002, "Invalid source type. Please choose from: TEXTBOOK, REFERENCE_BOOK, ONLINE_COURSE, DOCUMENTATION, JOURNAL_PAPER, ARTICLE", HttpStatus.BAD_REQUEST),
-    INVALID_YEAR(24003, "Published year must be between 1900 and the current year", HttpStatus.BAD_REQUEST),
-    MAPPING_NOT_FOUND(24004, "Syllabus and Source mapping not found", HttpStatus.NOT_FOUND),
-    SOURCE_ALREADY_MAPPED(24005, "Source is already assigned to this syllabus", HttpStatus.CONFLICT),
+    SOURCE_CODE_EXISTS(24002, "Source code already exists", HttpStatus.BAD_REQUEST),
+    INVALID_SOURCE_TYPE(24003, "Invalid source type. Please choose from: TEXTBOOK, REFERENCE_BOOK, ONLINE_COURSE, DOCUMENTATION, JOURNAL_PAPER, ARTICLE", HttpStatus.BAD_REQUEST),
+    INVALID_YEAR(24004, "Published year must be between 1900 and the current year", HttpStatus.BAD_REQUEST),
+    MAPPING_NOT_FOUND(24005, "Syllabus and Source mapping not found", HttpStatus.NOT_FOUND),
+    SOURCE_ALREADY_MAPPED(24006, "Source is already assigned to this syllabus", HttpStatus.CONFLICT),
+
+    // PROPOSED SOURCE
+    PROPOSED_SOURCE_NOT_FOUND(34001, "Proposed source not found", HttpStatus.NOT_FOUND),
+    PROPOSED_SOURCE_ALREADY_EXISTS(34002, "This source is already proposed for this subject", HttpStatus.CONFLICT),
 
     // ASSESSMENT
     ASSESSMENT_NOT_FOUND(26001, "Assessment not found", HttpStatus.NOT_FOUND),

@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -16,6 +17,12 @@ public interface SourceRepository extends JpaRepository<Source, UUID> {
         // Tìm kiếm theo tên hoặc tác giả (phân trang)
         Page<Source> findBySourceNameContainingIgnoreCaseOrAuthorContainingIgnoreCase(
                         String name, String author, Pageable pageable);
+
+        boolean existsBySourceCode(String sourceCode);
+
+        Optional<Source> findBySourceCode(String sourceCode);
+
+        boolean existsBySourceCodeAndSourceIdNot(String sourceCode, UUID sourceId);
 
         @Query("SELECT s FROM Source s WHERE " +
                         "(:type IS NULL OR CAST(s.type AS string) = :type) AND " +
