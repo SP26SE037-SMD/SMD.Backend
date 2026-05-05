@@ -34,6 +34,9 @@ public class SourceService {
 
     @Transactional
     public SourceResponse create(SourceRequest request) {
+        if (repository.existsBySourceCode(request.getSourceCode())) {
+            throw new AppException(ErrorCode.SOURCE_CODE_EXISTS);
+        }
         SourceType type;
         try {
             type = SourceType.valueOf(request.getType().toUpperCase());
@@ -74,6 +77,11 @@ public class SourceService {
     public SourceResponse update(UUID id, SourceRequest request) {
         Source source = repository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.SOURCE_NOT_FOUND));
+
+        if (request.getSourceCode() != null &&
+                repository.existsBySourceCodeAndSourceIdNot(request.getSourceCode(), id)) {
+            throw new AppException(ErrorCode.SOURCE_CODE_EXISTS);
+        }
 
         SourceType type;
         try {

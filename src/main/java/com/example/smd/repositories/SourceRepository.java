@@ -17,6 +17,10 @@ public interface SourceRepository extends JpaRepository<Source, UUID> {
         Page<Source> findBySourceNameContainingIgnoreCaseOrAuthorContainingIgnoreCase(
                         String name, String author, Pageable pageable);
 
+        boolean existsBySourceCode(String sourceCode);
+
+        boolean existsBySourceCodeAndSourceIdNot(String sourceCode, UUID sourceId);
+
         @Query("SELECT s FROM Source s WHERE " +
                         "(:type IS NULL OR CAST(s.type AS string) = :type) AND " +
                         "(:search IS NULL OR s.sourceName ILIKE %:search% " +
