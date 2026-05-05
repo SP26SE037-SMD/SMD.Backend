@@ -1,10 +1,7 @@
 package com.example.smd.repositories;
 
 import com.example.smd.entities.Assessment;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
@@ -16,6 +13,7 @@ public interface AssessmentRepository extends JpaRepository<Assessment, UUID>, J
 
     List<Assessment> findBySyllabus_SyllabusIdOrderByPartAsc(UUID syllabusId);
 
+    @EntityGraph(attributePaths = {"assessmentCategory", "assessmentType"})
     List<Assessment> findBySyllabus_SyllabusId(UUID syllabusId);
 
     @Query("SELECT COALESCE(SUM(a.weight), 0) FROM Assessment a WHERE a.syllabus.syllabusId = :syllabusId AND UPPER(COALESCE(a.status, '')) <> 'ARCHIVED'")
