@@ -25,7 +25,7 @@ public interface POsRepository extends JpaRepository<PO, UUID> {
 
     List<PO> findByMajor_MajorId(UUID majorId);
 
-    java.util.Optional<PO> findByPoCodeAndMajor_MajorCode(String poCode, String majorCode);
+    java.util.Optional<PO> findFirstByPoCodeAndMajor_MajorCode(String poCode, String majorCode);
 
     // Tìm PO của Major theo Status (Để phục vụ phân quyền Role)
     Page<PO> findByMajor_MajorIdAndStatus(UUID majorId, String status, Pageable pageable);
