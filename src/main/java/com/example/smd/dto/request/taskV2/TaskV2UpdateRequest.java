@@ -18,6 +18,7 @@ public class TaskV2UpdateRequest {
     private String description;
     private String status;
     private String action;
+    private  String comment;
     private String priority;
     private String type;
     private UUID targetId;

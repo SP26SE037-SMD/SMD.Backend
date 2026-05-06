@@ -23,6 +23,7 @@ public class TaskV2Response {
     private String description;
     private String status;
     private String action;
+    private  String comment;
     private String priority;
     private String type;
     private LocalDate dueDate;

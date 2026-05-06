@@ -52,6 +52,9 @@ public class TaskV2 {
     @Column(name = "priority", length = 20)
     String priority;
 
+    @Column(name = "comment", columnDefinition = "TEXT")
+    String comment;
+
     @Column(name = "due_date")
     LocalDate dueDate;
 
