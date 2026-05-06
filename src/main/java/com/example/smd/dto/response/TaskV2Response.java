@@ -29,6 +29,7 @@ public class TaskV2Response {
     private LocalDate completedAt;
     private LocalDate createdAt;
 
+    private SubjectDto subject;
     private SyllabusDto syllabus;
     private CurriculumDto curriculum;
     private DocumentDto document;
@@ -39,6 +40,19 @@ public class TaskV2Response {
         private UUID accountId;
         private String email;
         private String fullName;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class SubjectDto {
+        private UUID subjectId;
+        private String subjectCode;
+        private String subjectName;
+        private Integer credits;
+        private String departmentCode;
+        private String departmentName;
     }
 
     @Data

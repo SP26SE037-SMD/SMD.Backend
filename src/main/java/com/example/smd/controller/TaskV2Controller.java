@@ -2,8 +2,10 @@ package com.example.smd.controller;
 
 import com.example.smd.dto.request.taskV2.TaskV2CreateRequest;
 import com.example.smd.dto.request.taskV2.TaskV2UpdateRequest;
+import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.dto.response.TaskV2Response;
 import com.example.smd.services.TaskV2Service;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AccessLevel;
@@ -78,5 +80,16 @@ public class TaskV2Controller {
     public ResponseEntity<Void> deleteTask(@PathVariable UUID taskId) {
         taskV2Service.deleteTask(taskId);
         return ResponseEntity.noContent().build();
+    }
+    @PostMapping("/batch/{sprintId}")
+    @Operation(summary = "Create multiple tasks in a sprint", description = "Auto-create tasks from subjects of sprint's curriculum and department")
+    public ResponseObject<Boolean> createBatch(
+            @PathVariable UUID sprintId,
+            @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
+        return ResponseObject.<Boolean>builder()
+                .data(taskV2Service.createBatch(sprintId, userId))
+                .message("Tasks created successfully")
+                .build();
     }
 }

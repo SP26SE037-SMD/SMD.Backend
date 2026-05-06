@@ -7,7 +7,7 @@ public enum ActionType {
     SUBMIT,         // Nộp để review
     APPROVE,        // Phê duyệt
     REJECT,         // Từ chối
-    PUBLISH,        // Xuất bản
+    PUBLISHED,        // Xuất bản
     ARCHIVE,        // Lưu trữ
     RESTORE,        // Khôi phục
     COMMENT         // Bình luận
