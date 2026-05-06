@@ -32,6 +32,10 @@ public class ReviewV2 {
     @JoinColumn(name = "task_id", nullable = false)
     private TaskV2 task;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "reviewer_id", nullable = false)
+    Account reviewer;
+
     @Column(name = "created_at")
     LocalDate createdAt;
 

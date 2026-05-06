@@ -3,8 +3,11 @@ package com.example.smd.services;
 import com.example.smd.dto.request.reviewV2.ReviewV2CreateRequest;
 import com.example.smd.dto.request.reviewV2.ReviewV2UpdateRequest;
 import com.example.smd.dto.response.ReviewV2Response;
+import com.example.smd.entities.Account;
 import com.example.smd.entities.ReviewV2;
 import com.example.smd.entities.TaskV2;
+import com.example.smd.mapper.ReviewV2Mapper;
+import com.example.smd.repositories.AccountRepository;
 import com.example.smd.repositories.ReviewV2Repository;
 import com.example.smd.repositories.TaskV2Repository;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +27,9 @@ import java.util.stream.Collectors;
 public class ReviewV2Service {
 
     private final ReviewV2Repository reviewV2Repository;
-    private final TaskV2Repository taskV2Repository;
+    private final TaskV2Repository    taskV2Repository;
+    private final AccountRepository   accountRepository;
+    private final ReviewV2Mapper      reviewV2Mapper;
 
     // ===================== GET ALL (paged + filter) =====================
 
@@ -35,7 +40,7 @@ public class ReviewV2Service {
             return new PageImpl<>(Collections.emptyList(), pageable, 0);
         }
         List<ReviewV2Response> responses = page.getContent().stream()
-                .map(this::toResponse)
+                .map(reviewV2Mapper::toResponse)
                 .collect(Collectors.toList());
         return new PageImpl<>(responses, pageable, page.getTotalElements());
     }
@@ -45,7 +50,7 @@ public class ReviewV2Service {
     @Transactional(readOnly = true)
     public List<ReviewV2Response> getAllByTask(UUID taskId) {
         return reviewV2Repository.findAllByTask_TaskId(taskId).stream()
-                .map(this::toResponse)
+                .map(reviewV2Mapper::toResponse)
                 .collect(Collectors.toList());
     }
 
@@ -55,7 +60,7 @@ public class ReviewV2Service {
     public ReviewV2Response getById(UUID reviewId) {
         ReviewV2 review = reviewV2Repository.findById(reviewId)
                 .orElseThrow(() -> new RuntimeException("Review not found: " + reviewId));
-        return toResponse(review);
+        return reviewV2Mapper.toResponse(review);
     }
 
     // ===================== CREATE =====================
@@ -65,13 +70,17 @@ public class ReviewV2Service {
         TaskV2 task = taskV2Repository.findById(request.getTaskId())
                 .orElseThrow(() -> new RuntimeException("Task not found: " + request.getTaskId()));
 
+        Account reviewer = accountRepository.findById(request.getReviewerId())
+                .orElseThrow(() -> new RuntimeException("Reviewer (account) not found: " + request.getReviewerId()));
+
         ReviewV2 review = ReviewV2.builder()
                 .task(task)
+                .reviewer(reviewer)
                 .isAccepted(request.getIsAccepted())
                 .comment(request.getComment())
                 .build();
 
-        return toResponse(reviewV2Repository.save(review));
+        return reviewV2Mapper.toResponse(reviewV2Repository.save(review));
     }
 
     // ===================== UPDATE =====================
@@ -81,14 +90,9 @@ public class ReviewV2Service {
         ReviewV2 review = reviewV2Repository.findById(reviewId)
                 .orElseThrow(() -> new RuntimeException("Review not found: " + reviewId));
 
-        if (request.getIsAccepted() != null) {
-            review.setIsAccepted(request.getIsAccepted());
-        }
-        if (request.getComment() != null) {
-            review.setComment(request.getComment());
-        }
+        reviewV2Mapper.updateEntity(review, request);
 
-        return toResponse(reviewV2Repository.save(review));
+        return reviewV2Mapper.toResponse(reviewV2Repository.save(review));
     }
 
     // ===================== DELETE =====================
@@ -99,26 +103,5 @@ public class ReviewV2Service {
             throw new RuntimeException("Review not found: " + reviewId);
         }
         reviewV2Repository.deleteById(reviewId);
-    }
-
-    // ===================== PRIVATE HELPER =====================
-
-    private ReviewV2Response toResponse(ReviewV2 review) {
-        ReviewV2Response.TaskDto taskDto = null;
-        if (review.getTask() != null) {
-            TaskV2 t = review.getTask();
-            taskDto = ReviewV2Response.TaskDto.builder()
-                    .taskId(t.getTaskId())
-                    .taskName(t.getTaskName())
-                    .description(t.getDescription())
-                    .build();
-        }
-        return ReviewV2Response.builder()
-                .reviewId(review.getReviewId())
-                .isAccepted(review.getIsAccepted())
-                .comment(review.getComment())
-                .createdAt(review.getCreatedAt())
-                .task(taskDto)
-                .build();
     }
 }
