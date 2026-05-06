@@ -23,12 +23,14 @@ public class TaskV2Response {
     private String description;
     private String status;
     private String action;
+    private  String comment;
     private String priority;
     private String type;
     private LocalDate dueDate;
     private LocalDate completedAt;
     private LocalDate createdAt;
 
+    private SubjectDto subject;
     private SyllabusDto syllabus;
     private CurriculumDto curriculum;
     private DocumentDto document;
@@ -39,6 +41,19 @@ public class TaskV2Response {
         private UUID accountId;
         private String email;
         private String fullName;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class SubjectDto {
+        private UUID subjectId;
+        private String subjectCode;
+        private String subjectName;
+        private Integer credits;
+        private String departmentCode;
+        private String departmentName;
     }
 
     @Data
