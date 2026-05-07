@@ -33,8 +33,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class SessionService {
 
-    private static final String DEFAULT_STATUS = "DRAFT";
-    private static final String SOFT_DELETE_STATUS = "ARCHIVED";
 
     private final AccountService accountService;
     private final SessionRepository sessionRepository;
@@ -80,12 +78,14 @@ public class SessionService {
         Specification<Session> specification = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
+            var syllabusJoin = root.join("syllabus", jakarta.persistence.criteria.JoinType.LEFT);
+
             if (syllabusId != null) {
-                predicates.add(cb.equal(root.get("syllabus").get("syllabusId"), syllabusId));
+                predicates.add(cb.equal(syllabusJoin.get("syllabusId"), syllabusId));
             }
 
             if (status != null && !status.trim().isEmpty()) {
-                predicates.add(cb.equal(cb.upper(root.get("status")), status.trim().toUpperCase()));
+                predicates.add(cb.equal(cb.upper(syllabusJoin.get("status")), status.trim().toUpperCase()));
             }
 
             if (search != null && !search.trim().isEmpty()) {
@@ -115,12 +115,12 @@ public class SessionService {
         // 3. Logic Phân quyền:
         // Nếu là STUDENT hoặc LECTURER, chỉ cho phép xem nếu status là PUBLISHED
         if (RoleName.STUDENT.toString().equals(roleName) || RoleName.LECTURER.toString().equals(roleName)) {
-            if (!MaterialStatus.PUBLISHED.toString().equalsIgnoreCase(session.getStatus())) {
+            if (!MaterialStatus.PUBLISHED.toString().equalsIgnoreCase(session.getSyllabus().getStatus())) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
 
-        if ("DRAFT".equals(session.getStatus()) || MaterialStatus.REVISION_REQUESTED.toString().equals(session.getStatus())) {
+        if (SyllabusStatus.IN_PROGRESS.toString().equalsIgnoreCase(session.getSyllabus().getStatus())) {
             if (!(RoleName.PDCM.toString().equals(account.getRole().getRoleName()) || RoleName.COLLABORATOR.toString().equals(account.getRole().getRoleName()))) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
@@ -172,7 +172,6 @@ public class SessionService {
         Session session = sessionMapper.toEntity(request);
         session.setSessionType(newType);
         session.setSyllabus(syllabus);
-        session.setStatus(DEFAULT_STATUS);
 
         session = sessionRepository.save(session);
         return sessionMapper.toResponse(session);
@@ -192,7 +191,7 @@ public class SessionService {
         Syllabus syllabus = syllabusRepository.findById(request.getSyllabusId())
                 .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
 
-        if (!("DRAFT".equals(session.getStatus()) || MaterialStatus.REVISION_REQUESTED.toString().equals(session.getStatus()))) {
+        if (!SyllabusStatus.IN_PROGRESS.toString().equals(session.getSyllabus().getStatus())) {
             throw new AppException(ErrorCode.SESSION_NOT_EDITABLE);
         }
 
@@ -280,7 +279,6 @@ public class SessionService {
             Session session = sessionMapper.toEntity(request);
             session.setSessionType(newType);
             session.setSyllabus(syllabus);
-            session.setStatus(DEFAULT_STATUS); // Chú ý: đảm bảo DEFAULT_STATUS đã được define
 
             sessionsToSave.add(session);
         }
@@ -294,19 +292,7 @@ public class SessionService {
                 .collect(Collectors.toList());
     }
 
-    @Transactional
-    public SessionResponse updateSessionStatus(UUID sessionId, String status) {
-        Session session = sessionRepository.findById(sessionId)
-                .orElseThrow(() -> new AppException(ErrorCode.SESSION_NOT_FOUND));
 
-        if (status == null || status.trim().isEmpty()) {
-            throw new AppException(ErrorCode.SESSION_STATUS_REQUIRED);
-        }
-
-        session.setStatus(status.trim());
-        session = sessionRepository.save(session);
-        return sessionMapper.toResponse(session);
-    }
 
     @Transactional
     public boolean deleteSession(UUID sessionId, String accountId) {
@@ -319,17 +305,11 @@ public class SessionService {
         Session session = sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new AppException(ErrorCode.SESSION_NOT_FOUND));
 
-        if (!(SyllabusStatus.IN_PROGRESS.toString().equals(session.getSyllabus().getStatus()) || SyllabusStatus.REVISION_REQUESTED.toString().equals(session.getSyllabus().getStatus()))) {
+        if (!SyllabusStatus.IN_PROGRESS.toString().equals(session.getSyllabus().getStatus())) {
             throw new AppException(ErrorCode.SESSION_NOT_EDITABLE);
         }
 
-        if (DEFAULT_STATUS.equalsIgnoreCase(session.getStatus())) {
-            sessionRepository.delete(session);
-            return true;
-        }
-
-        session.setStatus(SOFT_DELETE_STATUS);
-        sessionRepository.save(session);
+        sessionRepository.delete(session);
         return true;
     }
 
@@ -350,10 +330,11 @@ public class SessionService {
             throw new AppException(ErrorCode.SESSION_NOT_FOUND);
         }
 
-        boolean hasNonDraft = sessions.stream()
-                .anyMatch(session -> !DEFAULT_STATUS.equalsIgnoreCase(session.getStatus()));
-        if (hasNonDraft) {
-            throw new AppException(ErrorCode.SESSION_NOT_DRAFT);
+        Syllabus syllabus = syllabusRepository.findById(syllabusId)
+                .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
+
+        if (!SyllabusStatus.IN_PROGRESS.toString().equals(syllabus.getStatus())) {
+            throw new AppException(ErrorCode.SESSION_NOT_EDITABLE);
         }
 
         sessionRepository.deleteAll(sessions);
@@ -370,27 +351,7 @@ public class SessionService {
         return Sort.Direction.ASC;
     }
 
-    @jakarta.transaction.Transactional
-    public void updateSessionStatusBySyllabus(String syllabusId, String newStatus) {
-        // 1. Kiểm tra trạng thái hợp lệ từ Enum SyllabusStatus (hoặc MaterialStatus nếu bạn có riêng)
-        SyllabusStatus status;
-        try {
-            status = SyllabusStatus.valueOf(newStatus.toUpperCase());
-        } catch (IllegalArgumentException | NullPointerException e) {
-            throw new AppException(ErrorCode.INVALID_MATERIAL_STATUS);
-        }
 
-        UUID uuidSyllabusId = UUID.fromString(syllabusId);
-
-        // 2. Kiểm tra Syllabus có tồn tại không trước khi update Material
-        if (!syllabusRepository.existsById(uuidSyllabusId)) {
-            throw new AppException(ErrorCode.SYLLABUS_NOT_FOUND);
-        }
-
-        // 3. Cập nhật hàng loạt trạng thái các Materials thuộc Syllabus này
-        // Lưu ý: Material đi theo Syllabus nên ta dùng updateStatusBySyllabusId
-        int affectedRows = sessionRepository.updateStatusBySyllabusId(status.toString(), uuidSyllabusId);
-    }
 
     public SessionValidationResult validate(List<SessionRequest> inputs, UUID syllabusId) {
         SessionValidationResult result = new SessionValidationResult();

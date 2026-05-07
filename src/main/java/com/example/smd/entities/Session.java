@@ -45,8 +45,6 @@ public class Session {
     @Column(name = "created_at")
     Instant createdAt;
 
-    @Column(name = "status")
-    String status;
 
     @OneToMany(mappedBy = "session", fetch = FetchType.LAZY)
     List<CLO_Session> cloSessions;

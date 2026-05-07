@@ -28,7 +28,7 @@ public class CloSessionMappingMapper {
                         : null)
                 .sessionNumber(session != null ? session.getSessionNumber() : null)
                 .sessionTitle(session != null ? session.getSessionTitle() : null)
-                .sessionStatus(session != null ? session.getStatus() : null)
+                .sessionStatus(session != null && session.getSyllabus() != null ? session.getSyllabus().getStatus() : null)
                 .syllabusId(syllabus != null && syllabus.getSyllabusId() != null
                         ? syllabus.getSyllabusId().toString()
                         : null)

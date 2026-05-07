@@ -45,7 +45,4 @@ public class AssessmentRequest {
     String gradingGuide;
 
     String note;
-
-    @Size(max = 20, message = "ASSESSMENT_STATUS_INVALID")
-    String status;
 }

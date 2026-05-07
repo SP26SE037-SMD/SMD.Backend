@@ -27,7 +27,7 @@ public class CloAssessmentMappingMapper {
                         ? assessment.getAssessmentId().toString()
                         : null)
                 .assessmentPart(assessment != null ? assessment.getPart() : null)
-                .assessmentStatus(assessment != null ? assessment.getStatus() : null)
+                .assessmentStatus(assessment != null && assessment.getSyllabus() != null ? assessment.getSyllabus().getStatus() : null)
                 .syllabusId(syllabus != null && syllabus.getSyllabusId() != null
                         ? syllabus.getSyllabusId().toString()
                         : null)

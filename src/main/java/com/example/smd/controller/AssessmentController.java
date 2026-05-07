@@ -110,31 +110,7 @@ public class AssessmentController {
                 .build();
     }
 
-    @PatchMapping("/{id}/status")
-    @PreAuthorize("hasAuthority('SYLLABUS_UPDATE')")
-    @Operation(
-            summary = "Update Assessment Lifecycle Status (Cập nhật trạng thái bài đánh giá)",
-            description = "### 🎯 Quy trình quản lý đánh giá và đo lường (Assessment Workflow):\n" +
-                    "Kiểm soát toàn bộ vòng đời từ lúc khởi tạo ma trận đề đến khi công bố kết quả cho sinh viên:\n\n" +
-                    "| Status | Mô tả chi tiết (Nghiệp vụ) | Ràng buộc hệ thống |\n" +
-                    "| :--- | :--- | :--- |\n" +
-                    "| **DRAFT** | **Bản nháp:** Giảng viên mới tạo khung tên bài đánh giá, chưa có nội dung chi tiết. | Chỉ người tạo nhìn thấy. |\n" +
-                    "| **PENDING_REVIEW** | **Chờ thẩm định:** Nội dung đã hoàn thiện, đang đợi HoD/FDC kiểm duyệt tính sư phạm. | Khóa toàn bộ quyền chỉnh sửa. |\n" +
-                    "| **REVISION_REQ** | **Yêu cầu chỉnh sửa:** Hội đồng yêu cầu điều chỉnh lại nội dung hoặc trọng số bài thi. | Mở lại quyền chỉnh sửa cho giảng viên. |\n" +
-                    "| **APPROVED** | **Đã phê duyệt:** Nội dung đạt chuẩn, sẵn sàng đưa vào đề cương chi tiết (Syllabus). | Chốt dữ liệu cấu trúc bài thi. |\n" +
-                    "| **PUBLISHED** | **Công bố:** Bài đánh giá chính thức có hiệu lực, điểm số được hiển thị công khai trên Portal. | Sinh viên có thể xem điểm & nhận xét. |\n" +
-                    "| **ARCHIVED** | **Lưu trữ:** Dữ liệu cũ dùng để đối soát lịch sử hoặc phục vụ hậu kiểm. | Chuyển sang chế độ Read-only vĩnh viễn. |\n\n"
-    )
-    public ResponseObject<AssessmentResponse> updateAssessmentStatus(
-            @PathVariable UUID id,
-            @RequestParam String status
-    ) {
-        return ResponseObject.<AssessmentResponse>builder()
-                .status(1000)
-                .data(assessmentService.updateAssessmentStatus(id, status))
-                .message("Update assessment status successfully")
-                .build();
-    }
+
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('SYLLABUS_UPDATE')")
@@ -148,35 +124,7 @@ public class AssessmentController {
                 .build();
     }
 
-    @PatchMapping("/syllabus/{syllabusId}/status")
-    @PreAuthorize("hasAuthority('SYLLABUS_UPDATE')")
-    @Operation(
-            summary = "Update Material Lifecycle Status",
-            description = "### Quy trình phê duyệt tài liệu học tập (Material Approval):\n" +
-                    "Cập nhật trạng thái để kiểm soát quyền truy cập và hiển thị của tài liệu:\n\n" +
-                    "| Status | Mô tả chi tiết (Nghiệp vụ) |\n" +
-                    "| :--- | :--- |\n" +
-                    "| **DRAFT** | **Khởi tạo:** Giảng viên mới tạo định danh tài liệu (Tên tài liệu, Loại: PDF/Slide/Link). | Chỉ người tạo nhìn thấy. |\n" +
-                    "| **REVISION_REQUESTED** | **Yêu cầu chỉnh sửa:** Tài liệu cần được điều chỉnh hoặc bổ sung theo feedback của người duyệt. |\n" +
-                    "| **APPROVED** | **Đã duyệt:** Nội dung tài liệu đạt yêu cầu, sẵn sàng để đưa vào Syllabus chính thức. |\n" +
-                    "| **REJECTED** | **Từ chối:** Tài liệu không phù hợp với chương trình đào tạo hoặc vi phạm quy định. |\n" +
-                    "| **PUBLISHED** | **Đã ban hành:** Tài liệu chính thức hiển thị cho sinh viên xem và tải về trên Portal. |\n" +
-                    "| **ARCHIVED** | **Lưu trữ:** Tài liệu của các học kỳ cũ, không còn áp dụng nhưng được giữ lại để đối soát lịch sử. |"
-    )
-    public ResponseObject<Void> updateStatusBySyllabus(
-            @Parameter(description = "ID of the Syllabus")
-            @PathVariable String syllabusId,
 
-            @Parameter(description = "New status to apply (e.g., PUBLISHED)")
-            @RequestParam String newStatus) {
-
-        assessmentService.updateAssessmentStatusBySyllabus(syllabusId, newStatus);
-
-        return ResponseObject.<Void>builder()
-                .status(1000)
-                .message("All materials in syllabus " + syllabusId + " updated to " + newStatus)
-                .build();
-    }
 
     @PostMapping("/syllabus/{syllabusId}/validate")
     @Operation(

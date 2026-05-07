@@ -327,15 +327,8 @@ public class TaskV2Service {
             throw new AppException(ErrorCode.SUBJECT_NOT_FOUND);
         }
 
-//        long existingTaskCount = taskRepository.countBySprint_SprintId(sprintId);
-//        if (existingTaskCount >= subjectIds.size()) {
-//            throw new AppException(
-//                    ErrorCode.TASK_LIST_REQUIRED,
-//                    "Task list for this sprint has already reached the number of subjects in department"
-//            );
-//        }
-
-//        Set<UUID> existingSubjectIds = taskRepository.findExistingSubjectIdsInSprint(sprintId, subjectIds);
+        // Query 1 lần: lấy tất cả targetId đã tồn tại trong sprint (cả SUBJECT lẫn SYLLABUS)
+        Set<UUID> existingTargetIds = taskV2Repository.findAllTargetIdsInSprint(sprintId);
 
         Account hopdcAccount = accountRepository
                 .findByDepartmentAndRoleName(departmentId, RoleName.HOPDC.name())
@@ -345,9 +338,6 @@ public class TaskV2Service {
 
         List<TaskV2> tasksToSave = new ArrayList<>();
         for (UUID subjectId : subjectIds) {
-//            if (existingSubjectIds.contains(subjectId)) {
-//                continue;
-//            }
 
             Subject subject = subjectRepository.findById(subjectId)
                     .orElseThrow(() -> new AppException(ErrorCode.SUBJECT_NOT_FOUND));
@@ -380,12 +370,16 @@ public class TaskV2Service {
                 }
                 task.setType(TaskType.SYLLABUS.name());
                 task.setAction(ActionType.UPDATE.name());
-                task.setTargetId(syllabus.getSyllabusId()); // Assuming the first
+                task.setTargetId(syllabus.getSyllabusId());
                 task.setPriority("MEDIUM");
                 task.setDescription("Mapping CLOs of " + subject.getSubjectCode() + " to new curriculum ");
-                // syllabus is
-                // the one to link
             }
+
+            // Skip nếu targetId thực tế (subjectId hoặc syllabusId) đã tồn tại trong sprint
+            if (existingTargetIds.contains(task.getTargetId())) {
+                continue;
+            }
+
             tasksToSave.add(task);
         }
 

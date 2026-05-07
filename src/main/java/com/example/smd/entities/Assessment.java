@@ -52,9 +52,6 @@ public class Assessment {
     @Column(columnDefinition = "TEXT")
     String note;
 
-    // bổ sung cột
-    @Column(name = "status")
-    String status;
 
     @Column(name = "created_at")
     Instant createdAt;
