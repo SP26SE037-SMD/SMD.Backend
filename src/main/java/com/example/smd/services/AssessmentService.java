@@ -74,12 +74,15 @@ public class AssessmentService {
         Specification<Assessment> specification = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
+            // Dùng chung 1 join (LEFT) để khớp với Join của @EntityGraph, giúp Hibernate tự động deduplicate.
+            var syllabusJoin = root.join("syllabus", jakarta.persistence.criteria.JoinType.LEFT);
+
             if (syllabusId != null) {
-                predicates.add(cb.equal(root.get("syllabus").get("syllabusId"), syllabusId));
+                predicates.add(cb.equal(syllabusJoin.get("syllabusId"), syllabusId));
             }
 
             if (status != null && !status.trim().isEmpty()) {
-                predicates.add(cb.equal(cb.upper(root.get("status")), status.trim().toUpperCase()));
+                predicates.add(cb.equal(cb.upper(syllabusJoin.get("status")), status.trim().toUpperCase()));
             }
 
             if (search != null && !search.trim().isEmpty()) {
@@ -110,12 +113,12 @@ public class AssessmentService {
         // 3. Logic Phân quyền:
         // Nếu là STUDENT hoặc LECTURER, chỉ cho phép xem nếu status là PUBLISHED
         if (RoleName.STUDENT.toString().equals(roleName) || RoleName.LECTURER.toString().equals(roleName)) {
-            if (!MaterialStatus.PUBLISHED.toString().equalsIgnoreCase(assessment.getStatus())) {
+            if (!MaterialStatus.PUBLISHED.toString().equalsIgnoreCase(assessment.getSyllabus().getStatus())) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
 
-        if ("DRAFT".equals(assessment.getStatus())|| MaterialStatus.REVISION_REQUESTED.toString().equals(assessment.getStatus())) {
+        if (SyllabusStatus.IN_PROGRESS.toString().equalsIgnoreCase(assessment.getSyllabus().getStatus())) {
             if (!(RoleName.PDCM.toString().equals(account.getRole().getRoleName()) || RoleName.COLLABORATOR.toString().equals(account.getRole().getRoleName()))) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
@@ -162,7 +165,6 @@ public class AssessmentService {
         assessment.setAssessmentCategory(category);
         assessment.setAssessmentType(type);
         assessment.setSyllabus(syllabus);
-        assessment.setStatus(normalizeStatus(request.getStatus()));
 
         assessment = assessmentRepository.save(assessment);
         return assessmentMapper.toResponse(assessment);
@@ -217,7 +219,6 @@ public class AssessmentService {
             assessment.setAssessmentCategory(category);
             assessment.setAssessmentType(type);
             assessment.setSyllabus(syllabus);
-            assessment.setStatus(normalizeStatus(request.getStatus()));
 
             assessmentsToSave.add(assessment);
         }
@@ -250,7 +251,7 @@ public class AssessmentService {
             assessmentTypeRepository.findById(request.getTypeId())
                 .orElseThrow(() -> new AppException(ErrorCode.ASSESSMENT_TYPE_NOT_FOUND));
 
-        if (!("DRAFT".equals(assessment.getStatus()) || MaterialStatus.REVISION_REQUESTED.toString().equals(assessment.getStatus()))) {
+        if (!SyllabusStatus.IN_PROGRESS.toString().equals(assessment.getSyllabus().getStatus())) {
             throw new AppException(ErrorCode.ASSESSMENT_NOT_EDITABLE);
         }
 
@@ -265,25 +266,12 @@ public class AssessmentService {
         assessment.setAssessmentCategory(category);
         assessment.setAssessmentType(type);
         assessment.setSyllabus(syllabus);
-        assessment.setStatus(normalizeStatus(request.getStatus()));
 
         assessment = assessmentRepository.save(assessment);
         return assessmentMapper.toResponse(assessment);
     }
 
-    @Transactional
-    public AssessmentResponse updateAssessmentStatus(UUID assessmentId, String status) {
-        Assessment assessment = assessmentRepository.findById(assessmentId)
-                .orElseThrow(() -> new AppException(ErrorCode.ASSESSMENT_NOT_FOUND));
 
-        if (status == null || status.trim().isEmpty()) {
-            throw new AppException(ErrorCode.ASSESSMENT_STATUS_REQUIRED);
-        }
-
-        assessment.setStatus(status.trim().toUpperCase());
-        assessment = assessmentRepository.save(assessment);
-        return assessmentMapper.toResponse(assessment);
-    }
 
     @Transactional
     public boolean deleteAssessment(UUID assessmentId, String accountId) {
@@ -295,16 +283,11 @@ public class AssessmentService {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
-        if (!(SyllabusStatus.IN_PROGRESS.toString().equals(assessment.getSyllabus().getStatus()) || SyllabusStatus.REVISION_REQUESTED.toString().equals(assessment.getSyllabus().getStatus()))) {
+        if (!SyllabusStatus.IN_PROGRESS.toString().equals(assessment.getSyllabus().getStatus())) {
             throw new AppException(ErrorCode.ASSESSMENT_NOT_EDITABLE);
         }
 
-        if(assessment.getStatus().equals("DRAFT")){
-            assessmentRepository.delete(assessment);
-            return true;
-        }
-        assessment.setStatus("ARCHIVED");
-        assessmentRepository.save(assessment);
+        assessmentRepository.delete(assessment);
         return true;
     }
 
@@ -326,12 +309,6 @@ public class AssessmentService {
         }
     }
 
-    private String normalizeStatus(String status) {
-        if (status == null || status.trim().isEmpty()) {
-            return "DRAFT";
-        }
-        return status.trim().toUpperCase();
-    }
 
     private Sort.Direction getSortDirection(String direction) {
         if (direction.equalsIgnoreCase("asc")) {
@@ -342,27 +319,7 @@ public class AssessmentService {
         return Sort.Direction.ASC;
     }
 
-    @jakarta.transaction.Transactional
-    public void updateAssessmentStatusBySyllabus(String syllabusId, String newStatus) {
-        // 1. Kiểm tra trạng thái hợp lệ từ Enum SyllabusStatus (hoặc MaterialStatus nếu bạn có riêng)
-        SyllabusStatus status;
-        try {
-            status = SyllabusStatus.valueOf(newStatus.toUpperCase());
-        } catch (IllegalArgumentException | NullPointerException e) {
-            throw new AppException(ErrorCode.INVALID_MATERIAL_STATUS);
-        }
 
-        UUID uuidSyllabusId = UUID.fromString(syllabusId);
-
-        // 2. Kiểm tra Syllabus có tồn tại không trước khi update Material
-        if (!syllabusRepository.existsById(uuidSyllabusId)) {
-            throw new AppException(ErrorCode.SYLLABUS_NOT_FOUND);
-        }
-
-        // 3. Cập nhật hàng loạt trạng thái các Materials thuộc Syllabus này
-        // Lưu ý: Material đi theo Syllabus nên ta dùng updateStatusBySyllabusId
-        int affectedRows = assessmentRepository.updateStatusBySyllabusId(status.toString(), uuidSyllabusId);
-    }
 
     @Transactional
     public AssessmentValidationResult validate(List<AssessmentRequest> inputs, UUID syllabusId) {

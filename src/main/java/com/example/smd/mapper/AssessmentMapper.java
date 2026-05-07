@@ -28,7 +28,7 @@ public class AssessmentMapper {
                 .knowledgeSkill(assessment.getKnowledgeSkill())
                 .gradingGuide(assessment.getGradingGuide())
                 .note(assessment.getNote())
-                .status(assessment.getStatus())
+                .status(assessment.getSyllabus() != null ? assessment.getSyllabus().getStatus() : null)
                 .createdAt(assessment.getCreatedAt())
                 .build();
     }
@@ -47,7 +47,6 @@ public class AssessmentMapper {
                 .knowledgeSkill(request.getKnowledgeSkill())
                 .gradingGuide(request.getGradingGuide())
                 .note(request.getNote())
-                .status(request.getStatus())
                 .build();
     }
 
@@ -75,9 +74,6 @@ public class AssessmentMapper {
         }
         if (request.getNote() != null) {
             assessment.setNote(request.getNote());
-        }
-        if (request.getStatus() != null) {
-            assessment.setStatus(request.getStatus());
         }
     }
 }

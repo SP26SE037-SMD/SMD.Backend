@@ -8,8 +8,11 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.lang.Nullable;
 
 import java.util.List;
 import java.util.Optional;
@@ -17,9 +20,10 @@ import java.util.UUID;
 
 @Repository
 public interface SessionRepository extends JpaRepository<Session, UUID>, JpaSpecificationExecutor<Session> {
-
+    @EntityGraph(attributePaths = {"syllabus"})
     List<Session> findBySyllabus_SyllabusIdOrderBySessionNumberAsc(UUID syllabusId);
 
+    @EntityGraph(attributePaths = {"syllabus"})
     List<Session> findBySyllabus_SyllabusId(UUID syllabusId);
 
     boolean existsBySyllabus_SyllabusIdAndSessionNumber(UUID syllabusId, Integer sessionNumber);
@@ -34,11 +38,10 @@ public interface SessionRepository extends JpaRepository<Session, UUID>, JpaSpec
             UUID sessionId
     );
 
-    @Modifying
-    @Transactional
-    @Query("UPDATE Session s SET s.status = :status WHERE s.syllabus.syllabusId = :syllabusId")
-    int updateStatusBySyllabusId(@Param("status") String status, @Param("syllabusId") UUID syllabusId);
-
-
+    @EntityGraph(attributePaths = {"syllabus"})
     Page<Session> findBySyllabus_SyllabusId(UUID syllabusId, Pageable pageable);
+
+    @Override
+    @EntityGraph(attributePaths = {"syllabus"})
+    Page<Session> findAll(@Nullable Specification<Session> spec, Pageable pageable);
 }
