@@ -654,7 +654,8 @@ public class FullImportService {
 
                 if (subjectRepository.existsBySubjectCode(subjectCode)) {
                     ctx.details.add(ImportSubjectResult.builder()
-                            .subjectCode(subjectCode).status("SUCCESS").message("Skipped: Already exists in DB").build());
+                            .subjectCode(subjectCode).status(
+                                    "SUCCESS").message("Validated").build());
                     continue; // SKIP Insert
                 }
 
@@ -699,6 +700,30 @@ public class FullImportService {
                 ctx.details.add(ImportSubjectResult.builder()
                         .subjectCode(subjectCode).status("SUCCESS").message("Validated").build());
             }
+
+            // === VALIDATE COMPLETENESS: Đảm bảo sheet Subject có đủ TẤT CẢ môn trong COURSE_MAPPING ===
+            if (!regulationMap.isEmpty()) {
+                List<String> missingInSheet = new ArrayList<>();
+                for (String regCode : regulationMap.keySet()) {
+                    // subjectCodesInFile chứa các code đã pass duplicate check (uppercase)
+                    if (!subjectCodesInFile.contains(regCode.toUpperCase())) {
+                        // Cũng cần check trong DB — nếu môn đã tồn tại trong DB thì được tính là "đã có"
+                        if (!subjectRepository.existsBySubjectCode(regulationMap.get(regCode).subjectCode)) {
+                            missingInSheet.add(regulationMap.get(regCode).subjectCode);
+                        }
+                    }
+                }
+                if (!missingInSheet.isEmpty()) {
+                    ctx.details.add(ImportSubjectResult.builder()
+                            .subjectCode(null)
+                            .status("FAILED")
+                            .message("Sheet Subject thiếu các môn học bắt buộc theo quy định COURSE_MAPPING: "
+                                    + String.join(", ", missingInSheet))
+                            .build());
+                    hasErrors = true;
+                }
+            }
+
         } catch (Exception e) {
             log.error("Subject parse error", e);
             hasErrors = true;
@@ -946,6 +971,29 @@ public class FullImportService {
                 ctx.details.add(com.example.smd.dto.response.source.ImportSourceResult.builder()
                         .sourceCode(sourceCode).status("SUCCESS").message("Validated").build());
             }
+
+            // === VALIDATE COMPLETENESS: Đảm bảo sheet Source có đủ TẤT CẢ source trong SOURCE_DOCUMENTS ===
+            if (!regulationMap.isEmpty()) {
+                List<String> missingSourcesInSheet = new ArrayList<>();
+                for (String regCode : regulationMap.keySet()) {
+                    if (!ctx.fileSourceCodes.contains(regCode.toUpperCase())) {
+                        // Cũng check DB — nếu source đã tồn tại thì được tính là "đã có"
+                        if (!sourceRepository.existsBySourceCode(regulationMap.get(regCode).sourceCode)) {
+                            missingSourcesInSheet.add(regulationMap.get(regCode).sourceCode);
+                        }
+                    }
+                }
+                if (!missingSourcesInSheet.isEmpty()) {
+                    ctx.details.add(com.example.smd.dto.response.source.ImportSourceResult.builder()
+                            .sourceCode(null)
+                            .status("FAILED")
+                            .message("Sheet Source thiếu các tài liệu bắt buộc theo quy định SOURCE_DOCUMENTS: "
+                                    + String.join(", ", missingSourcesInSheet))
+                            .build());
+                    hasErrors = true;
+                }
+            }
+
         } catch (Exception e) {
             log.error("Source parse error", e);
             hasErrors = true;

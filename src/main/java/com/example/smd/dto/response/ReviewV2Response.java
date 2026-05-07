@@ -23,6 +23,9 @@ public class ReviewV2Response {
     /** Thông tin tóm tắt của task liên quan */
     TaskDto task;
 
+    /** Người thực hiện review */
+    ReviewerDto reviewer;
+
     @Data
     @Builder
     @NoArgsConstructor
@@ -31,5 +34,15 @@ public class ReviewV2Response {
         private UUID taskId;
         private String taskName;
         private String description;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ReviewerDto {
+        private UUID accountId;
+        private String fullName;
+        private String email;
     }
 }

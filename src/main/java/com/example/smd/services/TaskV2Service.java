@@ -1,8 +1,11 @@
 package com.example.smd.services;
 
+import com.example.smd.dto.request.task.TaskVPRequest;
 import com.example.smd.dto.request.taskV2.TaskV2CreateRequest;
+import com.example.smd.dto.request.taskV2.TaskV2CreateVPRequest;
 import com.example.smd.dto.request.taskV2.TaskV2UpdateRequest;
 import com.example.smd.dto.response.TaskV2Response;
+import com.example.smd.dto.response.task.TaskVPResponse;
 import com.example.smd.entities.*;
 import com.example.smd.enums.*;
 import com.example.smd.exception.AppException;
@@ -405,5 +408,22 @@ public class TaskV2Service {
         }
 
         return true;
+    }
+
+//     ===================== CREATE BY VP =====================
+    @Transactional
+    public TaskV2Response createByVP(
+            TaskV2CreateVPRequest request,
+            String userId) {
+        TaskV2 task = taskV2Mapper.requestVPtoEntity(request);
+
+        Account account = accountRepository.findFirstByRole_RoleName(RoleName.HOCFDC.name())
+                .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND, "No account with role HoCFDC found"));
+        task.setAccount(account);
+        task.setCreatedBy(accountRepository.findById(UUID.fromString(userId))
+                .orElseThrow(() -> new RuntimeException("Account (createdBy) not found")));
+        task.setStatus(TaskStatus.TO_DO.name());
+        task = taskV2Repository.save(task);
+        return taskV2Mapper.toResponse(task);
     }
 }

@@ -15,6 +15,9 @@ public class ReviewV2CreateRequest {
     /** ID của TaskV2 mà review này thuộc về */
     UUID taskId;
 
+    /** ID của Account thực hiện review */
+    UUID reviewerId;
+
     /** Kết quả review: true = chấp nhận, false = từ chối, null = chưa quyết định */
     Boolean isAccepted;
 

@@ -12,7 +12,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
-@Table(name = "proposed_source")
+@Table(name = "source_subject_mapping")
 public class ProposedSource {
     @Id
     @Column(name = "id")
