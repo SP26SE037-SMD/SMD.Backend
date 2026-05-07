@@ -19,6 +19,7 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,23 +37,46 @@ public class RegulationAsyncService {
     @Transactional
     public void importMajorAndAddRegulation(byte[] fileData, String contentType, String accountId) {
         var programRegulationResponse = geminiService.extractMasterDataFromPdf(fileData, contentType, accountId);
-
-        var major = new Major();
-        major.setMajorCode(programRegulationResponse.getMajorCode());
-        major.setMajorName(programRegulationResponse.getMajorName());
-        major.setDescription(programRegulationResponse.getMajorDescription());
-        major.setStatus(PloStatus.DRAFT.toString());
-        var saveMajor = majorRepository.save(major);
-
-        List<RegulationResponse> saveRegulations = createRegulationBluk(programRegulationResponse, saveMajor);
-
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-                realtimePublisher.publishToAccount(accountId,
-                        RealtimePayload.status("IMPORT_SUCCESS", saveMajor.getMajorId()));
+        List<String> missingFields = new ArrayList<>();
+        for (java.lang.reflect.Field field : programRegulationResponse.getClass().getDeclaredFields()) {
+            field.setAccessible(true);
+            try {
+                Object value = field.get(programRegulationResponse);
+                if (value == null || (value instanceof String && ((String) value).trim().isEmpty())) {
+                    // Lấy tên field hoặc lấy giá trị từ @JsonProperty để thông báo cho thân thiện
+                    var jsonProperty = field.getAnnotation(com.fasterxml.jackson.annotation.JsonProperty.class);
+                    missingFields.add(jsonProperty != null ? jsonProperty.value() : field.getName());
+                }
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException("The system encountered an error while checking all the data.");
             }
-        });
+        }
+
+        if (!missingFields.isEmpty()) {
+            String errorMsg = String.join(", ", missingFields);
+            realtimePublisher.publishToAccount(accountId,
+                    RealtimePayload.status("VALIDATE_FAIL", errorMsg));
+            throw new RuntimeException(errorMsg);
+        } else {
+            var major = new Major();
+            major.setMajorCode(programRegulationResponse.getMajorCode());
+            major.setMajorName(programRegulationResponse.getMajorName());
+            major.setDescription(programRegulationResponse.getMajorDescription());
+            major.setStatus(PloStatus.DRAFT.toString());
+            var saveMajor = majorRepository.save(major);
+
+            List<RegulationResponse> saveRegulations = createRegulationBluk(programRegulationResponse, saveMajor);
+
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    realtimePublisher.publishToAccount(accountId,
+                            RealtimePayload.status("IMPORT_SUCCESS", saveMajor.getMajorId()));
+                }
+            });
+        }
+
+
     }
 
     @Transactional
