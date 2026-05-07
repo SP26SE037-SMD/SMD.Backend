@@ -502,7 +502,7 @@ public class FullImportService {
                                               && majorContext.parsedMajorCode.equalsIgnoreCase(ctx.parsedMajorCode));
                             
                             // If not in sheet, check in DB
-                            Optional<PO> foundPOInDB = poRepository.findFirstByPoCodeAndMajor_MajorCode(cleanPoCode, ctx.parsedMajorCode);
+                            Optional<PO> foundPOInDB = poRepository.findByPoCodeAndMajor_MajorCode(cleanPoCode, ctx.parsedMajorCode);
 
                             if (!foundInSheet && foundPOInDB.isEmpty()) {
                                 poMappingOk = false;

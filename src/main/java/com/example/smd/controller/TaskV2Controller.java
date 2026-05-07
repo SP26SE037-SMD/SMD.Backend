@@ -1,6 +1,7 @@
 package com.example.smd.controller;
 
 import com.example.smd.dto.request.taskV2.TaskV2CreateRequest;
+import com.example.smd.dto.request.taskV2.TaskV2CreateVPRequest;
 import com.example.smd.dto.request.taskV2.TaskV2UpdateRequest;
 import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.dto.response.TaskV2Response;
@@ -8,6 +9,7 @@ import com.example.smd.services.TaskV2Service;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -92,4 +94,17 @@ public class TaskV2Controller {
                 .message("Tasks created successfully")
                 .build();
     }
+
+        @PostMapping("/byVP")
+        @Operation(summary = "Create a new task (Specialized for VP)")
+        public ResponseObject<TaskV2Response> createByVP(
+                @RequestBody @Valid TaskV2CreateVPRequest request,
+                @AuthenticationPrincipal Jwt jwt) {
+            String userId = jwt.getClaimAsString("accountId");
+            return ResponseObject.<TaskV2Response>builder()
+                                .data(taskV2Service.createByVP(request, userId))
+                                .message("Task created successfully (VP)")
+                                .build();
+        }
+
 }
