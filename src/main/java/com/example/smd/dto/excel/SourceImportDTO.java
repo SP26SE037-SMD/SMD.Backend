@@ -19,24 +19,18 @@ public class SourceImportDTO {
     @ExcelColumn(name = "Source Name", order = 1)
     String sourceName;
 
-    @ExcelColumn(name = "Source Type", order = 2)
-    String sourceType;
-
-    @ExcelColumn(name = "Author", order = 3)
+    @ExcelColumn(name = "Author", order = 2)
     String author;
 
-    @ExcelColumn(name = "Publisher", order = 4)
+    @ExcelColumn(name = "Publisher", order = 3)
     String publisher;
 
-    @ExcelColumn(name = "Publication Year", order = 5)
+    @ExcelColumn(name = "Publication Year", order = 4)
     String publicationYear;
 
-    @ExcelColumn(name = "ISBN", order = 6)
-    String isbn;
-
-    @ExcelColumn(name = "URL", order = 7)
+    @ExcelColumn(name = "URL", order = 5)
     String url;
 
-    @ExcelColumn(name = "Subject Code", order = 8 )
+    @ExcelColumn(name = "Subject Code", order = 6)
     String subjectCode;
 }

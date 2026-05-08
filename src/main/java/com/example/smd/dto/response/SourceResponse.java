@@ -18,6 +18,5 @@ public class SourceResponse {
     String author;
     String publisher;
     int publishedYear;
-    String isbn;
     String url;
 }

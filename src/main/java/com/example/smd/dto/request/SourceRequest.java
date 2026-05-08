@@ -20,6 +20,5 @@ public class SourceRequest {
     String publisher;
     @Min(value = 1800, message = "INVALID_YEAR")
     int publishedYear;
-    String isbn;
     String url;
 }
