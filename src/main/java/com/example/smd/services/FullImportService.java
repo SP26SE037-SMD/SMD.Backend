@@ -2,6 +2,7 @@ package com.example.smd.services;
 
 import com.example.smd.dto.excel.CurriculumGroupSubjectImportDTO;
 import com.example.smd.dto.excel.GroupImportDTO;
+import com.example.smd.dto.excel.SourceImportDTO;
 import com.example.smd.dto.excel.SubjectImportDTO;
 import com.example.smd.dto.response.curriculum.ImportFullCurriculumResponse;
 import com.example.smd.dto.response.curriculum.ImportCurriculumResponse;
@@ -12,11 +13,14 @@ import com.example.smd.dto.response.group.ImportGroupResponse;
 import com.example.smd.dto.response.group.ImportGroupResult;
 import com.example.smd.dto.response.major.ImportMajorResponse;
 import com.example.smd.dto.response.major.ImportMajorResult;
+import com.example.smd.dto.response.source.ImportSourceResponse;
+import com.example.smd.dto.response.source.ImportSourceResult;
 import com.example.smd.dto.response.subject.ImportSubjectResponse;
 import com.example.smd.dto.response.subject.ImportSubjectResult;
 import com.example.smd.entities.*;
 import com.example.smd.enums.CurriculumStatus;
 import com.example.smd.enums.PloStatus;
+import com.example.smd.enums.SourceType;
 import com.example.smd.enums.SubjectStatus;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
@@ -32,8 +36,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.text.Normalizer;
 import java.time.Instant;
 import java.util.*;
+import java.util.regex.*;
 
 @Slf4j
 @Service
@@ -248,11 +254,11 @@ public class FullImportService {
                         source = Source.builder()
                                 .sourceCode(srcCode)
                                 .sourceName(trim(row.getSourceName()))
-                                .type(trim(row.getSourceType()))
+                                .type(SourceType.REFERENCE_BOOK.name())
                                 .author(trim(row.getAuthor()))
                                 .publisher(trim(row.getPublisher()))
                                 .publishedYear(parseIntegerSafe(row.getPublicationYear()) != null ? parseIntegerSafe(row.getPublicationYear()) : 0)
-                                .isbn(trim(row.getIsbn()))
+//                                .isbn(trim(row.getIsbn()))
                                 .url(trim(row.getUrl()))
                                 .build();
                         source = sourceRepository.save(source);
@@ -427,7 +433,7 @@ public class FullImportService {
                     if (majorContext.parsedMajorCode == null) {
                         ctx.details.add(ImportCurriculumResult.builder()
                                 .status("FAILED")
-                                .message("Lỗi hệ thống: Không tìm thấy dữ liệu từ sheet Major để đối chiếu")
+                                .message("System error: Data from the Major sheet could not be found for comparison")
                                 .build());
                         return true; // Dừng toàn bộ sheet này
                     }
@@ -437,8 +443,9 @@ public class FullImportService {
                         ctx.details.add(ImportCurriculumResult.builder()
                                 .curriculumCode(ctx.parsedCurCode)
                                 .status("FAILED")
-                                .message("Major Code bên sheet Curriculum [" + ctx.parsedMajorCode +
-                                        "] không khớp với Major Code bên sheet Major [" + majorContext.parsedMajorCode + "]")
+                                .message("Major Code in sheet " +
+                                        "Curriculum [" + ctx.parsedMajorCode +
+                                        "] does not match the Major Code in the Major sheet [" + majorContext.parsedMajorCode + "]")
                                 .build());
 
                         // Theo yêu cầu: Không khớp thì không cần check PO mapping
@@ -607,7 +614,8 @@ public class FullImportService {
                     ctx.details.add(ImportSubjectResult.builder()
                             .subjectCode(subjectCode)
                             .status("FAILED")
-                            .message("Mã môn học [" + subjectCode + "] không nằm trong chương trình khung quy định")
+                            .message( subjectCode + " not included " +
+                                    "in the prescribed framework program")
                             .build());
                     hasErrors = true;
                     continue;
@@ -621,23 +629,23 @@ public class FullImportService {
 
                 List<String> mismatchErrors = new ArrayList<>();
                 if (regDto.credit != null && !regDto.credit.equals(excelCredits)) {
-                    mismatchErrors.add("Credit (Chuẩn: " + regDto.credit + ", Excel: " + excelCredits + ")");
+                    mismatchErrors.add("Credit (Standard: " + regDto.credit + ", Excel: " + excelCredits + ")");
                 }
                 if (regDto.theoryPeriod != null && !regDto.theoryPeriod.equals(theory)) {
-                    mismatchErrors.add("Theory (Chuẩn: " + regDto.theoryPeriod + ", Excel: " + theory + ")");
+                    mismatchErrors.add("Theory (Standard: " + regDto.theoryPeriod + ", Excel: " + theory + ")");
                 }
                 if (regDto.practicalPeriod != null && !regDto.practicalPeriod.equals(practical)) {
-                    mismatchErrors.add("Practical (Chuẩn: " + regDto.practicalPeriod + ", Excel: " + practical + ")");
+                    mismatchErrors.add("Practical (Standard: " + regDto.practicalPeriod + ", Excel: " + practical + ")");
                 }
                 if (regDto.selfStudyPeriod != null && !regDto.selfStudyPeriod.equals(selfStudy)) {
-                    mismatchErrors.add("SelfStudy (Chuẩn: " + regDto.selfStudyPeriod + ", Excel: " + selfStudy + ")");
+                    mismatchErrors.add("SelfStudy (Standard: " + regDto.selfStudyPeriod + ", Excel: " + selfStudy + ")");
                 }
 
                 if (!mismatchErrors.isEmpty()) {
                     ctx.details.add(ImportSubjectResult.builder()
                             .subjectCode(subjectCode)
                             .status("FAILED")
-                            .message("Sai thông số quy định: " + String.join(", ", mismatchErrors))
+                            .message("Incorrect specified parameters: " + String.join(", ", mismatchErrors))
                             .build());
                     hasErrors = true;
                     continue;
@@ -717,7 +725,7 @@ public class FullImportService {
                     ctx.details.add(ImportSubjectResult.builder()
                             .subjectCode(null)
                             .status("FAILED")
-                            .message("Sheet Subject thiếu các môn học bắt buộc theo quy định COURSE_MAPPING: "
+                            .message("The Sheet Subject lacks the mandatory courses as required by regulations COURSE_MAPPING: "
                                     + String.join(", ", missingInSheet))
                             .build());
                     hasErrors = true;
@@ -786,7 +794,13 @@ public class FullImportService {
         return hasErrors;
     }
 
-    private boolean parseAndValidateSemesterMapping(Sheet sheet, SemesterImportContext ctx, SubjectImportContext subCtx, GroupImportContext grpCtx, CurriculumImportContext curCtx, Map<String, SubjectRegulationDTO> regulationMap) {
+    private boolean parseAndValidateSemesterMapping(
+            Sheet sheet,
+            SemesterImportContext ctx,
+            SubjectImportContext subCtx,
+            GroupImportContext grpCtx,
+            CurriculumImportContext curCtx,
+            Map<String, SubjectRegulationDTO> regulationMap) {
         boolean hasErrors = false;
         Set<String> subjectCodesInFile = new HashSet<>();
         
@@ -828,7 +842,7 @@ public class FullImportService {
 
                 // Verify Subject exists in Subject sheet
                 if (!subCtx.fileSubjectCodes.contains(subjectCode.toUpperCase())) {
-                    ctx.details.add(buildSemFail(rowNumber, groupCode, subjectCode, semesterRaw, "Subject Code này không có bên Sheet Subject"));
+                    ctx.details.add(buildSemFail(rowNumber, groupCode, subjectCode, semesterRaw, "This Subject Code is not in the Subject Sheet"));
                     hasErrors = true;
                     continue;
                 }
@@ -836,7 +850,7 @@ public class FullImportService {
                 // Verify Group exists in Group sheet (if provided)
                 if (groupCode != null && !groupCode.isEmpty()) {
                     if (!grpCtx.fileGroupCodes.contains(groupCode.toUpperCase())) {
-                        ctx.details.add(buildSemFail(rowNumber, groupCode, subjectCode, semesterRaw, "Group Code này không có bên Sheet Group"));
+                        ctx.details.add(buildSemFail(rowNumber, groupCode, subjectCode, semesterRaw, "This Group Code is not in the Sheet Group"));
                         hasErrors = true;
                         continue;
                     }
@@ -846,7 +860,7 @@ public class FullImportService {
                 if (regulationMap.containsKey(subjectCode.toUpperCase())) {
                     SubjectRegulationDTO regDto = regulationMap.get(subjectCode.toUpperCase());
                     if (regDto.semester != null && !regDto.semester.equals(semesterNo)) {
-                        ctx.details.add(buildSemFail(rowNumber, groupCode, subjectCode, semesterRaw, "Sai học kỳ quy định (Chuẩn: " + regDto.semester + ", Excel: " + semesterNo + ")"));
+                        ctx.details.add(buildSemFail(rowNumber, groupCode, subjectCode, semesterRaw, "Wrong semester specified (Standard: " + regDto.semester + ", Excel: " + semesterNo + ")"));
                         hasErrors = true;
                         continue;
                     }
@@ -871,7 +885,11 @@ public class FullImportService {
         return hasErrors;
     }
 
-    private boolean parseAndValidateSource(Sheet sheet, SourceImportContext ctx, SubjectImportContext subCtx, Map<String, SourceRegulationDTO> regulationMap) {
+    private boolean parseAndValidateSource(
+            Sheet sheet,
+            SourceImportContext ctx,
+            SubjectImportContext subCtx,
+            Map<String, SourceRegulationDTO> regulationMap) {
         boolean hasErrors = false;
         try {
             List<com.example.smd.dto.excel.SourceImportDTO> rows = ExcelImporter.importFromSheet(sheet, com.example.smd.dto.excel.SourceImportDTO.class);
@@ -886,7 +904,7 @@ public class FullImportService {
                 if (subjectCodeRaw == null) missingCols.add("Subject Code");
 
                 if (!missingCols.isEmpty()) {
-                    ctx.details.add(com.example.smd.dto.response.source.ImportSourceResult.builder()
+                    ctx.details.add(ImportSourceResult.builder()
                             .sourceCode(sourceCode)
                             .status("FAILED")
                             .message("Missing columns: " + String.join(", ", missingCols))
@@ -896,7 +914,7 @@ public class FullImportService {
                 }
 
                 if (!ctx.fileSourceCodes.add(sourceCode.toUpperCase())) {
-                    ctx.details.add(com.example.smd.dto.response.source.ImportSourceResult.builder()
+                    ctx.details.add(ImportSourceResult.builder()
                             .sourceCode(sourceCode).status("FAILED").message("Duplicate Source Code in file").build());
                     hasErrors = true;
                     continue;
@@ -904,10 +922,11 @@ public class FullImportService {
 
                 // Zero-Layer Validation
                 if (!regulationMap.containsKey(sourceCode.toUpperCase())) {
-                    ctx.details.add(com.example.smd.dto.response.source.ImportSourceResult.builder()
+                    ctx.details.add(ImportSourceResult.builder()
                             .sourceCode(sourceCode)
                             .status("FAILED")
-                            .message("Mã Source [" + sourceCode + "] không nằm trong quy định SOURCE_DOCUMENTS")
+                            .message("Source Code [" + sourceCode +
+                                    "] not included in the regulations SOURCE_DOCUMENTS")
                             .build());
                     hasErrors = true;
                     continue;
@@ -917,26 +936,26 @@ public class FullImportService {
                 List<String> mismatchErrors = new ArrayList<>();
 
                 if (regDto.sourceName != null && !regDto.sourceName.equalsIgnoreCase(sourceName)) {
-                    mismatchErrors.add("Source Name (Chuẩn: " + regDto.sourceName + ")");
+                    mismatchErrors.add("Source Name (Standard: " + regDto.sourceName + ")");
                 }
                 String author = trim(row.getAuthor());
                 if (regDto.author != null && !regDto.author.equalsIgnoreCase(author)) {
-                    mismatchErrors.add("Author (Chuẩn: " + regDto.author + ")");
+                    mismatchErrors.add("Author (Standard: " + regDto.author + ")");
                 }
                 String publisher = trim(row.getPublisher());
                 if (regDto.publisher != null && !regDto.publisher.equalsIgnoreCase(publisher)) {
-                    mismatchErrors.add("Publisher (Chuẩn: " + regDto.publisher + ")");
+                    mismatchErrors.add("Publisher (Standard: " + regDto.publisher + ")");
                 }
                 Integer pubYear = parseIntegerSafe(row.getPublicationYear());
                 if (regDto.publicationYear != null && !regDto.publicationYear.equals(pubYear)) {
-                    mismatchErrors.add("Publication Year (Chuẩn: " + regDto.publicationYear + ")");
+                    mismatchErrors.add("Publication Year (Standard: " + regDto.publicationYear + ")");
                 }
 
                 if (!mismatchErrors.isEmpty()) {
-                    ctx.details.add(com.example.smd.dto.response.source.ImportSourceResult.builder()
+                    ctx.details.add(ImportSourceResult.builder()
                             .sourceCode(sourceCode)
                             .status("FAILED")
-                            .message("Sai thông số quy định: " + String.join(", ", mismatchErrors))
+                            .message("Incorrect specified parameters: " + String.join(", ", mismatchErrors))
                             .build());
                     hasErrors = true;
                     continue;
@@ -957,10 +976,10 @@ public class FullImportService {
                 }
 
                 if (subjectMissing) {
-                    ctx.details.add(com.example.smd.dto.response.source.ImportSourceResult.builder()
+                    ctx.details.add(ImportSourceResult.builder()
                             .sourceCode(sourceCode)
                             .status("FAILED")
-                            .message("Các Subject Code sau không có bên sheet Subject: " + String.join(", ", invalidSubjects))
+                            .message("The following Subject Codes are not in the Subject sheet: " + String.join(", ", invalidSubjects))
                             .build());
                     hasErrors = true;
                     continue;
@@ -968,7 +987,7 @@ public class FullImportService {
 
                 // Passed
                 ctx.rowsToSave.add(row);
-                ctx.details.add(com.example.smd.dto.response.source.ImportSourceResult.builder()
+                ctx.details.add(ImportSourceResult.builder()
                         .sourceCode(sourceCode).status("SUCCESS").message("Validated").build());
             }
 
@@ -984,10 +1003,10 @@ public class FullImportService {
                     }
                 }
                 if (!missingSourcesInSheet.isEmpty()) {
-                    ctx.details.add(com.example.smd.dto.response.source.ImportSourceResult.builder()
+                    ctx.details.add(ImportSourceResult.builder()
                             .sourceCode(null)
                             .status("FAILED")
-                            .message("Sheet Source thiếu các tài liệu bắt buộc theo quy định SOURCE_DOCUMENTS: "
+                            .message("The Source Sheet lacks the mandatory documents as required by regulations SOURCE_DOCUMENTS: "
                                     + String.join(", ", missingSourcesInSheet))
                             .build());
                     hasErrors = true;
@@ -1016,8 +1035,8 @@ public class FullImportService {
         if (regulation == null || regulation.getValue() == null) return map;
 
         String value = regulation.getValue();
-        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("(.*?)\\s*\\(([^)]+)\\)");
-        java.util.regex.Matcher matcher = pattern.matcher(value);
+        Pattern pattern = Pattern.compile("(.*?)\\s*\\(([^)]+)\\)");
+        Matcher matcher = pattern.matcher(value);
         while (matcher.find()) {
             String namePart = matcher.group(1).trim();
             if (namePart.startsWith(",")) {
@@ -1025,7 +1044,7 @@ public class FullImportService {
             }
             String dataPart = matcher.group(2).trim();
             String[] dataFields = dataPart.split("\\|");
-            if (dataFields.length >= 5) {
+            if (dataFields.length >= 6) {
                 String code = dataFields[0].trim();
                 Integer semester = parseIntegerSafe(dataFields[1]);
                 Integer credit = parseIntegerSafe(dataFields[2]);
@@ -1046,7 +1065,7 @@ public class FullImportService {
 
     private String generateNASubjectCode(String subjectName) {
         if (subjectName == null || subjectName.trim().isEmpty()) return "N/A_UNKNOWN";
-        String normalized = java.text.Normalizer.normalize(subjectName.trim(), java.text.Normalizer.Form.NFD);
+        String normalized = Normalizer.normalize(subjectName.trim(), Normalizer.Form.NFD);
         String noDiacritics = normalized.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
         String noSpaces = noDiacritics.replaceAll("[^a-zA-Z0-9]", "");
         return "N/A_" + noSpaces;
@@ -1086,14 +1105,20 @@ public class FullImportService {
                 
                 Integer year = parseIntegerSafe(yearStr);
                 
-                SourceRegulationDTO dto = new SourceRegulationDTO(sourceCode, subjectCode, sourceName, author, publisher, year);
+                SourceRegulationDTO dto = new SourceRegulationDTO(
+                        sourceCode, subjectCode, sourceName, author, publisher, year);
                 map.put(sourceCode.toUpperCase(), dto);
             }
         }
         return map;
     }
 
-    private ImportCurriculumGroupSubjectResult buildSemFail(int rowNumber, String groupCode, String subjectCode, String semester, String message) {
+    private ImportCurriculumGroupSubjectResult buildSemFail(
+            int rowNumber,
+            String groupCode,
+            String subjectCode,
+            String semester,
+            String message) {
         return ImportCurriculumGroupSubjectResult.builder()
                 .rowNumber(rowNumber).groupCode(groupCode).subjectCode(subjectCode).semester(semester)
                 .status("FAILED").message(message).build();
@@ -1148,10 +1173,10 @@ public class FullImportService {
         return ImportCurriculumGroupSubjectResponse.builder().total(total).success(success).failed(total - success).details(ctx.details).build();
     }
 
-    private com.example.smd.dto.response.source.ImportSourceResponse buildSourceResponse(SourceImportContext ctx) {
+    private ImportSourceResponse buildSourceResponse(SourceImportContext ctx) {
         int total = ctx.details.size();
         int success = (int) ctx.details.stream().filter(d -> "SUCCESS".equals(d.getStatus())).count();
-        return com.example.smd.dto.response.source.ImportSourceResponse.builder().total(total).success(success).failed(total - success).details(ctx.details).build();
+        return ImportSourceResponse.builder().total(total).success(success).failed(total - success).details(ctx.details).build();
     }
 
     // ==========================================
@@ -1178,8 +1203,8 @@ public class FullImportService {
 
     private static class SourceImportContext {
         Set<String> fileSourceCodes = new HashSet<>();
-        List<com.example.smd.dto.excel.SourceImportDTO> rowsToSave = new ArrayList<>();
-        List<com.example.smd.dto.response.source.ImportSourceResult> details = new ArrayList<>();
+        List<SourceImportDTO> rowsToSave = new ArrayList<>();
+        List<ImportSourceResult> details = new ArrayList<>();
     }
 
     private static class SubjectRegulationDTO {

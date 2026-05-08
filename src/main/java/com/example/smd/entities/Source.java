@@ -36,8 +36,5 @@ public class Source {
     @Column(name = "publication_year") // Đổi tên cột cho rõ nghĩa
     int publishedYear;
 
-    @Column(length = 20)
-    String isbn;
-
     String url;
 }

@@ -131,11 +131,11 @@
 //                            materialRepository.save(m);
 //                        });
 //
-//                sessionRepository.findBySyllabus_SyllabusId(syllabus.getSyllabusId())
-//                        .forEach(s -> {
-//                            s.setStatus(SyllabusStatus.DRAFT.name());
-//                            sessionRepository.save(s);
-//                        });
+////                sessionRepository.findBySyllabus_SyllabusId(syllabus.getSyllabusId())
+////                        .forEach(s -> {
+////                            s.setStatus(SyllabusStatus.DRAFT.name());
+////                            sessionRepository.save(s);
+////                        });
 //
 ////                assessmentRepository.findBySyllabus_SyllabusId(syllabus.getSyllabusId())
 ////                        .forEach(a -> {
