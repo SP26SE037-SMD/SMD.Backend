@@ -12,6 +12,8 @@ import java.util.UUID;
 public interface RegulationRepository extends JpaRepository<Regulation, UUID>, JpaSpecificationExecutor<Regulation> {
     Optional<Regulation> findByCode(String code);
 
+    void deleteByMajorId(UUID majorId);
+
     boolean existsByCode(String code);
 
     boolean existsByCodeAndRegulationIdNot(String code, UUID regulationId);

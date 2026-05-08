@@ -13,6 +13,7 @@ import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.MajorMapper;
 import com.example.smd.repositories.MajorRepository;
 import com.example.smd.repositories.POsRepository;
+import com.example.smd.repositories.RegulationRepository;
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -43,6 +44,7 @@ import java.util.UUID;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class MajorService {
     AccountService accountService;
+    RegulationRepository regulationRepository;
     MajorRepository majorRepository;
     MajorMapper majorMapper;
     POsRepository poRepository;
@@ -161,17 +163,11 @@ public class MajorService {
     // Delete Major (Xóa mềm)
     @Transactional
     public void deleteMajor(UUID id, String accountId) {
-        //Kiểm tra Role tạo
-        var account = accountService.getAccountById(accountId);
-        String roleName = account.getRole().getRoleName();
-        if (!RoleName.VP.toString().equals(roleName)) {
-            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
-        }
-
         Major major = majorRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.MAJOR_NOT_FOUND));
 
         if ("DRAFT".equals(major.getStatus())) {
+            regulationRepository.deleteByMajorId(id);
             majorRepository.delete(major);
         } else {
             major.setStatus(PloStatus.ARCHIVED.toString());

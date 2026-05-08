@@ -42,7 +42,9 @@ public class DocumentService {
 
     public DocumentResponse getById(UUID id) {
         var document = repository.findById(id).orElseThrow(() -> new AppException(ErrorCode.DOCUMENT_NOT_FOUND));
-        return mapper.toDocumentResponse(document);
+        var response = mapper.toDocumentResponse(document);
+        response.setMajorId(document.getMajor().getMajorId());
+        return response;
     }
 
     public DocumentResponse create(DocumentRequest request) {
