@@ -1,11 +1,9 @@
 package com.example.smd.services;
 
-import com.example.smd.dto.request.task.TaskVPRequest;
 import com.example.smd.dto.request.taskV2.TaskV2CreateRequest;
 import com.example.smd.dto.request.taskV2.TaskV2CreateVPRequest;
 import com.example.smd.dto.request.taskV2.TaskV2UpdateRequest;
 import com.example.smd.dto.response.TaskV2Response;
-import com.example.smd.dto.response.task.TaskVPResponse;
 import com.example.smd.entities.*;
 import com.example.smd.enums.*;
 import com.example.smd.exception.AppException;
@@ -36,8 +34,8 @@ public class TaskV2Service {
     private final SprintRepository sprintRepository;
     private final AccountRepository accountRepository;
     private final TaskV2Mapper taskV2Mapper;
-    AccountService accountService;
-    CurriculumGroupSubjectRepository curriculumGroupSubjectRepository;
+    private final AccountService accountService;
+    private final CurriculumGroupSubjectRepository curriculumGroupSubjectRepository;
 
 
     // ===================== GET ALL =====================
