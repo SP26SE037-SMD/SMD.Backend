@@ -5,10 +5,14 @@ import com.example.smd.dto.response.validate.ProgramRegulationResponse;
 import com.example.smd.entities.Major;
 import com.example.smd.entities.Regulation;
 import com.example.smd.enums.PloStatus;
+import com.example.smd.enums.RoleName;
+import com.example.smd.exception.AppException;
+import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.MajorMapper;
 import com.example.smd.mapper.RegulationMapper;
 import com.example.smd.realtime.RealtimePayload;
 import com.example.smd.realtime.RealtimePublisher;
+import com.example.smd.repositories.AccountRepository;
 import com.example.smd.repositories.MajorRepository;
 import com.example.smd.repositories.RegulationRepository;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +34,7 @@ public class RegulationAsyncService {
     private final RegulationRepository regulationRepository;
     private final RegulationMapper regulationMapper;
     private final MajorRepository majorRepository;
+    private final AccountService accountService;
     private final GeminiService geminiService;
     private final RealtimePublisher realtimePublisher;
 
@@ -37,26 +42,33 @@ public class RegulationAsyncService {
     @Transactional
     public void importMajorAndAddRegulation(byte[] fileData, String contentType, String accountId) {
         var programRegulationResponse = geminiService.extractMasterDataFromPdf(fileData, contentType, accountId);
-        List<String> missingFields = new ArrayList<>();
-        for (java.lang.reflect.Field field : programRegulationResponse.getClass().getDeclaredFields()) {
-            field.setAccessible(true);
-            try {
-                Object value = field.get(programRegulationResponse);
-                if (value == null || (value instanceof String && ((String) value).trim().isEmpty())) {
-                    // Lấy tên field hoặc lấy giá trị từ @JsonProperty để thông báo cho thân thiện
-                    var jsonProperty = field.getAnnotation(com.fasterxml.jackson.annotation.JsonProperty.class);
-                    missingFields.add(jsonProperty != null ? jsonProperty.value() : field.getName());
+        var account = accountService.getAccountById(accountId);
+        String roleName = account.getRole().getRoleName();
+        if (!RoleName.VP.toString().equals(roleName)) {
+            List<String> missingFields = new ArrayList<>();
+            for (java.lang.reflect.Field field : programRegulationResponse.getClass().getDeclaredFields()) {
+                field.setAccessible(true);
+                try {
+                    Object value = field.get(programRegulationResponse);
+                    if (value == null || (value instanceof String && ((String) value).trim().isEmpty())) {
+                        // Lấy tên field hoặc lấy giá trị từ @JsonProperty để thông báo cho thân thiện
+                        var jsonProperty = field.getAnnotation(com.fasterxml.jackson.annotation.JsonProperty.class);
+                        missingFields.add(jsonProperty != null ? jsonProperty.value() : field.getName());
+                    }
+                } catch (IllegalAccessException e) {
+                    throw new RuntimeException("The system encountered an error while checking all the data.");
                 }
-            } catch (IllegalAccessException e) {
-                throw new RuntimeException("The system encountered an error while checking all the data.");
             }
-        }
 
-        if (!missingFields.isEmpty()) {
-            String errorMsg = String.join(", ", missingFields);
-            realtimePublisher.publishToAccount(accountId,
-                    RealtimePayload.status("VALIDATE_FAIL", errorMsg));
-            throw new RuntimeException(errorMsg);
+            if (!missingFields.isEmpty()) {
+                String errorMsg = String.join(", ", missingFields);
+                realtimePublisher.publishToAccount(accountId,
+                        RealtimePayload.status("VALIDATE_FAIL", errorMsg));
+                throw new RuntimeException(errorMsg);
+            } else {
+                realtimePublisher.publishToAccount(accountId,
+                        RealtimePayload.status("VALIDATE_SUCCESS", "Data verification successful"));
+            }
         } else {
             var major = new Major();
             major.setMajorCode(programRegulationResponse.getMajorCode());
@@ -66,17 +78,16 @@ public class RegulationAsyncService {
             var saveMajor = majorRepository.save(major);
 
             List<RegulationResponse> saveRegulations = createRegulationBluk(programRegulationResponse, saveMajor);
-
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 @Override
                 public void afterCommit() {
-                    realtimePublisher.publishToAccount(accountId,
-                            RealtimePayload.status("IMPORT_SUCCESS", saveMajor.getMajorId()));
+                    if (!RoleName.HOCFDC.toString().equals(roleName)) {
+                        realtimePublisher.publishToAccount(accountId,
+                                RealtimePayload.status("IMPORT_SUCCESS", saveMajor.getMajorId()));
+                    }
                 }
             });
         }
-
-
     }
 
     @Transactional
