@@ -267,6 +267,7 @@ public class GeminiService  {
             attempts++;
             realtimePublisher.publishToAccount(accountId,
                     RealtimePayload.status("PROCESSING", "AI is analyzing the file structure"));
+            log.info("PROCESSING: {}", "AI is analyzing the file structure");
 
             if ("ACTIVE".equals(state)) {
                 isReady = true;
