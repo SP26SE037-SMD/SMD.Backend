@@ -137,14 +137,7 @@ public class MajorService {
     // Update Major
     @Transactional
     public MajorResponse updateMajor(UUID id, MajorRequest request, String accountId) {
-
-        //Kiểm tra Role tạo
-        var account = accountService.getAccountById(accountId);
-        String roleName = account.getRole().getRoleName();
-        if (!RoleName.VP.toString().equals(roleName)) {
-            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
-        }
-
+        
         Major major = majorRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.MAJOR_NOT_FOUND));
 

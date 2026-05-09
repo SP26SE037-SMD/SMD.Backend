@@ -43,7 +43,9 @@ public class DocumentService {
     public DocumentResponse getById(UUID id) {
         var document = repository.findById(id).orElseThrow(() -> new AppException(ErrorCode.DOCUMENT_NOT_FOUND));
         var response = mapper.toDocumentResponse(document);
-        response.setMajorId(document.getMajor().getMajorId());
+        if (document.getMajor() != null && document.getMajor().getMajorId() != null) {
+            response.setMajorId(document.getMajor().getMajorId());
+        }
         return response;
     }
 
@@ -73,6 +75,7 @@ public class DocumentService {
         if(request.getDocumentUrl() != null) {
             document.setDocumentUrl(request.getDocumentUrl());
         }
+        document.setStatus("MAJOR_LINKED");
         var response = repository.save(document);
         return mapper.toDocumentResponse(response);
     }
