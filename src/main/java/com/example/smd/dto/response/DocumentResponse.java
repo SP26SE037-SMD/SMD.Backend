@@ -21,4 +21,5 @@ public class DocumentResponse {
     String documentUrl;
     String status;
     Instant createdAt;
+    UUID majorId;
 }
