@@ -35,9 +35,6 @@ public class Material {
     @Column(name = "version")
     Integer version;
 
-    @Column(name = "status")
-    String status;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "syllabus_id", nullable = false)
     Syllabus syllabus;

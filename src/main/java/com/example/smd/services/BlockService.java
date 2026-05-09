@@ -50,8 +50,7 @@ public class BlockService {
         Material material = materialRepository.findById(materialId)
                 .orElseThrow(() -> new AppException(ErrorCode.MATERIAL_NOT_FOUND));
 
-        if (!("DRAFT".equals(material.getStatus())
-                || MaterialStatus.REVISION_REQUESTED.toString().equals(material.getStatus()))) {
+        if (!SyllabusStatus.IN_PROGRESS.name().equals(material.getSyllabus().getStatus())) {
             throw new AppException(ErrorCode.MATERIAL_NOT_EDITABLE);
         }
 
@@ -85,8 +84,7 @@ public class BlockService {
         Material material = materialRepository.findById(materialId)
                 .orElseThrow(() -> new AppException(ErrorCode.MATERIAL_NOT_FOUND));
 
-        if (!(SyllabusStatus.DRAFT.name().equals(material.getStatus())
-                || MaterialStatus.REVISION_REQUESTED.name().equals(material.getStatus()))) {
+        if (!SyllabusStatus.IN_PROGRESS.name().equals(material.getSyllabus().getStatus())) {
             throw new AppException(ErrorCode.MATERIAL_NOT_EDITABLE);
         }
 
@@ -203,8 +201,7 @@ public class BlockService {
         Blocks block = blockRepository.findById(blockId)
                 .orElseThrow(() -> new AppException(ErrorCode.BLOCK_NOT_FOUND));
 
-        if (!("DRAFT".equals(block.getMaterial().getStatus())
-                || MaterialStatus.REVISION_REQUESTED.toString().equals(block.getMaterial().getStatus()))) {
+        if (!SyllabusStatus.IN_PROGRESS.name().equals(block.getMaterial().getSyllabus().getStatus())) {
             throw new AppException(ErrorCode.MATERIAL_NOT_EDITABLE);
         }
         blockRepository.deleteById(blockId);
@@ -235,8 +232,8 @@ public class BlockService {
                 .collect(Collectors.toSet());
 
         for (Material material : materialsToUpdate) {
-            String status = material.getStatus();
-            if (!("DRAFT".equals(status) || "REVISION_REQUESTED".equals(status))) {
+            String status = material.getSyllabus().getStatus();
+            if (!SyllabusStatus.IN_PROGRESS.name().equals(status)) {
                 throw new AppException(ErrorCode.MATERIAL_NOT_EDITABLE);
             }
         }
@@ -293,8 +290,7 @@ public class BlockService {
         Material material = materialRepository.findById(materialId)
                 .orElseThrow(() -> new AppException(ErrorCode.MATERIAL_NOT_FOUND));
 
-        if (!("DRAFT".equals(material.getStatus())
-                || MaterialStatus.REVISION_REQUESTED.toString().equals(material.getStatus()))) {
+        if (!SyllabusStatus.IN_PROGRESS.name().equals(material.getSyllabus().getStatus())) {
             throw new AppException(ErrorCode.MATERIAL_NOT_EDITABLE);
         }
 
