@@ -37,4 +37,6 @@ public interface CLOsRepository extends JpaRepository<CLOs, UUID> {
     Page<CLOs> findBySubject_SubjectIdAndStatus(UUID subjectId, String status, Pageable pageable);
 
     List<CLOs> findBySubject_SubjectId(UUID subjectId);
+
+    Optional<CLOs> findByCloCodeAndSubject_SubjectId(String cloCode, UUID subjectId);
 }

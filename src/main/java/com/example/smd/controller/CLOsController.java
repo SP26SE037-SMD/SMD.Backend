@@ -149,4 +149,16 @@ public class CLOsController {
                 .message("Cập nhật trạng thái CLO thành công")
                 .build();
     }
+
+    @PostMapping(value = "/import", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+//    @PreAuthorize("hasAuthority('CLOS_CREATE')") // Or whatever the appropriate authority is
+    @Operation(summary = "Import CLO_PLO_Mapping from Excel file")
+    public ResponseObject<com.example.smd.dto.response.cloplo.ImportCloPloMappingResponse> importExcel(
+            @RequestPart("file") org.springframework.web.multipart.MultipartFile file) {
+        return ResponseObject.<com.example.smd.dto.response.cloplo.ImportCloPloMappingResponse>builder()
+                .status(1000)
+                .data(closService.importCloPloMapping(file))
+                .message("Import CLO_PLO_Mapping completed")
+                .build();
+    }
 }
