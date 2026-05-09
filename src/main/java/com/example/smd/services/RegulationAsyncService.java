@@ -102,7 +102,7 @@ public class RegulationAsyncService {
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 @Override
                 public void afterCommit() {
-                    if (!RoleName.HOCFDC.toString().equals(roleName)) {
+                    if (RoleName.HOCFDC.toString().equals(roleName)) {
                         realtimePublisher.publishToAccount(accountId,
                                 RealtimePayload.status("IMPORT_SUCCESS", saveMajor.getMajorId()));
                     }
