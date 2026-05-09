@@ -16,6 +16,7 @@ import com.example.smd.repositories.AccountRepository;
 import com.example.smd.repositories.MajorRepository;
 import com.example.smd.repositories.RegulationRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +28,7 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class RegulationAsyncService {
@@ -44,16 +46,33 @@ public class RegulationAsyncService {
         var programRegulationResponse = geminiService.extractMasterDataFromPdf(fileData, contentType, accountId);
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
-        if (!RoleName.VP.toString().equals(roleName)) {
+        if (RoleName.VP.toString().equals(roleName)) {
             List<String> missingFields = new ArrayList<>();
+            // Hằng số định danh giá trị null từ AI prompt
+            String AI_NULL_VALUE = "[NULL]";
+
             for (java.lang.reflect.Field field : programRegulationResponse.getClass().getDeclaredFields()) {
                 field.setAccessible(true);
                 try {
                     Object value = field.get(programRegulationResponse);
-                    if (value == null || (value instanceof String && ((String) value).trim().isEmpty())) {
-                        // Lấy tên field hoặc lấy giá trị từ @JsonProperty để thông báo cho thân thiện
+                    var jsonPropertys = field.getAnnotation(com.fasterxml.jackson.annotation.JsonProperty.class);
+                    String fieldDisplayNames = (jsonPropertys != null && !jsonPropertys.value().isEmpty())
+                            ? jsonPropertys.value()
+                            : field.getName();
+                    System.out.println(String.format("Field: [%-30s] | Value: %s", fieldDisplayNames, value));
+                    // Kiểm tra nếu giá trị là null thực sự, hoặc là chuỗi "[NULL]" (từ AI), hoặc chuỗi rỗng
+                    boolean isMissing = (value == null) ||
+                            (value instanceof String &&
+                                    (AI_NULL_VALUE.equalsIgnoreCase(((String) value).trim()) || ((String) value).trim().isEmpty()));
+
+                    if (isMissing) {
+                        // Lấy tên field từ @JsonProperty để thông báo cho thân thiện với người dùng
                         var jsonProperty = field.getAnnotation(com.fasterxml.jackson.annotation.JsonProperty.class);
-                        missingFields.add(jsonProperty != null ? jsonProperty.value() : field.getName());
+                        String fieldDisplayName = (jsonProperty != null && !jsonProperty.value().isEmpty())
+                                ? jsonProperty.value()
+                                : field.getName();
+
+                        missingFields.add(fieldDisplayName);
                     }
                 } catch (IllegalAccessException e) {
                     throw new RuntimeException("The system encountered an error while checking all the data.");
@@ -64,10 +83,12 @@ public class RegulationAsyncService {
                 String errorMsg = String.join(", ", missingFields);
                 realtimePublisher.publishToAccount(accountId,
                         RealtimePayload.status("VALIDATE_FAIL", errorMsg));
+                log.info("VALIDATE_FAIL: {}", errorMsg);
                 throw new RuntimeException(errorMsg);
             } else {
                 realtimePublisher.publishToAccount(accountId,
                         RealtimePayload.status("VALIDATE_SUCCESS", "Data verification successful"));
+                log.info("VALIDATE_SUCCESS: {}", "Data verification successful");
             }
         } else {
             var major = new Major();
