@@ -75,6 +75,7 @@ public class DocumentService {
         if(request.getDocumentUrl() != null) {
             document.setDocumentUrl(request.getDocumentUrl());
         }
+        document.setStatus("MAJOR_LINKED");
         var response = repository.save(document);
         return mapper.toDocumentResponse(response);
     }
