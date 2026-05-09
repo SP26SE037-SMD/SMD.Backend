@@ -291,7 +291,10 @@ public class GeminiService  {
         }
 
         // 2. Chuẩn bị Prompt và gọi AI
-        String finalPrompt = promptTemplateService.get(PromptKey.MASTER_DATA_EXTRACTOR_PROMPT);
+        String finalPrompt = promptTemplateService.get(PromptKey.VALIDATE_DATA_EXTRACTOR_PROMPT);
+        if ("HOCFDC".equals(roleName)) { // Hoặc role Admin
+            finalPrompt = promptTemplateService.get(PromptKey.MASTER_DATA_EXTRACTOR_PROMPT);
+        }
         String mimeType = contentType != null ? contentType : "application/pdf";
 
         // Gọi hàm prompt hỗ trợ file
