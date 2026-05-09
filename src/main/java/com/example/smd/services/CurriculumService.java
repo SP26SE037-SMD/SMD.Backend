@@ -11,6 +11,8 @@ import com.example.smd.entities.Major;
 import com.example.smd.entities.PLOs;
 import com.example.smd.entities.PO;
 import com.example.smd.entities.PO_PLO_Mapping;
+import com.example.smd.entities.Subject;
+import com.example.smd.entities.Curriculum_Group_Subject;
 import com.example.smd.enums.*;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
@@ -42,6 +44,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import com.example.smd.repositories.SubjectRepository;
+import com.example.smd.repositories.CurriculumGroupSubjectRepository;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -55,6 +60,8 @@ public class CurriculumService {
     PLOsRepository plOsRepository;
     POsRepository poRepository;
     PoPloMappingRepository poPloMappingRepository;
+    SubjectRepository subjectRepository;
+    CurriculumGroupSubjectRepository curriculumGroupSubjectRepository;
 
     /**
      * Lấy danh sách curriculum với phân trang và bộ lọc
@@ -350,6 +357,65 @@ public class CurriculumService {
         Curriculum updatedCurriculum = curriculumRepository.save(curriculum);
 
         return curriculumMapper.toCurriculumResponse(updatedCurriculum);
+    }
+
+    /**
+     * API đồng bộ status của Curriculum, PLOs, Major, POs, Subjects
+     */
+    @Transactional
+    public void syncCurriculumStatus(String curriculumId, String accountId) {
+
+        // Kiểm tra Role
+        var account = accountService.getAccountById(accountId);
+        String roleName = account.getRole().getRoleName();
+        if (!RoleName.HOCFDC.toString().equals(roleName)) {
+            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+        }
+
+        // 1. Dựa vào curriculumId lấy lên đối tượng curriculum rồi chuyển sang SYLLABUS_DEVELOP
+        Curriculum curriculum = curriculumRepository.findById(UUID.fromString(curriculumId))
+                .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));
+        
+        curriculum.setStatus(CurriculumStatus.SYLLABUS_DEVELOP.toString());
+        curriculumRepository.save(curriculum);
+
+        // 2. Lấy lên list PLO thuộc curriculum đó rồi chuyển status sang INTERNAL_REVIEW
+        List<PLOs> plos = plOsRepository.findByCurriculum_CurriculumId(curriculum.getCurriculumId());
+        for (PLOs plo : plos) {
+            plo.setStatus(PloStatus.INTERNAL_REVIEW.toString());
+        }
+        plOsRepository.saveAll(plos);
+
+        // 3. Dựa vào đối tượng curriculum có majorId, lấy lên đối tượng major đó
+        Major major = curriculum.getMajor();
+        if (major != null && !PloStatus.PUBLISHED.toString().equals(major.getStatus())) {
+            // Nếu là DRAFT thì chuyển sang INTERNAL_REVIEW
+            if (PloStatus.DRAFT.toString().equals(major.getStatus())) {
+                List<PO> pos = poRepository.findByMajor_MajorId(major.getMajorId());
+                for (PO po : pos) {
+                    po.setStatus(PloStatus.INTERNAL_REVIEW.toString());
+                }
+                poRepository.saveAll(pos);
+
+                major.setStatus(PloStatus.INTERNAL_REVIEW.toString());
+                majorRepository.save(major);
+            }
+        }
+
+        // 4. Lấy lên list subject thuộc curriculum. Validate nếu là DRAFT thì chuyển sang WAITING_SYLLABUS
+        List<Curriculum_Group_Subject> mappings = curriculumGroupSubjectRepository.findAllByCurriculumIdOrderBySemester(curriculum.getCurriculumId());
+        List<Subject> subjectsToUpdate = new ArrayList<>();
+        
+        for (Curriculum_Group_Subject mapping : mappings) {
+            Subject subject = mapping.getSubject();
+            if (SubjectStatus.DRAFT.toString().equals(subject.getStatus())) {
+                subject.setStatus(SubjectStatus.WAITING_SYLLABUS.toString());
+                subjectsToUpdate.add(subject);
+            }
+        }
+        if (!subjectsToUpdate.isEmpty()) {
+            subjectRepository.saveAll(subjectsToUpdate);
+        }
     }
 
     @Transactional

@@ -40,4 +40,6 @@ public interface PLOsRepository extends JpaRepository<PLOs, UUID> {
     Page<PLOs> findByCurriculum_CurriculumIdAndStatus(UUID curriculumId, String status, Pageable pageable);
 
     List<PLOs> findByCurriculum_CurriculumId(UUID curriculumId);
+
+    Optional<PLOs> findByPloCodeAndCurriculum_CurriculumId(String ploCode, UUID curriculumId);
 }

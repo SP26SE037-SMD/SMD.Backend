@@ -3,26 +3,29 @@ package com.example.smd.services;
 import com.example.smd.dto.request.clo.CLOsCreateRequest;
 import com.example.smd.dto.request.clo.CLOsRequest;
 import com.example.smd.dto.response.clo.CLOsResponse;
-import com.example.smd.entities.CLOs;
-import com.example.smd.entities.Subject;
+import com.example.smd.dto.response.cloplo.ImportCloPloMappingResponse;
+import com.example.smd.dto.response.cloplo.ImportCloPloMappingResult;
+import com.example.smd.entities.*;
 import com.example.smd.enums.PloStatus;
 import com.example.smd.enums.RoleName;
 import com.example.smd.enums.SubjectStatus;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.CLOsMapper;
-import com.example.smd.repositories.CLOsRepository;
-import com.example.smd.repositories.SubjectRepository;
+import com.example.smd.repositories.*;
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.*;
 
@@ -34,6 +37,10 @@ public class CLOsService {
 
     CLOsRepository closRepository;
     SubjectRepository subjectRepository;
+    CurriculumRepository curriculumRepository;
+    CurriculumGroupSubjectRepository curriculumGroupSubjectRepository;
+    PLOsRepository plOsRepository;
+    CloPloMappingRepository cloPloMappingRepository;
     AccountService accountService;
     CLOsMapper closMapper;
 
@@ -231,5 +238,234 @@ public class CLOsService {
 
         // 3. Cập nhật hàng loạt trạng thái các CLOs thuộc môn học này
         int affectedRows = closRepository.updateStatusBySubjectId(status.toString(), uuidSubjectId);
+    }
+
+    @Transactional
+    public ImportCloPloMappingResponse importCloPloMapping(MultipartFile file) {
+        boolean hasErrors = false;
+        DataFormatter formatter = new DataFormatter();
+        
+        List<ImportCloPloMappingResult> details = new ArrayList<>();
+        List<CLOs> newClosToSave = new ArrayList<>();
+        List<CLO_PLO_Mapping> mappingsToSave = new ArrayList<>();
+        Set<String> processedCloCodes = new HashSet<>();
+        
+        try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
+            Sheet sheet = workbook.getSheet("CLOs");
+            if (sheet == null) {
+                throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION, "Sheet CLOs not found");
+            }
+
+            int state = 0; // 0 = find Header 1, 1 = read Header 1, 2 = find Header 2, 3 = read Header 2
+            
+            int subjCodeCol = -1, minBloomCol = -1, curCodeCol = -1;
+            int cloCodeCol = -1, descCol = -1, bloomCol = -1, ploMapCol = -1;
+            
+            String currentSubjectCode = null;
+            Integer currentMinBloom = null;
+            String currentCurriculumCode = null;
+            Subject currentSubject = null;
+            Curriculum currentCurriculum = null;
+            boolean header1Valid = false;
+
+            for (int i = 0; i <= sheet.getLastRowNum(); i++) {
+                Row row = sheet.getRow(i);
+                if (row == null) continue;
+
+                if (state == 0) {
+                    for (int c = 0; c < row.getLastCellNum(); c++) {
+                        String cellVal = getCellValue(row, c, formatter);
+                        if (cellVal.equalsIgnoreCase("Subject Code")) subjCodeCol = c;
+                        else if (cellVal.equalsIgnoreCase("Min Bloom Level")) minBloomCol = c;
+                        else if (cellVal.equalsIgnoreCase("Curriculum Code")) curCodeCol = c;
+                    }
+                    if (subjCodeCol != -1 && minBloomCol != -1 && curCodeCol != -1) state = 1;
+                } else if (state == 1) {
+                    String sCode = getCellValue(row, subjCodeCol, formatter);
+                    if (sCode != null && !sCode.isEmpty()) {
+                        currentSubjectCode = sCode;
+                        currentMinBloom = parseIntegerSafe(getCellValue(row, minBloomCol, formatter));
+                        currentCurriculumCode = getCellValue(row, curCodeCol, formatter);
+                        
+                        header1Valid = true;
+                        // Validate Curriculum
+                        currentCurriculum = curriculumRepository.findByCurriculumCode(currentCurriculumCode).orElse(null);
+                        if (currentCurriculum == null) {
+                            details.add(ImportCloPloMappingResult.builder()
+                                    .subjectCode(currentSubjectCode).status("FAILED").message("Curriculum Code not found in DB: " + currentCurriculumCode).build());
+                            hasErrors = true;
+                            header1Valid = false;
+                        }
+                        
+                        // Validate Subject
+                        currentSubject = subjectRepository.findBySubjectCode(currentSubjectCode).orElse(null);
+                        if (currentSubject == null) {
+                            details.add(ImportCloPloMappingResult.builder()
+                                    .subjectCode(currentSubjectCode).status("FAILED").message("Subject Code not found in DB: " + currentSubjectCode).build());
+                            hasErrors = true;
+                            header1Valid = false;
+                        }
+                        
+                        // Validate association
+                        if (header1Valid) {
+                            boolean existsAssoc = curriculumGroupSubjectRepository.existsByCurriculumAndSubject(currentCurriculum.getCurriculumId(), currentSubject.getSubjectId());
+                            if (!existsAssoc) {
+                                details.add(ImportCloPloMappingResult.builder()
+                                        .subjectCode(currentSubjectCode).status("FAILED").message("Subject does not belong to Curriculum").build());
+                                hasErrors = true;
+                                header1Valid = false;
+                            }
+                        }
+                        
+                        state = 2;
+                    }
+                } else if (state == 2) {
+                    for (int c = 0; c < row.getLastCellNum(); c++) {
+                        String cellVal = getCellValue(row, c, formatter);
+                        if (cellVal.equalsIgnoreCase("CLO Code")) cloCodeCol = c;
+                        else if (cellVal.equalsIgnoreCase("Description")) descCol = c;
+                        else if (cellVal.equalsIgnoreCase("Bloom Level")) bloomCol = c;
+                        else if (cellVal.equalsIgnoreCase("PLO Code Mapping")) ploMapCol = c;
+                    }
+                    if (cloCodeCol != -1) state = 3;
+                } else if (state == 3) {
+                    String cloCode = getCellValue(row, cloCodeCol, formatter);
+                    if (cloCode == null || cloCode.isEmpty()) {
+                        String firstCell = getCellValue(row, 0, formatter);
+                        if (firstCell.equalsIgnoreCase("Subject Code")) {
+                            i--; 
+                            state = 0;
+                            subjCodeCol = -1; minBloomCol = -1; curCodeCol = -1;
+                            cloCodeCol = -1; descCol = -1; bloomCol = -1; ploMapCol = -1;
+                            continue;
+                        }
+                        continue; // Skip empty rows
+                    }
+                    
+                    if (!header1Valid) {
+                        continue; // Skip processing CLOs if header 1 is invalid
+                    }
+
+                    String desc = descCol != -1 ? getCellValue(row, descCol, formatter) : null;
+                    Integer bloomLvl = bloomCol != -1 ? parseIntegerSafe(getCellValue(row, bloomCol, formatter)) : null;
+                    String ploMappingRaw = ploMapCol != -1 ? getCellValue(row, ploMapCol, formatter) : "";
+                    
+                    List<String> rowErrors = new ArrayList<>();
+
+                    if (desc == null || desc.trim().isEmpty()) {
+                        rowErrors.add("Description cannot be empty");
+                    }
+
+                    if (bloomLvl == null || currentMinBloom == null || bloomLvl < currentMinBloom) {
+                        rowErrors.add("Bloom Level (" + bloomLvl + ") must be >= Min Bloom Level (" + currentMinBloom + ")");
+                    }
+
+                    String uniqueKey = currentSubjectCode.toUpperCase() + "_" + cloCode.toUpperCase();
+                    if (!processedCloCodes.add(uniqueKey)) {
+                        rowErrors.add("Duplicate CLO Code in file for this subject");
+                    }
+
+                    CLOs cloObj = closRepository.findByCloCodeAndSubject_SubjectId(cloCode, currentSubject.getSubjectId()).orElse(null);
+                    if (cloObj == null) {
+                        cloObj = CLOs.builder()
+                                .cloCode(cloCode)
+                                .cloName(null)
+                                .description(desc)
+                                .bloomLevel(String.valueOf(bloomLvl))
+                                .subject(currentSubject)
+                                .status(com.example.smd.enums.PloStatus.DRAFT.toString())
+                                .build();
+                        newClosToSave.add(cloObj);
+                    }
+
+                    if (!ploMappingRaw.isEmpty()) {
+                        String[] ploCodes = ploMappingRaw.split(",");
+                        for (String pc : ploCodes) {
+                            String cleanPlo = pc.trim();
+                            if (cleanPlo.isEmpty()) continue;
+                            
+                           PLOs ploObj = plOsRepository.findByPloCodeAndCurriculum_CurriculumId(cleanPlo, currentCurriculum.getCurriculumId()).orElse(null);
+                            if (ploObj == null) {
+                                rowErrors.add("PLO Code '" + cleanPlo + "' not found in Curriculum");
+                            } else {
+                                boolean mappingExists = false;
+                                if (cloObj.getCloId() != null) {
+                                    mappingExists = cloPloMappingRepository.existsByClo_CloIdAndPlo_PloId(cloObj.getCloId(), ploObj.getPloId());
+                                }
+                                if (mappingExists) {
+                                    rowErrors.add("Mapping " + cloCode + " -> " + cleanPlo + " already exists in DB");
+                                } else {
+                                   CLO_PLO_Mapping mapping = CLO_PLO_Mapping.builder()
+                                            .clo(cloObj)
+                                            .plo(ploObj)
+                                            .contributionLevel(null)
+                                            .build();
+                                    mappingsToSave.add(mapping);
+                                }
+                            }
+                        }
+                    }
+
+                    if (!rowErrors.isEmpty()) {
+                        details.add(com.example.smd.dto.response.cloplo.ImportCloPloMappingResult.builder()
+                                .subjectCode(currentSubjectCode).cloCode(cloCode).status("FAILED")
+                                .message(String.join("; ", rowErrors)).build());
+                        hasErrors = true;
+                    } else {
+                        details.add(com.example.smd.dto.response.cloplo.ImportCloPloMappingResult.builder()
+                                .subjectCode(currentSubjectCode).cloCode(cloCode).status("SUCCESS").message("Validated").build());
+                    }
+                }
+            }
+
+            if (!hasErrors && !mappingsToSave.isEmpty()) {
+                // Save any new CLOs first
+                for (CLOs clo : newClosToSave) {
+                    Subject subject = subjectRepository.findBySubjectCode(clo.getSubject().getSubjectCode()).orElseThrow();
+                    clo.setSubject(subject);
+                    closRepository.save(clo);
+                }
+                
+                // Save CLO_PLO mappings
+                for (CLO_PLO_Mapping mapping : mappingsToSave) {
+                    CLOs clo = closRepository.findByCloCodeAndSubject_SubjectId(
+                            mapping.getClo().getCloCode(),
+                            subjectRepository.findBySubjectCode(mapping.getClo().getSubject().getSubjectCode()).get().getSubjectId()
+                    ).orElseThrow();
+                    mapping.setClo(clo);
+
+                    PLOs plo = plOsRepository.findByPloCodeAndCurriculum_CurriculumId(
+                            mapping.getPlo().getPloCode(),
+                            curriculumRepository.findByCurriculumCode(mapping.getPlo().getCurriculum().getCurriculumCode()).get().getCurriculumId()
+                    ).orElseThrow();
+                    mapping.setPlo(plo);
+
+                    cloPloMappingRepository.save(mapping);
+                }
+            }
+            
+            int total = details.size();
+            int success = (int) details.stream().filter(d -> "SUCCESS".equals(d.getStatus())).count();
+            return ImportCloPloMappingResponse.builder()
+                    .total(total).success(success).failed(total - success).details(details).build();
+
+        } catch (Exception e) {
+            log.error("CLO_PLO_Mapping import error", e);
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION, "Import failed: " + e.getMessage());
+        }
+    }
+
+    private String getCellValue(Row row, int cellIndex, DataFormatter formatter) {
+        if (row == null || cellIndex == -1) return "";
+        Cell cell = row.getCell(cellIndex);
+        if (cell == null) return "";
+        return formatter.formatCellValue(cell).trim();
+    }
+
+    private Integer parseIntegerSafe(String raw) {
+        if (raw == null) return null;
+        String value = raw.trim();
+        if (value.isEmpty()) return null;
+        try { return Integer.parseInt(value); } catch (Exception e) { return null; }
     }
 }

@@ -203,6 +203,26 @@ public class CurriculumController {
         }
 
         /**
+         * API đồng bộ status của Curriculum, PLOs, Major, POs, Subjects
+         */
+        @PatchMapping("/{id}/sync-status")
+//        @PreAuthorize("hasAuthority('CURRICULUM_UPDATE')")
+        @Operation(summary = "Dùng khi mới major và curriculum",
+                description =
+                "Updates the curriculum status to SYLLABUS_DEVELOP " +
+                        "and synchronizes Curriculum, PLOs, Major, POs, and Subjects statuses.")
+        public ResponseObject<Void> syncCurriculumStatus(
+                        @Parameter(description = "Curriculum ID (UUID)") @PathVariable String id,
+                        @AuthenticationPrincipal Jwt jwt) {
+                String userId = jwt.getClaimAsString("accountId");
+                curriculumService.syncCurriculumStatus(id, userId);
+                return ResponseObject.<Void>builder()
+                                .status(1000)
+                                .message("Curriculum and related entities statuses synchronized successfully")
+                                .build();
+        }
+
+        /**
          * API cập nhật endYear của curriculum
          */
         @PatchMapping("/{id}/end-year")
