@@ -240,7 +240,7 @@ public class GeminiService  {
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
 
-        if (!"HOCFDC".equals(roleName)) { // Hoặc role Admin
+        if (!("HOCFDC".equals(roleName) || "VP".equals(roleName))) { // Hoặc role Admin
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
@@ -267,6 +267,7 @@ public class GeminiService  {
             attempts++;
             realtimePublisher.publishToAccount(accountId,
                     RealtimePayload.status("PROCESSING", "AI is analyzing the file structure"));
+            log.info("PROCESSING: {}", "AI is analyzing the file structure");
 
             if ("ACTIVE".equals(state)) {
                 isReady = true;
