@@ -86,13 +86,15 @@ public class CurriculumService {
 
         // 1. Khởi tạo Pageable
         Sort.Direction direction = sort.length > 1 && sort[1].equalsIgnoreCase("desc")
-                ? Sort.Direction.DESC : Sort.Direction.ASC;
+                ? Sort.Direction.DESC
+                : Sort.Direction.ASC;
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sort[0]));
 
         // 2. Chuẩn hóa Status & Phân quyền (Giống hệt Major)
         // Xử lý trường hợp chuỗi rỗng hoặc "all" từ Frontend
         String finalStatus = (status == null || status.trim().isEmpty() || status.equalsIgnoreCase("all"))
-                ? null : status.trim();
+                ? null
+                : status.trim();
 
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
@@ -130,9 +132,11 @@ public class CurriculumService {
                 // TRƯỜNG HỢP 2: Có Search + Có Status (Dùng AND trong SQL)
                 curriculumPage = switch (type) {
                     case "code" ->
-                            curriculumRepository.findByCurriculumCodeContainingIgnoreCaseAndStatus(searchLower, finalStatus, pageable);
+                        curriculumRepository.findByCurriculumCodeContainingIgnoreCaseAndStatus(searchLower, finalStatus,
+                                pageable);
                     case "name" ->
-                            curriculumRepository.findByCurriculumNameContainingIgnoreCaseAndStatus(searchLower, finalStatus, pageable);
+                        curriculumRepository.findByCurriculumNameContainingIgnoreCaseAndStatus(searchLower, finalStatus,
+                                pageable);
                     default -> curriculumRepository.searchAllFieldsWithStatus(searchLower, finalStatus, pageable);
                 };
             } else {
@@ -141,7 +145,9 @@ public class CurriculumService {
                     case "code" -> curriculumRepository.findByCurriculumCodeContainingIgnoreCase(searchLower, pageable);
                     case "name" -> curriculumRepository.findByCurriculumNameContainingIgnoreCase(searchLower, pageable);
                     default ->
-                            curriculumRepository.findByCurriculumNameContainingIgnoreCaseOrCurriculumCodeContainingIgnoreCase(searchLower, searchLower, pageable);
+                        curriculumRepository
+                                .findByCurriculumNameContainingIgnoreCaseOrCurriculumCodeContainingIgnoreCase(
+                                        searchLower, searchLower, pageable);
                 };
             }
         }
@@ -177,7 +183,7 @@ public class CurriculumService {
     @Transactional
     public CurriculumResponse createCurriculum(CurriculumCreateRequest request, String accountId) {
 
-        //Kiểm tra Role tạo
+        // Kiểm tra Role tạo
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
         if (!RoleName.HOCFDC.toString().equals(roleName)) {
@@ -193,7 +199,8 @@ public class CurriculumService {
         Major major = majorRepository.findById(UUID.fromString(request.getMajorId()))
                 .orElseThrow(() -> new AppException(ErrorCode.MAJOR_NOT_FOUND));
 
-        if (!(PloStatus.PUBLISHED.toString().equals(major.getStatus()) || PloStatus.INTERNAL_REVIEW.toString().equals(major.getStatus()))) {
+        if (!(PloStatus.PUBLISHED.toString().equals(major.getStatus())
+                || PloStatus.INTERNAL_REVIEW.toString().equals(major.getStatus()))) {
             throw new AppException(ErrorCode.CURRICULUM_NOT_CREATE);
         }
 
@@ -221,13 +228,13 @@ public class CurriculumService {
     public CurriculumResponse getCurriculumDetail(String id, String accountId) {
         log.info("Fetching curriculum detail for ID: {}", id);
 
-        Curriculum curriculum =
-                curriculumRepository.findById(UUID.fromString(id))
-                        .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));
+        Curriculum curriculum = curriculumRepository.findById(UUID.fromString(id))
+                .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));
 
-        //Phân quyền ROLE Student + Lecture chỉ xem được PUBLISHED
+        // Phân quyền ROLE Student + Lecture chỉ xem được PUBLISHED
         var account = accountService.getAccountById(accountId);
-        if (RoleName.STUDENT.toString().equals(account.getRole().getRoleName()) || RoleName.LECTURER.toString().equals(account.getRole().getRoleName())) {
+        if (RoleName.STUDENT.toString().equals(account.getRole().getRoleName())
+                || RoleName.LECTURER.toString().equals(account.getRole().getRoleName())) {
             if (!CurriculumStatus.PUBLISHED.toString().equals(curriculum.getStatus())) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
@@ -251,9 +258,10 @@ public class CurriculumService {
         Curriculum curriculum = curriculumRepository.findByCurriculumCode(code)
                 .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));
 
-        //Phân quyền ROLE Student + Lecture chỉ xem được PUBLISHED
+        // Phân quyền ROLE Student + Lecture chỉ xem được PUBLISHED
         var account = accountService.getAccountById(accountId);
-        if (RoleName.STUDENT.toString().equals(account.getRole().getRoleName()) || RoleName.LECTURER.toString().equals(account.getRole().getRoleName())) {
+        if (RoleName.STUDENT.toString().equals(account.getRole().getRoleName())
+                || RoleName.LECTURER.toString().equals(account.getRole().getRoleName())) {
             if (!CurriculumStatus.PUBLISHED.toString().equals(curriculum.getStatus())) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
@@ -273,10 +281,10 @@ public class CurriculumService {
      */
     @Transactional
     public CurriculumResponse updateCurriculum(String id,
-                                               CurriculumCreateRequest request, String accountId) {
+            CurriculumCreateRequest request, String accountId) {
         log.info("Updating curriculum with ID: {}", id);
 
-        //Kiểm tra Role tạo
+        // Kiểm tra Role tạo
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
         if (!RoleName.HOCFDC.toString().equals(roleName)) {
@@ -284,9 +292,8 @@ public class CurriculumService {
         }
 
         // 1. Tìm curriculum hiện tại
-        Curriculum curriculum =
-                curriculumRepository.findById(UUID.fromString(id))
-                        .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));
+        Curriculum curriculum = curriculumRepository.findById(UUID.fromString(id))
+                .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));
 
         // 2. Kiểm tra nếu đổi code thì không được trùng với code khác
         if (!curriculum.getCurriculumCode().equals(request.getCurriculumCode())) {
@@ -316,7 +323,7 @@ public class CurriculumService {
      */
     @Transactional
     public CurriculumResponse updateCurriculumStatus(String id,
-                                                     String status) {
+            String status) {
         log.info("Updating curriculum status for ID: {} to {}", id, status);
 
         Curriculum curriculum = curriculumRepository.findById(UUID.fromString(id))
@@ -340,13 +347,13 @@ public class CurriculumService {
      */
     @Transactional
     public CurriculumResponse updateCurriculumEndYear(String id,
-                                                      int endYear, String accountId) {
+            int endYear, String accountId) {
         log.info("Updating curriculum status for ID: {} to {}", id, endYear);
 
         Curriculum curriculum = curriculumRepository.findById(UUID.fromString(id))
                 .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));
 
-        //Kiểm tra Role tạo
+        // Kiểm tra Role tạo
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
         if (!RoleName.HOCFDC.toString().equals(roleName)) {
@@ -372,14 +379,16 @@ public class CurriculumService {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
-        // 1. Dựa vào curriculumId lấy lên đối tượng curriculum rồi chuyển sang SYLLABUS_DEVELOP
+        // 1. Dựa vào curriculumId lấy lên đối tượng curriculum rồi chuyển sang
+        // SYLLABUS_DEVELOP
         Curriculum curriculum = curriculumRepository.findById(UUID.fromString(curriculumId))
                 .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));
-        
+
         curriculum.setStatus(CurriculumStatus.SYLLABUS_DEVELOP.toString());
         curriculumRepository.save(curriculum);
 
-        // 2. Lấy lên list PLO thuộc curriculum đó rồi chuyển status sang INTERNAL_REVIEW
+        // 2. Lấy lên list PLO thuộc curriculum đó rồi chuyển status sang
+        // INTERNAL_REVIEW
         List<PLOs> plos = plOsRepository.findByCurriculum_CurriculumId(curriculum.getCurriculumId());
         for (PLOs plo : plos) {
             plo.setStatus(PloStatus.INTERNAL_REVIEW.toString());
@@ -402,10 +411,12 @@ public class CurriculumService {
             }
         }
 
-        // 4. Lấy lên list subject thuộc curriculum. Validate nếu là DRAFT thì chuyển sang WAITING_SYLLABUS
-        List<Curriculum_Group_Subject> mappings = curriculumGroupSubjectRepository.findAllByCurriculumIdOrderBySemester(curriculum.getCurriculumId());
+        // 4. Lấy lên list subject thuộc curriculum. Validate nếu là DRAFT thì chuyển
+        // sang WAITING_SYLLABUS
+        List<Curriculum_Group_Subject> mappings = curriculumGroupSubjectRepository
+                .findAllByCurriculumIdOrderBySemester(curriculum.getCurriculumId());
         List<Subject> subjectsToUpdate = new ArrayList<>();
-        
+
         for (Curriculum_Group_Subject mapping : mappings) {
             Subject subject = mapping.getSubject();
             if (SubjectStatus.DRAFT.toString().equals(subject.getStatus())) {
@@ -420,7 +431,7 @@ public class CurriculumService {
 
     @Transactional
     public void delete(UUID id, String accountId) {
-        //Kiểm tra Role tạo
+        // Kiểm tra Role tạo
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
         if (!RoleName.HOCFDC.toString().equals(roleName)) {
@@ -440,17 +451,21 @@ public class CurriculumService {
 
     /**
      * Import Curriculum + PLOs từ Excel.
-     * Mỗi dòng gồm: Curriculum Code, Name, Start Year, Description, Major Code, PLO Code, PLO Description.
-     * Một Curriculum có thể có nhiều dòng (nhiều PLO). Curriculum Code dùng để nhóm các PLO.
+     * Mỗi dòng gồm: Curriculum Code, Name, Start Year, Description, Major Code, PLO
+     * Code, PLO Description.
+     * Một Curriculum có thể có nhiều dòng (nhiều PLO). Curriculum Code dùng để nhóm
+     * các PLO.
      * Validate:
-     *   - Curriculum Code đã tồn tại trong DB → báo lỗi, skip toàn bộ dòng có Curriculum Code đó.
-     *   - PLO Code phải duy nhất (global) → validate trong file và trong DB.
+     * - Curriculum Code đã tồn tại trong DB → báo lỗi, skip toàn bộ dòng có
+     * Curriculum Code đó.
+     * - PLO Code phải duy nhất (global) → validate trong file và trong DB.
      */
     @Transactional
     public ImportCurriculumResponse importCurriculums(MultipartFile file) {
         try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
             Sheet sheet = workbook.getSheet("Curriculum");
-            if (sheet == null) sheet = workbook.getSheetAt(0); // fallback
+            if (sheet == null)
+                sheet = workbook.getSheetAt(0); // fallback
             return importCurriculumFromSheet(sheet);
         } catch (Exception e) {
             throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION, "Import curriculum failed: " + e.getMessage());
@@ -466,37 +481,44 @@ public class CurriculumService {
         try {
             int curCodeCol = -1, curNameCol = -1, curYearCol = -1, curDescCol = -1, majorCodeCol = -1;
             int ploCodeCol = -1, ploDescCol = -1, poMappingCol = -1;
-            
+
             String parsedCurCode = null;
             String parsedCurName = null;
             Integer parsedStartYear = null;
             String parsedCurDesc = null;
             String parsedMajorCode = null;
-            
+
             // Temporary class to hold PLO data
             class PLORowData {
                 String ploCode;
                 String ploDesc;
                 List<PO> mappedPOs = new ArrayList<>();
             }
-            
+
             List<PLORowData> ploList = new ArrayList<>();
             Set<String> ploCodesInFile = new HashSet<>();
 
-            int state = 0; // 0 = find cur header, 1 = read cur data, 2 = find plo header, 3 = read plo data
+            int state = 0; // 0 = find cur header, 1 = read cur data, 2 = find plo header, 3 = read plo
+                           // data
 
             for (int i = 0; i <= sheet.getLastRowNum(); i++) {
                 Row row = sheet.getRow(i);
-                if (row == null) continue;
+                if (row == null)
+                    continue;
 
                 if (state == 0) { // find curriculum header
                     for (int c = 0; c < row.getLastCellNum(); c++) {
                         String cellVal = getCellValue(row, c, formatter);
-                        if (cellVal.equalsIgnoreCase("Curriculum Code")) curCodeCol = c;
-                        else if (cellVal.equalsIgnoreCase("Name") || cellVal.equalsIgnoreCase("Curriculum Name")) curNameCol = c;
-                        else if (cellVal.equalsIgnoreCase("Start Year")) curYearCol = c;
-                        else if (cellVal.equalsIgnoreCase("Description")) curDescCol = c;
-                        else if (cellVal.equalsIgnoreCase("Major Code")) majorCodeCol = c;
+                        if (cellVal.equalsIgnoreCase("Curriculum Code"))
+                            curCodeCol = c;
+                        else if (cellVal.equalsIgnoreCase("Name") || cellVal.equalsIgnoreCase("Curriculum Name"))
+                            curNameCol = c;
+                        else if (cellVal.equalsIgnoreCase("Start Year"))
+                            curYearCol = c;
+                        else if (cellVal.equalsIgnoreCase("Description"))
+                            curDescCol = c;
+                        else if (cellVal.equalsIgnoreCase("Major Code"))
+                            majorCodeCol = c;
                     }
                     if (curCodeCol != -1 && majorCodeCol != -1) {
                         state = 1;
@@ -508,19 +530,25 @@ public class CurriculumService {
                         parsedCurName = curNameCol != -1 ? getCellValue(row, curNameCol, formatter) : null;
                         parsedMajorCode = majorCodeCol != -1 ? getCellValue(row, majorCodeCol, formatter) : null;
                         parsedCurDesc = curDescCol != -1 ? getCellValue(row, curDescCol, formatter) : null;
-                        
+
                         if (curYearCol != -1) {
                             String yearRaw = getCellValue(row, curYearCol, formatter);
-                            try { parsedStartYear = Integer.parseInt(yearRaw); } catch (Exception ignored) {}
+                            try {
+                                parsedStartYear = Integer.parseInt(yearRaw);
+                            } catch (Exception ignored) {
+                            }
                         }
                         state = 2;
                     }
                 } else if (state == 2) { // find plo header
                     for (int c = 0; c < row.getLastCellNum(); c++) {
                         String cellVal = getCellValue(row, c, formatter);
-                        if (cellVal.equalsIgnoreCase("PLO Code")) ploCodeCol = c;
-                        else if (cellVal.equalsIgnoreCase("Description") || cellVal.equalsIgnoreCase("PLO Description")) ploDescCol = c;
-                        else if (cellVal.equalsIgnoreCase("PO Code Mapping")) poMappingCol = c;
+                        if (cellVal.equalsIgnoreCase("PLO Code"))
+                            ploCodeCol = c;
+                        else if (cellVal.equalsIgnoreCase("Description") || cellVal.equalsIgnoreCase("PLO Description"))
+                            ploDescCol = c;
+                        else if (cellVal.equalsIgnoreCase("PO Code Mapping"))
+                            poMappingCol = c;
                     }
                     if (ploCodeCol != -1) {
                         state = 3;
@@ -530,7 +558,7 @@ public class CurriculumService {
                     if (ploCode != null && !ploCode.isEmpty()) {
                         String ploDesc = ploDescCol != -1 ? getCellValue(row, ploDescCol, formatter) : null;
                         String poMappingRaw = poMappingCol != -1 ? getCellValue(row, poMappingCol, formatter) : "";
-                        
+
                         if (!ploCodesInFile.add(ploCode.toUpperCase())) {
                             details.add(ImportCurriculumResult.builder()
                                     .curriculumCode(parsedCurCode)
@@ -540,19 +568,21 @@ public class CurriculumService {
                                     .build());
                             continue;
                         }
-                        
+
                         PLORowData ploData = new PLORowData();
                         ploData.ploCode = ploCode;
                         ploData.ploDesc = ploDesc;
-                        
+
                         boolean poMappingOk = true;
                         if (!poMappingRaw.isEmpty()) {
                             String[] poCodesArray = poMappingRaw.split(",");
                             for (String pc : poCodesArray) {
                                 String cleanPoCode = pc.trim();
-                                if (cleanPoCode.isEmpty()) continue;
+                                if (cleanPoCode.isEmpty())
+                                    continue;
                                 // validate PO Code exists within the current Major
-                                java.util.Optional<PO> foundPO = poRepository.findByPoCodeAndMajor_MajorCode(cleanPoCode, parsedMajorCode);
+                                java.util.Optional<PO> foundPO = poRepository
+                                        .findByPoCodeAndMajor_MajorCode(cleanPoCode, parsedMajorCode);
                                 if (foundPO.isEmpty()) {
                                     poMappingOk = false;
                                     details.add(ImportCurriculumResult.builder()
@@ -567,7 +597,7 @@ public class CurriculumService {
                                 }
                             }
                         }
-                        
+
                         if (poMappingOk) {
                             ploList.add(ploData);
                             details.add(ImportCurriculumResult.builder()
@@ -603,7 +633,7 @@ public class CurriculumService {
                 boolean hasErrors = details.stream().anyMatch(d -> "FAILED".equals(d.getStatus()));
                 if (!hasErrors) {
                     Major major = majorRepository.findByMajorCode(parsedMajorCode).orElseThrow();
-                    
+
                     Curriculum curriculum = Curriculum.builder()
                             .curriculumCode(parsedCurCode)
                             .curriculumName(parsedCurName)
@@ -623,7 +653,7 @@ public class CurriculumService {
                                 .status(PloStatus.DRAFT.toString())
                                 .build();
                         PLOs savedPlo = plOsRepository.save(plo);
-                        
+
                         // Save mappings
                         for (PO po : pData.mappedPOs) {
                             PO_PLO_Mapping mapping = new PO_PLO_Mapping();
@@ -642,7 +672,8 @@ public class CurriculumService {
             }
 
         } catch (Exception e) {
-            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION, "Import curriculum from sheet failed: " + e.getMessage());
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION,
+                    "Import curriculum from sheet failed: " + e.getMessage());
         }
 
         int total = details.size();
@@ -659,14 +690,22 @@ public class CurriculumService {
     }
 
     private String getCellValue(Row row, int cellIndex, DataFormatter formatter) {
-        if (row == null) return "";
+        if (row == null)
+            return "";
         Cell cell = row.getCell(cellIndex);
-        if (cell == null) return "";
+        if (cell == null)
+            return "";
+
+        if (cell.getCellType() == CellType.FORMULA) {
+            FormulaEvaluator evaluator = row.getSheet().getWorkbook().getCreationHelper().createFormulaEvaluator();
+            return formatter.formatCellValue(cell, evaluator).trim();
+        }
         return formatter.formatCellValue(cell).trim();
     }
 
     private String trim(String value) {
-        if (value == null) return null;
+        if (value == null)
+            return null;
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
     }

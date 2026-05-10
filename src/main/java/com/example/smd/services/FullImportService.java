@@ -66,7 +66,7 @@ public class FullImportService {
         boolean hasErrors = false;
 
         try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
-            
+
             // Contexts to store parsed data
             MajorImportContext majorContext = new MajorImportContext();
             CurriculumImportContext curContext = new CurriculumImportContext();
@@ -99,7 +99,7 @@ public class FullImportService {
             log.info("=== KIỂM TRA DỮ LIỆU REGULATION MAP ===");
             log.info("Số lượng môn học trong Map: " + regulationMap.size());
             log.info("Danh sách các Mã môn (Keys) trong Map: " + regulationMap.keySet());
-// ===========================================
+            // ===========================================
 
             // 3. Parse and Validate Subject
             Sheet subjectSheet = workbook.getSheet("Subject");
@@ -118,7 +118,8 @@ public class FullImportService {
             // 5. Parse and Validate Semester Mapping
             Sheet semesterSheet = workbook.getSheet("Semester Mapping");
             if (semesterSheet != null) {
-                hasErrors |= parseAndValidateSemesterMapping(semesterSheet, semContext, subContext, groupContext, curContext, regulationMap);
+                hasErrors |= parseAndValidateSemesterMapping(semesterSheet, semContext, subContext, groupContext,
+                        curContext, regulationMap);
                 response.setSemesterMappingResult(buildSemesterResponse(semContext));
             }
 
@@ -142,14 +143,16 @@ public class FullImportService {
             // Check if any errors occurred across all sheets
             if (hasErrors) {
                 response.setSuccess(false);
-                response.setMessage("Validation failed. No data was saved to the database. Please check the results for details.");
-                return response; // Transaction will rollback or nothing is saved yet because we only saved to DB at the end
+                response.setMessage(
+                        "Validation failed. No data was saved to the database. Please check the results for details.");
+                return response; // Transaction will rollback or nothing is saved yet because we only saved to DB
+                                 // at the end
             }
 
             // -------------------------------------------------------------
             // PHASE 3: INSERT INTO DATABASE
             // -------------------------------------------------------------
-            
+
             // Insert Major & POs
             if (majorContext.parsedMajorCode != null) {
                 Major majorToUse;
@@ -204,7 +207,7 @@ public class FullImportService {
                             .status(PloStatus.DRAFT.toString())
                             .build();
                     PLOs savedPlo = plOsRepository.save(plo);
-                    
+
                     for (PO po : pData.mappedPOs) {
                         PO_PLO_Mapping mapping = new PO_PLO_Mapping();
                         mapping.setPo(po);
@@ -229,11 +232,12 @@ public class FullImportService {
                 Curriculum c = curriculumRepository.findById(newCurriculumId).orElseThrow();
                 for (Curriculum_Group_Subject entity : semContext.mappingsToSave) {
                     entity.setCurriculum(c);
-                    
-                    // The subject might have been just saved, let's fetch it from DB to ensure valid reference
+
+                    // The subject might have been just saved, let's fetch it from DB to ensure
+                    // valid reference
                     Subject s = subjectRepository.findBySubjectCode(entity.getSubject().getSubjectCode()).orElseThrow();
                     entity.setSubject(s);
-                    
+
                     if (entity.getGroup() != null && entity.getGroup().getGroupCode() != null) {
                         Group g = groupRepository.findByGroupCode(entity.getGroup().getGroupCode()).orElseThrow();
                         entity.setGroup(g);
@@ -248,7 +252,7 @@ public class FullImportService {
             if (!srcContext.rowsToSave.isEmpty()) {
                 for (com.example.smd.dto.excel.SourceImportDTO row : srcContext.rowsToSave) {
                     String srcCode = trim(row.getSourceCode());
-                    
+
                     Source source;
                     if (!sourceRepository.existsBySourceCode(srcCode)) {
                         source = Source.builder()
@@ -257,8 +261,10 @@ public class FullImportService {
                                 .type(SourceType.REFERENCE_BOOK.name())
                                 .author(trim(row.getAuthor()))
                                 .publisher(trim(row.getPublisher()))
-                                .publishedYear(parseIntegerSafe(row.getPublicationYear()) != null ? parseIntegerSafe(row.getPublicationYear()) : 0)
-//                                .isbn(trim(row.getIsbn()))
+                                .publishedYear(parseIntegerSafe(row.getPublicationYear()) != null
+                                        ? parseIntegerSafe(row.getPublicationYear())
+                                        : 0)
+                                // .isbn(trim(row.getIsbn()))
                                 .url(trim(row.getUrl()))
                                 .build();
                         source = sourceRepository.save(source);
@@ -272,11 +278,13 @@ public class FullImportService {
                         String[] subjectCodes = subjectCodeRaw.split("[,\\-;\n]+");
                         for (String sCode : subjectCodes) {
                             sCode = sCode.trim();
-                            if (sCode.isEmpty()) continue;
-                            
+                            if (sCode.isEmpty())
+                                continue;
+
                             Subject subject = subjectRepository.findBySubjectCode(sCode).orElse(null);
                             if (subject != null) {
-                                boolean exists = proposedSourceRepository.existsBySource_SourceIdAndSubject_SubjectId(source.getSourceId(), subject.getSubjectId());
+                                boolean exists = proposedSourceRepository.existsBySource_SourceIdAndSubject_SubjectId(
+                                        source.getSourceId(), subject.getSubjectId());
                                 if (!exists) {
                                     ProposedSource ps = ProposedSource.builder()
                                             .source(source)
@@ -309,22 +317,28 @@ public class FullImportService {
         boolean hasErrors = false;
         DataFormatter formatter = new DataFormatter();
         int majorCodeCol = -1, majorNameCol = -1, majorDescCol = -1, poCodeCol = -1, poDescCol = -1;
-        int state = 0; // 0 = find major header, 1 = read major data, 2 = find po header, 3 = read po data
+        int state = 0; // 0 = find major header, 1 = read major data, 2 = find po header, 3 = read po
+                       // data
 
         Set<String> poCodesInFile = new HashSet<>();
 
         for (int i = 0; i <= sheet.getLastRowNum(); i++) {
             Row row = sheet.getRow(i);
-            if (row == null) continue;
+            if (row == null)
+                continue;
 
             if (state == 0) {
                 for (int c = 0; c < row.getLastCellNum(); c++) {
                     String cellVal = getCellValue(row, c, formatter);
-                    if (cellVal.equalsIgnoreCase("Major Code")) majorCodeCol = c;
-                    else if (cellVal.equalsIgnoreCase("Name") || cellVal.equalsIgnoreCase("Major Name")) majorNameCol = c;
-                    else if (cellVal.equalsIgnoreCase("Description")) majorDescCol = c;
+                    if (cellVal.equalsIgnoreCase("Major Code"))
+                        majorCodeCol = c;
+                    else if (cellVal.equalsIgnoreCase("Name") || cellVal.equalsIgnoreCase("Major Name"))
+                        majorNameCol = c;
+                    else if (cellVal.equalsIgnoreCase("Description"))
+                        majorDescCol = c;
                 }
-                if (majorCodeCol != -1 && majorNameCol != -1) state = 1;
+                if (majorCodeCol != -1 && majorNameCol != -1)
+                    state = 1;
             } else if (state == 1) {
                 String code = getCellValue(row, majorCodeCol, formatter);
                 if (code != null && !code.isEmpty()) {
@@ -336,15 +350,18 @@ public class FullImportService {
             } else if (state == 2) {
                 for (int c = 0; c < row.getLastCellNum(); c++) {
                     String cellVal = getCellValue(row, c, formatter);
-                    if (cellVal.equalsIgnoreCase("PO Code")) poCodeCol = c;
-                    else if (cellVal.equalsIgnoreCase("Description") || cellVal.equalsIgnoreCase("PO Description")) poDescCol = c;
+                    if (cellVal.equalsIgnoreCase("PO Code"))
+                        poCodeCol = c;
+                    else if (cellVal.equalsIgnoreCase("Description") || cellVal.equalsIgnoreCase("PO Description"))
+                        poDescCol = c;
                 }
-                if (poCodeCol != -1) state = 3;
+                if (poCodeCol != -1)
+                    state = 3;
             } else if (state == 3) {
                 String poCode = getCellValue(row, poCodeCol, formatter);
                 if (poCode != null && !poCode.isEmpty()) {
                     String poDesc = poDescCol != -1 ? getCellValue(row, poDescCol, formatter) : null;
-                    
+
                     if (poDesc == null || poDesc.trim().isEmpty()) {
                         ctx.details.add(ImportMajorResult.builder()
                                 .majorCode(ctx.parsedMajorCode)
@@ -373,7 +390,7 @@ public class FullImportService {
                             .status(PloStatus.DRAFT.toString())
                             .build();
                     ctx.poListToSave.add(po);
-                    
+
                     ctx.details.add(ImportMajorResult.builder()
                             .majorCode(ctx.parsedMajorCode)
                             .poCode(poCode)
@@ -385,44 +402,56 @@ public class FullImportService {
         }
 
         if (ctx.parsedMajorCode == null) {
-            ctx.details.add(ImportMajorResult.builder().status("FAILED").message("Major Data not found in sheet").build());
+            ctx.details
+                    .add(ImportMajorResult.builder().status("FAILED").message("Major Data not found in sheet").build());
             return true;
         }
 
         if (majorRepository.existsByMajorCode(ctx.parsedMajorCode)) {
             ctx.isExistingMajor = true;
-            // Existing major: DO NOT throw error. Just use the existing one, but validate/import POs from the sheet as requested.
-            // If the major exists but we still want to add POs from the sheet to it, it is valid based on user requirements.
+            // Existing major: DO NOT throw error. Just use the existing one, but
+            // validate/import POs from the sheet as requested.
+            // If the major exists but we still want to add POs from the sheet to it, it is
+            // valid based on user requirements.
         } else if (ctx.parsedMajorName == null || ctx.parsedMajorName.isEmpty()) {
-            ctx.details.add(ImportMajorResult.builder().majorCode(ctx.parsedMajorCode).status("FAILED").message("Missing required field: Name").build());
+            ctx.details.add(ImportMajorResult.builder().majorCode(ctx.parsedMajorCode).status("FAILED")
+                    .message("Missing required field: Name").build());
             hasErrors = true;
         }
 
         return hasErrors;
     }
 
-    private boolean parseAndValidateCurriculum(Sheet sheet, CurriculumImportContext ctx, MajorImportContext majorContext) {
+    private boolean parseAndValidateCurriculum(Sheet sheet, CurriculumImportContext ctx,
+            MajorImportContext majorContext) {
         boolean hasErrors = false;
         DataFormatter formatter = new DataFormatter();
         int curCodeCol = -1, curNameCol = -1, curYearCol = -1, curDescCol = -1, majorCodeCol = -1;
         int ploCodeCol = -1, ploDescCol = -1, poMappingCol = -1;
-        int state = 0; 
+        int state = 0;
         Set<String> ploCodesInFile = new HashSet<>();
 
         for (int i = 0; i <= sheet.getLastRowNum(); i++) {
             Row row = sheet.getRow(i);
-            if (row == null) continue;
+            if (row == null)
+                continue;
             // STATE 0: Tìm Header của Curriculum
-            if (state == 0) { 
+            if (state == 0) {
                 for (int c = 0; c < row.getLastCellNum(); c++) {
                     String cellVal = getCellValue(row, c, formatter);
-                    if (cellVal.equalsIgnoreCase("Curriculum Code")) curCodeCol = c;
-                    else if (cellVal.equalsIgnoreCase("Name") || cellVal.equalsIgnoreCase("Curriculum Name")) curNameCol = c;
-                    else if (cellVal.equalsIgnoreCase("Start Year")) curYearCol = c;
-                    else if (cellVal.equalsIgnoreCase("Description")) curDescCol = c;
-                    else if (cellVal.equalsIgnoreCase("Major Code")) majorCodeCol = c;
+                    if (cellVal.equalsIgnoreCase("Curriculum Code"))
+                        curCodeCol = c;
+                    else if (cellVal.equalsIgnoreCase("Name") || cellVal.equalsIgnoreCase("Curriculum Name"))
+                        curNameCol = c;
+                    else if (cellVal.equalsIgnoreCase("Start Year"))
+                        curYearCol = c;
+                    else if (cellVal.equalsIgnoreCase("Description"))
+                        curDescCol = c;
+                    else if (cellVal.equalsIgnoreCase("Major Code"))
+                        majorCodeCol = c;
                 }
-                if (curCodeCol != -1 && majorCodeCol != -1) state = 1;
+                if (curCodeCol != -1 && majorCodeCol != -1)
+                    state = 1;
             }
             // STATE 1: Đọc thông tin Curriculum và Validate Major Code
             else if (state == 1) {
@@ -445,7 +474,8 @@ public class FullImportService {
                                 .status("FAILED")
                                 .message("Major Code in sheet " +
                                         "Curriculum [" + ctx.parsedMajorCode +
-                                        "] does not match the Major Code in the Major sheet [" + majorContext.parsedMajorCode + "]")
+                                        "] does not match the Major Code in the Major sheet ["
+                                        + majorContext.parsedMajorCode + "]")
                                 .build());
 
                         // Theo yêu cầu: Không khớp thì không cần check PO mapping
@@ -456,24 +486,31 @@ public class FullImportService {
                     ctx.parsedCurDesc = curDescCol != -1 ? getCellValue(row, curDescCol, formatter) : null;
                     if (curYearCol != -1) {
                         String yearRaw = getCellValue(row, curYearCol, formatter);
-                        try { ctx.parsedStartYear = Integer.parseInt(yearRaw); } catch (Exception ignored) {}
+                        try {
+                            ctx.parsedStartYear = Integer.parseInt(yearRaw);
+                        } catch (Exception ignored) {
+                        }
                     }
                     state = 2;
                 }
-            } else if (state == 2) { 
+            } else if (state == 2) {
                 for (int c = 0; c < row.getLastCellNum(); c++) {
                     String cellVal = getCellValue(row, c, formatter);
-                    if (cellVal.equalsIgnoreCase("PLO Code")) ploCodeCol = c;
-                    else if (cellVal.equalsIgnoreCase("Description") || cellVal.equalsIgnoreCase("PLO Description")) ploDescCol = c;
-                    else if (cellVal.equalsIgnoreCase("PO Code Mapping")) poMappingCol = c;
+                    if (cellVal.equalsIgnoreCase("PLO Code"))
+                        ploCodeCol = c;
+                    else if (cellVal.equalsIgnoreCase("Description") || cellVal.equalsIgnoreCase("PLO Description"))
+                        ploDescCol = c;
+                    else if (cellVal.equalsIgnoreCase("PO Code Mapping"))
+                        poMappingCol = c;
                 }
-                if (ploCodeCol != -1) state = 3;
-            } else if (state == 3) { 
+                if (ploCodeCol != -1)
+                    state = 3;
+            } else if (state == 3) {
                 String ploCode = getCellValue(row, ploCodeCol, formatter);
                 if (ploCode != null && !ploCode.isEmpty()) {
                     String ploDesc = ploDescCol != -1 ? getCellValue(row, ploDescCol, formatter) : null;
                     String poMappingRaw = poMappingCol != -1 ? getCellValue(row, poMappingCol, formatter) : "";
-                    
+
                     if (ploDesc == null || ploDesc.trim().isEmpty()) {
                         ctx.details.add(ImportCurriculumResult.builder()
                                 .curriculumCode(ctx.parsedCurCode).ploCode(ploCode).status("FAILED")
@@ -489,11 +526,11 @@ public class FullImportService {
                         hasErrors = true;
                         continue;
                     }
-                    
+
                     PLORowData ploData = new PLORowData();
                     ploData.ploCode = ploCode;
                     ploData.ploDesc = ploDesc;
-                    
+
                     boolean poMappingOk = true;
                     List<String> mappingErrors = new ArrayList<>();
 
@@ -501,15 +538,17 @@ public class FullImportService {
                         String[] poCodesArray = poMappingRaw.split(",");
                         for (String pc : poCodesArray) {
                             String cleanPoCode = pc.trim();
-                            if (cleanPoCode.isEmpty()) continue;
-                            
+                            if (cleanPoCode.isEmpty())
+                                continue;
+
                             // Check if this PO is being imported right now in Major sheet
                             boolean foundInSheet = majorContext.poListToSave.stream()
-                                    .anyMatch(po -> po.getPoCode().equalsIgnoreCase(cleanPoCode) 
-                                              && majorContext.parsedMajorCode.equalsIgnoreCase(ctx.parsedMajorCode));
-                            
+                                    .anyMatch(po -> po.getPoCode().equalsIgnoreCase(cleanPoCode)
+                                            && majorContext.parsedMajorCode.equalsIgnoreCase(ctx.parsedMajorCode));
+
                             // If not in sheet, check in DB
-                            Optional<PO> foundPOInDB = poRepository.findByPoCodeAndMajor_MajorCode(cleanPoCode, ctx.parsedMajorCode);
+                            Optional<PO> foundPOInDB = poRepository.findByPoCodeAndMajor_MajorCode(cleanPoCode,
+                                    ctx.parsedMajorCode);
 
                             if (!foundInSheet && foundPOInDB.isEmpty()) {
                                 poMappingOk = false;
@@ -518,22 +557,25 @@ public class FullImportService {
                                 if (foundPOInDB.isPresent()) {
                                     ploData.mappedPOs.add(foundPOInDB.get());
                                 } else {
-                                    // PO is in sheet, but since it's not saved yet, we create a temporary reference.
+                                    // PO is in sheet, but since it's not saved yet, we create a temporary
+                                    // reference.
                                     // We will link it properly during insertion phase or assume it's created.
                                     // We just need to store it so it can be mapped later.
                                     PO sheetPo = majorContext.poListToSave.stream()
                                             .filter(po -> po.getPoCode().equalsIgnoreCase(cleanPoCode))
                                             .findFirst().orElse(null);
-                                    if (sheetPo != null) ploData.mappedPOs.add(sheetPo);
+                                    if (sheetPo != null)
+                                        ploData.mappedPOs.add(sheetPo);
                                 }
                             }
                         }
                     }
-                    
+
                     if (!poMappingOk) {
                         ctx.details.add(ImportCurriculumResult.builder()
                                 .curriculumCode(ctx.parsedCurCode).ploCode(ploCode).status("FAILED")
-                                .message("PLO " + ploCode + " mapping errors: " + String.join(", ", mappingErrors)).build());
+                                .message("PLO " + ploCode + " mapping errors: " + String.join(", ", mappingErrors))
+                                .build());
                         hasErrors = true;
                     } else {
                         ctx.ploListToSave.add(ploData);
@@ -546,16 +588,19 @@ public class FullImportService {
         }
 
         if (ctx.parsedCurCode == null) {
-            ctx.details.add(ImportCurriculumResult.builder().status("FAILED").message("Curriculum Data not found in sheet").build());
+            ctx.details.add(ImportCurriculumResult.builder().status("FAILED")
+                    .message("Curriculum Data not found in sheet").build());
             return true;
         }
 
         if (curriculumRepository.existsByCurriculumCode(ctx.parsedCurCode)) {
             ctx.isExistingCurriculum = true;
-            // Existing Curriculum: We do not error out. We append PLOs based on user requirements.
+            // Existing Curriculum: We do not error out. We append PLOs based on user
+            // requirements.
         }
 
-        if (ctx.parsedMajorCode == null || (!majorContext.parsedMajorCode.equalsIgnoreCase(ctx.parsedMajorCode) && !majorRepository.existsByMajorCode(ctx.parsedMajorCode))) {
+        if (ctx.parsedMajorCode == null || (!majorContext.parsedMajorCode.equalsIgnoreCase(ctx.parsedMajorCode)
+                && !majorRepository.existsByMajorCode(ctx.parsedMajorCode))) {
             ctx.details.add(ImportCurriculumResult.builder()
                     .curriculumCode(ctx.parsedCurCode).status("FAILED")
                     .message("Major code not found in DB or import sheet: " + ctx.parsedMajorCode).build());
@@ -565,11 +610,12 @@ public class FullImportService {
         return hasErrors;
     }
 
-    private boolean parseAndValidateSubject(Sheet sheet, SubjectImportContext ctx, Map<String, SubjectRegulationDTO> regulationMap) {
+    private boolean parseAndValidateSubject(Sheet sheet, SubjectImportContext ctx,
+            Map<String, SubjectRegulationDTO> regulationMap) {
 
         boolean hasErrors = false;
         Set<String> subjectCodesInFile = new HashSet<>();
-        
+
         try {
             List<SubjectImportDTO> rows = ExcelImporter.importFromSheet(sheet, SubjectImportDTO.class);
             for (SubjectImportDTO row : rows) {
@@ -580,27 +626,37 @@ public class FullImportService {
                 List<String> missingCols = new ArrayList<>();
                 if (subjectCode == null) {
                     missingCols.add("Subject Code");
-                } else{
+                } else {
                     if (subjectCode.equalsIgnoreCase("N/A")) {
                         subjectCode = generateNASubjectCode(subjectName);
                     }
                     ctx.fileSubjectCodes.add(subjectCode.toUpperCase());
                 }
-                if (subjectName == null) missingCols.add("Subject Name");
-                if (departmentCode == null) missingCols.add("Department Code");
-                if (trim(row.getCredits()) == null) missingCols.add("Credits");
-                if (trim(row.getTimeAllocation()) == null) missingCols.add("Time Allocation");
-                if (trim(row.getMinToPass()) == null) missingCols.add("Min to pass");
-                if (trim(row.getStudentLimit()) == null) missingCols.add("Student Limit");
-                if (trim(row.getStudentTasks()) == null) missingCols.add("Student Tasks");
-                if (trim(row.getScoringScale()) == null) missingCols.add("Scoring Scale");
-                if (trim(row.getMinBloomLevel()) == null) missingCols.add("Min Bloom Level");
+                if (subjectName == null)
+                    missingCols.add("Subject Name");
+                if (departmentCode == null)
+                    missingCols.add("Department Code");
+                if (trim(row.getCredits()) == null)
+                    missingCols.add("Credits");
+                if (trim(row.getTimeAllocation()) == null)
+                    missingCols.add("Time Allocation");
+                if (trim(row.getMinToPass()) == null)
+                    missingCols.add("Min to pass");
+                if (trim(row.getStudentLimit()) == null)
+                    missingCols.add("Student Limit");
+                if (trim(row.getStudentTasks()) == null)
+                    missingCols.add("Student Tasks");
+                if (trim(row.getScoringScale()) == null)
+                    missingCols.add("Scoring Scale");
+                if (trim(row.getMinBloomLevel()) == null)
+                    missingCols.add("Min Bloom Level");
 
                 if (!missingCols.isEmpty()) {
                     ctx.details.add(ImportSubjectResult.builder()
                             .subjectCode(subjectCode)
                             .status("FAILED")
-                            .message("Subject " + (subjectCode != null ? subjectCode : "Unknown") + " missing columns: " + String.join(", ", missingCols))
+                            .message("Subject " + (subjectCode != null ? subjectCode : "Unknown") + " missing columns: "
+                                    + String.join(", ", missingCols))
                             .build());
                     hasErrors = true;
                     continue;
@@ -614,7 +670,7 @@ public class FullImportService {
                     ctx.details.add(ImportSubjectResult.builder()
                             .subjectCode(subjectCode)
                             .status("FAILED")
-                            .message( subjectCode + " not included " +
+                            .message(subjectCode + " not included " +
                                     "in the prescribed framework program")
                             .build());
                     hasErrors = true;
@@ -635,10 +691,12 @@ public class FullImportService {
                     mismatchErrors.add("Theory (Standard: " + regDto.theoryPeriod + ", Excel: " + theory + ")");
                 }
                 if (regDto.practicalPeriod != null && !regDto.practicalPeriod.equals(practical)) {
-                    mismatchErrors.add("Practical (Standard: " + regDto.practicalPeriod + ", Excel: " + practical + ")");
+                    mismatchErrors
+                            .add("Practical (Standard: " + regDto.practicalPeriod + ", Excel: " + practical + ")");
                 }
                 if (regDto.selfStudyPeriod != null && !regDto.selfStudyPeriod.equals(selfStudy)) {
-                    mismatchErrors.add("SelfStudy (Standard: " + regDto.selfStudyPeriod + ", Excel: " + selfStudy + ")");
+                    mismatchErrors
+                            .add("SelfStudy (Standard: " + regDto.selfStudyPeriod + ", Excel: " + selfStudy + ")");
                 }
 
                 if (!mismatchErrors.isEmpty()) {
@@ -651,11 +709,12 @@ public class FullImportService {
                     continue;
                 }
 
-               //comment do thử để chỗ khác
-//                ctx.fileSubjectCodes.add(subjectCode.toUpperCase());
+                // comment do thử để chỗ khác
+                // ctx.fileSubjectCodes.add(subjectCode.toUpperCase());
                 if (!subjectCodesInFile.add(subjectCode.toUpperCase())) {
                     ctx.details.add(ImportSubjectResult.builder()
-                            .subjectCode(subjectCode).status("FAILED").message("Duplicate subjectCode in file").build());
+                            .subjectCode(subjectCode).status("FAILED").message("Duplicate subjectCode in file")
+                            .build());
                     hasErrors = true;
                     continue;
                 }
@@ -663,14 +722,16 @@ public class FullImportService {
                 if (subjectRepository.existsBySubjectCode(subjectCode)) {
                     ctx.details.add(ImportSubjectResult.builder()
                             .subjectCode(subjectCode).status(
-                                    "SUCCESS").message("Validated").build());
+                                    "SUCCESS")
+                            .message("Validated").build());
                     continue; // SKIP Insert
                 }
 
                 Department department = departmentRepository.findByDepartmentCode(departmentCode).orElse(null);
                 if (department == null) {
                     ctx.details.add(ImportSubjectResult.builder()
-                            .subjectCode(subjectCode).status("FAILED").message("Department code not found in DB: " + departmentCode).build());
+                            .subjectCode(subjectCode).status("FAILED")
+                            .message("Department code not found in DB: " + departmentCode).build());
                     hasErrors = true;
                     continue;
                 }
@@ -680,7 +741,8 @@ public class FullImportService {
                     credits = Integer.parseInt(row.getCredits().trim());
                 } catch (NumberFormatException e) {
                     ctx.details.add(ImportSubjectResult.builder()
-                            .subjectCode(subjectCode).status("FAILED").message("Credits must be a valid number").build());
+                            .subjectCode(subjectCode).status("FAILED").message("Credits must be a valid number")
+                            .build());
                     hasErrors = true;
                     continue;
                 }
@@ -709,13 +771,15 @@ public class FullImportService {
                         .subjectCode(subjectCode).status("SUCCESS").message("Validated").build());
             }
 
-            // === VALIDATE COMPLETENESS: Đảm bảo sheet Subject có đủ TẤT CẢ môn trong COURSE_MAPPING ===
+            // === VALIDATE COMPLETENESS: Đảm bảo sheet Subject có đủ TẤT CẢ môn trong
+            // COURSE_MAPPING ===
             if (!regulationMap.isEmpty()) {
                 List<String> missingInSheet = new ArrayList<>();
                 for (String regCode : regulationMap.keySet()) {
                     // subjectCodesInFile chứa các code đã pass duplicate check (uppercase)
                     if (!subjectCodesInFile.contains(regCode.toUpperCase())) {
-                        // Cũng cần check trong DB — nếu môn đã tồn tại trong DB thì được tính là "đã có"
+                        // Cũng cần check trong DB — nếu môn đã tồn tại trong DB thì được tính là "đã
+                        // có"
                         if (!subjectRepository.existsBySubjectCode(regulationMap.get(regCode).subjectCode)) {
                             missingInSheet.add(regulationMap.get(regCode).subjectCode);
                         }
@@ -725,8 +789,9 @@ public class FullImportService {
                     ctx.details.add(ImportSubjectResult.builder()
                             .subjectCode(null)
                             .status("FAILED")
-                            .message("The Sheet Subject lacks the mandatory courses as required by regulations COURSE_MAPPING: "
-                                    + String.join(", ", missingInSheet))
+                            .message(
+                                    "The Sheet Subject lacks the mandatory courses as required by regulations COURSE_MAPPING: "
+                                            + String.join(", ", missingInSheet))
                             .build());
                     hasErrors = true;
                 }
@@ -747,15 +812,18 @@ public class FullImportService {
             for (GroupImportDTO row : rows) {
                 String groupCode = trim(row.getGroupCode());
                 String groupName = trim(row.getGroupName());
-                
+
                 List<String> missingCols = new ArrayList<>();
-                if (groupCode == null) missingCols.add("Group Code");
-                if (groupName == null) missingCols.add("Group Name");
+                if (groupCode == null)
+                    missingCols.add("Group Code");
+                if (groupName == null)
+                    missingCols.add("Group Name");
 
                 if (!missingCols.isEmpty()) {
                     ctx.details.add(ImportGroupResult.builder()
                             .groupCode(groupCode).status("FAILED")
-                            .message("Group " + (groupCode != null ? groupCode : "Unknown") + " missing columns: " + String.join(", ", missingCols))
+                            .message("Group " + (groupCode != null ? groupCode : "Unknown") + " missing columns: "
+                                    + String.join(", ", missingCols))
                             .build());
                     hasErrors = true;
                     continue;
@@ -803,29 +871,32 @@ public class FullImportService {
             Map<String, SubjectRegulationDTO> regulationMap) {
         boolean hasErrors = false;
         Set<String> subjectCodesInFile = new HashSet<>();
-        
-        // Find existing curriculum subjects to prevent duplicates if modifying an existing curriculum
+
+        // Find existing curriculum subjects to prevent duplicates if modifying an
+        // existing curriculum
         // Removed DB checks as requested.
 
         try {
-            List<CurriculumGroupSubjectImportDTO> rows = ExcelImporter.importFromSheet(sheet, CurriculumGroupSubjectImportDTO.class);
+            List<CurriculumGroupSubjectImportDTO> rows = ExcelImporter.importFromSheet(sheet,
+                    CurriculumGroupSubjectImportDTO.class);
             for (int i = 0; i < rows.size(); i++) {
                 int rowNumber = i + 2;
                 CurriculumGroupSubjectImportDTO row = rows.get(i);
-                
+
                 String groupCode = trim(row.getGroupCode());
                 String subjectCode = trim(row.getSubjectCode());
                 String semesterRaw = trim(row.getSemester());
 
                 if (subjectCode == null || semesterRaw == null) {
-                    ctx.details.add(buildSemFail(rowNumber, groupCode, subjectCode, semesterRaw, "Missing required fields: Subject Code, Semester"));
+                    ctx.details.add(buildSemFail(rowNumber, groupCode, subjectCode, semesterRaw,
+                            "Missing required fields: Subject Code, Semester"));
                     hasErrors = true;
                     continue;
                 }
 
-
                 if (!subjectCodesInFile.add(subjectCode.toUpperCase())) {
-                    ctx.details.add(buildSemFail(rowNumber, groupCode, subjectCode, semesterRaw, "Duplicate subject in mapping file"));
+                    ctx.details.add(buildSemFail(rowNumber, groupCode, subjectCode, semesterRaw,
+                            "Duplicate subject in mapping file"));
                     hasErrors = true;
                     continue;
                 }
@@ -833,16 +904,19 @@ public class FullImportService {
                 int semesterNo;
                 try {
                     semesterNo = Integer.parseInt(semesterRaw);
-                    if (semesterNo <= 0) throw new Exception();
+                    if (semesterNo <= 0)
+                        throw new Exception();
                 } catch (Exception e) {
-                    ctx.details.add(buildSemFail(rowNumber, groupCode, subjectCode, semesterRaw, "Invalid semester value"));
+                    ctx.details.add(
+                            buildSemFail(rowNumber, groupCode, subjectCode, semesterRaw, "Invalid semester value"));
                     hasErrors = true;
                     continue;
                 }
 
                 // Verify Subject exists in Subject sheet
                 if (!subCtx.fileSubjectCodes.contains(subjectCode.toUpperCase())) {
-                    ctx.details.add(buildSemFail(rowNumber, groupCode, subjectCode, semesterRaw, "This Subject Code is not in the Subject Sheet"));
+                    ctx.details.add(buildSemFail(rowNumber, groupCode, subjectCode, semesterRaw,
+                            "This Subject Code is not in the Subject Sheet"));
                     hasErrors = true;
                     continue;
                 }
@@ -850,7 +924,8 @@ public class FullImportService {
                 // Verify Group exists in Group sheet (if provided)
                 if (groupCode != null && !groupCode.isEmpty()) {
                     if (!grpCtx.fileGroupCodes.contains(groupCode.toUpperCase())) {
-                        ctx.details.add(buildSemFail(rowNumber, groupCode, subjectCode, semesterRaw, "This Group Code is not in the Sheet Group"));
+                        ctx.details.add(buildSemFail(rowNumber, groupCode, subjectCode, semesterRaw,
+                                "This Group Code is not in the Sheet Group"));
                         hasErrors = true;
                         continue;
                     }
@@ -860,7 +935,9 @@ public class FullImportService {
                 if (regulationMap.containsKey(subjectCode.toUpperCase())) {
                     SubjectRegulationDTO regDto = regulationMap.get(subjectCode.toUpperCase());
                     if (regDto.semester != null && !regDto.semester.equals(semesterNo)) {
-                        ctx.details.add(buildSemFail(rowNumber, groupCode, subjectCode, semesterRaw, "Wrong semester specified (Standard: " + regDto.semester + ", Excel: " + semesterNo + ")"));
+                        ctx.details.add(buildSemFail(rowNumber, groupCode, subjectCode, semesterRaw,
+                                "Wrong semester specified (Standard: " + regDto.semester + ", Excel: " + semesterNo
+                                        + ")"));
                         hasErrors = true;
                         continue;
                     }
@@ -868,8 +945,9 @@ public class FullImportService {
 
                 Curriculum_Group_Subject mapping = Curriculum_Group_Subject.builder()
                         .semester(semesterNo)
-                        // Temporary dummy subjects/groups to hold the code, replaced during insertion phase
-                        .subject(Subject.builder().subjectCode(subjectCode).build()) 
+                        // Temporary dummy subjects/groups to hold the code, replaced during insertion
+                        // phase
+                        .subject(Subject.builder().subjectCode(subjectCode).build())
                         .group(groupCode != null ? Group.builder().groupCode(groupCode).build() : null)
                         .build();
 
@@ -892,16 +970,20 @@ public class FullImportService {
             Map<String, SourceRegulationDTO> regulationMap) {
         boolean hasErrors = false;
         try {
-            List<com.example.smd.dto.excel.SourceImportDTO> rows = ExcelImporter.importFromSheet(sheet, com.example.smd.dto.excel.SourceImportDTO.class);
+            List<com.example.smd.dto.excel.SourceImportDTO> rows = ExcelImporter.importFromSheet(sheet,
+                    com.example.smd.dto.excel.SourceImportDTO.class);
             for (com.example.smd.dto.excel.SourceImportDTO row : rows) {
                 String sourceCode = trim(row.getSourceCode());
                 String sourceName = trim(row.getSourceName());
                 String subjectCodeRaw = trim(row.getSubjectCode());
-                
+
                 List<String> missingCols = new ArrayList<>();
-                if (sourceCode == null) missingCols.add("Source Code");
-                if (sourceName == null) missingCols.add("Source Name");
-                if (subjectCodeRaw == null) missingCols.add("Subject Code");
+                if (sourceCode == null)
+                    missingCols.add("Source Code");
+                if (sourceName == null)
+                    missingCols.add("Source Name");
+                if (subjectCodeRaw == null)
+                    missingCols.add("Subject Code");
 
                 if (!missingCols.isEmpty()) {
                     ctx.details.add(ImportSourceResult.builder()
@@ -967,8 +1049,9 @@ public class FullImportService {
                 List<String> invalidSubjects = new ArrayList<>();
                 for (String sCode : subjectCodes) {
                     sCode = sCode.trim();
-                    if (sCode.isEmpty()) continue;
-                    
+                    if (sCode.isEmpty())
+                        continue;
+
                     if (!subCtx.fileSubjectCodes.contains(sCode.toUpperCase())) {
                         subjectMissing = true;
                         invalidSubjects.add(sCode);
@@ -979,7 +1062,8 @@ public class FullImportService {
                     ctx.details.add(ImportSourceResult.builder()
                             .sourceCode(sourceCode)
                             .status("FAILED")
-                            .message("The following Subject Codes are not in the Subject sheet: " + String.join(", ", invalidSubjects))
+                            .message("The following Subject Codes are not in the Subject sheet: "
+                                    + String.join(", ", invalidSubjects))
                             .build());
                     hasErrors = true;
                     continue;
@@ -991,7 +1075,8 @@ public class FullImportService {
                         .sourceCode(sourceCode).status("SUCCESS").message("Validated").build());
             }
 
-            // === VALIDATE COMPLETENESS: Đảm bảo sheet Source có đủ TẤT CẢ source trong SOURCE_DOCUMENTS ===
+            // === VALIDATE COMPLETENESS: Đảm bảo sheet Source có đủ TẤT CẢ source trong
+            // SOURCE_DOCUMENTS ===
             if (!regulationMap.isEmpty()) {
                 List<String> missingSourcesInSheet = new ArrayList<>();
                 for (String regCode : regulationMap.keySet()) {
@@ -1006,8 +1091,9 @@ public class FullImportService {
                     ctx.details.add(ImportSourceResult.builder()
                             .sourceCode(null)
                             .status("FAILED")
-                            .message("The Source Sheet lacks the mandatory documents as required by regulations SOURCE_DOCUMENTS: "
-                                    + String.join(", ", missingSourcesInSheet))
+                            .message(
+                                    "The Source Sheet lacks the mandatory documents as required by regulations SOURCE_DOCUMENTS: "
+                                            + String.join(", ", missingSourcesInSheet))
                             .build());
                     hasErrors = true;
                 }
@@ -1026,13 +1112,17 @@ public class FullImportService {
 
     private Map<String, SubjectRegulationDTO> initZeroLayerValidation(String majorCode) {
         Map<String, SubjectRegulationDTO> map = new HashMap<>();
-        if (majorCode == null || majorCode.isEmpty()) return map;
+        if (majorCode == null || majorCode.isEmpty())
+            return map;
 
         Major major = majorRepository.findByMajorCode(majorCode).orElse(null);
-        if (major == null) return map;
+        if (major == null)
+            return map;
 
-        Regulation regulation = regulationRepository.findByCodeAndMajor_MajorId("COURSE_MAPPING", major.getMajorId()).orElse(null);
-        if (regulation == null || regulation.getValue() == null) return map;
+        Regulation regulation = regulationRepository.findByCodeAndMajor_MajorId("COURSE_MAPPING", major.getMajorId())
+                .orElse(null);
+        if (regulation == null || regulation.getValue() == null)
+            return map;
 
         String value = regulation.getValue();
         Pattern pattern = Pattern.compile("(.*?)\\s*\\(([^)]+)\\)");
@@ -1055,8 +1145,9 @@ public class FullImportService {
                 if (code.equalsIgnoreCase("N/A")) {
                     code = generateNASubjectCode(namePart);
                 }
-                
-                SubjectRegulationDTO dto = new SubjectRegulationDTO(code, namePart, semester, credit, theory, practical, selfStudy);
+
+                SubjectRegulationDTO dto = new SubjectRegulationDTO(code, namePart, semester, credit, theory, practical,
+                        selfStudy);
                 map.put(code.toUpperCase(), dto);
             }
         }
@@ -1064,66 +1155,75 @@ public class FullImportService {
     }
 
     private String generateNASubjectCode(String subjectName) {
-        if (subjectName == null || subjectName.trim().isEmpty()) return "N/A_UNKNOWN";
+        if (subjectName == null || subjectName.trim().isEmpty())
+            return "N/A_UNKNOWN";
         String normalized = Normalizer.normalize(subjectName.trim(), Normalizer.Form.NFD);
         String noDiacritics = normalized.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
         String noSpaces = noDiacritics.replaceAll("[^a-zA-Z0-9]", "");
         return "N/A_" + noSpaces;
     }
 
-//    private Map<String, SourceRegulationDTO> initSourceZeroLayerValidation(String majorCode) {
-//        Map<String, SourceRegulationDTO> map = new HashMap<>();
-//        if (majorCode == null || majorCode.isEmpty()) return map;
-//
-//        Major major = majorRepository.findByMajorCode(majorCode).orElse(null);
-//        if (major == null) return map;
-//
-//        Regulation regulation = regulationRepository.findByCodeAndMajor_MajorId("SOURCE_DOCUMENTS", major.getMajorId()).orElse(null);
-//        if (regulation == null || regulation.getValue() == null) return map;
-//
-//        String value = regulation.getValue();
-//        // Format: SourceCode/SubjectCode/SourceName/Author/Publisher/PublisherYear
-//        // separated by comma. Notice that some names might have commas!
-//        // But the example format is: "000100/001535-001264/Giáo trình.../Bộ GD ĐT/NXB.../2016, 000101/..."
-//        // If there's a comma in the title, it could break. We split by ", " followed by a number.
-//        // Actually, let's split by ", " and check if the part starts with numbers.
-//        String[] parts = value.split(",\\s*(?=\\d{5,6}/)"); //
-//        // Split by comma followed by 5 or 6 digits and a slash
-//        if (parts.length == 1 && !value.contains(", ")) {
-//            // maybe no comma at all
-//            parts = new String[]{value};
-//        }
-//
-//        for (String part : parts) {
-//            String[] fields = part.split("/");
-//            if (fields.length >= 6) {
-//                String sourceCode = fields[0].trim();
-//                String subjectCode = fields[1].trim();
-//                String sourceName = fields[2].trim();
-//                String author = fields[3].trim();
-//                String publisher = fields[4].trim();
-//                String yearStr = fields[5].trim();
-//
-//                Integer year = parseIntegerSafe(yearStr);
-//
-//                SourceRegulationDTO dto = new SourceRegulationDTO(
-//                        sourceCode, subjectCode, sourceName, author, publisher, year);
-//                map.put(sourceCode.toUpperCase(), dto);
-//            }
-//        }
-//        return map;
-//    }
-
+    // private Map<String, SourceRegulationDTO> initSourceZeroLayerValidation(String
+    // majorCode) {
+    // Map<String, SourceRegulationDTO> map = new HashMap<>();
+    // if (majorCode == null || majorCode.isEmpty()) return map;
+    //
+    // Major major = majorRepository.findByMajorCode(majorCode).orElse(null);
+    // if (major == null) return map;
+    //
+    // Regulation regulation =
+    // regulationRepository.findByCodeAndMajor_MajorId("SOURCE_DOCUMENTS",
+    // major.getMajorId()).orElse(null);
+    // if (regulation == null || regulation.getValue() == null) return map;
+    //
+    // String value = regulation.getValue();
+    // // Format: SourceCode/SubjectCode/SourceName/Author/Publisher/PublisherYear
+    // // separated by comma. Notice that some names might have commas!
+    // // But the example format is: "000100/001535-001264/Giáo trình.../Bộ GD
+    // ĐT/NXB.../2016, 000101/..."
+    // // If there's a comma in the title, it could break. We split by ", " followed
+    // by a number.
+    // // Actually, let's split by ", " and check if the part starts with numbers.
+    // String[] parts = value.split(",\\s*(?=\\d{5,6}/)"); //
+    // // Split by comma followed by 5 or 6 digits and a slash
+    // if (parts.length == 1 && !value.contains(", ")) {
+    // // maybe no comma at all
+    // parts = new String[]{value};
+    // }
+    //
+    // for (String part : parts) {
+    // String[] fields = part.split("/");
+    // if (fields.length >= 6) {
+    // String sourceCode = fields[0].trim();
+    // String subjectCode = fields[1].trim();
+    // String sourceName = fields[2].trim();
+    // String author = fields[3].trim();
+    // String publisher = fields[4].trim();
+    // String yearStr = fields[5].trim();
+    //
+    // Integer year = parseIntegerSafe(yearStr);
+    //
+    // SourceRegulationDTO dto = new SourceRegulationDTO(
+    // sourceCode, subjectCode, sourceName, author, publisher, year);
+    // map.put(sourceCode.toUpperCase(), dto);
+    // }
+    // }
+    // return map;
+    // }
 
     private Map<String, SourceRegulationDTO> initSourceZeroLayerValidation(String majorCode) {
         Map<String, SourceRegulationDTO> map = new HashMap<>();
-        if (majorCode == null || majorCode.isEmpty()) return map;
+        if (majorCode == null || majorCode.isEmpty())
+            return map;
 
         Major major = majorRepository.findByMajorCode(majorCode).orElse(null);
-        if (major == null) return map;
+        if (major == null)
+            return map;
 
-        Regulation regulation = regulationRepository.findByCodeAndMajor_MajorId("SOURCE_DOCUMENTS", major.getMajorId()).orElse(null);
-        if (regulation == null || regulation.getValue() == null) return map;
+        Regulation regulation = regulationRepository.findByCodeAndMajor_MajorId("SOURCE_DOCUMENTS", major.getMajorId())
+                .orElse(null);
+        if (regulation == null || regulation.getValue() == null)
+            return map;
 
         String value = regulation.getValue();
 
@@ -1178,58 +1278,77 @@ public class FullImportService {
     }
 
     private String getCellValue(Row row, int cellIndex, DataFormatter formatter) {
-        if (row == null || cellIndex == -1) return "";
+        if (row == null || cellIndex == -1)
+            return "";
         Cell cell = row.getCell(cellIndex);
-        if (cell == null) return "";
+        if (cell == null)
+            return "";
+
+        if (cell.getCellType() == CellType.FORMULA) {
+            FormulaEvaluator evaluator = row.getSheet().getWorkbook().getCreationHelper().createFormulaEvaluator();
+            return formatter.formatCellValue(cell, evaluator).trim();
+        }
         return formatter.formatCellValue(cell).trim();
     }
 
     private String trim(String value) {
-        if (value == null) return null;
+        if (value == null)
+            return null;
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
     }
 
     private Integer parseIntegerSafe(String raw) {
         String value = trim(raw);
-        if (value == null) return null;
-        try { return Integer.parseInt(value); } catch (Exception e) { return null; }
+        if (value == null)
+            return null;
+        try {
+            return Integer.parseInt(value);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private ImportMajorResponse buildMajorResponse(MajorImportContext ctx) {
         int total = ctx.details.size();
         int success = (int) ctx.details.stream().filter(d -> "SUCCESS".equals(d.getStatus())).count();
-        return ImportMajorResponse.builder().total(total).success(success).failed(total - success).details(ctx.details).build();
+        return ImportMajorResponse.builder().total(total).success(success).failed(total - success).details(ctx.details)
+                .build();
     }
 
     private ImportCurriculumResponse buildCurriculumResponse(CurriculumImportContext ctx) {
         int total = ctx.details.size();
         int success = (int) ctx.details.stream().filter(d -> "SUCCESS".equals(d.getStatus())).count();
-        return ImportCurriculumResponse.builder().total(total).success(success).failed(total - success).details(ctx.details).build();
+        return ImportCurriculumResponse.builder().total(total).success(success).failed(total - success)
+                .details(ctx.details).build();
     }
 
     private ImportSubjectResponse buildSubjectResponse(SubjectImportContext ctx) {
         int total = ctx.details.size();
         int success = (int) ctx.details.stream().filter(d -> "SUCCESS".equals(d.getStatus())).count();
-        return ImportSubjectResponse.builder().total(total).success(success).failed(total - success).details(ctx.details).build();
+        return ImportSubjectResponse.builder().total(total).success(success).failed(total - success)
+                .details(ctx.details).build();
     }
 
     private ImportGroupResponse buildGroupResponse(GroupImportContext ctx) {
         int total = ctx.details.size();
         int success = (int) ctx.details.stream().filter(d -> "SUCCESS".equals(d.getStatus())).count();
-        return ImportGroupResponse.builder().total(total).success(success).failed(total - success).details(ctx.details).build();
+        return ImportGroupResponse.builder().total(total).success(success).failed(total - success).details(ctx.details)
+                .build();
     }
 
     private ImportCurriculumGroupSubjectResponse buildSemesterResponse(SemesterImportContext ctx) {
         int total = ctx.details.size();
         int success = (int) ctx.details.stream().filter(d -> "SUCCESS".equals(d.getStatus())).count();
-        return ImportCurriculumGroupSubjectResponse.builder().total(total).success(success).failed(total - success).details(ctx.details).build();
+        return ImportCurriculumGroupSubjectResponse.builder().total(total).success(success).failed(total - success)
+                .details(ctx.details).build();
     }
 
     private ImportSourceResponse buildSourceResponse(SourceImportContext ctx) {
         int total = ctx.details.size();
         int success = (int) ctx.details.stream().filter(d -> "SUCCESS".equals(d.getStatus())).count();
-        return ImportSourceResponse.builder().total(total).success(success).failed(total - success).details(ctx.details).build();
+        return ImportSourceResponse.builder().total(total).success(success).failed(total - success).details(ctx.details)
+                .build();
     }
 
     // ==========================================
@@ -1244,7 +1363,8 @@ public class FullImportService {
         String publisher;
         Integer publicationYear;
 
-        public SourceRegulationDTO(String sourceCode, List<String> subjectCode, String sourceName, String author, String publisher, Integer publicationYear) {
+        public SourceRegulationDTO(String sourceCode, List<String> subjectCode, String sourceName, String author,
+                String publisher, Integer publicationYear) {
             this.sourceCode = sourceCode;
             this.subjectCode = subjectCode;
             this.sourceName = sourceName;
@@ -1269,7 +1389,8 @@ public class FullImportService {
         Integer practicalPeriod;
         Integer selfStudyPeriod;
 
-        public SubjectRegulationDTO(String subjectCode, String subjectName, Integer semester, Integer credit, Integer theoryPeriod, Integer practicalPeriod, Integer selfStudyPeriod) {
+        public SubjectRegulationDTO(String subjectCode, String subjectName, Integer semester, Integer credit,
+                Integer theoryPeriod, Integer practicalPeriod, Integer selfStudyPeriod) {
             this.subjectCode = subjectCode;
             this.subjectName = subjectName;
             this.semester = semester;

@@ -61,6 +61,11 @@ public class ExcelImporter {
         Cell cell = row.getCell(cellIndex);
         if (cell == null)
             return "";
+
+        if (cell.getCellType() == CellType.FORMULA) {
+            FormulaEvaluator evaluator = row.getSheet().getWorkbook().getCreationHelper().createFormulaEvaluator();
+            return formatter.formatCellValue(cell, evaluator).trim();
+        }
         return formatter.formatCellValue(cell).trim();
     }
 }
