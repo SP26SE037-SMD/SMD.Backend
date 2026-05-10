@@ -32,9 +32,6 @@ public class Sprint {
     @Column(length = 20)
     String status; // Planning, Active, Completed
 
-    @OneToMany(mappedBy = "sprint", fetch = FetchType.LAZY)
-    List<Task> tasks;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "account_id", nullable = false)
     Account account;

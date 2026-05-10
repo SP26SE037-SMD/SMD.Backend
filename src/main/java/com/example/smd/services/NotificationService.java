@@ -11,8 +11,6 @@ import com.example.smd.realtime.RealtimePayload;
 import com.example.smd.realtime.RealtimePublisher;
 import com.example.smd.repositories.AccountRepository;
 import com.example.smd.repositories.NotificationRepository;
-import com.example.smd.repositories.ReviewTaskRepository;
-import com.example.smd.repositories.TaskRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -36,8 +34,6 @@ public class NotificationService {
     NotificationRepository notificationRepository;
     AccountRepository accountRepository;
     NotificationMapper notificationMapper;
-    TaskRepository taskRepository;
-    ReviewTaskRepository reviewTaskRepository;
     RealtimePublisher realtimePublisher;
 
     /**
@@ -50,21 +46,12 @@ public class NotificationService {
         Account account = accountRepository.findById(request.getAccountId())
                 .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND));
 
-        if (request.getTaskId() != null && !taskRepository.existsById(request.getTaskId())) {
-            throw new AppException(ErrorCode.TASK_NOT_FOUND);
-        }
-
-        if (request.getReviewId() != null && !reviewTaskRepository.existsById(request.getReviewId())) {
-            throw new AppException(ErrorCode.REVIEW_TASK_NOT_FOUND);
-        }
-
         // Tạo notification
         Notification notification = notificationMapper.toNotification(request);
         notification.setAccount(account);
 
         // Lưu notification
         Notification savedNotification = notificationRepository.save(notification);
-        log.info("Created notification {} for user {}", savedNotification.getNotificationId(), account.getEmail());
 
         // Publish realtime notification qua WebSocket
         try {

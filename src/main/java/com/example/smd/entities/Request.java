@@ -46,10 +46,6 @@ public class Request {
     Curriculum curriculum;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "task_id")
-    Task task;
-
-    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "major_id")
     Major major;
 

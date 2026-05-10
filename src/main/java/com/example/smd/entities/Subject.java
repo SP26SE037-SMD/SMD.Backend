@@ -93,9 +93,6 @@ public class Subject {
     List<Syllabus> syllabuses;
 
     @OneToMany(mappedBy = "subject", fetch = FetchType.LAZY)
-    List<Task> tasks;
-
-    @OneToMany(mappedBy = "subject", fetch = FetchType.LAZY)
     List<Subject_Prerequisite> prerequisites;
 
     @OneToMany(mappedBy = "subject", fetch = FetchType.LAZY)

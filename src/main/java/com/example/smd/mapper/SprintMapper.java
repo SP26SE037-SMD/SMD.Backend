@@ -11,7 +11,6 @@ import org.mapstruct.MappingTarget;
 @Mapper(componentModel = "spring")
 public interface SprintMapper {
     @Mapping(target = "sprintId", ignore = true)
-    @Mapping(target = "tasks", ignore = true)
     @Mapping(target = "account", ignore = true)
     @Mapping(target = "curriculum", ignore = true)
     Sprint toSprint(SprintCreateRequest request);
@@ -22,7 +21,6 @@ public interface SprintMapper {
     SprintResponse toSprintResponse(Sprint sprint);
 
     @Mapping(target = "sprintId", ignore = true)
-    @Mapping(target = "tasks", ignore = true)
     @Mapping(target = "account", ignore = true)
     @Mapping(target = "curriculum", ignore = true)
     void updateSprint(@MappingTarget Sprint sprint, SprintUpdateRequest request);

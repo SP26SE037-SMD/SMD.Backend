@@ -3,6 +3,7 @@ package com.example.smd.controller;
 import com.example.smd.dto.request.taskV2.TaskV2CreateRequest;
 import com.example.smd.dto.request.taskV2.TaskV2CreateVPRequest;
 import com.example.smd.dto.request.taskV2.TaskV2UpdateRequest;
+import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.dto.response.TaskV2Response;
 import com.example.smd.services.TaskV2Service;
@@ -36,7 +37,7 @@ public class TaskV2Controller {
     private final TaskV2Service taskV2Service;
 
     @GetMapping
-    public ResponseEntity<com.example.smd.dto.response.PagedResponse<TaskV2Response>> getAllTasks(
+    public ResponseEntity<PagedResponse<TaskV2Response>> getAllTasks(
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) UUID sprintId,
@@ -74,8 +75,8 @@ public class TaskV2Controller {
     }
 
     @PatchMapping("/{taskId}/status")
-    public ResponseEntity<TaskV2Response> updateTaskStatus(@PathVariable UUID taskId, @RequestParam String request) {
-        return ResponseEntity.ok(taskV2Service.updateTaskStatus(taskId, request));
+    public ResponseEntity<TaskV2Response> updateTaskStatus(@PathVariable UUID taskId, @RequestParam String status) {
+        return ResponseEntity.ok(taskV2Service.updateTaskStatus(taskId, status));
     }
 
     @DeleteMapping("/{taskId}")

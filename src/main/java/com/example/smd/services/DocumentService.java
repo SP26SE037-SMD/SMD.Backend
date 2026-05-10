@@ -1,14 +1,15 @@
 package com.example.smd.services;
 
 import com.example.smd.dto.request.DocumentRequest;
+import com.example.smd.dto.request.NotificationRequest;
 import com.example.smd.dto.response.DocumentResponse;
-import com.example.smd.entities.Department;
-import com.example.smd.entities.Document;
-import com.example.smd.entities.Major;
-import com.example.smd.entities.Subject;
+import com.example.smd.entities.*;
+import com.example.smd.enums.NotificationType;
+import com.example.smd.enums.RoleName;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.DocumentMapper;
+import com.example.smd.repositories.AccountRepository;
 import com.example.smd.repositories.DocumentRepository;
 import com.example.smd.repositories.MajorRepository;
 import jakarta.transaction.Transactional;
@@ -28,6 +29,11 @@ public class DocumentService {
     MajorRepository majorRepository;
     DocumentRepository repository;
     DocumentMapper mapper;
+    NotificationService notificationService;
+    AccountRepository accountRepository;
+
+
+
 
     @Transactional
     public List<DocumentResponse> getAll(UUID majorId, String status) {
@@ -77,6 +83,20 @@ public class DocumentService {
         }
         document.setStatus("MAJOR_LINKED");
         var response = repository.save(document);
+
+        Account vpAccount = accountRepository
+                .findFirstByRole_RoleName(RoleName.VP.name())
+                .stream()
+                .findFirst()
+                .orElse(null);
+
+        NotificationRequest notifReq = NotificationRequest.builder()
+                .title("Document Extraction ")
+                .message("Document" + request.getDocumentUrl()+ " has been extracted")
+                .type(NotificationType.SYSTEM)
+                .accountId(vpAccount.getAccountId())
+                .build();
+        notificationService.createNotification(notifReq);
         return mapper.toDocumentResponse(response);
     }
 

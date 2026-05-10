@@ -970,9 +970,9 @@ public class FullImportService {
             Map<String, SourceRegulationDTO> regulationMap) {
         boolean hasErrors = false;
         try {
-            List<com.example.smd.dto.excel.SourceImportDTO> rows = ExcelImporter.importFromSheet(sheet,
-                    com.example.smd.dto.excel.SourceImportDTO.class);
-            for (com.example.smd.dto.excel.SourceImportDTO row : rows) {
+            List<SourceImportDTO> rows = ExcelImporter.importFromSheet(sheet,
+                    SourceImportDTO.class);
+            for (SourceImportDTO row : rows) {
                 String sourceCode = trim(row.getSourceCode());
                 String sourceName = trim(row.getSourceName());
                 String subjectCodeRaw = trim(row.getSubjectCode());
@@ -1228,8 +1228,8 @@ public class FullImportService {
         String value = regulation.getValue();
 
         // Sử dụng Regex để tìm chuỗi theo mẫu: Tên sách(Mã|Môn|Tác giả|NXB|Năm)
-        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("(.*?)\\s*\\(([^)]+)\\)");
-        java.util.regex.Matcher matcher = pattern.matcher(value);
+        Pattern pattern = Pattern.compile("(.*?)\\s*\\(([^)]+)\\)");
+        Matcher matcher = pattern.matcher(value);
 
         while (matcher.find()) {
             String sourceName = matcher.group(1).trim();

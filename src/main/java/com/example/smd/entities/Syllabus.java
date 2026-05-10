@@ -28,12 +28,6 @@ public class Syllabus {
     @Column(name = "syllabus_name", nullable = false, length = 100)
     String syllabusName;
 
-//    @Column(name = "min_bloom_level")
-//    Integer minBloomLevel;
-
-    @Column(name = "min_avg_grade")
-    Double minAvgGrade; // Decimal(4,2)
-
     @Column(length = 20)
     String status; // 'Draft', 'Review', 'Approved', 'Active', 'Archived'
 
@@ -51,9 +45,6 @@ public class Syllabus {
 
     @OneToMany(mappedBy = "syllabus", fetch = FetchType.LAZY)
     List<Syllabus_Source> syllabusSources;
-
-    @OneToMany(mappedBy = "syllabus", fetch = FetchType.LAZY)
-    List<Task> tasks;
 
     // Trong class Syllabus
     @OneToMany(mappedBy = "syllabus", fetch = FetchType.LAZY, cascade = CascadeType.ALL)

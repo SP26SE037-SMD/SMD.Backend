@@ -293,7 +293,8 @@ public class CurriculumController {
                         "- `Curriculum`: Curriculum data, PLOs, and PO mapping.\n" +
                         "- `Subject`: Subjects list.\n" +
                         "- `Group`: Elective groups.\n" +
-                        "- `Semester Mapping`: Mapping between Curriculum, Group, Subject, and Semester."
+                        "- `Semester Mapping`: Mapping between Curriculum, Group, Subject, and Semester.\n"+
+                        "- `Source`"
         )
         public ResponseObject<ImportFullCurriculumResponse> importFullCurriculum(
                 @RequestParam("file") MultipartFile file
