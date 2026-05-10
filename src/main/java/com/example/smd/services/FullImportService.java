@@ -250,7 +250,7 @@ public class FullImportService {
 
             // Insert Sources & ProposedSources
             if (!srcContext.rowsToSave.isEmpty()) {
-                for (com.example.smd.dto.excel.SourceImportDTO row : srcContext.rowsToSave) {
+                for (SourceImportDTO row : srcContext.rowsToSave) {
                     String srcCode = trim(row.getSourceCode());
 
                     Source source;
@@ -1082,9 +1082,9 @@ public class FullImportService {
                 for (String regCode : regulationMap.keySet()) {
                     if (!ctx.fileSourceCodes.contains(regCode.toUpperCase())) {
                         // Cũng check DB — nếu source đã tồn tại thì được tính là "đã có"
-                        if (!sourceRepository.existsBySourceCode(regulationMap.get(regCode).sourceCode)) {
-                            missingSourcesInSheet.add(regulationMap.get(regCode).sourceCode);
-                        }
+//                        if (!sourceRepository.existsBySourceCode(regulationMap.get(regCode).sourceCode)) {
+//                        }
+                        missingSourcesInSheet.add(regulationMap.get(regCode).sourceCode);
                     }
                 }
                 if (!missingSourcesInSheet.isEmpty()) {
