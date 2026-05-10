@@ -27,7 +27,4 @@ public class NotificationRequest {
     @NotNull(message = "ACCOUNT_ID_REQUIRED")
     UUID accountId;
 
-    UUID taskId;
-
-    UUID reviewId;
 }

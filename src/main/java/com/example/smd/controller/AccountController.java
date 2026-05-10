@@ -236,19 +236,19 @@ public class AccountController {
                 .build();
     }
 
-    @GetMapping("/department/available-account-ids")
-    @Operation(
-            summary = "Get available accounts in department that " +
-                    "don't have tasks for a specific syllabus")
-    public ResponseObject<List<AvailableAccountResponse>> getAvailableAccountIdsInMyDepartmentBySyllabus(
-            @RequestParam UUID syllabusId,
-            @AuthenticationPrincipal Jwt jwt) {
-        String currentAccountId = jwt.getClaimAsString("accountId");
-
-        return ResponseObject.<List<AvailableAccountResponse>>builder()
-                .status(1000)
-                .data(accountService.getAvailableAccountIdsInMyDepartmentBySyllabus(syllabusId, currentAccountId))
-                .message("Available accounts retrieved successfully")
-                .build();
-    }
+//    @GetMapping("/department/available-account-ids")
+//    @Operation(
+//            summary = "Get available accounts in department that " +
+//                    "don't have tasks for a specific syllabus")
+//    public ResponseObject<List<AvailableAccountResponse>> getAvailableAccountIdsInMyDepartmentBySyllabus(
+//            @RequestParam UUID syllabusId,
+//            @AuthenticationPrincipal Jwt jwt) {
+//        String currentAccountId = jwt.getClaimAsString("accountId");
+//
+//        return ResponseObject.<List<AvailableAccountResponse>>builder()
+//                .status(1000)
+//                .data(accountService.getAvailableAccountIdsInMyDepartmentBySyllabus(syllabusId, currentAccountId))
+//                .message("Available accounts retrieved successfully")
+//                .build();
+//    }
 }

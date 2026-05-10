@@ -1,27 +1,18 @@
 package com.example.smd.services;
 
 import com.example.smd.dto.excel.CurriculumImportDTO;
+import com.example.smd.dto.request.NotificationRequest;
 import com.example.smd.dto.request.curriculum.CurriculumCreateRequest;
 import com.example.smd.dto.response.CurriculumResponse;
 import com.example.smd.dto.response.CurriculumShortResponse;
 import com.example.smd.dto.response.curriculum.ImportCurriculumResponse;
 import com.example.smd.dto.response.curriculum.ImportCurriculumResult;
-import com.example.smd.entities.Curriculum;
-import com.example.smd.entities.Major;
-import com.example.smd.entities.PLOs;
-import com.example.smd.entities.PO;
-import com.example.smd.entities.PO_PLO_Mapping;
-import com.example.smd.entities.Subject;
-import com.example.smd.entities.Curriculum_Group_Subject;
+import com.example.smd.entities.*;
 import com.example.smd.enums.*;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.CurriculumMapper;
-import com.example.smd.repositories.CurriculumRepository;
-import com.example.smd.repositories.MajorRepository;
-import com.example.smd.repositories.PLOsRepository;
-import com.example.smd.repositories.POsRepository;
-import com.example.smd.repositories.PoPloMappingRepository;
+import com.example.smd.repositories.*;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import lombok.AccessLevel;
@@ -44,19 +35,17 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import com.example.smd.repositories.SubjectRepository;
-import com.example.smd.repositories.CurriculumGroupSubjectRepository;
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class CurriculumService {
-
+    AccountRepository accountRepository;
     CurriculumRepository curriculumRepository;
     MajorRepository majorRepository;
     CurriculumMapper curriculumMapper;
     AccountService accountService;
+    NotificationService notificationService;
     PLOsRepository plOsRepository;
     POsRepository poRepository;
     PoPloMappingRepository poPloMappingRepository;
@@ -427,6 +416,20 @@ public class CurriculumService {
         if (!subjectsToUpdate.isEmpty()) {
             subjectRepository.saveAll(subjectsToUpdate);
         }
+        Account vpAccount = accountRepository
+                .findFirstByRole_RoleName(RoleName.VP.name())
+                .stream()
+                .findFirst()
+                .orElse(null);
+
+        NotificationRequest notifReq = NotificationRequest.builder()
+                .title("Major Created")
+                .message( "Curriculum: "+ curriculum.getCurriculumCode()
+                        + " of Major " + major.getMajorCode()+" been created")
+                .type(NotificationType.SYSTEM)
+                .accountId(vpAccount.getAccountId())
+                .build();
+        notificationService.createNotification(notifReq);
     }
 
     @Transactional

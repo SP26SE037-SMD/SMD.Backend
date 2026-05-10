@@ -1,8 +1,6 @@
 package com.example.smd.services;
 
-import com.example.smd.dto.request.taskV2.TaskV2CreateRequest;
-import com.example.smd.dto.request.taskV2.TaskV2CreateVPRequest;
-import com.example.smd.dto.request.taskV2.TaskV2UpdateRequest;
+import com.example.smd.dto.request.taskV2.*;
 import com.example.smd.dto.response.TaskV2Response;
 import com.example.smd.entities.*;
 import com.example.smd.enums.*;
@@ -10,7 +8,11 @@ import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.TaskV2Mapper;
 import com.example.smd.repositories.*;
+import com.example.smd.dto.request.NotificationRequest;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -23,19 +25,22 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class TaskV2Service {
 
-    private final TaskV2Repository taskV2Repository;
-    private final SubjectRepository subjectRepository;
-    private final SyllabusRepository syllabusRepository;
-    private final CurriculumRepository curriculumRepository;
-    private final DocumentRepository documentRepository;
-    private final SprintRepository sprintRepository;
-    private final AccountRepository accountRepository;
-    private final TaskV2Mapper taskV2Mapper;
-    private final AccountService accountService;
-    private final CurriculumGroupSubjectRepository curriculumGroupSubjectRepository;
+    TaskV2Repository taskV2Repository;
+    SubjectRepository subjectRepository;
+    SyllabusRepository syllabusRepository;
+    CurriculumRepository curriculumRepository;
+    DocumentRepository documentRepository;
+    SprintRepository sprintRepository;
+    AccountRepository accountRepository;
+    TaskV2Mapper taskV2Mapper;
+    AccountService accountService;
+    CurriculumGroupSubjectRepository curriculumGroupSubjectRepository;
+    NotificationService notificationService;
 
 
     // ===================== GET ALL =====================
@@ -155,7 +160,19 @@ public class TaskV2Service {
                     .orElseThrow(() -> new RuntimeException("Account (assignTo) not found")));
         }
 
-        return getTaskById(taskV2Repository.save(task).getTaskId());
+        TaskV2 savedTask = taskV2Repository.save(task);
+
+        if (savedTask.getAccount() != null) {
+            NotificationRequest notifReq = NotificationRequest.builder()
+                    .title("New Task Assigned")
+                    .message("You have been assigned a new task: " + savedTask.getTaskName())
+                    .type(NotificationType.TASK)
+                    .accountId(savedTask.getAccount().getAccountId())
+                    .build();
+            notificationService.createNotification(notifReq);
+        }
+
+        return getTaskById(savedTask.getTaskId());
     }
 
     // ===================== UPDATE =====================
@@ -164,6 +181,7 @@ public class TaskV2Service {
     public TaskV2Response updateTask(UUID taskId, TaskV2UpdateRequest request) {
         TaskV2 task = taskV2Repository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Task not found"));
+        String oldStatus = task.getStatus();
 
         taskV2Mapper.updateEntity(task, request);
 
@@ -176,7 +194,19 @@ public class TaskV2Service {
 
         applyCompletedAt(task);
 
-        return getTaskById(taskV2Repository.save(task).getTaskId());
+        TaskV2 savedTask = taskV2Repository.save(task);
+
+        if (!"DONE".equalsIgnoreCase(oldStatus) && "DONE".equalsIgnoreCase(savedTask.getStatus()) && savedTask.getCreatedBy() != null) {
+            NotificationRequest notifReq = NotificationRequest.builder()
+                    .title("Task Completed")
+                    .message("The task '" + savedTask.getTaskName() + "' has been marked as DONE.")
+                    .type(NotificationType.TASK)
+                    .accountId(savedTask.getCreatedBy().getAccountId())
+                    .build();
+            notificationService.createNotification(notifReq);
+        }
+
+        return getTaskById(savedTask.getTaskId());
     }
 
     // ===================== UPDATE STATUS =====================
@@ -184,8 +214,10 @@ public class TaskV2Service {
     @Transactional
     public TaskV2Response updateTaskStatus(UUID taskId,
                                            String request) {
+        log.info("Updating status of task {} to {}", taskId, request);
         TaskV2 task = taskV2Repository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Task not found"));
+        String oldStatus = task.getStatus();
 
         if (request != null) {
             task.setStatus(request);
@@ -193,7 +225,19 @@ public class TaskV2Service {
 
         applyCompletedAt(task);
 
-        return getTaskById(taskV2Repository.save(task).getTaskId());
+        TaskV2 savedTask = taskV2Repository.save(task);
+
+        if (!"DONE".equalsIgnoreCase(oldStatus) && "DONE".equalsIgnoreCase(savedTask.getStatus()) && savedTask.getCreatedBy() != null) {
+            NotificationRequest notifReq = NotificationRequest.builder()
+                    .title("Task Completed")
+                    .message("The task '" + savedTask.getTaskName() + "' has been marked as DONE.")
+                    .type(NotificationType.TASK)
+                    .accountId(savedTask.getCreatedBy().getAccountId())
+                    .build();
+            notificationService.createNotification(notifReq);
+        }
+
+        return getTaskById(savedTask.getTaskId());
     }
 
     // ===================== DELETE =====================
@@ -394,9 +438,18 @@ public class TaskV2Service {
                 sprint.getAccount().getRole() != null &&
                 RoleName.HOPDC.name().equals(sprint.getAccount().getRole().getRoleName())) {
             List<String> taskNames = savedTasks.stream().map(TaskV2::getTaskName).toList();
-//            log.info("Notification: Tasks " + taskNames + " created" +
-//                    " in sprint " + sprint.getSprintName() +
-//                    " for HoPDC account: " + sprint.getAccount().getEmail());
+        }
+
+        if (hopdcAccount != null && !savedTasks.isEmpty()) {
+            for (TaskV2 savedTask : savedTasks) {
+                NotificationRequest notifReq = NotificationRequest.builder()
+                        .title("New Task Assigned in Sprint")
+                        .message("You have been assigned a new task in sprint: " + savedTask.getTaskName())
+                        .type(NotificationType.TASK)
+                        .accountId(hopdcAccount.getAccountId())
+                        .build();
+                notificationService.createNotification(notifReq);
+            }
         }
 
         return true;
@@ -416,6 +469,17 @@ public class TaskV2Service {
                 .orElseThrow(() -> new RuntimeException("Account (createdBy) not found")));
         task.setStatus(TaskStatus.TO_DO.name());
         task = taskV2Repository.save(task);
+
+        if (task.getAccount() != null) {
+            NotificationRequest notifReq = NotificationRequest.builder()
+                    .title("New Task Assigned")
+                    .message("You have been assigned a new task: " + task.getTaskName())
+                    .type(NotificationType.TASK)
+                    .accountId(task.getAccount().getAccountId())
+                    .build();
+            notificationService.createNotification(notifReq);
+        }
+
         return taskV2Mapper.toResponse(task);
     }
 }

@@ -39,12 +39,6 @@ public class Notification {
     @JoinColumn(name = "recipient_id", nullable = false)
     Account account;
 
-    @Column(name = "task_id")
-    UUID taskId;
-
-    @Column(name = "review_id")
-    UUID reviewId;
-
     @Column(name = "created_at")
     Instant createdAt;
 
