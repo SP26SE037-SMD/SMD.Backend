@@ -50,6 +50,25 @@ public class AssessmentMapper {
                 .build();
     }
 
+    public Assessment cloneEntity(Assessment assessment) {
+        if (assessment == null) {
+            return null;
+        }
+
+        return Assessment.builder()
+                .assessmentCategory(assessment.getAssessmentCategory())
+                .assessmentType(assessment.getAssessmentType())
+                .part(assessment.getPart())
+                .weight(assessment.getWeight())
+                .completionCriteria(assessment.getCompletionCriteria())
+                .duration(assessment.getDuration())
+                .questionType(assessment.getQuestionType())
+                .knowledgeSkill(assessment.getKnowledgeSkill())
+                .gradingGuide(assessment.getGradingGuide())
+                .note(assessment.getNote())
+                .build();
+    }
+
     public void updateEntity(Assessment assessment, AssessmentRequest request) {
         if (request.getPart() != null) {
             assessment.setPart(request.getPart());

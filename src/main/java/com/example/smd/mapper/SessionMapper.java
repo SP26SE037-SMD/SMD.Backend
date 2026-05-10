@@ -41,6 +41,21 @@ public class SessionMapper {
                 .build();
     }
 
+    public Session cloneEntity(Session session) {
+        if (session == null) {
+            return null;
+        }
+
+        return Session.builder()
+                .sessionNumber(session.getSessionNumber())
+                .sessionTitle(session.getSessionTitle())
+                .teachingMethods(session.getTeachingMethods())
+                .sessionTopic(session.getSessionTopic())
+                .duration(session.getDuration())
+                .sessionType(session.getSessionType())
+                .build();
+    }
+
     public void updateEntity(Session session, SessionRequest request) {
         session.setSessionNumber(request.getSessionNumber());
         session.setSessionTitle(request.getSessionTitle());

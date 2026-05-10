@@ -30,4 +30,9 @@ public interface BlockMapper {
     @Mapping(target = "material", ignore = true)
     @Mapping(target = "idx", ignore = true)
     void updateBlockList(@MappingTarget Blocks block, UpdateBlockRequest request);
+
+    @Mapping(target = "blockId", ignore = true)
+    @Mapping(target = "material", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    Blocks cloneBlock(Blocks block);
 }

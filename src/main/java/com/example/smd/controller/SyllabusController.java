@@ -251,4 +251,17 @@ public class SyllabusController {
                                 .message("Syllabuses retrieved successfully")
                                 .build();
         }
+        @PostMapping("/copy")
+        @Operation(summary = "Copy data from one syllabus to another", description = "Copies Material, Blocks, Assessment, and Session from oldSyllabusId to newSyllabusId")
+        public ResponseObject<Void> copySyllabusData(
+                        @RequestParam("oldSyllabusId") UUID oldSyllabusId,
+                        @RequestParam("newSyllabusId") UUID newSyllabusId) {
+                
+                syllabusService.copySyllabusData(oldSyllabusId, newSyllabusId);
+
+                return ResponseObject.<Void>builder()
+                                .status(1000)
+                                .message("Syllabus data copied successfully")
+                                .build();
+        }
 }
