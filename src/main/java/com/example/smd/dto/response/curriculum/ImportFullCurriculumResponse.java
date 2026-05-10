@@ -3,6 +3,7 @@ package com.example.smd.dto.response.curriculum;
 import com.example.smd.dto.response.curriculumgroupsubject.ImportCurriculumGroupSubjectResponse;
 import com.example.smd.dto.response.group.ImportGroupResponse;
 import com.example.smd.dto.response.major.ImportMajorResponse;
+import com.example.smd.dto.response.source.ImportSourceResponse;
 import com.example.smd.dto.response.subject.ImportSubjectResponse;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -21,5 +22,5 @@ public class ImportFullCurriculumResponse {
     ImportSubjectResponse subjectResult;
     ImportGroupResponse groupResult;
     ImportCurriculumGroupSubjectResponse semesterMappingResult;
-    com.example.smd.dto.response.source.ImportSourceResponse sourceResult;
+    ImportSourceResponse sourceResult;
 }
