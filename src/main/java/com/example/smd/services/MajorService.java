@@ -50,15 +50,18 @@ public class MajorService {
     POsRepository poRepository;
 
     @Transactional
-    public Page<MajorResponse> getAllMajors(String accountId, String search, String searchBy, String status, int page, int size, String[] sort) {
+    public Page<MajorResponse> getAllMajors(String accountId, String search, String searchBy, String status, int page,
+            int size, String[] sort) {
         // 1. Khởi tạo Pageable
         Sort.Direction direction = sort.length > 1 && sort[1].equalsIgnoreCase("desc")
-                ? Sort.Direction.DESC : Sort.Direction.ASC;
+                ? Sort.Direction.DESC
+                : Sort.Direction.ASC;
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sort[0]));
 
         // 2. Chuẩn hóa Status: null, rỗng hoặc "all" đều được coi là "Không lọc" (null)
         String finalStatus = (status == null || status.isBlank() || "all".equalsIgnoreCase(status))
-                ? null : status.trim();
+                ? null
+                : status.trim();
 
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
@@ -89,15 +92,18 @@ public class MajorService {
         String type = (searchBy != null && !searchBy.isBlank()) ? searchBy.toLowerCase() : "all";
 
         if (!hasSearch) {
-            // TRƯỜNG HỢP 1: Nếu finalStatus là null (getAll cho Admin/VP) -> Chạy findAll(pageable)
+            // TRƯỜNG HỢP 1: Nếu finalStatus là null (getAll cho Admin/VP) -> Chạy
+            // findAll(pageable)
             majorPage = hasStatus ? majorRepository.findByStatus(finalStatus, pageable)
                     : majorRepository.findAll(pageable);
         } else {
             String searchLower = search.trim();
             if (hasStatus) {
                 majorPage = switch (type) {
-                    case "code" -> majorRepository.findByMajorCodeContainingIgnoreCaseAndStatus(searchLower, finalStatus, pageable);
-                    case "name" -> majorRepository.findByMajorNameContainingIgnoreCaseAndStatus(searchLower, finalStatus, pageable);
+                    case "code" -> majorRepository.findByMajorCodeContainingIgnoreCaseAndStatus(searchLower,
+                            finalStatus, pageable);
+                    case "name" -> majorRepository.findByMajorNameContainingIgnoreCaseAndStatus(searchLower,
+                            finalStatus, pageable);
                     default -> majorRepository.searchAllFieldsWithStatus(searchLower, finalStatus, pageable);
                 };
             } else {
@@ -105,7 +111,8 @@ public class MajorService {
                 majorPage = switch (type) {
                     case "code" -> majorRepository.findByMajorCodeContainingIgnoreCase(searchLower, pageable);
                     case "name" -> majorRepository.findByMajorNameContainingIgnoreCase(searchLower, pageable);
-                    default -> majorRepository.findByMajorNameContainingIgnoreCaseOrMajorCodeContainingIgnoreCase(searchLower, searchLower, pageable);
+                    default -> majorRepository.findByMajorNameContainingIgnoreCaseOrMajorCodeContainingIgnoreCase(
+                            searchLower, searchLower, pageable);
                 };
             }
         }
@@ -117,7 +124,7 @@ public class MajorService {
     @Transactional
     public MajorResponse createMajor(MajorRequest request, String accountId) {
 
-        //Kiểm tra Role tạo
+        // Kiểm tra Role tạo
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
         if (!RoleName.VP.toString().equals(roleName)) {
@@ -137,7 +144,7 @@ public class MajorService {
     // Update Major
     @Transactional
     public MajorResponse updateMajor(UUID id, MajorRequest request, String accountId) {
-        
+
         Major major = majorRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.MAJOR_NOT_FOUND));
 
@@ -173,9 +180,10 @@ public class MajorService {
         Major major = majorRepository.findByMajorCode(majorCode)
                 .orElseThrow(() -> new AppException(ErrorCode.MAJOR_NOT_FOUND));
 
-        //Phân quyền ROLE Student + Lecture chỉ xem được PUBLISHED
+        // Phân quyền ROLE Student + Lecture chỉ xem được PUBLISHED
         var account = accountService.getAccountById(accountId);
-        if (RoleName.STUDENT.toString().equals(account.getRole().getRoleName()) ||RoleName.LECTURER.toString().equals(account.getRole().getRoleName())) {
+        if (RoleName.STUDENT.toString().equals(account.getRole().getRoleName())
+                || RoleName.LECTURER.toString().equals(account.getRole().getRoleName())) {
             if (!PloStatus.PUBLISHED.toString().equals(major.getStatus())) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
@@ -194,9 +202,10 @@ public class MajorService {
         Major major = majorRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.MAJOR_NOT_FOUND));
 
-        //Phân quyền ROLE Student + Lecture chỉ xem được PUBLISHED
+        // Phân quyền ROLE Student + Lecture chỉ xem được PUBLISHED
         var account = accountService.getAccountById(accountId);
-        if (RoleName.STUDENT.toString().equals(account.getRole().getRoleName()) || RoleName.LECTURER.toString().equals(account.getRole().getRoleName())) {
+        if (RoleName.STUDENT.toString().equals(account.getRole().getRoleName())
+                || RoleName.LECTURER.toString().equals(account.getRole().getRoleName())) {
             if (!PloStatus.PUBLISHED.toString().equals(major.getStatus())) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
@@ -245,14 +254,16 @@ public class MajorService {
      * Mỗi dòng gồm: Major Code, Name, Description, PO Code, PO Description.
      * Một Major có thể có nhiều dòng (nhiều PO). Major Code dùng để nhóm các PO.
      * Validate:
-     *   - Major Code đã tồn tại trong DB → báo lỗi, skip toàn bộ dòng có Major Code đó.
-     *   - PO Code phải duy nhất (global) → validate trong file và trong DB.
+     * - Major Code đã tồn tại trong DB → báo lỗi, skip toàn bộ dòng có Major Code
+     * đó.
+     * - PO Code phải duy nhất (global) → validate trong file và trong DB.
      */
     @Transactional
     public ImportMajorResponse importMajors(MultipartFile file) {
         try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
             Sheet sheet = workbook.getSheet("Major");
-            if (sheet == null) sheet = workbook.getSheetAt(0);
+            if (sheet == null)
+                sheet = workbook.getSheetAt(0);
             return importMajorFromSheet(sheet);
         } catch (Exception e) {
             throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION, "Import major failed: " + e.getMessage());
@@ -267,26 +278,31 @@ public class MajorService {
         try {
             int majorCodeCol = -1, majorNameCol = -1, majorDescCol = -1;
             int poCodeCol = -1, poDescCol = -1;
-            
+
             String parsedMajorCode = null;
             String parsedMajorName = null;
             String parsedMajorDesc = null;
-            
+
             List<PO> poList = new ArrayList<>();
             Set<String> poCodesInFile = new HashSet<>();
 
-            int state = 0; // 0 = find major header, 1 = read major data, 2 = find po header, 3 = read po data
+            int state = 0; // 0 = find major header, 1 = read major data, 2 = find po header, 3 = read po
+                           // data
 
             for (int i = 0; i <= sheet.getLastRowNum(); i++) {
                 Row row = sheet.getRow(i);
-                if (row == null) continue;
+                if (row == null)
+                    continue;
 
                 if (state == 0) { // find major header
                     for (int c = 0; c < row.getLastCellNum(); c++) {
                         String cellVal = getCellValue(row, c, formatter);
-                        if (cellVal.equalsIgnoreCase("Major Code")) majorCodeCol = c;
-                        else if (cellVal.equalsIgnoreCase("Name") || cellVal.equalsIgnoreCase("Major Name")) majorNameCol = c;
-                        else if (cellVal.equalsIgnoreCase("Description")) majorDescCol = c;
+                        if (cellVal.equalsIgnoreCase("Major Code"))
+                            majorCodeCol = c;
+                        else if (cellVal.equalsIgnoreCase("Name") || cellVal.equalsIgnoreCase("Major Name"))
+                            majorNameCol = c;
+                        else if (cellVal.equalsIgnoreCase("Description"))
+                            majorDescCol = c;
                     }
                     if (majorCodeCol != -1 && majorNameCol != -1) {
                         state = 1;
@@ -302,8 +318,10 @@ public class MajorService {
                 } else if (state == 2) { // find po header
                     for (int c = 0; c < row.getLastCellNum(); c++) {
                         String cellVal = getCellValue(row, c, formatter);
-                        if (cellVal.equalsIgnoreCase("PO Code")) poCodeCol = c;
-                        else if (cellVal.equalsIgnoreCase("Description") || cellVal.equalsIgnoreCase("PO Description")) poDescCol = c;
+                        if (cellVal.equalsIgnoreCase("PO Code"))
+                            poCodeCol = c;
+                        else if (cellVal.equalsIgnoreCase("Description") || cellVal.equalsIgnoreCase("PO Description"))
+                            poDescCol = c;
                     }
                     if (poCodeCol != -1) {
                         state = 3;
@@ -312,7 +330,7 @@ public class MajorService {
                     String poCode = getCellValue(row, poCodeCol, formatter);
                     if (poCode != null && !poCode.isEmpty()) {
                         String poDesc = poDescCol != -1 ? getCellValue(row, poDescCol, formatter) : null;
-                        
+
                         if (!poCodesInFile.add(poCode.toUpperCase())) {
                             details.add(ImportMajorResult.builder()
                                     .majorCode(parsedMajorCode)
@@ -322,18 +340,20 @@ public class MajorService {
                                     .build());
                             continue;
                         }
-                        
-                        // PO Code no longer needs to be globally unique. It only needs to be unique within the new major.
+
+                        // PO Code no longer needs to be globally unique. It only needs to be unique
+                        // within the new major.
                         // Since we track poCodesInFile, we guarantee uniqueness within the file.
-                        // And since the Major is brand new (rejected if exists), there are no existing POs for this Major to collide with.
-                        
+                        // And since the Major is brand new (rejected if exists), there are no existing
+                        // POs for this Major to collide with.
+
                         PO po = PO.builder()
                                 .poCode(poCode)
                                 .description(poDesc)
                                 .status(PloStatus.DRAFT.toString())
                                 .build();
                         poList.add(po);
-                        
+
                         details.add(ImportMajorResult.builder()
                                 .majorCode(parsedMajorCode)
                                 .poCode(poCode)
@@ -387,7 +407,8 @@ public class MajorService {
             }
 
         } catch (Exception e) {
-            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION, "Import major from sheet failed: " + e.getMessage());
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION,
+                    "Import major from sheet failed: " + e.getMessage());
         }
 
         int total = details.size();
@@ -401,16 +422,24 @@ public class MajorService {
                 .details(details)
                 .build();
     }
-    
+
     private String getCellValue(Row row, int cellIndex, DataFormatter formatter) {
-        if (row == null) return "";
+        if (row == null)
+            return "";
         Cell cell = row.getCell(cellIndex);
-        if (cell == null) return "";
+        if (cell == null)
+            return "";
+
+        if (cell.getCellType() == CellType.FORMULA) {
+            FormulaEvaluator evaluator = row.getSheet().getWorkbook().getCreationHelper().createFormulaEvaluator();
+            return formatter.formatCellValue(cell, evaluator).trim();
+        }
         return formatter.formatCellValue(cell).trim();
     }
 
     private String trim(String value) {
-        if (value == null) return null;
+        if (value == null)
+            return null;
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
     }
