@@ -43,6 +43,18 @@ public class EmailService {
     public record AccountCreatedEmail(String email, String fullName) {}
 
     /**
+     * DTO gửi email nhắc nhở task quá hạn.
+     * Dùng record để truyền tham số rõ ràng, immutable.
+     */
+    public record TaskOverdueEmail(
+            String email,
+            String recipientName,
+            String taskName,
+            String dueDate,
+            long overdueDays
+    ) {}
+
+    /**
      * Gửi email chào mừng user mới
      */
     public void sendWelcomeEmail(String toEmail, String userName)
@@ -124,8 +136,63 @@ public class EmailService {
     }
 
     /**
+     * Gửi email nhắc nhở task quá hạn theo cơ chế song song (parallel batch).
+     * Tuyệt đối KHÔNG dùng for-loop tuần tự để gửi từng email một.
+     * Mỗi email được gửi trong một CompletableFuture riêng -> chạy đồng thời.
+     * allOf().join() đảm bảo tất cả hoàn thành trước khi Job tiếp tục.
+     *
+     * @param emailList danh sách task quá hạn cần gửi email (đã được lọc sẵn từ DB)
+     */
+    public void sendTaskOverdueEmailsBatch(List<TaskOverdueEmail> emailList) {
+        if (emailList == null || emailList.isEmpty()) {
+            log.info("[TaskReminderJob] No overdue emails to send.");
+            return;
+        }
+
+        log.info("[TaskReminderJob] Sending {} overdue task email(s) in parallel...", emailList.size());
+
+        // Tạo một CompletableFuture cho mỗi email, chạy song song
+        List<CompletableFuture<Void>> futures = emailList.stream()
+                .map(item -> CompletableFuture.runAsync(() -> {
+                    try {
+                        String recipientName = (item.recipientName() == null || item.recipientName().isBlank())
+                                ? item.email()
+                                : item.recipientName();
+
+                        // Render template HTML với thông tin task
+                        String htmlBody = emailTemplateService.buildTaskOverdueEmail(
+                                recipientName,
+                                item.taskName(),
+                                item.dueDate(),
+                                item.overdueDays()
+                        );
+
+                        MimeMessage mimeMessage = buildMimeMessage(
+                                item.email(),
+                                "[SMD] ⚠️ Task Quá Hạn: " + item.taskName(),
+                                htmlBody
+                        );
+
+                        sendMessage(mimeMessage);
+                        log.info("[TaskReminderJob] Overdue email sent to: {} for task: {}",
+                                item.email(), item.taskName());
+                    } catch (Exception ex) {
+                        // Log lỗi nhưng KHÔNG throw để không ảnh hưởng các email khác
+                        log.error("[TaskReminderJob] Failed to send overdue email to {} for task '{}': {}",
+                                item.email(), item.taskName(), ex.getMessage());
+                    }
+                }))
+                .toList();
+
+        // Chờ tất cả email gửi xong mới tiếp tục
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+        log.info("[TaskReminderJob] Finished sending overdue emails.");
+    }
+
+    /**
      * Tạo MimeMessage HTML
      */
+
     private MimeMessage buildMimeMessage(String to,
                                          String subject,
                                          String htmlBody)
