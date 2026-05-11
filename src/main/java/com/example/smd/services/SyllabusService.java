@@ -5,6 +5,10 @@ import com.example.smd.dto.response.syllabus.SyllabusResponse;
 import com.example.smd.entities.Department;
 import com.example.smd.entities.Subject;
 import com.example.smd.entities.Syllabus;
+import com.example.smd.entities.Assessment;
+import com.example.smd.entities.Session;
+import com.example.smd.entities.Material;
+import com.example.smd.entities.Blocks;
 import com.example.smd.enums.PloStatus;
 import com.example.smd.enums.RoleName;
 import com.example.smd.enums.SubjectStatus;
@@ -14,6 +18,14 @@ import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.SyllabusMapper;
 import com.example.smd.repositories.SubjectRepository;
 import com.example.smd.repositories.SyllabusRepository;
+import com.example.smd.repositories.AssessmentRepository;
+import com.example.smd.repositories.SessionRepository;
+import com.example.smd.repositories.MaterialRepository;
+import com.example.smd.repositories.BlockRepository;
+import com.example.smd.mapper.AssessmentMapper;
+import com.example.smd.mapper.SessionMapper;
+import com.example.smd.mapper.MaterialMapper;
+import com.example.smd.mapper.BlockMapper;
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +35,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.UUID;
 
 import static org.apache.logging.log4j.ThreadContext.isEmpty;
@@ -37,6 +50,14 @@ public class SyllabusService {
     SyllabusMapper syllabusMapper;
     AccountService accountService;
     DepartmentService departmentService;
+    AssessmentRepository assessmentRepository;
+    SessionRepository sessionRepository;
+    MaterialRepository materialRepository;
+    BlockRepository blockRepository;
+    AssessmentMapper assessmentMapper;
+    SessionMapper sessionMapper;
+    MaterialMapper materialMapper;
+    BlockMapper blockMapper;
 
     // 1. Tạo mới
     @Transactional
@@ -217,5 +238,46 @@ public class SyllabusService {
         return syllabuses.stream()
                 .map(syllabusMapper::toResponse)
                 .toList();
+    }
+
+    @Transactional
+    public void copySyllabusData(UUID oldSyllabusId, UUID newSyllabusId) {
+        Syllabus newSyllabus = syllabusRepository.findById(newSyllabusId)
+                .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
+
+        // 1. Copy Assessment
+        List<Assessment> oldAssessments = assessmentRepository.findBySyllabus_SyllabusId(oldSyllabusId);
+        List<Assessment> newAssessments = oldAssessments.stream().map(old -> {
+            Assessment newAssessment = assessmentMapper.cloneEntity(old);
+            newAssessment.setSyllabus(newSyllabus);
+            return newAssessment;
+        }).toList();
+        assessmentRepository.saveAll(newAssessments);
+
+        // 2. Copy Session
+        List<Session> oldSessions = sessionRepository.findBySyllabus_SyllabusId(oldSyllabusId);
+        List<Session> newSessions = oldSessions.stream().map(old -> {
+            Session newSession = sessionMapper.cloneEntity(old);
+            newSession.setSyllabus(newSyllabus);
+            return newSession;
+        }).toList();
+        sessionRepository.saveAll(newSessions);
+
+        // 3. Copy Material & Blocks
+        List<Material> oldMaterials = materialRepository.findBySyllabus_SyllabusId(oldSyllabusId);
+        for (Material oldMaterial : oldMaterials) {
+            Material newMaterial = materialMapper.cloneMaterial(oldMaterial);
+            newMaterial.setSyllabus(newSyllabus);
+            newMaterial = materialRepository.save(newMaterial);
+
+            List<Blocks> oldBlocks = blockRepository.findAllByMaterial_MaterialIdOrderByIdxAsc(oldMaterial.getMaterialId());
+            Material finalNewMaterial = newMaterial;
+            List<Blocks> newBlocks = oldBlocks.stream().map(old -> {
+                Blocks newBlock = blockMapper.cloneBlock(old);
+                newBlock.setMaterial(finalNewMaterial);
+                return newBlock;
+            }).toList();
+            blockRepository.saveAll(newBlocks);
+        }
     }
 }

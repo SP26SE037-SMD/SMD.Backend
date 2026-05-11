@@ -410,9 +410,8 @@ public class TaskV2Service {
                             "No HoPDC account found in this department"
                     );
                 }
-                task.setType(TaskType.SYLLABUS.name());
+                task.setType(TaskType.SUBJECT.name());
                 task.setAction(ActionType.UPDATE.name());
-                task.setTargetId(syllabus.getSyllabusId());
                 task.setPriority("MEDIUM");
                 task.setDescription("Mapping CLOs of " + subject.getSubjectCode() + " to new curriculum ");
             }

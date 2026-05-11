@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -25,7 +26,7 @@ public interface POsRepository extends JpaRepository<PO, UUID> {
 
     List<PO> findByMajor_MajorId(UUID majorId);
 
-    java.util.Optional<PO> findByPoCodeAndMajor_MajorCode(String poCode, String majorCode);
+    Optional<PO> findByPoCodeAndMajor_MajorCode(String poCode, String majorCode);
 
     // Tìm PO của Major theo Status (Để phục vụ phân quyền Role)
     Page<PO> findByMajor_MajorIdAndStatus(UUID majorId, String status, Pageable pageable);

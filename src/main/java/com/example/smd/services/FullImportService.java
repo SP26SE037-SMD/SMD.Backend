@@ -168,11 +168,20 @@ public class FullImportService {
                     majorToUse = majorRepository.findByMajorCode(majorContext.parsedMajorCode).orElseThrow();
                 }
 
+                List<PO> validPosToSave = new ArrayList<>();
                 for (PO po : majorContext.poListToSave) {
-                    po.setMajor(majorToUse);
+                    // Kiểm tra xem PO Code này đã thuộc về Major này trong DB chưa
+                    Optional<PO> existingPo = poRepository.findByPoCodeAndMajor_MajorCode(po.getPoCode(), majorContext.parsedMajorCode);
+
+                    if (existingPo.isEmpty()) {
+                        po.setMajor(majorToUse); // Gán Major gốc
+                        validPosToSave.add(po);  // Đưa vào danh sách cần lưu
+                    }
                 }
-                if (!majorContext.poListToSave.isEmpty()) {
-                    poRepository.saveAll(majorContext.poListToSave);
+
+                // Chỉ lưu những PO mới
+                if (!validPosToSave.isEmpty()) {
+                    poRepository.saveAll(validPosToSave);
                 }
             }
 
@@ -264,7 +273,6 @@ public class FullImportService {
                                 .publishedYear(parseIntegerSafe(row.getPublicationYear()) != null
                                         ? parseIntegerSafe(row.getPublicationYear())
                                         : 0)
-                                // .isbn(trim(row.getIsbn()))
                                 .url(trim(row.getUrl()))
                                 .build();
                         source = sourceRepository.save(source);

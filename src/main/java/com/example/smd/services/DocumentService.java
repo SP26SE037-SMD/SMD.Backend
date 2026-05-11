@@ -92,7 +92,9 @@ public class DocumentService {
 
         NotificationRequest notifReq = NotificationRequest.builder()
                 .title("Document Extraction ")
-                .message("Document" + request.getDocumentUrl()+ " has been extracted")
+                .message("Document " + document.getDocumentUrl()+
+                        " has been " +
+                        "extracted")
                 .type(NotificationType.SYSTEM)
                 .accountId(vpAccount.getAccountId())
                 .build();

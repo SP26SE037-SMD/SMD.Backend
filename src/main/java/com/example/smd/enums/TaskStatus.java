@@ -5,5 +5,6 @@ public enum TaskStatus {
     TO_DO,           // Chưa bắt đầu
     IN_PROGRESS,     // Đang thực hiện
     DONE,            // Hoàn thành
-    CANCELLED        // Đã hủy
+    CANCELLED,       // Đã hủy
+    OVERDUE          // Quá hạn (do Job tự động set, dùng làm anti-spam flag)
 }

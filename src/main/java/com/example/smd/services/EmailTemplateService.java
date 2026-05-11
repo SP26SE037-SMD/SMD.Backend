@@ -36,6 +36,26 @@ public class EmailTemplateService {
         return renderTemplate("account-created.html", variables);
     }
 
+    /**
+     * Build email nhắc nhở Task Quá Hạn (dùng cho TaskReminderJob).
+     *
+     * @param recipientName  Tên người được giao task
+     * @param taskName       Tên task
+     * @param dueDate        Ngày tới hạn (định dạng dd/MM/yyyy)
+     * @param overdueDays    Số ngày đã quá hạn
+     */
+    public String buildTaskOverdueEmail(String recipientName,
+                                        String taskName,
+                                        String dueDate,
+                                        long overdueDays) {
+        Map<String, String> variables = defaultVariables();
+        variables.put("recipientName", safe(recipientName));
+        variables.put("taskName",      safe(taskName));
+        variables.put("dueDate",       safe(dueDate));
+        variables.put("overdueDays",   String.valueOf(overdueDays));
+        return renderTemplate("task-overdue.html", variables);
+    }
+
     private Map<String, String> defaultVariables() {
         Map<String, String> vars = new HashMap<>();
         vars.put("year", String.valueOf(Year.now().getValue()));

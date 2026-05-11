@@ -28,4 +28,10 @@ public interface MaterialMapper {
     @Mapping(target = "uploadedAt", ignore = true)
     @Mapping(target = "blocks", ignore = true)
     void updateMaterial(@MappingTarget Material material, MaterialRequest request);
+
+    @Mapping(target = "materialId", ignore = true)
+    @Mapping(target = "uploadedAt", ignore = true)
+    @Mapping(target = "syllabus", ignore = true)
+    @Mapping(target = "blocks", ignore = true)
+    Material cloneMaterial(Material material);
 }
