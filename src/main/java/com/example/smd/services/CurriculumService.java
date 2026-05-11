@@ -372,15 +372,20 @@ public class CurriculumService {
         // SYLLABUS_DEVELOP
         Curriculum curriculum = curriculumRepository.findById(UUID.fromString(curriculumId))
                 .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));
-
-        curriculum.setStatus(CurriculumStatus.SYLLABUS_DEVELOP.toString());
+        if(CurriculumStatus.DRAFT.toString().equals(curriculum.getStatus())) {
+            curriculum.setStatus(CurriculumStatus.SYLLABUS_DEVELOP.toString());
+        } else {
+            throw new AppException(ErrorCode.CURRICULUM_NOT_DRAFT);
+        }
         curriculumRepository.save(curriculum);
 
         // 2. Lấy lên list PLO thuộc curriculum đó rồi chuyển status sang
         // INTERNAL_REVIEW
         List<PLOs> plos = plOsRepository.findByCurriculum_CurriculumId(curriculum.getCurriculumId());
         for (PLOs plo : plos) {
-            plo.setStatus(PloStatus.INTERNAL_REVIEW.toString());
+            if (PloStatus.DRAFT.toString().equals(plo.getStatus())) {
+                plo.setStatus(PloStatus.INTERNAL_REVIEW.toString());
+            }
         }
         plOsRepository.saveAll(plos);
 
@@ -391,7 +396,9 @@ public class CurriculumService {
             if (PloStatus.DRAFT.toString().equals(major.getStatus())) {
                 List<PO> pos = poRepository.findByMajor_MajorId(major.getMajorId());
                 for (PO po : pos) {
-                    po.setStatus(PloStatus.INTERNAL_REVIEW.toString());
+                    if (PloStatus.DRAFT.toString().equals(po.getStatus())) {
+                        po.setStatus(PloStatus.INTERNAL_REVIEW.toString());
+                    }
                 }
                 poRepository.saveAll(pos);
 
