@@ -86,9 +86,9 @@ public class TaskReminderJob {
             // ----------------------------------------------------------------
             sendBulkNotifications(
                     threeDayTasks,
-                    "⏰ Task sắp đến hạn trong 3 ngày",
+                    "⏰ Task due in 3 days",
                     task -> String.format(
-                            "Task \"%s\" sẽ đến hạn vào ngày %s. Hãy hoàn thành đúng tiến độ!",
+                            "Task \"%s\" will be due on %s. Please complete on schedule!",
                             task.getTaskName(),
                             task.getDueDate().format(DATE_FORMATTER)
                     ),
@@ -100,9 +100,9 @@ public class TaskReminderJob {
             // ----------------------------------------------------------------
             sendBulkNotifications(
                     dueTodayTasks,
-                    "🔔 Task đến hạn hôm nay!",
+                    "🔔 Task is due today!",
                     task -> String.format(
-                            "Task \"%s\" đến hạn hôm nay (%s). Vui lòng hoàn thành và cập nhật trạng thái!",
+                            "Task \"%s\" due today (%s). Please complete and update the status!",
                             task.getTaskName(),
                             task.getDueDate().format(DATE_FORMATTER)
                     ),
@@ -186,9 +186,9 @@ public class TaskReminderJob {
         // --- 4a. Gửi In-App Notification cho toàn bộ task quá hạn ---
         sendBulkNotifications(
                 overdueTaskList,
-                "🚨 Task đã quá hạn!",
+                "🚨 The task is overdue!",
                 task -> String.format(
-                        "Task \"%s\" đã quá hạn %d ngày (hạn chót: %s). Vui lòng xử lý ngay!",
+                        "Task \"%s\" is overdue %d ngày (deadline: %s). Please handle it immediately!",
                         task.getTaskName(),
                         ChronoUnit.DAYS.between(task.getDueDate(), today),
                         task.getDueDate().format(DATE_FORMATTER)

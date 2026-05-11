@@ -764,6 +764,7 @@ public class FullImportService {
                         .description(trim(row.getDescription()))
                         .department(department)
                         .minToPass(parseIntegerSafe(row.getMinToPass()))
+                        .minBloomLevel(parseIntegerSafe(row.getMinBloomLevel()))
                         .studentLimit(parseIntegerSafe(row.getStudentLimit()))
                         .studentTasks(trim(row.getStudentTasks()))
                         .scoringScale(parseIntegerSafe(row.getScoringScale()))
