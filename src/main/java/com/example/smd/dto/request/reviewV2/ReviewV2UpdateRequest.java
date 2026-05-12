@@ -10,8 +10,6 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ReviewV2UpdateRequest {
 
-    /** Cập nhật kết quả review */
-    Boolean isAccepted;
 
     /** Cập nhật nhận xét */
     String comment;

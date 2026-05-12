@@ -34,8 +34,8 @@ public class ReviewV2Service {
     // ===================== GET ALL (paged + filter) =====================
 
     @Transactional(readOnly = true)
-    public Page<ReviewV2Response> getAll(UUID taskId, Boolean isAccepted, Pageable pageable) {
-        Page<ReviewV2> page = reviewV2Repository.findAllWithFilters(taskId, isAccepted, pageable);
+    public Page<ReviewV2Response> getAll(UUID taskId, Pageable pageable) {
+        Page<ReviewV2> page = reviewV2Repository.findAllWithFilters(taskId, pageable);
         if (page.isEmpty()) {
             return new PageImpl<>(Collections.emptyList(), pageable, 0);
         }
@@ -76,7 +76,6 @@ public class ReviewV2Service {
         ReviewV2 review = ReviewV2.builder()
                 .task(task)
                 .reviewer(reviewer)
-                .isAccepted(request.getIsAccepted())
                 .comment(request.getComment())
                 .build();
 

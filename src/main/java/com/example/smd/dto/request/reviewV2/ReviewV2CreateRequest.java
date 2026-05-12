@@ -18,8 +18,6 @@ public class ReviewV2CreateRequest {
     /** ID của Account thực hiện review */
     UUID reviewerId;
 
-    /** Kết quả review: true = chấp nhận, false = từ chối, null = chưa quyết định */
-    Boolean isAccepted;
 
     /** Nhận xét / ghi chú của reviewer */
     String comment;

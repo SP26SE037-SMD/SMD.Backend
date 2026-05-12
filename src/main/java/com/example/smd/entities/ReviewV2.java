@@ -22,9 +22,6 @@ public class ReviewV2 {
     @Column(name = "review_id")
     private UUID reviewId;
 
-    @Column(name = "is_accepted")
-    private Boolean isAccepted;
-
     @Column(name = "comment", columnDefinition = "text")
     private String comment;
 
