@@ -53,7 +53,7 @@ public class TaskV2Controller {
         Page<TaskV2Response> responsePage = taskV2Service.getAllTasks(
                 search, status, sprintId, type, action, assignTo, createdBy, targetId, pageable
         );
-        return ResponseEntity.ok(com.example.smd.dto.response.PagedResponse.of(responsePage));
+        return ResponseEntity.ok(PagedResponse.of(responsePage));
     }
 
     @GetMapping("/{taskId}")

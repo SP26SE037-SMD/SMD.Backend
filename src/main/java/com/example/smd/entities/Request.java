@@ -37,17 +37,15 @@ public class Request {
     @JoinColumn(name = "created_by")
     Account createdBy;
 
+    @Column(name = "request_type", length = 50)
+    String type; //SYLLABUS | CURRICULUM | MAJOR|SUBJECT|TASK
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "received_by")
     Account receivedBy;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "curriculum_id")
-    Curriculum curriculum;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "major_id")
-    Major major;
+    @Column(name = "target_id")
+    UUID targetId; // ID của Syllabus, Curriculum, Major, Subject, Task tương ứng
 
     @Column(name = "created_at")
     Instant createdAt;

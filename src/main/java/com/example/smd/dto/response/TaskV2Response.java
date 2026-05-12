@@ -24,6 +24,7 @@ public class TaskV2Response {
     private String status;
     private String action;
     private  String comment;
+    private Boolean isAccepted;
     private String priority;
     private String type;
     private LocalDate dueDate;

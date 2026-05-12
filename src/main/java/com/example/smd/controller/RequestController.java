@@ -1,6 +1,7 @@
 package com.example.smd.controller;
 
-import com.example.smd.dto.request.request.RequestRequest;
+import com.example.smd.dto.request.request.RequestCreateRequest;
+import com.example.smd.dto.request.request.RequestUpdateRequest;
 import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.dto.response.request.RequestResponse;
@@ -15,6 +16,8 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -29,53 +32,73 @@ public class RequestController {
 
     RequestService requestService;
 
+    // ------------------------------------------------------------------ CREATE
+
     @PostMapping
     @Operation(summary = "Create a new request")
-    public ResponseObject<RequestResponse> create(@RequestBody @Valid RequestRequest request) {
+    public ResponseObject<RequestResponse> create(
+            @RequestBody @Valid RequestCreateRequest dto,
+            @AuthenticationPrincipal Jwt jwt) {
+
+        String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<RequestResponse>builder()
-                .data(requestService.create(request))
+                .data(requestService.create(dto, userId))
                 .message("Request created successfully")
                 .build();
     }
+
+    // ------------------------------------------------------------------ READ
 
     @GetMapping
     @Operation(summary = "Get all requests with pagination and filtering")
     public ResponseObject<PagedResponse<RequestResponse>> getAll(
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String status,
-            @RequestParam(required = false) UUID curriculumId,
-            @RequestParam(required = false) UUID majorId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) UUID createdById,
+            @RequestParam(required = false) UUID receivedById,
+            @RequestParam(required = false) UUID targetId,
+            @RequestParam(defaultValue = "0")   int page,
+            @RequestParam(defaultValue = "10")  int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String direction) {
 
-        Sort sort = direction.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+        Sort sort = direction.equalsIgnoreCase("desc")
+                ? Sort.by(sortBy).descending()
+                : Sort.by(sortBy).ascending();
         Pageable pageable = PageRequest.of(page, size, sort);
 
         return ResponseObject.<PagedResponse<RequestResponse>>builder()
-                .data(PagedResponse.of(requestService.getAll(search, status, curriculumId, majorId, pageable)))
+                .data(PagedResponse.of(
+                        requestService.getAll(search, status, type, createdById, receivedById, targetId, pageable)))
                 .message("Requests retrieved successfully")
                 .build();
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Get request detail by ID")
-    public ResponseObject<RequestResponse> getDetail(@PathVariable UUID id) {
+    public ResponseObject<RequestResponse> getById(@PathVariable UUID id) {
         return ResponseObject.<RequestResponse>builder()
-                .data(requestService.getDetail(id))
-                .message("Request detail retrieved successfully")
+                .data(requestService.getById(id))
+                .message("Request retrieved successfully")
                 .build();
     }
 
-    @PutMapping("/{id}")
-    @Operation(summary = "Update request information")
-    public ResponseObject<RequestResponse> update(@PathVariable UUID id, @RequestBody @Valid RequestRequest request) {
+    // ------------------------------------------------------------------ UPDATE STATUS
+
+    @PatchMapping("/{id}/status")
+    @Operation(summary = "Update request status / comment / receivedBy")
+    public ResponseObject<RequestResponse> updateStatus(
+            @PathVariable UUID id,
+            @RequestBody @Valid RequestUpdateRequest dto) {
+
         return ResponseObject.<RequestResponse>builder()
-                .data(requestService.update(id, request))
+                .data(requestService.updateStatus(id, dto))
                 .message("Request updated successfully")
                 .build();
     }
+
+    // ------------------------------------------------------------------ DELETE
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete request")
@@ -83,15 +106,6 @@ public class RequestController {
         requestService.delete(id);
         return ResponseObject.<Void>builder()
                 .message("Request deleted successfully")
-                .build();
-    }
-
-    @PatchMapping("/{id}/status")
-    @Operation(summary = "Update request status")
-    public ResponseObject<RequestResponse> updateStatus(@PathVariable UUID id, @RequestParam String status, @RequestParam String comment) {
-        return ResponseObject.<RequestResponse>builder()
-                .data(requestService.updateStatus(id, status, comment))
-                .message("Request status updated successfully")
                 .build();
     }
 }

@@ -16,7 +16,6 @@ import java.util.UUID;
 public class ReviewV2Response {
 
     UUID reviewId;
-    Boolean isAccepted;
     String comment;
     LocalDate createdAt;
 

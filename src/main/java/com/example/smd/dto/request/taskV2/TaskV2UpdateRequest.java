@@ -1,9 +1,7 @@
 package com.example.smd.dto.request.taskV2;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDate;
 import java.util.UUID;
@@ -12,16 +10,17 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class TaskV2UpdateRequest {
-    private UUID assignTo;
-    private String taskName;
-    private String description;
-    private String status;
-    private String action;
-    private  String comment;
-    private String priority;
-    private String type;
-    private UUID targetId;
-    private UUID rootTaskId;
-    private LocalDate dueDate;
+     UUID assignTo;
+     String taskName;
+     String description;
+    String action;
+    Boolean isAccepted;
+    String comment;
+    String priority;
+    String type;
+    UUID targetId;
+    UUID rootTaskId;
+    LocalDate dueDate;
 }

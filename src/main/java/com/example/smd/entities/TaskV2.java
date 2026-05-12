@@ -49,11 +49,14 @@ public class TaskV2 {
     @Column(length = 20)
     String status; // To Do, In Progress, Done
 
+    @Column(name = "is_accepted")
+    Boolean isAccepted;
+
     @Column(name = "priority", length = 20)
     String priority;
 
     @Column(name = "comment", columnDefinition = "TEXT")
-    String comment;
+    String comment; //cho nguoi tạo task
 
     @Column(name = "due_date")
     LocalDate dueDate;

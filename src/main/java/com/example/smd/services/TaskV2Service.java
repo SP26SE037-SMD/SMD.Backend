@@ -181,7 +181,6 @@ public class TaskV2Service {
     public TaskV2Response updateTask(UUID taskId, TaskV2UpdateRequest request) {
         TaskV2 task = taskV2Repository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Task not found"));
-        String oldStatus = task.getStatus();
 
         taskV2Mapper.updateEntity(task, request);
 
@@ -195,16 +194,24 @@ public class TaskV2Service {
         applyCompletedAt(task);
 
         TaskV2 savedTask = taskV2Repository.save(task);
-
-        if (!"DONE".equalsIgnoreCase(oldStatus) && "DONE".equalsIgnoreCase(savedTask.getStatus()) && savedTask.getCreatedBy() != null) {
-            NotificationRequest notifReq = NotificationRequest.builder()
-                    .title("Task Completed")
-                    .message("The task '" + savedTask.getTaskName() + "' has been marked as DONE.")
+        NotificationRequest notifReq = null;
+        if (Boolean.TRUE.equals(request.getIsAccepted())) {
+            notifReq = NotificationRequest.builder()
+                    .title("Task was Accepted")
+                    .message("The task '" + savedTask.getTaskName() + "' has been accepted.")
                     .type(NotificationType.TASK)
-                    .accountId(savedTask.getCreatedBy().getAccountId())
+                    .accountId(savedTask.getAccount().getAccountId())
                     .build();
-            notificationService.createNotification(notifReq);
+        } else {
+            notifReq = NotificationRequest.builder()
+                    .title("Task was Rejected")
+                    .message("The task '" + savedTask.getTaskName() + "' has been rejected. Please review the comments to know the reason.")
+                    .type(NotificationType.TASK)
+                    .accountId(savedTask.getAccount().getAccountId())
+                    .build();
         }
+
+        notificationService.createNotification(notifReq);
 
         return getTaskById(savedTask.getTaskId());
     }

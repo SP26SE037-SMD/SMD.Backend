@@ -36,10 +36,9 @@ public class ReviewV2Controller {
     // ----------------------------------------------------------------
     @GetMapping
     @Operation(summary = "Get all reviews with pagination",
-               description = "Filter by taskId and/or isAccepted. Sorted by createdAt desc by default.")
+               description = "Filter by taskId. Sorted by createdAt desc by default.")
     public ResponseObject<PagedResponse<ReviewV2Response>> getAll(
             @RequestParam(required = false) UUID taskId,
-            @RequestParam(required = false) Boolean isAccepted,
             @RequestParam(defaultValue = "0")  int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
@@ -50,7 +49,7 @@ public class ReviewV2Controller {
                 : Sort.by(sortBy).descending();
         Pageable pageable = PageRequest.of(page, size, sort);
 
-        Page<ReviewV2Response> resultPage = reviewV2Service.getAll(taskId, isAccepted, pageable);
+        Page<ReviewV2Response> resultPage = reviewV2Service.getAll(taskId, pageable);
 
         return ResponseObject.<PagedResponse<ReviewV2Response>>builder()
                 .data(PagedResponse.of(resultPage))
@@ -88,7 +87,7 @@ public class ReviewV2Controller {
     // ----------------------------------------------------------------
     @PostMapping
     @Operation(summary = "Create a new review for a TaskV2",
-               description = "Requires taskId. isAccepted can be null (pending), true (accepted), false (rejected).")
+               description = "Requires taskId.")
     public ResponseObject<ReviewV2Response> create(@RequestBody ReviewV2CreateRequest request) {
         return ResponseObject.<ReviewV2Response>builder()
                 .data(reviewV2Service.create(request))

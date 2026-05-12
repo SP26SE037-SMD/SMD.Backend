@@ -1,5 +1,6 @@
 package com.example.smd.mapper;
 
+import com.example.smd.dto.request.reviewV2.ReviewV2UpdateRequest;
 import com.example.smd.dto.response.ReviewV2Response;
 import com.example.smd.entities.ReviewV2;
 import org.mapstruct.Mapper;
@@ -20,12 +21,12 @@ public interface ReviewV2Mapper {
     @Mapping(target = "reviewer.email",     source = "reviewer.email")
     ReviewV2Response toResponse(ReviewV2 review);
 
-    // ---- Partial update: chỉ patch isAccepted & comment ----
+    // ---- Partial update: chỉ patch comment ----
 
     @Mapping(target = "reviewId",   ignore = true)
     @Mapping(target = "task",       ignore = true)
     @Mapping(target = "reviewer",   ignore = true)
     @Mapping(target = "createdAt",  ignore = true)
     void updateEntity(@MappingTarget ReviewV2 review,
-                      com.example.smd.dto.request.reviewV2.ReviewV2UpdateRequest request);
+                      ReviewV2UpdateRequest request);
 }

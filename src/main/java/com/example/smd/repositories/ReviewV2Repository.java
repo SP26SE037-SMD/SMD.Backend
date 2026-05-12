@@ -20,12 +20,10 @@ public interface ReviewV2Repository extends JpaRepository<ReviewV2, UUID> {
             SELECT r FROM ReviewV2 r
             LEFT JOIN r.task t
             WHERE (:taskId IS NULL OR t.taskId = :taskId)
-              AND (:isAccepted IS NULL OR r.isAccepted = :isAccepted)
             ORDER BY r.createdAt DESC
             """)
     Page<ReviewV2> findAllWithFilters(
             @Param("taskId") UUID taskId,
-            @Param("isAccepted") Boolean isAccepted,
             Pageable pageable
     );
 

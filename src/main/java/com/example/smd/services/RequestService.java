@@ -1,14 +1,15 @@
 package com.example.smd.services;
 
-import com.example.smd.dto.request.request.RequestRequest;
+import com.example.smd.dto.request.request.RequestCreateRequest;
+import com.example.smd.dto.request.request.RequestUpdateRequest;
 import com.example.smd.dto.response.request.RequestResponse;
-import com.example.smd.entities.Curriculum;
 import com.example.smd.entities.Request;
-import com.example.smd.enums.CurriculumStatus;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.RequestMapper;
-import com.example.smd.repositories.*;
+import com.example.smd.repositories.AccountRepository;
+import com.example.smd.repositories.RequestRepository;
+import com.example.smd.repositories.RequestSpecification;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -23,73 +24,81 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class RequestService {
+
     RequestRepository requestRepository;
     AccountRepository accountRepository;
-    CurriculumRepository curriculumRepository;
-    MajorRepository majorRepository;
     RequestMapper requestMapper;
 
+    // ------------------------------------------------------------------ CREATE
+
     @Transactional
-    public RequestResponse create(RequestRequest requestDto) {
-        Request request = requestMapper.toRequest(requestDto);
+    public RequestResponse create(RequestCreateRequest dto, String createdByUserId) {
+        Request request = requestMapper.toEntity(dto);
 
-        if (requestDto.getCreatedById() != null) {
-            request.setCreatedBy(accountRepository.findById(requestDto.getCreatedById())
-                    .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND)));
+        // createdBy từ JWT
+        request.setCreatedBy(
+                accountRepository.findById(UUID.fromString(createdByUserId))
+                        .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND)));
+
+        // receivedBy (tuỳ chọn)
+        if (dto.getReceivedById() != null) {
+            request.setReceivedBy(
+                    accountRepository.findById(dto.getReceivedById())
+                            .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND)));
         }
 
-        if (requestDto.getCurriculumId() != null) {
-            request.setCurriculum(curriculumRepository.findById(requestDto.getCurriculumId())
-                    .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND)));
-        }
+        request.setStatus("PENDING");
 
-        if (requestDto.getMajorId() != null) {
-            request.setMajor(majorRepository.findById(requestDto.getMajorId())
-                    .orElseThrow(() -> new AppException(ErrorCode.MAJOR_NOT_FOUND)));
-        }
+        return requestMapper.toResponse(requestRepository.save(request));
+    }
 
-        request = requestRepository.save(request);
-        return requestMapper.toRequestResponse(request);
+    // ------------------------------------------------------------------ READ
+
+    @Transactional(readOnly = true)
+    public Page<RequestResponse> getAll(
+            String search,
+            String status,
+            String type,
+            UUID createdById,
+            UUID receivedById,
+            UUID targetId,
+            Pageable pageable) {
+
+        var spec = RequestSpecification.withFilters(search, status, type, createdById, receivedById, targetId);
+        return requestRepository.findAll(spec, pageable)
+                .map(requestMapper::toResponse);
     }
 
     @Transactional(readOnly = true)
-    public Page<RequestResponse> getAll(String search, String status, UUID curriculumId, UUID majorId, Pageable pageable) {
-        var spec = RequestSpecification.withFilters(search, status, curriculumId, majorId);
-        return requestRepository.findAll(spec, pageable).map(requestMapper::toRequestResponse);
+    public RequestResponse getById(UUID id) {
+        return requestMapper.toResponse(
+                requestRepository.findById(id)
+                        .orElseThrow(() -> new AppException(ErrorCode.REQUEST_NOT_FOUND)));
     }
 
-    @Transactional(readOnly = true)
-    public RequestResponse getDetail(UUID id) {
-        Request request = requestRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.REQUEST_NOT_FOUND));
-        return requestMapper.toRequestResponse(request);
-    }
+    // ------------------------------------------------------------------ UPDATE STATUS
 
+    /**
+     * Chỉ người nhận (receivedBy) mới được phép cập nhật trạng thái + comment.
+     * Các trường khác (title, content, type, targetId) không được thay đổi ở đây.
+     */
     @Transactional
-    public RequestResponse update(UUID id, RequestRequest requestDto) {
+    public RequestResponse updateStatus(UUID id, RequestUpdateRequest dto) {
         Request request = requestRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.REQUEST_NOT_FOUND));
 
-        requestMapper.updateRequest(request, requestDto);
+        requestMapper.updateEntity(request, dto);
 
-        if (requestDto.getCreatedById() != null) {
-            request.setCreatedBy(accountRepository.findById(requestDto.getCreatedById())
-                    .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND)));
+        if (dto.getReceivedById() != null) {
+            request.setReceivedBy(
+                    accountRepository.findById(dto.getReceivedById())
+                            .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND)));
         }
 
-        if (requestDto.getCurriculumId() != null) {
-            request.setCurriculum(curriculumRepository.findById(requestDto.getCurriculumId())
-                    .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND)));
-        }
-
-        if (requestDto.getMajorId() != null) {
-            request.setMajor(majorRepository.findById(requestDto.getMajorId())
-                    .orElseThrow(() -> new AppException(ErrorCode.MAJOR_NOT_FOUND)));
-        }
-
-        request = requestRepository.save(request);
-        return requestMapper.toRequestResponse(request);
+        return requestMapper.toResponse(requestRepository.save(request));
     }
+
+    // ------------------------------------------------------------------ DELETE
 
     @Transactional
     public void delete(UUID id) {
@@ -97,24 +106,5 @@ public class RequestService {
             throw new AppException(ErrorCode.REQUEST_NOT_FOUND);
         }
         requestRepository.deleteById(id);
-    }
-
-    @Transactional
-    public RequestResponse updateStatus(UUID id, String status, String comment) {
-        Request request = requestRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.REQUEST_NOT_FOUND));
-        request.setComment(comment);
-        request.setStatus(status);
-        request = requestRepository.save(request);
-
-        Curriculum curriculum = curriculumRepository.findById(request.getCurriculum().getCurriculumId())
-                .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));
-        if("REJECTED".equalsIgnoreCase(status)) {
-            curriculum.setStatus(CurriculumStatus.DRAFT.toString());
-        } else if("APPROVED".equalsIgnoreCase(status)){
-            curriculum.setStatus(CurriculumStatus.STRUCTURE_APPROVED.toString());
-        }
-        curriculumRepository.save(curriculum);
-        return requestMapper.toRequestResponse(request);
     }
 }
