@@ -234,16 +234,6 @@ public class TaskV2Service {
 
         TaskV2 savedTask = taskV2Repository.save(task);
 
-        if (!"DONE".equalsIgnoreCase(oldStatus) && "DONE".equalsIgnoreCase(savedTask.getStatus()) && savedTask.getCreatedBy() != null) {
-            NotificationRequest notifReq = NotificationRequest.builder()
-                    .title("Task Completed")
-                    .message("The task '" + savedTask.getTaskName() + "' has been marked as DONE.")
-                    .type(NotificationType.TASK)
-                    .accountId(savedTask.getCreatedBy().getAccountId())
-                    .build();
-            notificationService.createNotification(notifReq);
-        }
-
         return getTaskById(savedTask.getTaskId());
     }
 
@@ -335,6 +325,7 @@ public class TaskV2Service {
                 .credits(sub.getCredits())
                 .departmentCode(deptCode)
                 .departmentName(deptName)
+                .status(sub.getStatus())
                 .build();
     }
 

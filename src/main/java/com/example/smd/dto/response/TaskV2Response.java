@@ -53,6 +53,7 @@ public class TaskV2Response {
         private String subjectCode;
         private String subjectName;
         private Integer credits;
+        private String status;
         private String departmentCode;
         private String departmentName;
     }
