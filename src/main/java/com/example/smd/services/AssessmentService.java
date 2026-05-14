@@ -39,25 +39,10 @@ public class AssessmentService {
 
     @Transactional(readOnly = true)
     public Page<AssessmentResponse> getAllAssessments(UUID syllabusId,
-                                                      String status,
                                                       String search,
                                                       int page,
                                                       int size,
-                                                      String[] sort,
-                                                      String accountId) {
-        var account = accountService.getAccountById(accountId);
-        String roleName = account.getRole().getRoleName();
-        if (RoleName.STUDENT.toString().equals(roleName) || RoleName.LECTURER.toString().equals(roleName)) {
-            if (!SyllabusStatus.PUBLISHED.toString().equals(status)) {
-                throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
-            }
-        }
-
-        if (PloStatus.DRAFT.toString().equals(status)) {
-            if (!(RoleName.PDCM.toString().equals(account.getRole().getRoleName()) ||RoleName.COLLABORATOR.toString().equals(account.getRole().getRoleName()))) {
-                throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
-            }
-        }
+                                                      String[] sort) {
 
         List<Sort.Order> orders = new ArrayList<>();
         if (sort[0].contains(",")) {
@@ -81,9 +66,6 @@ public class AssessmentService {
                 predicates.add(cb.equal(syllabusJoin.get("syllabusId"), syllabusId));
             }
 
-            if (status != null && !status.trim().isEmpty()) {
-                predicates.add(cb.equal(cb.upper(syllabusJoin.get("status")), status.trim().toUpperCase()));
-            }
 
             if (search != null && !search.trim().isEmpty()) {
                 String searchPattern = "%" + search.trim().toLowerCase() + "%";

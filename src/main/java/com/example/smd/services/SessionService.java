@@ -38,17 +38,15 @@ public class SessionService {
     private final SessionRepository sessionRepository;
     private final SyllabusRepository syllabusRepository;
     private final SessionMapper sessionMapper;
-    private final SessionRegulationValidationService sessionRegulationValidationService;
     private final SubjectRepository subjectRepository;
 
     @Transactional(readOnly = true)
     public Page<SessionResponse> getAllSessions(UUID syllabusId,
-                                                String status,
                                                 String search,
                                                 int page,
                                                 int size,
-                                                String[] sort,
-                                                String accountId) {
+                                                String[] sort
+    ) {
         List<Sort.Order> orders = new ArrayList<>();
         if (sort[0].contains(",")) {
             for (String sortOrder : sort) {
@@ -59,19 +57,6 @@ public class SessionService {
             orders.add(new Sort.Order(getSortDirection(sort[1]), sort[0]));
         }
 
-        var account = accountService.getAccountById(accountId);
-        String roleName = account.getRole().getRoleName();
-        if (RoleName.STUDENT.toString().equals(roleName) || RoleName.LECTURER.toString().equals(roleName)) {
-            if (!status.equals(MaterialStatus.PUBLISHED.toString())) {
-                throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
-            }
-        }
-
-        if (PloStatus.DRAFT.toString().equals(status)) {
-            if (!(RoleName.PDCM.toString().equals(account.getRole().getRoleName()) || RoleName.COLLABORATOR.toString().equals(account.getRole().getRoleName()))) {
-                throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
-            }
-        }
 
         Pageable pagingSort = PageRequest.of(page, size, Sort.by(orders));
 
@@ -82,10 +67,6 @@ public class SessionService {
 
             if (syllabusId != null) {
                 predicates.add(cb.equal(syllabusJoin.get("syllabusId"), syllabusId));
-            }
-
-            if (status != null && !status.trim().isEmpty()) {
-                predicates.add(cb.equal(cb.upper(syllabusJoin.get("status")), status.trim().toUpperCase()));
             }
 
             if (search != null && !search.trim().isEmpty()) {

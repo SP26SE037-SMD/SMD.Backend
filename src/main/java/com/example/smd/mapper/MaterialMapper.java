@@ -12,7 +12,6 @@ public interface MaterialMapper {
 
     // Ánh xạ từ Entity sang Response
     @Mapping(target = "syllabusId", source = "syllabus.syllabusId")
-    @Mapping(target = "status", source = "syllabus.status")
     MaterialResponse toResponse(Material material);
 
     // Ánh xạ từ Request sang Entity (Bỏ qua syllabus vì sẽ set thủ công ở Service)

@@ -15,14 +15,14 @@ import java.util.UUID;
 @Repository
 public interface AssessmentRepository extends JpaRepository<Assessment, UUID>, JpaSpecificationExecutor<Assessment> {
 
-    @EntityGraph(attributePaths = {"assessmentCategory", "assessmentType", "syllabus"})
+    @EntityGraph(attributePaths = {"assessmentCategory", "assessmentType"})
     List<Assessment> findBySyllabus_SyllabusIdOrderByPartAsc(UUID syllabusId);
 
-    @EntityGraph(attributePaths = {"assessmentCategory", "assessmentType", "syllabus"})
+    @EntityGraph(attributePaths = {"assessmentCategory", "assessmentType"})
     List<Assessment> findBySyllabus_SyllabusId(UUID syllabusId);
 
     @Override
-    @EntityGraph(attributePaths = {"assessmentCategory", "assessmentType", "syllabus"})
+    @EntityGraph(attributePaths = {"assessmentCategory", "assessmentType"})
     Page<Assessment> findAll(@Nullable Specification<Assessment> spec, Pageable pageable);
 
     @Query("SELECT COALESCE(SUM(a.weight), 0) FROM Assessment a WHERE a.syllabus.syllabusId = :syllabusId")

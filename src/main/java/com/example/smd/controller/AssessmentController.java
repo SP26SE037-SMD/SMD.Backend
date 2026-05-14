@@ -36,16 +36,13 @@ public class AssessmentController {
     @Operation(summary = "Get all assessments with pagination and filters")
     public ResponseObject<PagedResponse<AssessmentResponse>> getAllAssessments(
             @RequestParam(required = false) UUID syllabusId,
-            @RequestParam(required = false) String status,
             @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "part,asc") String[] sort,
-            @AuthenticationPrincipal Jwt jwt) {
-        String userId = jwt.getClaimAsString("accountId");
+            @RequestParam(defaultValue = "part,asc") String[] sort) {
         return ResponseObject.<PagedResponse<AssessmentResponse>>builder()
                 .status(1000)
-                .data(PagedResponse.of(assessmentService.getAllAssessments(syllabusId, status, search, page, size, sort, userId)))
+                .data(PagedResponse.of(assessmentService.getAllAssessments(syllabusId, search, page, size, sort)))
                 .message("Get all assessments successfully")
                 .build();
     }

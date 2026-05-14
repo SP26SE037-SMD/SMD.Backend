@@ -20,6 +20,5 @@ public class MaterialResponse {
     Instant uploadedAt;
     Integer id;
     Integer version;
-    String status;
     UUID syllabusId;
 }

@@ -17,6 +17,7 @@ import java.util.UUID;
 public class TaskV2Response {
     private UUID taskId;
     private UUID sprintId;
+    private UUID rootTaskId;
     private AccountDto assignTo;
     private AccountDto createdBy;
     private String taskName;
@@ -53,6 +54,7 @@ public class TaskV2Response {
         private String subjectCode;
         private String subjectName;
         private Integer credits;
+        private String status;
         private String departmentCode;
         private String departmentName;
     }

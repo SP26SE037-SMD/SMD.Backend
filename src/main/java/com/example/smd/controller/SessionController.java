@@ -35,17 +35,15 @@ public class  SessionController {
     @Operation(summary = "Get all sessions with pagination and filters")
     public ResponseObject<PagedResponse<SessionResponse>> getAllSessions(
             @RequestParam(required = false) UUID syllabusId,
-            @RequestParam(required = false) String status,
             @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "sessionNumber,asc") String[] sort,
-            @AuthenticationPrincipal Jwt jwt) {
-        String userId = jwt.getClaimAsString("accountId");
+            @RequestParam(defaultValue = "sessionNumber,asc") String[] sort
+    ) {
         return ResponseObject.<PagedResponse<SessionResponse>>builder()
                 .status(1000)
                 .data(PagedResponse.of(sessionService.getAllSessions(
-                        syllabusId, status, search, page, size, sort, userId
+                        syllabusId,  search, page, size, sort
                 )))
                 .message("Get all sessions successfully")
                 .build();
