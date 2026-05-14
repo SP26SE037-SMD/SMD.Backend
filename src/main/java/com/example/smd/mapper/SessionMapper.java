@@ -21,7 +21,6 @@ public class SessionMapper {
                 .teachingMethods(session.getTeachingMethods())
                 .sessionType(session.getSessionType())
                 .duration(session.getDuration())
-                .status(session.getSyllabus() != null ? session.getSyllabus().getStatus() : null)
                 .createdAt(session.getCreatedAt())
                 .sessionTopic(session.getSessionTopic())
                 .build();

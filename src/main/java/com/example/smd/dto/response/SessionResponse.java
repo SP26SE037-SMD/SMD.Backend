@@ -25,7 +25,6 @@ public class SessionResponse {
     String content;
     String teachingMethods;
     Integer duration;
-    String status;
     String sessionTopic;
     String sessionType;
 

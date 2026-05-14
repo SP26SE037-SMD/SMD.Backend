@@ -45,13 +45,11 @@ public class MaterialController {
     @Operation(summary = "Get all materials by Syllabus ID")
     public ResponseObject<List<MaterialResponse>> getAllBySyllabus(
             @PathVariable UUID syllabusId,
-            @Parameter(description = "Filter by status (DRAFT, DEFINED, PUBLISHED, WAITING_SYLLABUS, PENDING_REVIEW, ARCHIVED)")
-            @RequestParam(required = false) String status,
             @AuthenticationPrincipal Jwt jwt) {
         String userId = jwt.getClaimAsString("accountId");
         return ResponseObject.<List<MaterialResponse>>builder()
                 .status(1000)
-                .data(materialService.getAllBySyllabus(syllabusId, status, userId))
+                .data(materialService.getAllBySyllabus(syllabusId, userId))
                 .message("Materials retrieved successfully")
                 .build();
     }

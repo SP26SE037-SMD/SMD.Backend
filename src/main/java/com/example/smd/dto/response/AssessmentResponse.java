@@ -28,6 +28,5 @@ public class AssessmentResponse {
     String knowledgeSkill;
     String gradingGuide;
     String note;
-    String status;
     Instant createdAt;
 }

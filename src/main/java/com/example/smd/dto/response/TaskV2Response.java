@@ -17,6 +17,7 @@ import java.util.UUID;
 public class TaskV2Response {
     private UUID taskId;
     private UUID sprintId;
+    private UUID rootTaskId;
     private AccountDto assignTo;
     private AccountDto createdBy;
     private String taskName;

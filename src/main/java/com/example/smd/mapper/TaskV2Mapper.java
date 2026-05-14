@@ -52,5 +52,6 @@ public interface TaskV2Mapper {
     @Mapping(target = "syllabus", ignore = true)
     @Mapping(target = "curriculum", ignore = true)
     @Mapping(target = "document", ignore = true)
+    @Mapping(target = "rootTaskId")
     TaskV2Response toResponse(TaskV2 task);
 }

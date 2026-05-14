@@ -31,7 +31,6 @@ import java.util.UUID;
 public class MaterialService {
     MaterialRepository materialRepository;
     SyllabusRepository syllabusRepository;
-    SessionRepository sessionRepository;
     AccountService accountService;
     MaterialMapper materialMapper;
 
@@ -110,7 +109,7 @@ public class MaterialService {
 
     // 5. Get All by SyllabusId
     @Transactional
-    public List<MaterialResponse> getAllBySyllabus(UUID syllabusId, String status, String accountId) {
+    public List<MaterialResponse> getAllBySyllabus(UUID syllabusId, String accountId) {
         // 1. Kiểm tra Syllabus tồn tại
         Syllabus syllabus = syllabusRepository.findById(syllabusId)
                 .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
@@ -119,27 +118,13 @@ public class MaterialService {
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
 
-        // Chuẩn hóa status đầu vào
-        String finalStatus = (status == null || status.trim().isEmpty()) ? null : status.trim().toUpperCase();
-
         // 3. Ép buộc Role thấp chỉ được xem PUBLISHED
         if (RoleName.STUDENT.toString().equals(roleName) || RoleName.LECTURER.toString().equals(roleName)) {
-            if (!SyllabusStatus.PUBLISHED.toString().equals(finalStatus)) {
+            if (!SyllabusStatus.PUBLISHED.toString().equals(syllabus.getStatus())) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }
 
-        if (PloStatus.DRAFT.toString().equals(finalStatus)) {
-            if (!(RoleName.PDCM.toString().equals(account.getRole().getRoleName()) || RoleName.COLLABORATOR.toString().equals(account.getRole().getRoleName()))) {
-                throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
-            }
-        }
-
-        // 4. Truy vấn dữ liệu
-        if (finalStatus != null && !finalStatus.equals(syllabus.getStatus())) {
-            return java.util.Collections.emptyList();
-        }
-        
         List<Material> materials = materialRepository.findLatestMaterialsBySyllabusId(syllabusId);
 
         return materials.stream()

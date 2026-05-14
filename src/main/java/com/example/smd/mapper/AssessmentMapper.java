@@ -28,7 +28,6 @@ public class AssessmentMapper {
                 .knowledgeSkill(assessment.getKnowledgeSkill())
                 .gradingGuide(assessment.getGradingGuide())
                 .note(assessment.getNote())
-                .status(assessment.getSyllabus() != null ? assessment.getSyllabus().getStatus() : null)
                 .createdAt(assessment.getCreatedAt())
                 .build();
     }
