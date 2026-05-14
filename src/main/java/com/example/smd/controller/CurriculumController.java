@@ -7,6 +7,7 @@ import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.dto.response.curriculum.ImportCurriculumResponse;
 import com.example.smd.dto.response.curriculum.ImportFullCurriculumResponse;
+import com.example.smd.services.CurriculumExcelExportService;
 import com.example.smd.services.CurriculumService;
 import com.example.smd.services.FullImportService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -17,14 +18,21 @@ import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.data.domain.Page;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayInputStream;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
 
@@ -38,6 +46,7 @@ public class CurriculumController {
 
         CurriculumService curriculumService;
         FullImportService fullImportService;
+        CurriculumExcelExportService curriculumExcelExportService;
 
         /**
          * API lấy danh sách curriculum với phân trang và bộ lọc
@@ -304,5 +313,40 @@ public class CurriculumController {
                                 .data(fullImportService.importFullCurriculum(file))
                                 .message("Full curriculum import completed")
                                 .build();
+        }
+
+        /**
+         * API Export toàn bộ Curriculum ra file Excel 5 sheets
+         */
+        @GetMapping("/{id}/export")
+        @Operation(
+                summary = "Export Full Curriculum to Excel",
+                description = "Exports the full curriculum data (Major, Curriculum, Subjects, CLO-PLO mapping, "
+                        + "Semester mapping) into a formatted 5-sheet Excel report file (.xlsx).")
+        public ResponseEntity<InputStreamResource> exportCurriculum(
+                @Parameter(description = "Curriculum ID (UUID)") @PathVariable UUID id,
+                 @AuthenticationPrincipal Jwt jwt
+        ) {
+                String userId = jwt.getClaimAsString("accountId");
+
+                ByteArrayInputStream excelStream = curriculumExcelExportService.exportFullCurriculum(id);
+                var curriculum =
+                        curriculumService.getCurriculumDetail(id.toString(), userId);
+                String fileName =curriculum.getCurriculumCode()+
+                        "-" + curriculum.getCurriculumName();
+                String finalFileName = fileName + ".xlsx";
+
+                ContentDisposition contentDisposition = ContentDisposition
+                        .attachment()
+                        .filename(finalFileName, StandardCharsets.UTF_8)
+                        .build();
+
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentDisposition(contentDisposition);
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .contentType(MediaType.parseMediaType(
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                    .body(new InputStreamResource(excelStream));
         }
 }
