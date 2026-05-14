@@ -2,8 +2,8 @@ package com.example.smd.controller;
 
 import com.example.smd.dto.request.ProposedSourceRequest;
 import com.example.smd.dto.response.PagedResponse;
-import com.example.smd.dto.response.ProposedSourceResponse;
 import com.example.smd.dto.response.ResponseObject;
+import com.example.smd.dto.response.SourceResponse;
 import com.example.smd.services.ProposedSourceService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -38,8 +38,8 @@ public class ProposedSourceController {
             description = "Liên kết một tài liệu (Source) với một môn học (Subject) dưới dạng đề xuất tham khảo."
     )
 //    @PreAuthorize("hasAuthority('PROPOSED_SOURCE_CREATE')")
-    public ResponseObject<ProposedSourceResponse> create(@RequestBody @Valid ProposedSourceRequest request) {
-        return ResponseObject.<ProposedSourceResponse>builder()
+    public ResponseObject<SourceResponse> create(@RequestBody @Valid ProposedSourceRequest request) {
+        return ResponseObject.<SourceResponse>builder()
                 .status(1000)
                 .data(service.create(request))
                 .message("Proposed source created successfully")
@@ -54,13 +54,13 @@ public class ProposedSourceController {
             summary = "Lấy danh sách tất cả đề xuất tài liệu",
             description = "Hỗ trợ phân trang và tìm kiếm theo tên/mã tài liệu hoặc tên/mã môn học."
     )
-    public ResponseObject<PagedResponse<ProposedSourceResponse>> getAll(
+    public ResponseObject<PagedResponse<SourceResponse>> getAll(
             @Parameter(description = "Tìm kiếm theo sourceCode, sourceName, subjectCode, subjectName")
             @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
-        return ResponseObject.<PagedResponse<ProposedSourceResponse>>builder()
+        return ResponseObject.<PagedResponse<SourceResponse>>builder()
                 .status(1000)
                 .data(PagedResponse.of(service.getAll(search, page, size)))
                 .message("Get proposed sources list successfully")
@@ -75,8 +75,8 @@ public class ProposedSourceController {
             summary = "Xem chi tiết đề xuất tài liệu",
             description = "Lấy thông tin chi tiết của một đề xuất tài liệu dựa trên ID."
     )
-    public ResponseObject<ProposedSourceResponse> getDetail(@PathVariable UUID id) {
-        return ResponseObject.<ProposedSourceResponse>builder()
+    public ResponseObject<SourceResponse> getDetail(@PathVariable UUID id) {
+        return ResponseObject.<SourceResponse>builder()
                 .status(1000)
                 .data(service.getDetail(id))
                 .message("Get proposed source detail successfully")
@@ -91,8 +91,8 @@ public class ProposedSourceController {
             summary = "Lấy danh sách đề xuất tài liệu theo môn học",
             description = "Trả về tất cả tài liệu được đề xuất cho một môn học cụ thể."
     )
-    public ResponseObject<List<ProposedSourceResponse>> getBySubject(@PathVariable UUID subjectId) {
-        return ResponseObject.<List<ProposedSourceResponse>>builder()
+    public ResponseObject<List<SourceResponse>> getBySubject(@PathVariable UUID subjectId) {
+        return ResponseObject.<List<SourceResponse>>builder()
                 .status(1000)
                 .data(service.getBySubject(subjectId))
                 .message("Get proposed sources by subject successfully")
@@ -107,8 +107,8 @@ public class ProposedSourceController {
             summary = "Lấy danh sách đề xuất theo tài liệu",
             description = "Trả về tất cả môn học đang đề xuất sử dụng một tài liệu cụ thể."
     )
-    public ResponseObject<List<ProposedSourceResponse>> getBySource(@PathVariable UUID sourceId) {
-        return ResponseObject.<List<ProposedSourceResponse>>builder()
+    public ResponseObject<List<SourceResponse>> getBySource(@PathVariable UUID sourceId) {
+        return ResponseObject.<List<SourceResponse>>builder()
                 .status(1000)
                 .data(service.getBySource(sourceId))
                 .message("Get proposed sources by source successfully")
@@ -124,10 +124,10 @@ public class ProposedSourceController {
             description = "Thay đổi tài liệu hoặc môn học được liên kết trong một đề xuất tham khảo."
     )
 //    @PreAuthorize("hasAuthority('PROPOSED_SOURCE_UPDATE')")
-    public ResponseObject<ProposedSourceResponse> update(
+    public ResponseObject<SourceResponse> update(
             @PathVariable UUID id,
             @RequestBody @Valid ProposedSourceRequest request) {
-        return ResponseObject.<ProposedSourceResponse>builder()
+        return ResponseObject.<SourceResponse>builder()
                 .status(1000)
                 .data(service.update(id, request))
                 .message("Proposed source updated successfully")

@@ -18,10 +18,19 @@ public interface ProposedSourceRepository extends JpaRepository<ProposedSource, 
 
     List<ProposedSource> findAllBySubject_SubjectId(UUID subjectId);
 
+    @Query("SELECT ps FROM ProposedSource ps JOIN FETCH ps.source WHERE ps.subject.subjectId = :subjectId")
+    List<ProposedSource> fetchWithSourceBySubjectId(@Param("subjectId") UUID subjectId);
+
+    @Query("SELECT ps FROM ProposedSource ps JOIN FETCH ps.source WHERE ps.source.sourceId = :sourceId")
+    List<ProposedSource> fetchWithSourceBySourceId(@Param("sourceId") UUID sourceId);
+
+    @Query("SELECT ps FROM ProposedSource ps JOIN FETCH ps.source WHERE ps.proposedSourceId = :id")
+    java.util.Optional<ProposedSource> fetchWithSourceById(@Param("id") UUID id);
+
     List<ProposedSource> findAllBySource_SourceId(UUID sourceId);
 
     @Query("SELECT ps FROM ProposedSource ps " +
-            "JOIN ps.source s " +
+            "JOIN FETCH ps.source s " +
             "JOIN ps.subject sub " +
             "WHERE (:search IS NULL " +
             "   OR s.sourceName ILIKE %:search% " +

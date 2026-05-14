@@ -1,11 +1,13 @@
 package com.example.smd.services;
 
 import com.example.smd.dto.request.taskV2.*;
+import com.example.smd.dto.response.SourceResponse;
 import com.example.smd.dto.response.TaskV2Response;
 import com.example.smd.entities.*;
 import com.example.smd.enums.*;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
+import com.example.smd.mapper.SourceMapper;
 import com.example.smd.mapper.TaskV2Mapper;
 import com.example.smd.repositories.*;
 import com.example.smd.dto.request.NotificationRequest;
@@ -41,6 +43,9 @@ public class TaskV2Service {
     AccountService accountService;
     CurriculumGroupSubjectRepository curriculumGroupSubjectRepository;
     NotificationService notificationService;
+    CLOsRepository closRepository;
+    ProposedSourceRepository proposedSourceRepository;
+    SourceMapper sourceMapper;
 
 
     // ===================== GET ALL =====================
@@ -161,6 +166,24 @@ public class TaskV2Service {
         }
 
         TaskV2 savedTask = taskV2Repository.save(task);
+
+        // Nếu type=SYLLABUS và action=CREATE: update CLO status từ DRAFT -> INTERNAL_REVIEW
+        if (TaskType.SYLLABUS.name().equals(request.getType()) && ActionType.CREATE.name().equals(request.getAction())) {
+            if (request.getTargetId() != null) {
+                syllabusRepository.findByIdWithSubject(request.getTargetId()).ifPresent(syllabus -> {
+                    if (syllabus.getSubject() != null) {
+                        UUID subjectId = syllabus.getSubject().getSubjectId();
+                        List<CLOs> clos = closRepository.findBySubject_SubjectId(subjectId);
+                        for (CLOs clo : clos) {
+                            if (PloStatus.DRAFT.name().equals(clo.getStatus())) {
+                                clo.setStatus(PloStatus.INTERNAL_REVIEW.name());
+                            }
+                        }
+                        closRepository.saveAll(clos);
+                    }
+                });
+            }
+        }
 
         if (savedTask.getAccount() != null) {
             NotificationRequest notifReq = NotificationRequest.builder()
@@ -310,7 +333,7 @@ public class TaskV2Service {
         return response;
     }
 
-    /** Build SubjectDto từ Subject entity (bao gồm thông tin department) */
+    /** Build SubjectDto từ Subject entity (bao gồm thông tin department và sources) */
     private TaskV2Response.SubjectDto buildSubjectDto(Subject sub) {
         String deptCode = null;
         String deptName = null;
@@ -318,6 +341,13 @@ public class TaskV2Service {
             deptCode = sub.getDepartment().getDepartmentCode();
             deptName = sub.getDepartment().getDepartmentName();
         }
+
+        List<SourceResponse> sources = proposedSourceRepository
+                .fetchWithSourceBySubjectId(sub.getSubjectId())
+                .stream()
+                .map(ps -> sourceMapper.toResponse(ps.getSource()))
+                .toList();
+
         return TaskV2Response.SubjectDto.builder()
                 .subjectId(sub.getSubjectId())
                 .subjectCode(sub.getSubjectCode())
@@ -326,6 +356,7 @@ public class TaskV2Service {
                 .departmentCode(deptCode)
                 .departmentName(deptName)
                 .status(sub.getStatus())
+                .sources(sources)
                 .build();
     }
 
