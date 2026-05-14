@@ -22,6 +22,7 @@ import com.example.smd.repositories.AssessmentRepository;
 import com.example.smd.repositories.SessionRepository;
 import com.example.smd.repositories.MaterialRepository;
 import com.example.smd.repositories.BlockRepository;
+import com.example.smd.repositories.SyllabusSourceRepository;
 import com.example.smd.mapper.AssessmentMapper;
 import com.example.smd.mapper.SessionMapper;
 import com.example.smd.mapper.MaterialMapper;
@@ -58,6 +59,7 @@ public class SyllabusService {
     SessionMapper sessionMapper;
     MaterialMapper materialMapper;
     BlockMapper blockMapper;
+    SyllabusSourceRepository syllabusSourceRepository;
 
     // 1. Tạo mới
     @Transactional
@@ -136,10 +138,17 @@ public class SyllabusService {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
         }
 
-        // Kiểm tra xem Material có tồn tại không
+        // Kiểm tra xem Syllabus có tồn tại không
         Syllabus syllabus = syllabusRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
+
         if ("DRAFT".equals(syllabus.getStatus())) {
+            // Xóa các bảng con trước để tránh FK constraint violation
+            assessmentRepository.deleteAll(assessmentRepository.findBySyllabus_SyllabusId(id));
+            sessionRepository.deleteAll(sessionRepository.findBySyllabus_SyllabusId(id));
+            // materials đã có CascadeType.ALL trên Syllabus entity, sẽ tự xóa
+            // nhưng syllabus_sources không có cascade → xóa thủ công
+            syllabusSourceRepository.deleteAll(syllabusSourceRepository.findBySyllabus_SyllabusId(id));
             syllabusRepository.delete(syllabus);
         } else {
             syllabus.setStatus("ARCHIVED");
