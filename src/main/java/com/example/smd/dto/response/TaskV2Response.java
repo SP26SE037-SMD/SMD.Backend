@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -55,6 +56,7 @@ public class TaskV2Response {
         private String subjectName;
         private Integer credits;
         private String status;
+        private List<SourceResponse> sources;
         private String departmentCode;
         private String departmentName;
     }

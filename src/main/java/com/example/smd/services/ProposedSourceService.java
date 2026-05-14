@@ -1,13 +1,13 @@
 package com.example.smd.services;
 
 import com.example.smd.dto.request.ProposedSourceRequest;
-import com.example.smd.dto.response.ProposedSourceResponse;
+import com.example.smd.dto.response.SourceResponse;
 import com.example.smd.entities.ProposedSource;
 import com.example.smd.entities.Source;
 import com.example.smd.entities.Subject;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
-import com.example.smd.mapper.ProposedSourceMapper;
+import com.example.smd.mapper.SourceMapper;
 import com.example.smd.repositories.ProposedSourceRepository;
 import com.example.smd.repositories.SourceRepository;
 import com.example.smd.repositories.SubjectRepository;
@@ -34,13 +34,13 @@ public class ProposedSourceService {
     ProposedSourceRepository repository;
     SourceRepository sourceRepository;
     SubjectRepository subjectRepository;
-    ProposedSourceMapper mapper;
+    SourceMapper sourceMapper;
 
     // -------------------------------------------------------
     // CREATE
     // -------------------------------------------------------
     @Transactional
-    public ProposedSourceResponse create(ProposedSourceRequest request) {
+    public SourceResponse create(ProposedSourceRequest request) {
         Source source = sourceRepository.findById(request.getSourceId())
                 .orElseThrow(() -> new AppException(ErrorCode.SOURCE_NOT_FOUND));
 
@@ -57,51 +57,53 @@ public class ProposedSourceService {
                 .subject(subject)
                 .build();
 
-        return mapper.toResponse(repository.save(entity));
+        repository.save(entity);
+        return sourceMapper.toResponse(source);
     }
 
     // -------------------------------------------------------
     // GET ALL (paginated + optional search)
     // -------------------------------------------------------
-    public Page<ProposedSourceResponse> getAll(String search, int page, int size) {
+    public Page<SourceResponse> getAll(String search, int page, int size) {
         String searchCriteria = (search == null || search.trim().isEmpty()) ? null : search.trim();
         Pageable pageable = PageRequest.of(page, size, Sort.by("source.sourceName").ascending());
+        // findByFilters dùng JOIN FETCH ps.source nên ps.getSource() an toàn
         return repository.findByFilters(searchCriteria, pageable)
-                .map(mapper::toResponse);
+                .map(ps -> sourceMapper.toResponse(ps.getSource()));
     }
 
     // -------------------------------------------------------
     // GET DETAIL
     // -------------------------------------------------------
-    public ProposedSourceResponse getDetail(UUID id) {
-        return repository.findById(id)
-                .map(mapper::toResponse)
+    public SourceResponse getDetail(UUID id) {
+        ProposedSource ps = repository.fetchWithSourceById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.PROPOSED_SOURCE_NOT_FOUND));
+        return sourceMapper.toResponse(ps.getSource());
     }
 
     // -------------------------------------------------------
     // GET BY SUBJECT
     // -------------------------------------------------------
-    public List<ProposedSourceResponse> getBySubject(UUID subjectId) {
+    public List<SourceResponse> getBySubject(UUID subjectId) {
         if (!subjectRepository.existsById(subjectId)) {
             throw new AppException(ErrorCode.SUBJECT_NOT_FOUND);
         }
-        return repository.findAllBySubject_SubjectId(subjectId)
+        return repository.fetchWithSourceBySubjectId(subjectId)
                 .stream()
-                .map(mapper::toResponse)
+                .map(ps -> sourceMapper.toResponse(ps.getSource()))
                 .toList();
     }
 
     // -------------------------------------------------------
     // GET BY SOURCE
     // -------------------------------------------------------
-    public List<ProposedSourceResponse> getBySource(UUID sourceId) {
+    public List<SourceResponse> getBySource(UUID sourceId) {
         if (!sourceRepository.existsById(sourceId)) {
             throw new AppException(ErrorCode.SOURCE_NOT_FOUND);
         }
-        return repository.findAllBySource_SourceId(sourceId)
+        return repository.fetchWithSourceBySourceId(sourceId)
                 .stream()
-                .map(mapper::toResponse)
+                .map(ps -> sourceMapper.toResponse(ps.getSource()))
                 .toList();
     }
 
@@ -109,7 +111,7 @@ public class ProposedSourceService {
     // UPDATE (thay đổi source hoặc subject)
     // -------------------------------------------------------
     @Transactional
-    public ProposedSourceResponse update(UUID id, ProposedSourceRequest request) {
+    public SourceResponse update(UUID id, ProposedSourceRequest request) {
         ProposedSource entity = repository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.PROPOSED_SOURCE_NOT_FOUND));
 
@@ -131,8 +133,8 @@ public class ProposedSourceService {
 
         entity.setSource(source);
         entity.setSubject(subject);
-
-        return mapper.toResponse(repository.save(entity));
+        repository.save(entity);
+        return sourceMapper.toResponse(source);
     }
 
     // -------------------------------------------------------
