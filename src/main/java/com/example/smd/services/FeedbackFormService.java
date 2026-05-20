@@ -310,7 +310,7 @@ public class FeedbackFormService {
 
         return FormSchemaResponse.builder()
                 .formId(formId.toString())
-                .title(buildFormTitle(record))
+                .title(record.getFormType())
                 .description(record.getFormDescription() != null && !record.getFormDescription().isBlank()
                         ? record.getFormDescription()
                         : "Phan hoi cho chuong trinh dao tao: " + record.getCurriculum().getCurriculumName())
@@ -576,11 +576,6 @@ public class FeedbackFormService {
         return itemToQuestion;
     }
 
-    private String buildFormTitle(GoogleFormRecord record) {
-        String curriculumName = record.getCurriculum() != null ? record.getCurriculum().getCurriculumName()
-                : "Curriculum";
-        return curriculumName + " - Feedback " + record.getFormType();
-    }
 
     private SectionResponse toSectionResponse(FeedbackFormSection section) {
         return SectionResponse.builder()
