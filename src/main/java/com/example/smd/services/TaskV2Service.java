@@ -119,6 +119,7 @@ public class TaskV2Service {
                         response.setSyllabus(TaskV2Response.SyllabusDto.builder()
                                 .syllabusId(s.getSyllabusId())
                                 .syllabusName(s.getSyllabusName())
+                                .status(s.getStatus())
                                 .build());
                         if (s.getSubject() != null) {
                             response.setSubject(buildSubjectDto(s.getSubject()));
@@ -303,6 +304,7 @@ public class TaskV2Service {
                     response.setSyllabus(TaskV2Response.SyllabusDto.builder()
                             .syllabusId(s.getSyllabusId())
                             .syllabusName(s.getSyllabusName())
+                            .status(s.getStatus())
                             .build());
                     if (s.getSubject() != null) {
                         response.setSubject(buildSubjectDto(s.getSubject()));

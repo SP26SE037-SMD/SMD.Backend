@@ -36,8 +36,11 @@ public class GoogleFormRecord {
     @Column(name = "edit_url", columnDefinition = "TEXT")
     String editUrl;
 
-    @Column(name = "form_type", length = 100)
+    @Column(name = "form_name", length = 100)
     String formType;
+
+    @Column(name = "description", columnDefinition = "TEXT")
+    String formDescription;
 
     @Column(name = "is_active")
     Boolean isActive;

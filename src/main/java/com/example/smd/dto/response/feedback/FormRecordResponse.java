@@ -17,6 +17,7 @@ public class FormRecordResponse {
     String formUrl;
     String formEditUrl;
     String formType;
+    String description;
     Boolean isActive;
     Instant createdAt;
     Instant closeAt;

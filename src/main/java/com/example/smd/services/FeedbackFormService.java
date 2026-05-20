@@ -71,6 +71,7 @@ public class FeedbackFormService {
         GoogleFormRecord record = GoogleFormRecord.builder()
                 .curriculum(curriculum)
                 .formType(req.getFormType().trim())
+                .formDescription(req.getDescription())
                 .closedAt(req.getCloseAt())
                 .isActive(false)
                 .build();
@@ -177,6 +178,9 @@ public class FeedbackFormService {
             }
             if (req.getCloseAt() != null) {
                 record.setClosedAt(req.getCloseAt());
+            }
+            if (req.getDescription() != null) {
+                record.setFormDescription(req.getDescription());
             }
         }
         formRecordRepo.save(record);
@@ -307,7 +311,9 @@ public class FeedbackFormService {
         return FormSchemaResponse.builder()
                 .formId(formId.toString())
                 .title(buildFormTitle(record))
-                .description("Phan hoi cho chuong trinh dao tao: " + record.getCurriculum().getCurriculumName())
+                .description(record.getFormDescription() != null && !record.getFormDescription().isBlank()
+                        ? record.getFormDescription()
+                        : "Phan hoi cho chuong trinh dao tao: " + record.getCurriculum().getCurriculumName())
                 .sections(sectionSchemas)
                 .build();
     }
@@ -605,6 +611,7 @@ public class FeedbackFormService {
                 .formUrl(record.getFormUrl())
                 .formEditUrl(record.getEditUrl())
                 .formType(record.getFormType())
+                .description(record.getFormDescription())
                 .isActive(record.getIsActive())
                 .createdAt(record.getCreatedAt())
                 .closeAt(record.getClosedAt())
