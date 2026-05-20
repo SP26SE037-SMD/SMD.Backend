@@ -12,5 +12,6 @@ import lombok.experimental.FieldDefaults;
 public class UpdateFormRequest {
     String title; // Cho phép update title nếu cần, backend xử lý linh hoạt
     String formType;
+    String description;
     Instant closeAt;
 }

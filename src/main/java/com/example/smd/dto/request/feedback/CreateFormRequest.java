@@ -14,5 +14,6 @@ import java.util.UUID;
 public class CreateFormRequest {
     UUID curriculumId;
     String formType;
+    String description;
     Instant closeAt;
 }

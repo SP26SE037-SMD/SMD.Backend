@@ -66,6 +66,7 @@ public class TaskV2Response {
     public static class SyllabusDto {
         private UUID syllabusId;
         private String syllabusName;
+        private String status;
     }
 
     @Data
