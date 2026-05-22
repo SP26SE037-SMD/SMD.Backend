@@ -261,6 +261,44 @@ public class TaskV2Service {
         return getTaskById(savedTask.getTaskId());
     }
 
+    // ===================== UPDATE Accepted  =====================
+
+    @Transactional
+    public TaskV2Response updateTaskAccepted(UUID taskId,
+                                           Boolean request) {
+        TaskV2 task = taskV2Repository.findById(taskId)
+                .orElseThrow(() -> new RuntimeException("Task not found"));
+
+        applyCompletedAt(task);
+
+        TaskV2 savedTask = taskV2Repository.save(task);
+
+        NotificationRequest notifReq = null;
+        if(task.getIsAccepted() != null) {
+            throw new RuntimeException("Task acceptance has already been set and cannot be updated again.");
+        }
+        if (Boolean.TRUE.equals(request)) {
+            notifReq = NotificationRequest.builder()
+                    .title("Task was Accepted")
+                    .message("The task '" + savedTask.getTaskName() + "' has been accepted.")
+                    .type(NotificationType.TASK)
+                    .accountId(savedTask.getAccount().getAccountId())
+                    .build();
+        } else {
+            notifReq = NotificationRequest.builder()
+                    .title("Task was Rejected")
+                    .message("The task '" + savedTask.getTaskName() + "' has been rejected. Please review the comments to know the reason.")
+                    .type(NotificationType.TASK)
+                    .accountId(savedTask.getAccount().getAccountId())
+                    .build();
+        }
+
+        notificationService.createNotification(notifReq);
+
+        return getTaskById(savedTask.getTaskId());
+    }
+
+
     // ===================== DELETE =====================
 
     @Transactional
