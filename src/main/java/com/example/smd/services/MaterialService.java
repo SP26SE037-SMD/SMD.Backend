@@ -47,10 +47,6 @@ public class MaterialService {
         Syllabus syllabus = syllabusRepository.findById(request.getSyllabusId())
                 .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
 
-        if (!(SyllabusStatus.IN_PROGRESS.toString().equals(syllabus.getStatus()) || SyllabusStatus.REVISION_REQUESTED.toString().equals(syllabus.getStatus()))) {
-            throw new AppException(ErrorCode.MATERIAL_CANNOT_CREATE);
-        }
-
         Material material = materialMapper.toEntity(request);
         material.setSyllabus(syllabus);
         material.setUploadedAt(Instant.now());
@@ -75,10 +71,6 @@ public class MaterialService {
         Material material = materialRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.MATERIAL_NOT_FOUND));
 
-        if (!SyllabusStatus.IN_PROGRESS.toString().equals(material.getSyllabus().getStatus())) {
-            throw new AppException(ErrorCode.MATERIAL_NOT_EDITABLE);
-        }
-
         materialMapper.updateMaterial(material, request);
 
         return materialMapper.toResponse(materialRepository.save(material));
@@ -99,10 +91,6 @@ public class MaterialService {
         // Kiểm tra xem Material có tồn tại không
         Material material = materialRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.MATERIAL_NOT_FOUND));
-
-        if (!SyllabusStatus.IN_PROGRESS.toString().equals(material.getSyllabus().getStatus())) {
-            throw new AppException(ErrorCode.MATERIAL_NOT_EDITABLE);
-        }
 
         materialRepository.delete(material);
     }
@@ -162,12 +150,6 @@ public class MaterialService {
         // Nếu là STUDENT hoặc LECTURER, chỉ cho phép xem nếu status là PUBLISHED
         if (RoleName.STUDENT.toString().equals(roleName) || RoleName.LECTURER.toString().equals(roleName)) {
             if (!MaterialStatus.PUBLISHED.toString().equalsIgnoreCase(material.getSyllabus().getStatus())) {
-                throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
-            }
-        }
-
-        if (SyllabusStatus.IN_PROGRESS.toString().equals(material.getSyllabus().getStatus())) {
-            if (!(RoleName.PDCM.toString().equals(account.getRole().getRoleName()) || RoleName.COLLABORATOR.toString().equals(account.getRole().getRoleName()))) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }

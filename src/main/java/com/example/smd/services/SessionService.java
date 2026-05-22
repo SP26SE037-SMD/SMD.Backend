@@ -101,11 +101,6 @@ public class SessionService {
             }
         }
 
-        if (SyllabusStatus.IN_PROGRESS.toString().equalsIgnoreCase(session.getSyllabus().getStatus())) {
-            if (!(RoleName.PDCM.toString().equals(account.getRole().getRoleName()) || RoleName.COLLABORATOR.toString().equals(account.getRole().getRoleName()))) {
-                throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
-            }
-        }
         return sessionMapper.toResponse(session);
     }
 
@@ -131,10 +126,6 @@ public class SessionService {
 
         Syllabus syllabus = syllabusRepository.findById(request.getSyllabusId())
                 .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
-
-        if (!(SyllabusStatus.IN_PROGRESS.toString().equals(syllabus.getStatus()) || SyllabusStatus.REVISION_REQUESTED.toString().equals(syllabus.getStatus()))) {
-            throw new AppException(ErrorCode.SESSION_CANNOT_CREATE);
-        }
 
         if (sessionRepository.existsBySyllabus_SyllabusIdAndSessionNumber(
                 request.getSyllabusId(), request.getSessionNumber())) {
@@ -171,10 +162,6 @@ public class SessionService {
 
         Syllabus syllabus = syllabusRepository.findById(request.getSyllabusId())
                 .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
-
-        if (!SyllabusStatus.IN_PROGRESS.toString().equals(session.getSyllabus().getStatus())) {
-            throw new AppException(ErrorCode.SESSION_NOT_EDITABLE);
-        }
 
         String newType = "";
         if (SessionType.THEORY.toString().equals(request.getSessionType())) {
@@ -224,14 +211,8 @@ public class SessionService {
         for (SessionRequest request : requests) {
             // 2. Validate và Cache Syllabus
             Syllabus syllabus = syllabusCache.computeIfAbsent(request.getSyllabusId(), id -> {
-                Syllabus s = syllabusRepository.findById(id)
+                return syllabusRepository.findById(id)
                         .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
-
-                if (!(SyllabusStatus.IN_PROGRESS.toString().equals(s.getStatus()) ||
-                        SyllabusStatus.REVISION_REQUESTED.toString().equals(s.getStatus()))) {
-                    throw new AppException(ErrorCode.SESSION_CANNOT_CREATE);
-                }
-                return s;
             });
 
             // 3. Kiểm tra trùng sessionNumber dưới Database
@@ -286,10 +267,6 @@ public class SessionService {
         Session session = sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new AppException(ErrorCode.SESSION_NOT_FOUND));
 
-        if (!SyllabusStatus.IN_PROGRESS.toString().equals(session.getSyllabus().getStatus())) {
-            throw new AppException(ErrorCode.SESSION_NOT_EDITABLE);
-        }
-
         sessionRepository.delete(session);
         return true;
     }
@@ -313,10 +290,6 @@ public class SessionService {
 
         Syllabus syllabus = syllabusRepository.findById(syllabusId)
                 .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
-
-        if (!SyllabusStatus.IN_PROGRESS.toString().equals(syllabus.getStatus())) {
-            throw new AppException(ErrorCode.SESSION_NOT_EDITABLE);
-        }
 
         sessionRepository.deleteAll(sessions);
         return true;
