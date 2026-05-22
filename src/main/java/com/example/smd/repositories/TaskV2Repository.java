@@ -96,4 +96,7 @@ public interface TaskV2Repository extends JpaRepository<TaskV2, UUID>, JpaSpecif
             WHERE t.taskId IN :ids
             """)
     void markOverdueNotified(@Param("ids") List<UUID> ids);
+
+    @Query("SELECT t.targetId FROM TaskV2 t WHERE t.type = :type")
+    List<UUID> findTargetIdsByType(@Param("type") String type);
 }
