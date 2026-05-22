@@ -265,18 +265,21 @@ public class TaskV2Service {
 
     @Transactional
     public TaskV2Response updateTaskAccepted(UUID taskId,
-                                           Boolean request) {
+                                           Boolean request, String comment) {
         TaskV2 task = taskV2Repository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Task not found"));
 
+        if(task.getIsAccepted() != null) {
+            throw new RuntimeException("Task acceptance has already been set and cannot be updated again.");
+        }
+
+        task.setIsAccepted(request);
+        task.setComment(comment);
         applyCompletedAt(task);
 
         TaskV2 savedTask = taskV2Repository.save(task);
 
         NotificationRequest notifReq = null;
-        if(task.getIsAccepted() != null) {
-            throw new RuntimeException("Task acceptance has already been set and cannot be updated again.");
-        }
         if (Boolean.TRUE.equals(request)) {
             notifReq = NotificationRequest.builder()
                     .title("Task was Accepted")
