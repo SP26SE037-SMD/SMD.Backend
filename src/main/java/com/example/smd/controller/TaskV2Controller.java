@@ -79,6 +79,11 @@ public class TaskV2Controller {
         return ResponseEntity.ok(taskV2Service.updateTaskStatus(taskId, status));
     }
 
+    @PatchMapping("/{taskId}/isAccepted")
+    public ResponseEntity<TaskV2Response> updateTaskAccepted(@PathVariable UUID taskId, @RequestParam Boolean isAccepted) {
+        return ResponseEntity.ok(taskV2Service.updateTaskAccepted(taskId, isAccepted));
+    }
+
     @DeleteMapping("/{taskId}")
     public ResponseEntity<Void> deleteTask(@PathVariable UUID taskId) {
         taskV2Service.deleteTask(taskId);
