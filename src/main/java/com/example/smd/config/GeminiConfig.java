@@ -75,8 +75,12 @@ public class GeminiConfig {
 
             } catch (HttpClientErrorException.TooManyRequests e) {
                 log.warn("Key hiện tại bị lỗi 429. Đang chuyển đổi sang key khác...");
-                apiKeyManager.rotateKey(currentKey);
-                attempts++;
+                if (maxAttempts == 1) {
+                    log.info("Chỉ có 1 key test. Tiến hành đợi 5 giây trước khi thử lại...");
+                } else {
+                    apiKeyManager.rotateKey(currentKey);
+                    attempts++;
+                }
 
                 try {
                     Thread.sleep(1000); // Tạm dừng 1s để giảm tải trước khi thử lại
@@ -124,8 +128,12 @@ public class GeminiConfig {
             } catch (HttpClientErrorException.TooManyRequests e) {
                 // 5. Bắt lỗi 429: Thực hiện xoay key
                 log.warn("Key hiện tại bị lỗi 429. Đang chuyển đổi sang key khác...");
-                apiKeyManager.rotateKey(currentKey);
-                attempts++;
+                if (maxAttempts == 1) {
+                    log.info("Chỉ có 1 key test. Tiến hành đợi 5 giây trước khi thử lại...");
+                } else {
+                    apiKeyManager.rotateKey(currentKey);
+                    attempts++;
+                }
 
                 try {
                     Thread.sleep(1000); // Tạm dừng 1s để giảm tải trước khi thử lại
@@ -162,8 +170,12 @@ public class GeminiConfig {
             } catch (HttpClientErrorException.TooManyRequests e) {
                 // 5. Bắt lỗi 429: Thực hiện xoay key
                 log.warn("Key hiện tại bị lỗi 429. Đang chuyển đổi sang key khác...");
-                apiKeyManager.rotateKey(currentKey);
-                attempts++;
+                if (maxAttempts == 1) {
+                    log.info("Chỉ có 1 key test. Tiến hành đợi 5 giây trước khi thử lại...");
+                } else {
+                    apiKeyManager.rotateKey(currentKey);
+                    attempts++;
+                }
 
                 try {
                     Thread.sleep(1000); // Tạm dừng 1s để giảm tải trước khi thử lại

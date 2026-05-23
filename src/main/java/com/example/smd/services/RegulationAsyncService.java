@@ -47,49 +47,9 @@ public class RegulationAsyncService {
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
         if (RoleName.VP.toString().equals(roleName)) {
-//            List<String> missingFields = new ArrayList<>();
-//            // Hằng số định danh giá trị null từ AI prompt
-//            String AI_NULL_VALUE = "[NULL]";
-//
-//            for (java.lang.reflect.Field field : programRegulationResponse.getClass().getDeclaredFields()) {
-//                field.setAccessible(true);
-//                try {
-//                    Object value = field.get(programRegulationResponse);
-//                    var jsonPropertys = field.getAnnotation(com.fasterxml.jackson.annotation.JsonProperty.class);
-//                    String fieldDisplayNames = (jsonPropertys != null && !jsonPropertys.value().isEmpty())
-//                            ? jsonPropertys.value()
-//                            : field.getName();
-//                    System.out.println(String.format("Field: [%-30s] | Value: %s", fieldDisplayNames, value));
-//                    // Kiểm tra nếu giá trị là null thực sự, hoặc là chuỗi "[NULL]" (từ AI), hoặc chuỗi rỗng
-//                    boolean isMissing = (value == null) ||
-//                            (value instanceof String &&
-//                                    (AI_NULL_VALUE.equalsIgnoreCase(((String) value).trim()) || ((String) value).trim().isEmpty()));
-//
-//                    if (isMissing) {
-//                        // Lấy tên field từ @JsonProperty để thông báo cho thân thiện với người dùng
-//                        var jsonProperty = field.getAnnotation(com.fasterxml.jackson.annotation.JsonProperty.class);
-//                        String fieldDisplayName = (jsonProperty != null && !jsonProperty.value().isEmpty())
-//                                ? jsonProperty.value()
-//                                : field.getName();
-//
-//                        missingFields.add(fieldDisplayName);
-//                    }
-//                } catch (IllegalAccessException e) {
-//                    throw new RuntimeException("The system encountered an error while checking all the data.");
-//                }
-//            }
-
-//            if (!missingFields.isEmpty()) {
-//                String errorMsg = String.join(", ", missingFields);
-//                realtimePublisher.publishToAccount(accountId,
-//                        RealtimePayload.status("VALIDATE_FAIL", errorMsg));
-//                log.info("VALIDATE_FAIL: {}", errorMsg);
-//                throw new RuntimeException(errorMsg);
-//            } else {
-                realtimePublisher.publishToAccount(accountId,
-                        RealtimePayload.status("VALIDATE_SUCCESS", programRegulationResponse));
-                log.info("VALIDATE_SUCCESS: {}", "Data verification successful");
-//            }
+            realtimePublisher.publishToAccount(accountId,
+                    RealtimePayload.status("VALIDATE_SUCCESS", programRegulationResponse));
+            log.info("VALIDATE_SUCCESS: {}", "Data verification successful");
         } else {
             var major = new Major();
             major.setMajorCode(programRegulationResponse.getMajorCode());
@@ -113,20 +73,18 @@ public class RegulationAsyncService {
 
     @Transactional
     public List<RegulationResponse> createRegulationBluk(ProgramRegulationResponse response, Major major) {
-        // Danh sách các quy tắc cần trích xuất (Trừ major_code, major_name, major_description)
-        // Cấu trúc: {Code, Name, Value}
         List<Regulation> regulations = new ArrayList<>();
 
-        regulations.add(createRegulation("TRAINING_LEVEL", "Trình độ đào tạo", response.getTrainingLevel(), major));
-        regulations.add(createRegulation("PO_PLO_RULE", "Quy định PO/PLO", response.getPoPloRule(), major));
-        regulations.add(createRegulation("TOTAL_CREDITS", "Tổng tín chỉ chương trình", response.getTotalCreditsRule(), major));
-        regulations.add(createRegulation("EXCLUDED_CREDITS", "Tín chỉ ngoại lệ (GDQP/GDTC)", response.getExcludedCreditsRule(), major));
-        regulations.add(createRegulation("GENERAL_EDU_CREDITS", "Tín chỉ giáo dục đại cương", response.getGeneralEducationCredits(), major));
-        regulations.add(createRegulation("PROFESSIONAL_EDU_CREDITS", "Tín chỉ giáo dục chuyên nghiệp", response.getProfessionalEducationCredits(), major));
-        regulations.add(createRegulation("ASSESSMENT_RATIO", "Tỉ lệ điểm quá trình/cuối kỳ", response.getAssessmentRule(), major));
-        regulations.add(createRegulation("COURSE_CATALOG", "Danh mục học phần", response.getCourseCatalogValidation(), major));
-        regulations.add(createRegulation("COURSE_MAPPING", "Chi tiết định biên học phần (N|a|b|c)", response.getCourseDetailMapping(), major));
-        regulations.add(createRegulation("SOURCE_DOCUMENTS", "Danh mục tài liệu tham khảo", response.getSourceValidation(), major));
+        regulations.add(createRegulation("TRAINING_LEVEL", "Training Level", response.getTrainingLevel(), major));
+        regulations.add(createRegulation("PO_PLO_RULE", "PO/PLO Regulations", response.getPoPloRule(), major));
+        regulations.add(createRegulation("TOTAL_CREDITS", "Total Program Credits", response.getTotalCreditsRule(), major));
+        regulations.add(createRegulation("EXCLUDED_CREDITS", "Excluded Credits (GDQP/GDTC)", response.getExcludedCreditsRule(), major));
+        regulations.add(createRegulation("GENERAL_EDU_CREDITS", "General Education Credits", response.getGeneralEducationCredits(), major));
+        regulations.add(createRegulation("PROFESSIONAL_EDU_CREDITS", "Professional Education Credits", response.getProfessionalEducationCredits(), major));
+        regulations.add(createRegulation("ASSESSMENT_RATIO", "In-class/Final Exam Grading Ratio", response.getAssessmentRule(), major));
+        regulations.add(createRegulation("COURSE_CATALOG", "Course Catalog / Specializations", response.getCourseCatalogValidation(), major));
+        regulations.add(createRegulation("COURSE_MAPPING", "Detailed Course Metrics (N|a|b|c)", response.getCourseDetailMapping(), major));
+        regulations.add(createRegulation("SOURCE_DOCUMENTS", "Main Textbooks and Reference List", response.getSourceValidation(), major));
 
         List<Regulation> savedRegulations = regulationRepository.saveAll(regulations);
 
