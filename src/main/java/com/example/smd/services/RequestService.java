@@ -33,6 +33,7 @@ public class RequestService {
     CurriculumRepository curriculumRepository;
     MajorRepository      majorRepository;
     TaskV2Repository     taskV2Repository;
+    SprintRepository     sprintRepository;
 
     // ------------------------------------------------------------------ CREATE
 
@@ -126,6 +127,7 @@ public class RequestService {
      * CURRICULUM -> CurriculumDto
      * MAJOR      -> MajorDto
      * TASK       -> TaskDto
+     * SPRINT     -> SprintDto
      */
     private RequestResponse enrichFromEntity(Request entity) {
         RequestResponse response = requestMapper.toResponse(entity);
@@ -195,6 +197,14 @@ public class RequestService {
                                 .status(t.getStatus())
                                 .type(t.getType())
                                 .action(t.getAction())
+                                .build()));
+                break;
+
+            case "SPRINT":
+                sprintRepository.findById(targetId).ifPresent(sp ->
+                        response.setSprint(RequestResponse.SprintDto.builder()
+                                .sprintId(sp.getSprintId())
+                                .sprintName(sp.getSprintName())
                                 .build()));
                 break;
 

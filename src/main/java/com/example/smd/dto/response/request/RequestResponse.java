@@ -33,6 +33,7 @@ public class RequestResponse {
     CurriculumDto curriculum;
     MajorDto      major;
     TaskDto       task;
+    SprintDto     sprint;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+7")
     Instant createdAt;
@@ -109,5 +110,14 @@ public class RequestResponse {
         String status;
         String type;
         String action;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class SprintDto {
+        UUID   sprintId;
+        String sprintName;
     }
 }
