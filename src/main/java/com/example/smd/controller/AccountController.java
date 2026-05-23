@@ -4,6 +4,7 @@ import com.example.smd.dto.request.account.AccountRequest;
 import com.example.smd.dto.request.account.AccountUpdateRequest;
 import com.example.smd.dto.response.account.AccountResponse;
 import com.example.smd.dto.response.account.AvailableAccountResponse;
+import com.example.smd.dto.response.account.HopdcResponse;
 import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.dto.response.account.ImportResult;
@@ -233,6 +234,22 @@ public class AccountController {
                 .status(1000)
                 .data(accountService.getAccountsByDepartment(departmentId))
                 .message("Accounts retrieved successfully for department: " + departmentId)
+                .build();
+    }
+
+    @GetMapping("/{accountId}/hopdc")
+    @Operation(
+            summary = "Get HOPDC accounts in the same department as the given account",
+            description = "Looks up the department of the provided accountId, then returns all accounts " +
+                    "with role HOPDC belonging to that department. " +
+                    "Response fields: accountId, email, fullName, department (departmentId, departmentCode, departmentName)."
+    )
+    public ResponseObject<List<HopdcResponse>> getHopdcBySameDepartment(
+            @PathVariable UUID accountId) {
+        return ResponseObject.<List<HopdcResponse>>builder()
+                .status(1000)
+                .data(accountService.getHopdcByAccountDepartment(accountId))
+                .message("HOPDC accounts retrieved successfully")
                 .build();
     }
 

@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+  <meta charset="UTF-8"/>
+  <title th:text="${data.curriculum.curriculumCode} + ' - Chuong trinh dao tao'">Curriculum Report</title>
+  <style>
+/*<![CDATA[*/
+
+    /* GLOBAL RESET */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: "DejaVu Sans", Arial, sans-serif;
+      font-size: 10pt;
+      color: #1a1a2e;
+      line-height: 1.5;
+    }
+
+    h1 { font-size: 22pt; font-weight: bold; }
+    h2 { font-size: 14pt; font-weight: bold; margin-bottom: 6pt; }
+    h3 { font-size: 11pt; font-weight: bold; margin-bottom: 4pt; }
+    p  { margin-bottom: 4pt; }
+
+    /* PAGE LAYOUT - Portrait (mac dinh) */
+    @page {
+      size: A4 portrait;
+      margin: 20mm 18mm 20mm 22mm;
+    }
+
+    /* Page 5: Landscape */
+    @page landscape-page {
+      size: A4 landscape;
+      margin: 15mm 15mm 15mm 15mm;
+    }
+
+    .landscape-section {
+      page: landscape-page;
+    }
+
+    /* PAGE BREAKS */
+    .page-break-before { page-break-before: always; }
+
+    /* COMMON TABLE STYLES */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 10pt;
+    }
+
+    th, td {
+      border: 1px solid #b0b8c9;
+      padding: 4pt 6pt;
+      vertical-align: middle;
+    }
+
+    th {
+      background-color: #1a3a6b;
+      color: #ffffff;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    tr:nth-child(even) td { background-color: #f0f4fb; }
+
+    td.center { text-align: center; }
+
+    /* PAGE 1 - COVER */
+    .cover {
+      text-align: center;
+      padding-top: 60pt;
+    }
+
+    .cover .badge {
+      display: inline-block;
+      border: 3pt solid #1a3a6b;
+      border-radius: 4pt;
+      padding: 4pt 14pt;
+      font-size: 10pt;
+      font-weight: bold;
+      color: #1a3a6b;
+      letter-spacing: 2pt;
+      margin-bottom: 20pt;
+    }
+
+    .cover h1 {
+      font-size: 20pt;
+      color: #1a3a6b;
+      line-height: 1.3;
+      margin-bottom: 6pt;
+    }
+
+    .cover .major-code {
+      font-size: 13pt;
+      color: #4a6fa5;
+      margin-bottom: 24pt;
+    }
+
+    .cover .description-box {
+      text-align: left;
+      background: #f0f4fb;
+      border-left: 4pt solid #1a3a6b;
+      padding: 10pt 14pt;
+      margin: 20pt 0;
+      font-size: 9.5pt;
+    }
+
+    .divider {
+      border: none;
+      border-top: 2pt solid #1a3a6b;
+      margin: 14pt 0;
+    }
+
+    .section-title {
+      font-size: 12pt;
+      font-weight: bold;
+      color: #1a3a6b;
+      border-bottom: 1.5pt solid #4a6fa5;
+      padding-bottom: 4pt;
+      margin-bottom: 10pt;
+      margin-top: 16pt;
+    }
+
+    /* PAGE 3 - SEMESTER PLAN group header */
+    .group-header td {
+      background-color: #d0daea !important;
+      font-weight: bold;
+      color: #1a1a2e;
+    }
+
+    /* PAGE 4 - SUBJECT CARDS */
+    .subject-card {
+      margin-bottom: 12pt;
+      page-break-inside: avoid;
+    }
+
+    .subject-card-header {
+      background-color: #1a3a6b;
+      color: #ffffff;
+      padding: 5pt 10pt;
+      font-size: 10.5pt;
+      font-weight: bold;
+    }
+
+    .subject-card-header span.code {
+      background: #4a6fa5;
+      border-radius: 2pt;
+      padding: 1pt 6pt;
+      margin-right: 6pt;
+      font-size: 9pt;
+    }
+
+    .card-grid {
+      display: table;
+      width: 100%;
+      border: 1pt solid #b0b8c9;
+      border-top: none;
+    }
+
+    .card-row {
+      display: table-row;
+    }
+
+    .card-row:nth-child(even) .card-label,
+    .card-row:nth-child(even) .card-value {
+      background-color: #f0f4fb;
+    }
+
+    .card-label {
+      display: table-cell;
+      width: 30%;
+      padding: 3pt 8pt;
+      font-weight: bold;
+      color: #1a3a6b;
+      border-right: 1pt solid #b0b8c9;
+      border-bottom: 1pt solid #e0e6f0;
+      vertical-align: top;
+    }
+
+    .card-value {
+      display: table-cell;
+      padding: 3pt 8pt;
+      border-bottom: 1pt solid #e0e6f0;
+      vertical-align: top;
+    }
+
+    .subject-divider {
+      border: none;
+      border-top: 1pt dashed #b0b8c9;
+      margin: 10pt 0;
+    }
+
+    /* PAGE 5 - CLO-PLO MATRIX (landscape) */
+    .matrix-table th, .matrix-table td {
+      font-size: 7.5pt;
+      padding: 3pt 4pt;
+    }
+
+    /* Vertical header cell for PLO columns */
+    .matrix-table th.vert {
+      height: 70pt;
+      width: 22pt;
+      padding: 0;
+      vertical-align: bottom;
+      text-align: center;
+      overflow: hidden;
+    }
+
+    /* Inner div rotated -90deg to simulate vertical text */
+    .matrix-table th.vert .rotated-text {
+      display: block;
+      transform: rotate(-90deg);
+      white-space: nowrap;
+      font-size: 7pt;
+      font-weight: bold;
+      color: #ffffff;
+      width: 65pt;
+      margin-left: -22pt;
+      margin-bottom: 4pt;
+      text-align: left;
+    }
+
+    .matrix-table td.subject-cell {
+      font-weight: bold;
+      background-color: #d0daea !important;
+      text-align: left;
+    }
+
+    .matrix-table td.check {
+      text-align: center;
+      color: #1a3a6b;
+      font-weight: bold;
+    }
+
+/*]]>*/
+  </style>
+</head>
+<body>
+
+<!-- PAGE 1: BIA - MAJOR INFO -->
+<div class="cover">
+  <div class="badge">CHUONG TRINH DAO TAO</div>
+
+  <h1 th:text="${data.major.majorName}">Ten nganh</h1>
+  <div class="major-code" th:text="'Ma nganh: ' + ${data.major.majorCode}">Ma nganh</div>
+
+  <hr class="divider"/>
+
+  <div class="description-box"
+       th:if="${data.major.description != null and !#strings.isEmpty(data.major.description)}">
+    <strong>Gioi thieu nganh:</strong><br/>
+    <span th:text="${data.major.description}"></span>
+  </div>
+</div>
+
+<div class="section-title">Muc tieu dao tao (Program Objectives - PO)</div>
+<table>
+  <thead>
+    <tr>
+      <th style="width:15%">Ma PO</th>
+      <th>Mo ta</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr th:each="po : ${data.major.pos}">
+      <td class="center" th:text="${po.poCode}"></td>
+      <td th:text="${po.description}"></td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- PAGE 2: PLO TABLE + PO-PLO MATRIX -->
+<div class="page-break-before">
+  <div style="margin-bottom:14pt;">
+    <h2 th:text="${data.curriculum.curriculumName}">Ten CTDT</h2>
+    <p>
+      <strong>Ma CTDT:</strong>
+      <span th:text="${data.curriculum.curriculumCode}"></span>
+      &#160;|&#160;
+      <strong>Nam ap dung:</strong>
+      <span th:text="${data.curriculum.startYear} + ' - ' + ${data.curriculum.endYear}"></span>
+    </p>
+  </div>
+
+  <div class="section-title">Chuan dau ra chuong trinh (PLO)</div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:12%">Ma PLO</th>
+        <th>Mo ta</th>
+        <th style="width:12%">Trang thai</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr th:each="plo : ${data.curriculum.plos}">
+        <td class="center" th:text="${plo.ploCode}"></td>
+        <td th:text="${plo.description}"></td>
+        <td class="center" th:text="${plo.status}"></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="section-title">Ma tran PO - PLO</div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:12%">PLO \ PO</th>
+        <th th:each="poH : ${data.curriculum.poHeaders}" th:text="${poH}"></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr th:each="plo : ${data.curriculum.plos}">
+        <td style="font-weight:bold;" th:text="${plo.ploCode}"></td>
+        <td class="center" th:each="poH : ${data.curriculum.poHeaders}">
+          <span th:if="${data.curriculum.ploPoMappings[plo.ploCode] != null
+                         and data.curriculum.ploPoMappings[plo.ploCode].contains(poH)}">X</span>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- PAGE 3: KE HOACH GIANG DAY -->
+<div class="page-break-before">
+  <div class="section-title">Ke hoach giang day theo ky</div>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:7%">Ky</th>
+        <th style="width:13%">Ma HP</th>
+        <th>Ten hoc phan</th>
+        <th style="width:8%">TC</th>
+        <th style="width:12%">Bac dao tao</th>
+      </tr>
+    </thead>
+    <tbody>
+      <th:block th:each="grp : ${data.semesterPlan}">
+        <tr class="group-header">
+          <td colspan="5">
+            <span th:text="${grp.groupCode + ' - ' + grp.groupName}"></span>
+            <span th:if="${grp.groupType != null and !#strings.isEmpty(grp.groupType)}"
+                  th:text="' (' + ${grp.groupType} + ')'"></span>
+            &#160;-&#160;
+            <span th:text="${grp.totalCredits} + ' TC'"></span>
+          </td>
+        </tr>
+        <tr th:each="row : ${grp.rows}">
+          <td class="center" th:text="${row.semester}"></td>
+          <td th:text="${row.subjectCode}"></td>
+          <td th:text="${row.subjectName}"></td>
+          <td class="center" th:text="${row.credits}"></td>
+          <td class="center" th:text="${row.degreeLevel}"></td>
+        </tr>
+      </th:block>
+    </tbody>
+  </table>
+</div>
+
+<!-- PAGE 4: CHI TIET HOC PHAN (SUBJECT CARDS) -->
+<div class="page-break-before">
+  <div class="section-title">Chi tiet danh muc hoc phan</div>
+
+  <th:block th:each="sub, iterStat : ${data.subjects}">
+    <div class="subject-card">
+      <div class="subject-card-header">
+        <span class="code" th:text="${sub.subjectCode}"></span>
+        <span th:text="${sub.subjectName}"></span>
+      </div>
+      <div class="card-grid">
+        <div class="card-row">
+          <span class="card-label">So tin chi</span>
+          <span class="card-value" th:text="${sub.credits} + ' TC'"></span>
+        </div>
+        <div class="card-row">
+          <span class="card-label">Tiet LT / TH / Tu hoc</span>
+          <span class="card-value"
+                th:text="${sub.theoryPeriods} + ' / ' + ${sub.practicalPeriods} + ' / ' + ${sub.selfStudyPeriods}"></span>
+        </div>
+        <div class="card-row">
+          <span class="card-label">Bac dao tao</span>
+          <span class="card-value" th:text="${sub.degreeLevel}"></span>
+        </div>
+        <div class="card-row">
+          <span class="card-label">Phan bo thoi gian</span>
+          <span class="card-value" th:text="${sub.timeAllocation}"></span>
+        </div>
+        <div class="card-row">
+          <span class="card-label">Khoa phu trach</span>
+          <span class="card-value" th:text="${sub.departmentName}"></span>
+        </div>
+        <div class="card-row">
+          <span class="card-label">Cong cu ho tro</span>
+          <span class="card-value" th:text="${sub.tool}"></span>
+        </div>
+        <div class="card-row">
+          <span class="card-label">Bloom toi thieu</span>
+          <span class="card-value" th:text="${sub.minBloomLevel}"></span>
+        </div>
+        <div class="card-row">
+          <span class="card-label">Thang diem / Diem toi thieu</span>
+          <span class="card-value"
+                th:text="${sub.scoringScale} + ' / ' + ${sub.minToPass}"></span>
+        </div>
+        <div class="card-row">
+          <span class="card-label">Trang thai</span>
+          <span class="card-value" th:text="${sub.status}"></span>
+        </div>
+        <div class="card-row"
+             th:if="${sub.description != null and !#strings.isEmpty(sub.description)}">
+          <span class="card-label">Mo ta</span>
+          <span class="card-value" th:text="${sub.description}"></span>
+        </div>
+      </div>
+    </div>
+    <hr class="subject-divider" th:if="${!iterStat.last}"/>
+  </th:block>
+</div>
+
+<!-- PAGE 5: MA TRAN CLO-PLO (LANDSCAPE) -->
+<div class="page-break-before landscape-section">
+  <div class="section-title">Ma tran CLO - PLO</div>
+
+  <table class="matrix-table">
+    <thead>
+      <tr>
+        <th style="width:12%">Mon hoc</th>
+        <th style="width:8%">Ma CLO</th>
+        <th style="width:22%">Ten CLO</th>
+        <th class="vert" th:each="ploH : ${data.cloPloMatrix.ploHeaders}">
+          <div class="rotated-text" th:text="${ploH}"></div>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <th:block th:each="grp : ${data.cloPloMatrix.subjectGroups}">
+        <th:block th:each="cloRow, cloStat : ${grp.cloRows}">
+          <tr>
+            <td class="subject-cell"
+                th:if="${cloStat.first}"
+                th:attr="rowspan=${grp.cloCount}"
+                th:text="${grp.subjectCode + ' - ' + grp.subjectName}"></td>
+
+            <td th:text="${cloRow.cloCode}"></td>
+            <td th:text="${cloRow.cloName}"></td>
+
+            <td class="check"
+                th:each="ploH : ${data.cloPloMatrix.ploHeaders}">
+              <span th:if="${cloRow.ploMapping[ploH]}">X</span>
+            </td>
+          </tr>
+        </th:block>
+      </th:block>
+    </tbody>
+  </table>
+</div>
+
+</body>
+</html>

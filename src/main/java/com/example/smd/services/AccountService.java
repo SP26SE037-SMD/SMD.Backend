@@ -6,6 +6,7 @@ import com.example.smd.dto.request.account.AccountRequest;
 import com.example.smd.dto.request.account.AccountUpdateRequest;
 import com.example.smd.dto.response.account.AvailableAccountResponse;
 import com.example.smd.dto.response.account.AccountResponse;
+import com.example.smd.dto.response.account.HopdcResponse;
 import com.example.smd.dto.response.account.ImportAccountResult;
 import com.example.smd.dto.response.account.ImportResult;
 import com.example.smd.entities.Account;
@@ -447,6 +448,40 @@ public class AccountService {
 
         return accounts.stream()
                 .map(accountMapper::toResponse)
+                .toList();
+    }
+
+    /**
+     * Lấy danh sách account có role HOPDC thuộc cùng department với account được chỉ định.
+     *
+     * @param accountId ID của account cần tra cứu department
+     * @return Danh sách HopdcResponse (id, email, fullName, department)
+     */
+    @Transactional(readOnly = true)
+    public List<HopdcResponse> getHopdcByAccountDepartment(UUID accountId) {
+        Account account = accountRepository.findById(accountId)
+                .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND));
+
+        if (account.getDepartment() == null) {
+            throw new AppException(ErrorCode.DEPARTMENT_NOT_FOUND);
+        }
+
+        UUID departmentId = account.getDepartment().getDepartmentId();
+
+        List<Account> hopdcAccounts = accountRepository
+                .findByDepartmentAndRoleName(departmentId, RoleName.HOPDC.name());
+
+        return hopdcAccounts.stream()
+                .map(a -> HopdcResponse.builder()
+                        .accountId(a.getAccountId())
+                        .email(a.getEmail())
+                        .fullName(a.getFullName())
+                        .department(HopdcResponse.DepartmentDto.builder()
+                                .departmentId(a.getDepartment().getDepartmentId())
+                                .departmentCode(a.getDepartment().getDepartmentCode())
+                                .departmentName(a.getDepartment().getDepartmentName())
+                                .build())
+                        .build())
                 .toList();
     }
 

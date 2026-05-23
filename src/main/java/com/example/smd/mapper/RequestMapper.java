@@ -42,5 +42,10 @@ public interface RequestMapper {
     @Mapping(target = "receivedBy.accountId", source = "receivedBy.accountId")
     @Mapping(target = "receivedBy.email",     source = "receivedBy.email")
     @Mapping(target = "receivedBy.fullName",  source = "receivedBy.fullName")
+    @Mapping(target = "subject",    ignore = true)
+    @Mapping(target = "syllabus",   ignore = true)
+    @Mapping(target = "curriculum", ignore = true)
+    @Mapping(target = "major",      ignore = true)
+    @Mapping(target = "task",       ignore = true)
     RequestResponse toResponse(Request request);
 }

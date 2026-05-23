@@ -487,7 +487,8 @@ public class TaskV2Service {
                 task.setPriority("MEDIUM");
                 task.setDescription("Mapping CLOs of " + subject.getSubjectCode() + " to new curriculum ");
             }
-
+            task.setTaskName(task.getAction()+" "+task.getType()+":" +
+                            " " + subject.getSubjectCode() +" - " + subject.getSubjectName());
             // Skip nếu targetId thực tế (subjectId hoặc syllabusId) đã tồn tại trong sprint
             if (existingTargetIds.contains(task.getTargetId())) {
                 continue;
