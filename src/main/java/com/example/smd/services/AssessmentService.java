@@ -100,12 +100,6 @@ public class AssessmentService {
             }
         }
 
-        if (SyllabusStatus.IN_PROGRESS.toString().equalsIgnoreCase(assessment.getSyllabus().getStatus())) {
-            if (!(RoleName.PDCM.toString().equals(account.getRole().getRoleName()) || RoleName.COLLABORATOR.toString().equals(account.getRole().getRoleName()))) {
-                throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
-            }
-        }
-
         return assessmentMapper.toResponse(assessment);
     }
 
@@ -129,9 +123,6 @@ public class AssessmentService {
         Syllabus syllabus = syllabusRepository.findById(syllabusId)
                 .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
 
-        if (!(SyllabusStatus.IN_PROGRESS.toString().equals(syllabus.getStatus()) || SyllabusStatus.REVISION_REQUESTED.toString().equals(syllabus.getStatus()))) {
-            throw new AppException(ErrorCode.ASSESSMENT_CANNOT_CREATE);
-        }
 
         Assessment_Category category =
             assessmentCategoryRepository.findById(request.getCategoryId())
@@ -180,10 +171,6 @@ public class AssessmentService {
             Syllabus syllabus = syllabusCache.computeIfAbsent(syllabusId, id -> {
                 Syllabus s = syllabusRepository.findById(id)
                         .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
-                if (!(SyllabusStatus.IN_PROGRESS.toString().equals(s.getStatus()) ||
-                        SyllabusStatus.REVISION_REQUESTED.toString().equals(s.getStatus()))) {
-                    throw new AppException(ErrorCode.ASSESSMENT_CANNOT_CREATE);
-                }
                 return s;
             });
 
@@ -233,10 +220,6 @@ public class AssessmentService {
             assessmentTypeRepository.findById(request.getTypeId())
                 .orElseThrow(() -> new AppException(ErrorCode.ASSESSMENT_TYPE_NOT_FOUND));
 
-        if (!SyllabusStatus.IN_PROGRESS.toString().equals(assessment.getSyllabus().getStatus())) {
-            throw new AppException(ErrorCode.ASSESSMENT_NOT_EDITABLE);
-        }
-
         UUID syllabusId = request.getSyllabusId();
         Syllabus syllabus = syllabusRepository.findById(syllabusId)
                 .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
@@ -263,10 +246,6 @@ public class AssessmentService {
         String roleName = account.getRole().getRoleName();
         if (!(RoleName.COLLABORATOR.toString().equals(roleName) || RoleName.PDCM.toString().equals(roleName))) {
             throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
-        }
-
-        if (!SyllabusStatus.IN_PROGRESS.toString().equals(assessment.getSyllabus().getStatus())) {
-            throw new AppException(ErrorCode.ASSESSMENT_NOT_EDITABLE);
         }
 
         assessmentRepository.delete(assessment);

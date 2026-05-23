@@ -12,6 +12,7 @@ import com.example.smd.mapper.DocumentMapper;
 import com.example.smd.repositories.AccountRepository;
 import com.example.smd.repositories.DocumentRepository;
 import com.example.smd.repositories.MajorRepository;
+import com.example.smd.repositories.TaskV2Repository;
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -31,19 +32,21 @@ public class DocumentService {
     DocumentMapper mapper;
     NotificationService notificationService;
     AccountRepository accountRepository;
-
-
-
+    TaskV2Repository taskV2Repository;
 
     @Transactional
     public List<DocumentResponse> getAll(UUID majorId, String status) {
+        List<UUID> documentId = taskV2Repository.findTargetIdsByType("MAJOR");
         List<Document> documents = repository.findAllWithFilters(majorId, status);
         if(majorId == null && status == null){
             documents = repository.findAllByMajorIsNull();
         } else if (majorId == null && status != null){
             documents = repository.findAllByMajorIsNullAndStatus(status);
         }
-        return mapper.toResponseList(documents);
+        List<Document> filteredDocuments = documents.stream()
+                .filter(doc -> !documentId.contains(doc.getDocumentId()))
+                .toList();
+        return mapper.toResponseList(filteredDocuments);
     }
 
     public DocumentResponse getById(UUID id) {

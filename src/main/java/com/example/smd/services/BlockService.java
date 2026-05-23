@@ -50,10 +50,6 @@ public class BlockService {
         Material material = materialRepository.findById(materialId)
                 .orElseThrow(() -> new AppException(ErrorCode.MATERIAL_NOT_FOUND));
 
-        if (!SyllabusStatus.IN_PROGRESS.name().equals(material.getSyllabus().getStatus())) {
-            throw new AppException(ErrorCode.MATERIAL_NOT_EDITABLE);
-        }
-
         List<Blocks> blocksList = new ArrayList<>();
         for (int i = 0; i < requests.size(); i++) {
             Blocks block = blockMapper.toEntity(requests.get(i));
@@ -83,10 +79,6 @@ public class BlockService {
     public List<BlockResponse> createBlocksWithIdx(UUID materialId, List<BlockWithIdxRequest> requests) {
         Material material = materialRepository.findById(materialId)
                 .orElseThrow(() -> new AppException(ErrorCode.MATERIAL_NOT_FOUND));
-
-        if (!SyllabusStatus.IN_PROGRESS.name().equals(material.getSyllabus().getStatus())) {
-            throw new AppException(ErrorCode.MATERIAL_NOT_EDITABLE);
-        }
 
         List<Blocks> blocksList = new ArrayList<>();
         for (BlockWithIdxRequest req : requests) {
@@ -201,9 +193,6 @@ public class BlockService {
         Blocks block = blockRepository.findById(blockId)
                 .orElseThrow(() -> new AppException(ErrorCode.BLOCK_NOT_FOUND));
 
-        if (!SyllabusStatus.IN_PROGRESS.name().equals(block.getMaterial().getSyllabus().getStatus())) {
-            throw new AppException(ErrorCode.MATERIAL_NOT_EDITABLE);
-        }
         blockRepository.deleteById(blockId);
 
         List<Blocks> remainingBlocks = blockRepository
@@ -230,13 +219,6 @@ public class BlockService {
         Set<Material> materialsToUpdate = blocksToDelete.stream()
                 .map(Blocks::getMaterial)
                 .collect(Collectors.toSet());
-
-        for (Material material : materialsToUpdate) {
-            String status = material.getSyllabus().getStatus();
-            if (!SyllabusStatus.IN_PROGRESS.name().equals(status)) {
-                throw new AppException(ErrorCode.MATERIAL_NOT_EDITABLE);
-            }
-        }
 
         // 3. Thực hiện xóa danh sách Block
         blockRepository.deleteAll(blocksToDelete);
@@ -289,10 +271,6 @@ public class BlockService {
     public List<BlockResponse> bulkUpdateBlocks(UUID materialId, BulkUpdateBlockRequest request) {
         Material material = materialRepository.findById(materialId)
                 .orElseThrow(() -> new AppException(ErrorCode.MATERIAL_NOT_FOUND));
-
-        if (!SyllabusStatus.IN_PROGRESS.name().equals(material.getSyllabus().getStatus())) {
-            throw new AppException(ErrorCode.MATERIAL_NOT_EDITABLE);
-        }
 
         // --- 1. Xử lý xóa ---
         List<UUID> deleteList = request.getDeleteBlockList();

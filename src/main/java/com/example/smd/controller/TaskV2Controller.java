@@ -80,8 +80,8 @@ public class TaskV2Controller {
     }
 
     @PatchMapping("/{taskId}/isAccepted")
-    public ResponseEntity<TaskV2Response> updateTaskAccepted(@PathVariable UUID taskId, @RequestParam Boolean isAccepted) {
-        return ResponseEntity.ok(taskV2Service.updateTaskAccepted(taskId, isAccepted));
+    public ResponseEntity<TaskV2Response> updateTaskAccepted(@PathVariable UUID taskId, @RequestParam Boolean isAccepted, @RequestParam String comment) {
+        return ResponseEntity.ok(taskV2Service.updateTaskAccepted(taskId, isAccepted, comment));
     }
 
     @DeleteMapping("/{taskId}")
