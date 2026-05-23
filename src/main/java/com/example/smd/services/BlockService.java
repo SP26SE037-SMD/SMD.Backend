@@ -58,16 +58,7 @@ public class BlockService {
             blocksList.add(block);
         }
 
-        // 1. Lưu danh sách Blocks vào DB trước để có ID
         List<Blocks> savedBlocks = blockRepository.saveAll(blocksList);
-
-        // 2. Với mỗi block đã lưu, tạo Embedding tương ứng
-        for (Blocks block : savedBlocks) {
-            // Chỉ tạo embedding nếu nội dung text không rỗng
-            if (block.getContentText() != null && !block.getContentText().isBlank()) {
-                embeddingService.createEmbedding(block.getContentText(), block);
-            }
-        }
 
         return savedBlocks.stream()
                 .map(blockMapper::toResponse)
