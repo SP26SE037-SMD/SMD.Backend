@@ -2,236 +2,161 @@
 <html xmlns:th="http://www.thymeleaf.org" lang="vi">
 <head>
   <meta charset="UTF-8"/>
-  <title th:text="${data.curriculum.curriculumCode} + ' - Chuong trinh dao tao'">Curriculum Report</title>
+  <title>Curriculum PDF Report</title>
   <style>
-/*<![CDATA[*/
+    /* --- CẤU HÌNH TRANG DỌC MẶC ĐỊNH (PORTRAIT) --- */
+    @page {
+        size: A4 portrait;
+        margin: 1.5cm;
+        @bottom-center {
+            content: "Trang " counter(page) " / " counter(pages);
+            font-family: "DejaVu Sans", sans-serif;
+            font-size: 9px;
+        }
+    }
 
-    /* GLOBAL RESET */
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    /* --- CẤU HÌNH TRANG NGANG ĐẶC BIỆT (LANDSCAPE) CHO MA TRẬN CLO-PLO --- */
+    @page landscape_page {
+        size: A4 landscape;
+        margin: 1.2cm;
+        @bottom-center {
+            content: "Trang " counter(page) " / " counter(pages);
+            font-family: "DejaVu Sans", sans-serif;
+            font-size: 9px;
+        }
+    }
 
     body {
-      font-family: "DejaVu Sans", Arial, sans-serif;
-      font-size: 10pt;
-      color: #1a1a2e;
-      line-height: 1.5;
+        font-family: "DejaVu Sans", sans-serif;
+        font-size: 11px;
+        color: #333;
+        line-height: 1.4;
+    }
+    h1, h2, h3, h4 {
+        color: #111;
+        font-weight: bold;
+    }
+    .cover-page {
+        text-align: center;
+        height: 100%;
+        page-break-after: always;
+        padding-top: 5cm;
+    }
+    .page-break {
+        page-break-before: always;
+    }
+    .section-title {
+        font-size: 14px;
+        font-weight: bold;
+        margin-top: 20px;
+        margin-bottom: 10px;
+        border-bottom: 1px solid #ddd;
+        padding-bottom: 5px;
+        text-transform: uppercase;
     }
 
-    h1 { font-size: 22pt; font-weight: bold; }
-    h2 { font-size: 14pt; font-weight: bold; margin-bottom: 6pt; }
-    h3 { font-size: 11pt; font-weight: bold; margin-bottom: 4pt; }
-    p  { margin-bottom: 4pt; }
-
-    /* PAGE LAYOUT - Portrait (mac dinh) */
-    @page {
-      size: A4 portrait;
-      margin: 20mm 18mm 20mm 22mm;
-    }
-
-    /* Page 5: Landscape */
-    @page landscape-page {
-      size: A4 landscape;
-      margin: 15mm 15mm 15mm 15mm;
-    }
-
-    .landscape-section {
-      page: landscape-page;
-    }
-
-    /* PAGE BREAKS */
-    .page-break-before { page-break-before: always; }
-
-    /* COMMON TABLE STYLES */
+    /* Định dạng các bảng thông thường */
     table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 15px;
+    }
+    th, td {
+        border: 1px solid #ccc;
+        padding: 6px;
+        text-align: left;
+        vertical-align: top;
+    }
+    th {
+        background-color: #f5f5f5;
+        font-weight: bold;
+    }
+    .text-center { text-align: center; }
+    .text-bold { font-weight: bold; }
+    .bg-group { background-color: #f0f0f0; font-weight: bold; }
+
+    /* --- CSS ĐỒNG BỘ ĐỂ FIX LỖI MA TRẬN CLO-PLO --- */
+    .matrix-section {
+        page: landscape_page; /* Kích hoạt xoay ngang trang giấy */
+        page-break-before: always; /* Luôn ngắt trang trước khi vào mục này */
+    }
+    .matrix-table {
+        width: 100%;
+        table-layout: fixed; /* Khóa cứng thuật toán co giãn cột của PDF Engine */
+        border-collapse: collapse;
+        font-size: 8.5px; /* Giảm size chữ để hiển thị vừa khít mười mấy cột PLO */
+        margin-top: 10px;
+    }
+    .matrix-table th, .matrix-table td {
+        border: 1px solid #333333;
+        padding: 4px 2px;
+        vertical-align: top;
+        word-wrap: break-word; /* Ép text dài tự động xuống dòng */
+        white-space: normal;  /* Chống tràn lề hàng ngang */
+    }
+    .matrix-table thead th {
+        background-color: #e6f2ff;
+        text-align: center;
+        font-weight: bold;
+    }
+    /* Phân bổ tỷ lệ chiều rộng cố định cho các cột chữ */
+    .col-subject { width: 14%; }
+    .col-clocode { width: 7%; text-align: center; }
+    .col-clodesc { width: 34%; } /* Cấp hẳn 34% không gian trang ngang cho nội dung mô tả CLO */
+    .col-plo { text-align: center; } /* Các cột PLO còn lại tự động chia đều khoảng trống */
+
+    /* --- PAGE 4: SUBJECT DETAIL TABLES --- */
+    .subject-detail-table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 10pt;
+      margin-bottom: 20pt;
+      page-break-inside: avoid; /* BẮT BUỘC: Ép PDF không được cắt ngang 1 môn học sang 2 trang */
+      border: 1.5pt solid #1a3a6b;
     }
 
-    th, td {
-      border: 1px solid #b0b8c9;
-      padding: 4pt 6pt;
-      vertical-align: middle;
-    }
-
-    th {
+    .subject-detail-table th.subject-header {
       background-color: #1a3a6b;
       color: #ffffff;
-      font-weight: bold;
-      text-align: center;
-    }
-
-    tr:nth-child(even) td { background-color: #f0f4fb; }
-
-    td.center { text-align: center; }
-
-    /* PAGE 1 - COVER */
-    .cover {
-      text-align: center;
-      padding-top: 60pt;
-    }
-
-    .cover .badge {
-      display: inline-block;
-      border: 3pt solid #1a3a6b;
-      border-radius: 4pt;
-      padding: 4pt 14pt;
-      font-size: 10pt;
-      font-weight: bold;
-      color: #1a3a6b;
-      letter-spacing: 2pt;
-      margin-bottom: 20pt;
-    }
-
-    .cover h1 {
-      font-size: 20pt;
-      color: #1a3a6b;
-      line-height: 1.3;
-      margin-bottom: 6pt;
-    }
-
-    .cover .major-code {
-      font-size: 13pt;
-      color: #4a6fa5;
-      margin-bottom: 24pt;
-    }
-
-    .cover .description-box {
+      padding: 8pt 10pt;
       text-align: left;
-      background: #f0f4fb;
-      border-left: 4pt solid #1a3a6b;
-      padding: 10pt 14pt;
-      margin: 20pt 0;
+      font-size: 11pt;
+      text-transform: uppercase;
+      border: 1.5pt solid #1a3a6b;
+    }
+
+    .subject-detail-table th.subject-header .code-badge {
+      background-color: #ffffff;
+      color: #1a3a6b;
+      padding: 2pt 6pt;
+      border-radius: 3pt;
+      margin-right: 8pt;
+      font-weight: bold;
+      font-size: 10pt;
+    }
+
+    .subject-detail-table td {
+      border: 1px solid #b0b8c9;
+      padding: 6pt 8pt;
+      vertical-align: top;
       font-size: 9.5pt;
     }
 
-    .divider {
-      border: none;
-      border-top: 2pt solid #1a3a6b;
-      margin: 14pt 0;
-    }
-
-    .section-title {
-      font-size: 12pt;
+    .subject-detail-table td.lbl {
+      background-color: #e6edf7;
       font-weight: bold;
       color: #1a3a6b;
-      border-bottom: 1.5pt solid #4a6fa5;
-      padding-bottom: 4pt;
-      margin-bottom: 10pt;
-      margin-top: 16pt;
+      width: 22%; /* Độ rộng cố định cho nhãn */
     }
 
-    /* PAGE 3 - SEMESTER PLAN group header */
-    .group-header td {
-      background-color: #d0daea !important;
-      font-weight: bold;
-      color: #1a1a2e;
+    .subject-detail-table td.val {
+      width: 28%; /* Độ rộng cố định cho giá trị */
     }
 
-    /* PAGE 4 - SUBJECT CARDS */
-    .subject-card {
-      margin-bottom: 12pt;
-      page-break-inside: avoid;
+    .subject-detail-table td.desc-val {
+      text-align: justify;
+      line-height: 1.4;
     }
 
-    .subject-card-header {
-      background-color: #1a3a6b;
-      color: #ffffff;
-      padding: 5pt 10pt;
-      font-size: 10.5pt;
-      font-weight: bold;
-    }
-
-    .subject-card-header span.code {
-      background: #4a6fa5;
-      border-radius: 2pt;
-      padding: 1pt 6pt;
-      margin-right: 6pt;
-      font-size: 9pt;
-    }
-
-    .card-grid {
-      display: table;
-      width: 100%;
-      border: 1pt solid #b0b8c9;
-      border-top: none;
-    }
-
-    .card-row {
-      display: table-row;
-    }
-
-    .card-row:nth-child(even) .card-label,
-    .card-row:nth-child(even) .card-value {
-      background-color: #f0f4fb;
-    }
-
-    .card-label {
-      display: table-cell;
-      width: 30%;
-      padding: 3pt 8pt;
-      font-weight: bold;
-      color: #1a3a6b;
-      border-right: 1pt solid #b0b8c9;
-      border-bottom: 1pt solid #e0e6f0;
-      vertical-align: top;
-    }
-
-    .card-value {
-      display: table-cell;
-      padding: 3pt 8pt;
-      border-bottom: 1pt solid #e0e6f0;
-      vertical-align: top;
-    }
-
-    .subject-divider {
-      border: none;
-      border-top: 1pt dashed #b0b8c9;
-      margin: 10pt 0;
-    }
-
-    /* PAGE 5 - CLO-PLO MATRIX (landscape) */
-    .matrix-table th, .matrix-table td {
-      font-size: 7.5pt;
-      padding: 3pt 4pt;
-    }
-
-    /* Vertical header cell for PLO columns */
-    .matrix-table th.vert {
-      height: 70pt;
-      width: 22pt;
-      padding: 0;
-      vertical-align: bottom;
-      text-align: center;
-      overflow: hidden;
-    }
-
-    /* Inner div rotated -90deg to simulate vertical text */
-    .matrix-table th.vert .rotated-text {
-      display: block;
-      transform: rotate(-90deg);
-      white-space: nowrap;
-      font-size: 7pt;
-      font-weight: bold;
-      color: #ffffff;
-      width: 65pt;
-      margin-left: -22pt;
-      margin-bottom: 4pt;
-      text-align: left;
-    }
-
-    .matrix-table td.subject-cell {
-      font-weight: bold;
-      background-color: #d0daea !important;
-      text-align: left;
-    }
-
-    .matrix-table td.check {
-      text-align: center;
-      color: #1a3a6b;
-      font-weight: bold;
-    }
-
-/*]]>*/
   </style>
 </head>
 <body>
@@ -255,16 +180,16 @@
 <div class="section-title">Program OutCome - POs</div>
 <table>
   <thead>
-    <tr>
-      <th style="width:15%">POs Code</th>
-      <th>Description</th>
-    </tr>
+  <tr>
+    <th style="width:15%">POs Code</th>
+    <th>Description</th>
+  </tr>
   </thead>
   <tbody>
-    <tr th:each="po : ${data.major.pos}">
-      <td class="center" th:text="${po.poCode}"></td>
-      <td th:text="${po.description}"></td>
-    </tr>
+  <tr th:each="po : ${data.major.pos}">
+    <td class="center" th:text="${po.poCode}"></td>
+    <td th:text="${po.description}"></td>
+  </tr>
   </tbody>
 </table>
 
@@ -284,35 +209,35 @@
   <div class="section-title">Program Learning OutCome (PLOs)</div>
   <table>
     <thead>
-      <tr>
-        <th style="width:12%">PLOs Code</th>
-        <th>Description</th>
-      </tr>
+    <tr>
+      <th style="width:12%">PLOs Code</th>
+      <th>Description</th>
+    </tr>
     </thead>
     <tbody>
-      <tr th:each="plo : ${data.curriculum.plos}">
-        <td class="center" th:text="${plo.ploCode}"></td>
-        <td th:text="${plo.description}"></td>
-      </tr>
+    <tr th:each="plo : ${data.curriculum.plos}">
+      <td class="center" th:text="${plo.ploCode}"></td>
+      <td th:text="${plo.description}"></td>
+    </tr>
     </tbody>
   </table>
 
   <div class="section-title">Mapping POs - PLOs</div>
   <table>
     <thead>
-      <tr>
-        <th style="width:12%">PLOs \ POs</th>
-        <th th:each="poH : ${data.curriculum.poHeaders}" th:text="${poH}"></th>
-      </tr>
+    <tr>
+      <th style="width:12%">PLOs \ POs</th>
+      <th th:each="poH : ${data.curriculum.poHeaders}" th:text="${poH}"></th>
+    </tr>
     </thead>
     <tbody>
-      <tr th:each="plo : ${data.curriculum.plos}">
-        <td style="font-weight:bold;" th:text="${plo.ploCode}"></td>
-        <td class="center" th:each="poH : ${data.curriculum.poHeaders}">
+    <tr th:each="plo : ${data.curriculum.plos}">
+      <td style="font-weight:bold;" th:text="${plo.ploCode}"></td>
+      <td class="center" th:each="poH : ${data.curriculum.poHeaders}">
           <span th:if="${data.curriculum.ploPoMappings[plo.ploCode] != null
                          and data.curriculum.ploPoMappings[plo.ploCode].contains(poH)}">X</span>
-        </td>
-      </tr>
+      </td>
+    </tr>
     </tbody>
   </table>
 </div>
@@ -323,33 +248,33 @@
 
   <table>
     <thead>
-      <tr>
-        <th style="width:7%">Semester</th>
-        <th style="width:13%">Subject Code</th>
-        <th>Course name</th>
-        <th style="width:8%">Credits</th>
-        <th style="width:12%">Level of Education</th>
-      </tr>
+    <tr>
+      <th style="width:7%">Semester</th>
+      <th style="width:13%">Subject Code</th>
+      <th>Course name</th>
+      <th style="width:8%">Credits</th>
+      <th style="width:12%">Level of Education</th>
+    </tr>
     </thead>
     <tbody>
-      <th:block th:each="grp : ${data.semesterPlan}">
-        <tr class="group-header">
-          <td colspan="5">
-            <span th:text="${grp.groupCode + ' - ' + grp.groupName}"></span>
-            <span th:if="${grp.groupType != null and !#strings.isEmpty(grp.groupType)}"
-                  th:text="' (' + ${grp.groupType} + ')'"></span>
-            &#160;-&#160;
-            <span th:text="${grp.totalCredits} + ' TC'"></span>
-          </td>
-        </tr>
-        <tr th:each="row : ${grp.rows}">
-          <td class="center" th:text="${row.semester}"></td>
-          <td th:text="${row.subjectCode}"></td>
-          <td th:text="${row.subjectName}"></td>
-          <td class="center" th:text="${row.credits}"></td>
-          <td class="center" th:text="${row.degreeLevel}"></td>
-        </tr>
-      </th:block>
+    <th:block th:each="grp : ${data.semesterPlan}">
+      <tr class="group-header">
+        <td colspan="5">
+          <span th:text="${grp.groupCode + ' - ' + grp.groupName}"></span>
+          <span th:if="${grp.groupType != null and !#strings.isEmpty(grp.groupType)}"
+                th:text="' (' + ${grp.groupType} + ')'"></span>
+          &#160;-&#160;
+          <span th:text="${grp.totalCredits} + ' TC'"></span>
+        </td>
+      </tr>
+      <tr th:each="row : ${grp.rows}">
+        <td class="center" th:text="${row.semester}"></td>
+        <td th:text="${row.subjectCode}"></td>
+        <td th:text="${row.subjectName}"></td>
+        <td class="center" th:text="${row.credits}"></td>
+        <td class="center" th:text="${row.degreeLevel}"></td>
+      </tr>
+    </th:block>
     </tbody>
   </table>
 </div>
@@ -359,54 +284,48 @@
   <div class="section-title">Course Subject details</div>
 
   <th:block th:each="sub, iterStat : ${data.subjects}">
-    <div class="subject-card">
-      <div class="subject-card-header">
-        <span class="code" th:text="${sub.subjectCode}"></span>
-        <span th:text="${sub.subjectName}"></span>
-      </div>
-      <div class="card-grid">
-        <div class="card-row">
-          <span class="card-label">Credits</span>
-          <span class="card-value" th:text="${sub.credits} + ' TC'"></span>
-        </div>
-        <div class="card-row">
-          <span class="card-label">Period Theory / Pratical  / Self-study</span>
-          <span class="card-value"
-                th:text="${sub.theoryPeriods} + ' / ' + ${sub.practicalPeriods} + ' / ' + ${sub.selfStudyPeriods}"></span>
-        </div>
-        <div class="card-row">
-          <span class="card-label">Level of Education</span>
-          <span class="card-value" th:text="${sub.degreeLevel}"></span>
-        </div>
-        <div class="card-row">
-          <span class="card-label">Time allocation</span>
-          <span class="card-value" th:text="${sub.timeAllocation}"></span>
-        </div>
-        <div class="card-row">
-          <span class="card-label">Department</span>
-          <span class="card-value" th:text="${sub.departmentName}"></span>
-        </div>
-        <div class="card-row">
-          <span class="card-label">Support tools</span>
-          <span class="card-value" th:text="${sub.tool}"></span>
-        </div>
-        <div class="card-row">
-          <span class="card-label">Minimum Bloom</span>
-          <span class="card-value" th:text="${sub.minBloomLevel}"></span>
-        </div>
-        <div class="card-row">
-          <span class="card-label">Scoring scale / Minimum score</span>
-          <span class="card-value"
-                th:text="${sub.scoringScale} + ' / ' + ${sub.minToPass}"></span>
-        </div>
-        <div class="card-row"
-             th:if="${sub.description != null and !#strings.isEmpty(sub.description)}">
-          <span class="card-label">Description</span>
-          <span class="card-value" th:text="${sub.description}"></span>
-        </div>
-      </div>
-    </div>
-    <hr class="subject-divider" th:if="${!iterStat.last}"/>
+    <table class="subject-detail-table">
+      <thead>
+      <tr>
+        <th colspan="4" class="subject-header">
+          <span class="code-badge" th:text="${sub.subjectCode}">MÃ MÔN</span>
+          <span th:text="${sub.subjectName}">TÊN MÔN HỌC</span>
+        </th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr>
+        <td class="lbl">Credits:</td>
+        <td class="val" th:text="${sub.credits} + ' TC'"></td>
+        <td class="lbl">Level of Education:</td>
+        <td class="val" th:text="${sub.degreeLevel}"></td>
+      </tr>
+
+      <tr>
+        <td class="lbl">Theory / Prac / Self:</td>
+        <td class="val" th:text="${sub.theoryPeriods} + ' / ' + ${sub.practicalPeriods} + ' / ' + ${sub.selfStudyPeriods}"></td>
+        <td class="lbl">Department:</td>
+        <td class="val" th:text="${sub.departmentName}"></td>
+      </tr>
+
+      <tr>
+        <td class="lbl">Score Scale / Min:</td>
+        <td class="val" th:text="${sub.scoringScale} + ' / ' + ${sub.minToPass}"></td>
+        <td class="lbl">Minimum Bloom:</td>
+        <td class="val" th:text="${sub.minBloomLevel}"></td>
+      </tr>
+
+      <tr th:if="${sub.tool != null and !#strings.isEmpty(sub.tool)}">
+        <td class="lbl">Support Tools:</td>
+        <td class="val" colspan="3" th:text="${sub.tool}"></td>
+      </tr>
+
+      <tr th:if="${sub.description != null and !#strings.isEmpty(sub.description)}">
+        <td class="lbl">Description:</td>
+        <td class="val desc-val" colspan="3" th:text="${sub.description}"></td>
+      </tr>
+      </tbody>
+    </table>
   </th:block>
 </div>
 
@@ -416,34 +335,35 @@
 
   <table class="matrix-table">
     <thead>
-      <tr>
-        <th style="width:12%">Subject</th>
-        <th style="width:8%">CLO Code</th>
-        <th style="width:22%">CLO Description</th>
-        <th class="vert" th:each="ploH : ${data.cloPloMatrix.ploHeaders}">
-          <div class="rotated-text" th:text="${ploH}"></div>
-        </th>
-      </tr>
+    <!-- [FIX] Khai báo width trên thead là anchor để table-layout:fixed hoạt động chính xác -->
+    <tr>
+      <th style="width:12%">Subject</th>
+      <th style="width:8%">CLO Code</th>
+      <!-- [FIX] Giữ 28% cho cột mô tả — đủ rộng để text xuống dòng thay vì bị nén -->
+      <th style="width:28%">CLO Description</th>
+      <th class="vert" th:each="ploH : ${data.cloPloMatrix.ploHeaders}">
+        <div class="rotated-text" th:text="${ploH}"></div>
+      </th>
+    </tr>
     </thead>
     <tbody>
-      <th:block th:each="grp : ${data.cloPloMatrix.subjectGroups}">
-        <th:block th:each="cloRow, cloStat : ${grp.cloRows}">
-          <tr>
-            <td class="subject-cell"
-                th:if="${cloStat.first}"
-                th:attr="rowspan=${grp.cloCount}"
-                th:text="${grp.subjectCode + ' - ' + grp.subjectName}"></td>
+    <th:block th:each="grp : ${data.cloPloMatrix.subjectGroups}">
+      <th:block th:each="cloRow, cloStat : ${grp.cloRows}">
+        <tr>
+          <td class="subject-cell"
+              th:if="${cloStat.first}"
+              th:rowspan="${grp.cloCount}"
+              th:text="${grp.subjectCode + ' - ' + grp.subjectName}"></td>
 
-            <td th:text="${cloRow.cloCode}"></td>
-            <td th:text="${cloRow.cloName}"></td>
+          <td th:text="${cloRow.cloCode}"></td>
+          <td th:text="${cloRow.cloName}"></td>
 
-            <td class="check"
-                th:each="ploH : ${data.cloPloMatrix.ploHeaders}">
-              <span th:if="${cloRow.ploMapping[ploH]}">X</span>
-            </td>
-          </tr>
-        </th:block>
+          <td class="check" th:each="ploH : ${data.cloPloMatrix.ploHeaders}">
+            <span th:if="${cloRow.ploMapping.get(ploH) == true}">X</span>
+          </td>
+        </tr>
       </th:block>
+    </th:block>
     </tbody>
   </table>
 </div>
