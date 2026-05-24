@@ -42,4 +42,5 @@ public interface SyllabusRepository extends JpaRepository<Syllabus, UUID> {
             "WHERE s.syllabusId = :id")
     Optional<Syllabus> findByIdWithSubject(@Param("id") UUID id);
 
+    List<Syllabus> findBySubject_SubjectIdOrderByCreatedAtDesc(UUID subjectId);
 }

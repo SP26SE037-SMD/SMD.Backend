@@ -2,10 +2,14 @@ package com.example.smd.controller;
 
 import com.example.smd.dto.request.SyllabusActionLogRequest;
 import com.example.smd.dto.request.SyllabusRequest;
+import com.example.smd.dto.response.AssessmentDiffResponse;
 import com.example.smd.dto.response.ComparisonResult;
 import com.example.smd.dto.response.ImpactResponse;
 import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.dto.response.syllabus.SyllabusResponse;
+import com.example.smd.dto.response.validate.CompareSyllabusResponse;
+import com.example.smd.entities.SyllabusComparisonHistory;
+import com.example.smd.enums.RoleName;
 import com.example.smd.enums.SyllabusActionType;
 import com.example.smd.enums.SyllabusStatus;
 import com.example.smd.services.AccountService;
@@ -25,6 +29,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -196,19 +201,15 @@ public class SyllabusController {
         }
 
         @PostMapping("/compare")
-        public ResponseObject<ComparisonResult> compareSyllabusVersions(
+        public ResponseObject<CompareSyllabusResponse> compareSyllabusVersions(
                         @RequestParam("oldSyllabusId") UUID oldSyllabusId,
-                        @RequestParam("newSyllabusId") UUID newSyllabusId) {
-
-                // Gọi Service xử lý logic: Query DB -> AI Analysis -> Result
-                ComparisonResult analysis = embeddingService.compareSyllabus(oldSyllabusId, newSyllabusId);
-
-                // Trả về mã 200 OK kèm cục dữ liệu phân tích
-
-                return ResponseObject.<ComparisonResult>builder()
-                                .data(analysis)
-                                .message("Compare syllabus successfully")
-                                .build();
+                        @RequestParam("newSyllabusId") UUID newSyllabusId,
+                        @AuthenticationPrincipal Jwt jwt) {
+                String userId = jwt.getClaimAsString("accountId");
+                return ResponseObject.<CompareSyllabusResponse>builder()
+                        .data(embeddingService.compareTwoVersionSyllabus(oldSyllabusId, newSyllabusId, userId))
+                        .message("Compare syllabus successfully")
+                        .build();
         }
 
         @PostMapping("/check-impact")

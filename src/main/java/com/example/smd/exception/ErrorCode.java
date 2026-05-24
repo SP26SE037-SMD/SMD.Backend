@@ -300,6 +300,9 @@ public enum ErrorCode {
     //DOCUMENT
     DOCUMENT_NOT_FOUND(33001, "Document not found", HttpStatus.NOT_FOUND),
 
+    //AI History Compare
+    AI_HISTORY_NOT_FOUND(34001, "No historical data for comparison was found for this pair of versions.", HttpStatus.NOT_FOUND),
+    SUBJECT_NOT_HAVE_TWO_SYLLABUS(34002, "History cannot be established: The outline series does not have two versions yet.", HttpStatus.BAD_REQUEST),
     // General
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),
     INVALID_KEY(1000, "Invalid message key", HttpStatus.BAD_REQUEST),
