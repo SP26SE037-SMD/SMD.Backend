@@ -20,22 +20,32 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         // Endpoint cho Web client (SockJS fallback)
         registry.addEndpoint("/ws")
-                .setAllowedOrigins(
-                        "http://localhost:3000",
-                        "http://localhost:5173",
-                        "http://localhost:3001",
-                        "http://localhost:8081",
-                        "http://localhost:8082",
-                        "http://43.207.156.116",
-                        "https://smd-syllabus-ebon.vercel.app",
-                        "https://smdview.vercel.app",
-                        "https://syllabus.io.vn"
-                )
+//                .setAllowedOrigins(
+//                        "http://localhost:3000",
+//                        "http://localhost:5173",
+//                        "http://localhost:3001",
+//                        "http://localhost:8081",
+//                        "http://localhost:8082",
+//                        "http://43.207.156.116",
+//                        "https://smd-syllabus-ebon.vercel.app",
+//                        "https://smdview.vercel.app",
+//                        "https://syllabus.io.vn"
+//                )
+                .setAllowedOriginPatterns(
+                        "https://syllabus.io.vn",
+                        "https://api.syllabus.io.vn",
+                        "http://localhost:*",
+                        "https://*.syllabus.io.vn"
+                        )
                 .withSockJS();
 
         // Endpoint cho native clients (mobile, desktop)
         registry.addEndpoint("/ws-native")
-                .setAllowedOrigins("*");
+//                .setAllowedOrigins("*");
+                .setAllowedOriginPatterns(
+                        "https://*.syllabus.io.vn",
+                        "http://localhost:*"
+                );
     }
 
     @Override
