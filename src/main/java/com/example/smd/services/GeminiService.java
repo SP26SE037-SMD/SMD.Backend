@@ -24,7 +24,6 @@ import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -191,14 +190,16 @@ public class GeminiService  {
     )
     public ComparisonResult compareSyllabus(SyllabusStructureResponse oldStruct, SyllabusStructureResponse newStruct) {
         try {
-            // 2. Convert sang JSON String để nhét vào Prompt
             String oldJson = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(oldStruct);
             String newJson = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(newStruct);
 
+            String safeOldJson = oldJson.replace("%", "%%");
+            String safeNewJson = newJson.replace("%", "%%");
+
             // 3. Tạo Prompt
             String prompt = String.format(promptTemplateService.get(PromptKey.COMPARISON_PROMPT),
-                    oldJson,
-                    newJson);
+                    safeOldJson,
+                    safeNewJson);
 
             // 4. Gọi Gemini API
             String rawResponse = gemini.prompt(prompt, apiGenerateUrl);
@@ -208,7 +209,7 @@ public class GeminiService  {
             return objectMapper.readValue(cleanJson, ComparisonResult.class);
 
         } catch (Exception e) {
-            throw new RuntimeException("Failed to analyze syllabus differences");
+            throw new AppException(ErrorCode.AI_GENERATION_FAILED);
         }
     }
 
