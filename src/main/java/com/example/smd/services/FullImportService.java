@@ -785,13 +785,10 @@ public class FullImportService {
             if (!regulationMap.isEmpty()) {
                 List<String> missingInSheet = new ArrayList<>();
                 for (String regCode : regulationMap.keySet()) {
-                    // subjectCodesInFile chứa các code đã pass duplicate check (uppercase)
-                    if (!subjectCodesInFile.contains(regCode.toUpperCase())) {
-                        // Cũng cần check trong DB — nếu môn đã tồn tại trong DB thì được tính là "đã
-                        // có"
-                        if (!subjectRepository.existsBySubjectCode(regulationMap.get(regCode).subjectCode)) {
-                            missingInSheet.add(regulationMap.get(regCode).subjectCode);
-                        }
+                    // ctx.fileSubjectCodes chứa tất cả code đọc được từ file (kể cả những môn bị fail validation)
+                    // → tránh báo "thiếu môn" khi môn thực sự có trong file nhưng bị lỗi ở bước khác
+                    if (!ctx.fileSubjectCodes.contains(regCode.toUpperCase())) {
+                        missingInSheet.add(regulationMap.get(regCode).subjectCode);
                     }
                 }
                 if (!missingInSheet.isEmpty()) {
@@ -1172,53 +1169,7 @@ public class FullImportService {
         return "N/A_" + noSpaces;
     }
 
-    // private Map<String, SourceRegulationDTO> initSourceZeroLayerValidation(String
-    // majorCode) {
-    // Map<String, SourceRegulationDTO> map = new HashMap<>();
-    // if (majorCode == null || majorCode.isEmpty()) return map;
-    //
-    // Major major = majorRepository.findByMajorCode(majorCode).orElse(null);
-    // if (major == null) return map;
-    //
-    // Regulation regulation =
-    // regulationRepository.findByCodeAndMajor_MajorId("SOURCE_DOCUMENTS",
-    // major.getMajorId()).orElse(null);
-    // if (regulation == null || regulation.getValue() == null) return map;
-    //
-    // String value = regulation.getValue();
-    // // Format: SourceCode/SubjectCode/SourceName/Author/Publisher/PublisherYear
-    // // separated by comma. Notice that some names might have commas!
-    // // But the example format is: "000100/001535-001264/Giáo trình.../Bộ GD
-    // ĐT/NXB.../2016, 000101/..."
-    // // If there's a comma in the title, it could break. We split by ", " followed
-    // by a number.
-    // // Actually, let's split by ", " and check if the part starts with numbers.
-    // String[] parts = value.split(",\\s*(?=\\d{5,6}/)"); //
-    // // Split by comma followed by 5 or 6 digits and a slash
-    // if (parts.length == 1 && !value.contains(", ")) {
-    // // maybe no comma at all
-    // parts = new String[]{value};
-    // }
-    //
-    // for (String part : parts) {
-    // String[] fields = part.split("/");
-    // if (fields.length >= 6) {
-    // String sourceCode = fields[0].trim();
-    // String subjectCode = fields[1].trim();
-    // String sourceName = fields[2].trim();
-    // String author = fields[3].trim();
-    // String publisher = fields[4].trim();
-    // String yearStr = fields[5].trim();
-    //
-    // Integer year = parseIntegerSafe(yearStr);
-    //
-    // SourceRegulationDTO dto = new SourceRegulationDTO(
-    // sourceCode, subjectCode, sourceName, author, publisher, year);
-    // map.put(sourceCode.toUpperCase(), dto);
-    // }
-    // }
-    // return map;
-    // }
+
 
     private Map<String, SourceRegulationDTO> initSourceZeroLayerValidation(String majorCode) {
         Map<String, SourceRegulationDTO> map = new HashMap<>();
@@ -1236,42 +1187,41 @@ public class FullImportService {
 
         String value = regulation.getValue();
 
-        // Sử dụng Regex để tìm chuỗi theo mẫu: Tên sách(Mã|Môn|Tác giả|NXB|Năm)
-        Pattern pattern = Pattern.compile("(.*?)\\s*\\(([^)]+)\\)");
+        // Regex áp dụng đúng logic "vách ngăn" của bạn
+        Pattern pattern = Pattern.compile("(.*?)\\s*\\(([^|]*)\\|([^|]*)\\|([^|]*)\\|([^|]*)\\|(.*?)\\)");
         Matcher matcher = pattern.matcher(value);
 
         while (matcher.find()) {
+            // Group 1: Source Name
             String sourceName = matcher.group(1).trim();
             if (sourceName.startsWith(",")) {
                 sourceName = sourceName.substring(1).trim();
             }
 
-            String dataPart = matcher.group(2).trim();
-            String[] dataFields = dataPart.split("\\|");
+            // Bắt trực tiếp các trường dựa vào vách ngăn |
+            String sourceCode = trim(matcher.group(2));
+            String subjectsRaw = matcher.group(3).trim(); // Riêng thằng này giữ nguyên String.trim() vì cần dùng hàm .split() ở dưới
+            String author = trim(matcher.group(4));
+            String publisher = trim(matcher.group(5));
+            String yearRaw = trim(matcher.group(6));
+            // Xử lý năm xuất bản rỗng
+            Integer year = parseIntegerSafe(yearRaw);
 
-            if (dataFields.length >= 5) {
-                String sourceCode = dataFields[0].trim();
-                String subjectsRaw = dataFields[1].trim();
-                String author = dataFields[2].trim();
-                String publisher = dataFields[3].trim();
-                Integer year = parseIntegerSafe(dataFields[4]);
-
-                // Xử lý đa mã môn (cách nhau bằng phẩy, chấm phẩy hoặc gạch nối)
-                String[] subjectArray = subjectsRaw.split("[,;\\-]");
-                List<String> allowedSubjects = new ArrayList<>();
-                for (String s : subjectArray) {
-                    String cleanCode = s.trim();
-                    if (!cleanCode.isEmpty()) {
-                        // Chỉ dùng trim() và in hoa để đối chiếu cho an toàn
-                        allowedSubjects.add(cleanCode.toUpperCase());
-                    }
+            // Xử lý đa mã môn
+            String[] subjectArray = subjectsRaw.split("[,;\\-]");
+            List<String> allowedSubjects = new ArrayList<>();
+            for (String s : subjectArray) {
+                String cleanCode = s.trim();
+                if (!cleanCode.isEmpty()) {
+                    allowedSubjects.add(cleanCode.toUpperCase());
                 }
-
-                SourceRegulationDTO dto = new SourceRegulationDTO(
-                        sourceCode, allowedSubjects, sourceName, author, publisher, year);
-                map.put(sourceCode.toUpperCase(), dto);
             }
+
+            SourceRegulationDTO dto = new SourceRegulationDTO(
+                    sourceCode, allowedSubjects, sourceName, author, publisher, year);
+            map.put(sourceCode.toUpperCase(), dto);
         }
+
         return map;
     }
 

@@ -235,15 +235,85 @@ public class CurriculumPdfService {
 
     // ── Page 5: CLO-PLO matrix ────────────────────────────────────────────────
 
+//    private CloPloMatrix buildCloPloMatrix(UUID curriculumId) {
+//        // PLOs (column headers)
+//        List<PLOs> ploList = plosRepository.findByCurriculum_CurriculumId(curriculumId)
+//                .stream()
+//                .sorted(Comparator.comparing(PLOs::getPloCode))
+//                .collect(Collectors.toList());
+//        List<String> ploHeaders = ploList.stream().map(PLOs::getPloCode).collect(Collectors.toList());
+//        Map<UUID, String> ploIdToCode = ploList.stream()
+//                .collect(Collectors.toMap(PLOs::getPloId, PLOs::getPloCode));
+//
+//        // Subjects in this curriculum (ordered by semester)
+//        List<Subject> subjects = cgsRepository.findAllByCurriculumIdOrderBySemester(curriculumId)
+//                .stream()
+//                .map(Curriculum_Group_Subject::getSubject)
+//                .filter(Objects::nonNull)
+//                .distinct()
+//                .collect(Collectors.toList());
+//
+//        List<CloPloMatrix.SubjectCloGroup> subjectGroups = new ArrayList<>();
+//
+//        for (Subject subject : subjects) {
+//            // CLOs of this subject
+//            List<CLOs> cloList = closRepository.findBySubject_SubjectId(subject.getSubjectId())
+//                    .stream()
+//                    .sorted(Comparator.comparing(CLOs::getCloCode))
+//                    .collect(Collectors.toList());
+//
+//            if (cloList.isEmpty()) continue;
+//
+//            List<CloPloMatrix.SubjectCloGroup.CloRow> cloRows = new ArrayList<>();
+//            for (CLOs clo : cloList) {
+//                // Which PLOs does this CLO map to?
+//                Set<String> mappedPloCodes = cloPloMappingRepository
+//                        .findByClo_CloId(clo.getCloId())
+//                        .stream()
+//                        .map(m -> ploIdToCode.get(m.getPlo().getPloId()))
+//                        .filter(Objects::nonNull)
+//                        .collect(Collectors.toSet());
+//
+//                // Build boolean map: ploCode -> marked?
+//                Map<String, Boolean> ploMapping = new LinkedHashMap<>();
+//                ploHeaders.forEach(code -> ploMapping.put(code, mappedPloCodes.contains(code)));
+//
+//                cloRows.add(CloPloMatrix.SubjectCloGroup.CloRow.builder()
+//                        .cloCode(clo.getCloCode())
+//                        .cloName(clo.getDescription())
+//                        .ploMapping(ploMapping)
+//                        .build());
+//            }
+//
+//            subjectGroups.add(CloPloMatrix.SubjectCloGroup.builder()
+//                    .subjectCode(subject.getSubjectCode())
+//                    .subjectName(subject.getSubjectName())
+//                    .cloCount(cloRows.size())
+//                    .cloRows(cloRows)
+//                    .build());
+//        }
+//
+//        return CloPloMatrix.builder()
+//                .ploHeaders(ploHeaders)
+//                .subjectGroups(subjectGroups)
+//                .build();
+//    }
+
     private CloPloMatrix buildCloPloMatrix(UUID curriculumId) {
-        // PLOs (column headers)
-        List<PLOs> ploList = plosRepository.findByCurriculum_CurriculumId(curriculumId)
-                .stream()
-                .sorted(Comparator.comparing(PLOs::getPloCode))
+        // Lấy danh sách PLO từ DB
+        List<PLOs> rawPloList = plosRepository.findByCurriculum_CurriculumId(curriculumId);
+
+        // FIX 1: Lọc trùng lặp (distinct) và Sắp xếp tự nhiên (Natural Sort: PLO1 -> PLO2 -> PLO10)
+        List<String> ploHeaders = rawPloList.stream()
+                .map(PLOs::getPloCode)
+                .filter(Objects::nonNull)
+                .distinct() // Lọc bỏ các PLO bị lặp lại
+                .sorted(Comparator.comparingInt(code -> {
+                    // Tách lấy phần số để sắp xếp (Ví dụ: "PLO12" -> 12)
+                    String num = code.replaceAll("\\D+", "");
+                    return num.isEmpty() ? 0 : Integer.parseInt(num);
+                }))
                 .collect(Collectors.toList());
-        List<String> ploHeaders = ploList.stream().map(PLOs::getPloCode).collect(Collectors.toList());
-        Map<UUID, String> ploIdToCode = ploList.stream()
-                .collect(Collectors.toMap(PLOs::getPloId, PLOs::getPloCode));
 
         // Subjects in this curriculum (ordered by semester)
         List<Subject> subjects = cgsRepository.findAllByCurriculumIdOrderBySemester(curriculumId)
@@ -259,18 +329,23 @@ public class CurriculumPdfService {
             // CLOs of this subject
             List<CLOs> cloList = closRepository.findBySubject_SubjectId(subject.getSubjectId())
                     .stream()
-                    .sorted(Comparator.comparing(CLOs::getCloCode))
+                    // Sắp xếp CLO theo số thứ tự tự nhiên (CLO1 -> CLO2 -> CLO10)
+                    .sorted(Comparator.comparingInt(c -> {
+                        String num = c.getCloCode().replaceAll("\\D+", "");
+                        return num.isEmpty() ? 0 : Integer.parseInt(num);
+                    }))
                     .collect(Collectors.toList());
 
             if (cloList.isEmpty()) continue;
 
             List<CloPloMatrix.SubjectCloGroup.CloRow> cloRows = new ArrayList<>();
+
             for (CLOs clo : cloList) {
-                // Which PLOs does this CLO map to?
+                // FIX 2: Lấy TRỰC TIẾP mã Code từ DB, không qua Map ID trung gian để tránh lỗi Null
                 Set<String> mappedPloCodes = cloPloMappingRepository
                         .findByClo_CloId(clo.getCloId())
                         .stream()
-                        .map(m -> ploIdToCode.get(m.getPlo().getPloId()))
+                        .map(m -> m.getPlo().getPloCode()) // Lấy thẳng mã PLO (Ví dụ: "PLO1")
                         .filter(Objects::nonNull)
                         .collect(Collectors.toSet());
 
@@ -280,7 +355,7 @@ public class CurriculumPdfService {
 
                 cloRows.add(CloPloMatrix.SubjectCloGroup.CloRow.builder()
                         .cloCode(clo.getCloCode())
-                        .cloName(clo.getCloName())
+                        .cloName(clo.getDescription())
                         .ploMapping(ploMapping)
                         .build());
             }
