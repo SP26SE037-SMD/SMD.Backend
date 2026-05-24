@@ -280,7 +280,7 @@ public class CurriculumPdfService {
 
                 cloRows.add(CloPloMatrix.SubjectCloGroup.CloRow.builder()
                         .cloCode(clo.getCloCode())
-                        .cloName(clo.getCloName())
+                        .cloName(clo.getDescription())
                         .ploMapping(ploMapping)
                         .build());
             }

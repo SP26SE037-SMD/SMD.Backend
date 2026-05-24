@@ -238,26 +238,26 @@
 
 <!-- PAGE 1: BIA - MAJOR INFO -->
 <div class="cover">
-  <div class="badge">CHUONG TRINH DAO TAO</div>
+  <div class="badge">ACADEMIC PROGRAM</div>
 
-  <h1 th:text="${data.major.majorName}">Ten nganh</h1>
-  <div class="major-code" th:text="'Ma nganh: ' + ${data.major.majorCode}">Ma nganh</div>
+  <h1 th:text="${data.major.majorName}">Major Name</h1>
+  <div class="major-code" th:text="'Ma nganh: ' + ${data.major.majorCode}">Major Code</div>
 
   <hr class="divider"/>
 
   <div class="description-box"
        th:if="${data.major.description != null and !#strings.isEmpty(data.major.description)}">
-    <strong>Gioi thieu nganh:</strong><br/>
+    <strong>Introduction to the Major:</strong><br/>
     <span th:text="${data.major.description}"></span>
   </div>
 </div>
 
-<div class="section-title">Muc tieu dao tao (Program Objectives - PO)</div>
+<div class="section-title">Program OutCome - POs</div>
 <table>
   <thead>
     <tr>
-      <th style="width:15%">Ma PO</th>
-      <th>Mo ta</th>
+      <th style="width:15%">POs Code</th>
+      <th>Description</th>
     </tr>
   </thead>
   <tbody>
@@ -271,39 +271,37 @@
 <!-- PAGE 2: PLO TABLE + PO-PLO MATRIX -->
 <div class="page-break-before">
   <div style="margin-bottom:14pt;">
-    <h2 th:text="${data.curriculum.curriculumName}">Ten CTDT</h2>
+    <h2 th:text="${data.curriculum.curriculumName}">Curriculum Name</h2>
     <p>
-      <strong>Ma CTDT:</strong>
+      <strong>Curriculum Code:</strong>
       <span th:text="${data.curriculum.curriculumCode}"></span>
       &#160;|&#160;
-      <strong>Nam ap dung:</strong>
-      <span th:text="${data.curriculum.startYear} + ' - ' + ${data.curriculum.endYear}"></span>
+      <strong>Year of Application:</strong>
+      <span th:text="${data.curriculum.startYear}"></span>
     </p>
   </div>
 
-  <div class="section-title">Chuan dau ra chuong trinh (PLO)</div>
+  <div class="section-title">Program Learning OutCome (PLOs)</div>
   <table>
     <thead>
       <tr>
-        <th style="width:12%">Ma PLO</th>
-        <th>Mo ta</th>
-        <th style="width:12%">Trang thai</th>
+        <th style="width:12%">PLOs Code</th>
+        <th>Description</th>
       </tr>
     </thead>
     <tbody>
       <tr th:each="plo : ${data.curriculum.plos}">
         <td class="center" th:text="${plo.ploCode}"></td>
         <td th:text="${plo.description}"></td>
-        <td class="center" th:text="${plo.status}"></td>
       </tr>
     </tbody>
   </table>
 
-  <div class="section-title">Ma tran PO - PLO</div>
+  <div class="section-title">Mapping POs - PLOs</div>
   <table>
     <thead>
       <tr>
-        <th style="width:12%">PLO \ PO</th>
+        <th style="width:12%">PLOs \ POs</th>
         <th th:each="poH : ${data.curriculum.poHeaders}" th:text="${poH}"></th>
       </tr>
     </thead>
@@ -321,16 +319,16 @@
 
 <!-- PAGE 3: KE HOACH GIANG DAY -->
 <div class="page-break-before">
-  <div class="section-title">Ke hoach giang day theo ky</div>
+  <div class="section-title">Semester-based Teaching Plan</div>
 
   <table>
     <thead>
       <tr>
-        <th style="width:7%">Ky</th>
-        <th style="width:13%">Ma HP</th>
-        <th>Ten hoc phan</th>
-        <th style="width:8%">TC</th>
-        <th style="width:12%">Bac dao tao</th>
+        <th style="width:7%">Semester</th>
+        <th style="width:13%">Subject Code</th>
+        <th>Course name</th>
+        <th style="width:8%">Credits</th>
+        <th style="width:12%">Level of Education</th>
       </tr>
     </thead>
     <tbody>
@@ -358,7 +356,7 @@
 
 <!-- PAGE 4: CHI TIET HOC PHAN (SUBJECT CARDS) -->
 <div class="page-break-before">
-  <div class="section-title">Chi tiet danh muc hoc phan</div>
+  <div class="section-title">Course Subject details</div>
 
   <th:block th:each="sub, iterStat : ${data.subjects}">
     <div class="subject-card">
@@ -368,42 +366,42 @@
       </div>
       <div class="card-grid">
         <div class="card-row">
-          <span class="card-label">So tin chi</span>
+          <span class="card-label">Credits</span>
           <span class="card-value" th:text="${sub.credits} + ' TC'"></span>
         </div>
         <div class="card-row">
-          <span class="card-label">Tiet LT / TH / Tu hoc</span>
+          <span class="card-label">Period Theory / Pratical  / Self-study</span>
           <span class="card-value"
                 th:text="${sub.theoryPeriods} + ' / ' + ${sub.practicalPeriods} + ' / ' + ${sub.selfStudyPeriods}"></span>
         </div>
         <div class="card-row">
-          <span class="card-label">Bac dao tao</span>
+          <span class="card-label">Level of Education</span>
           <span class="card-value" th:text="${sub.degreeLevel}"></span>
         </div>
         <div class="card-row">
-          <span class="card-label">Phan bo thoi gian</span>
+          <span class="card-label">Time allocation</span>
           <span class="card-value" th:text="${sub.timeAllocation}"></span>
         </div>
         <div class="card-row">
-          <span class="card-label">Khoa phu trach</span>
+          <span class="card-label">Department</span>
           <span class="card-value" th:text="${sub.departmentName}"></span>
         </div>
         <div class="card-row">
-          <span class="card-label">Cong cu ho tro</span>
+          <span class="card-label">Support tools</span>
           <span class="card-value" th:text="${sub.tool}"></span>
         </div>
         <div class="card-row">
-          <span class="card-label">Bloom toi thieu</span>
+          <span class="card-label">Minimum Bloom</span>
           <span class="card-value" th:text="${sub.minBloomLevel}"></span>
         </div>
         <div class="card-row">
-          <span class="card-label">Thang diem / Diem toi thieu</span>
+          <span class="card-label">Scoring scale / Minimum score</span>
           <span class="card-value"
                 th:text="${sub.scoringScale} + ' / ' + ${sub.minToPass}"></span>
         </div>
         <div class="card-row"
              th:if="${sub.description != null and !#strings.isEmpty(sub.description)}">
-          <span class="card-label">Mo ta</span>
+          <span class="card-label">Description</span>
           <span class="card-value" th:text="${sub.description}"></span>
         </div>
       </div>
@@ -414,14 +412,14 @@
 
 <!-- PAGE 5: MA TRAN CLO-PLO (LANDSCAPE) -->
 <div class="page-break-before landscape-section">
-  <div class="section-title">Ma tran CLO - PLO</div>
+  <div class="section-title">MAPPING CLO - PLO</div>
 
   <table class="matrix-table">
     <thead>
       <tr>
-        <th style="width:12%">Mon hoc</th>
-        <th style="width:8%">Ma CLO</th>
-        <th style="width:22%">Ten CLO</th>
+        <th style="width:12%">Subject</th>
+        <th style="width:8%">CLO Code</th>
+        <th style="width:22%">CLO Description</th>
         <th class="vert" th:each="ploH : ${data.cloPloMatrix.ploHeaders}">
           <div class="rotated-text" th:text="${ploH}"></div>
         </th>
