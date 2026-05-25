@@ -50,6 +50,7 @@ public class RegulationAsyncService {
             realtimePublisher.publishToAccount(accountId,
                     RealtimePayload.status("VALIDATE_SUCCESS", programRegulationResponse));
             log.info("VALIDATE_SUCCESS: {}", "Data verification successful");
+            log.info("Data: {}", programRegulationResponse);
         } else {
             var major = new Major();
             major.setMajorCode(programRegulationResponse.getMajorCode());

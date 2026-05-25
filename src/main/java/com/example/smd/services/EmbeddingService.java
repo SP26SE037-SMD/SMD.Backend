@@ -1,23 +1,16 @@
 package com.example.smd.services;
 
-import com.example.smd.dto.request.BlockRequest;
-import com.example.smd.dto.response.ComparisonResult;
-import com.example.smd.dto.response.ImpactResponse;
-import com.example.smd.dto.response.SimilarityResult;
+import com.example.smd.dto.response.*;
 import com.example.smd.dto.response.syllabus.SyllabusStructureResponse;
-import com.example.smd.entities.Blocks;
-import com.example.smd.entities.Material;
-import com.example.smd.entities.Syllabus;
-import com.example.smd.entities.Vector_Embeddings;
+import com.example.smd.dto.response.validate.CompareSyllabusResponse;
+import com.example.smd.entities.*;
 import com.example.smd.enums.ImpactStatus;
+import com.example.smd.enums.RoleName;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
-import com.example.smd.repositories.BlockRepository;
-import com.example.smd.repositories.EmbeddingRepository;
-import com.example.smd.repositories.MaterialRepository;
-import com.example.smd.repositories.SyllabusRepository;
+import com.example.smd.repositories.*;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.pgvector.PGvector;
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -26,9 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.util.List;
-import java.util.Locale;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -40,7 +31,10 @@ public class EmbeddingService {
     BlockRepository blockRepo;
     SyllabusRepository syllabusRepo;
     MaterialRepository materialRepo;
+    AssessmentRepository assessmentRepo;
     GeminiService gemini;
+    SyllabusComparisonHistoryRepository historyRepo;
+    AccountService accountService;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -77,7 +71,7 @@ public class EmbeddingService {
 
             // Lấy các tiêu đề nhỏ (Subtitle) từ Blocks
             List<String> topics = blockRepo.findTitlesByMaterialId(material.getMaterialId());
-
+            log.info("Topic material {}: {}", material.getMaterialId(), topics);
             return SyllabusStructureResponse.ChapterDTO.builder()
                     .materialId(material.getMaterialId())
                     .chapterTitle(material.getTitle())
@@ -104,6 +98,106 @@ public class EmbeddingService {
         } catch (Exception e) {
             throw new RuntimeException("Failed to analyze syllabus differences");
         }
+    }
+
+    public AssessmentDiffResponse compareAssessmentConfiguration(UUID oldId, UUID newId) {
+
+        List<Assessment> oldList = assessmentRepo.findBySyllabus_SyllabusId(oldId);
+        List<Assessment> newList = assessmentRepo.findBySyllabus_SyllabusId(newId);
+        AssessmentDiffResponse diff = new AssessmentDiffResponse();
+
+        java.util.function.Function<Assessment, String> getIdentifier = a -> {
+            String typeName = (a.getAssessmentType() != null)
+                    ? a.getAssessmentType().getTypeName()
+                    : "Unknown Type";
+
+            Integer part = (a.getPart() != null) ? a.getPart() : 1;
+
+            return String.format("%s - Part %d", typeName, part);
+        };
+
+        Map<String, Assessment> oldMap = oldList.stream()
+                .collect(Collectors.toMap(getIdentifier, a -> a, (existing, replacement) -> existing));
+        Map<String, Assessment> newMap = newList.stream()
+                .collect(Collectors.toMap(getIdentifier, a -> a, (existing, replacement) -> existing));
+
+        for (Assessment oldItem : oldList) {
+            String identifier = getIdentifier.apply(oldItem);
+
+            if (!newMap.containsKey(identifier)) {
+                diff.getRemovedAssessments().add(identifier);
+            } else {
+                Assessment newItem = newMap.get(identifier);
+                List<String> changes = new ArrayList<>();
+
+                // Check Loại bài thi (ví dụ: Summative / Formative)
+                if (oldItem.getAssessmentType() != null && newItem.getAssessmentType() != null) {
+                    if (!oldItem.getAssessmentType().getTypeId().equals(newItem.getAssessmentType().getTypeId())) {
+                        changes.add(String.format("The rating type changes from '%s' to '%s'",
+                                oldItem.getAssessmentType().getTypeName(), newItem.getAssessmentType().getTypeName()));
+                    }
+                }
+
+                // Check Trọng số điểm (Kiểu dữ liệu Double - Cần chống sai lệch số thập phân)
+                if (oldItem.getWeight() != null && newItem.getWeight() != null) {
+                    if (Double.compare(oldItem.getWeight(), newItem.getWeight()) != 0) {
+                        changes.add(String.format("The weight changes from %.1f%% to %.1f%%", oldItem.getWeight(), newItem.getWeight()));
+                    }
+                }
+
+                // Check Thời gian làm bài (Duration)
+                if (!java.util.Objects.equals(oldItem.getDuration(), newItem.getDuration())) {
+                    changes.add(String.format("The time allotted for the exam has changed from %d minutes to %d minutes.",
+                            oldItem.getDuration() != null ? oldItem.getDuration() : 0,
+                            newItem.getDuration() != null ? newItem.getDuration() : 0));
+                }
+
+                // Check Tiêu chí hoàn thành (Completion Criteria)
+                if (!java.util.Objects.equals(oldItem.getCompletionCriteria(), newItem.getCompletionCriteria())) {
+                    changes.add(String.format("The condition completes from '%s' to '%s'.",
+                            oldItem.getCompletionCriteria(), newItem.getCompletionCriteria()));
+                }
+
+                // Check Dạng câu hỏi (Question Type)
+                if (!java.util.Objects.equals(oldItem.getQuestionType(), newItem.getQuestionType())) {
+                    changes.add(String.format("The question format changes from '%s' to '%s'",
+                            oldItem.getQuestionType(), newItem.getQuestionType()));
+                }
+
+                // Check Chuẩn kiến thức kỹ năng (Knowledge Skill)
+                if (!java.util.Objects.equals(oldItem.getKnowledgeSkill(), newItem.getKnowledgeSkill())) {
+                    changes.add(String.format("The standard for knowledge skills changes from '%s' to '%s'",
+                            oldItem.getKnowledgeSkill(), newItem.getKnowledgeSkill()));
+                }
+
+                // Check Hướng dẫn chấm điểm (Grading Guide)
+                if (!java.util.Objects.equals(oldItem.getGradingGuide(), newItem.getGradingGuide())) {
+                    changes.add(String.format("Scoring guidelines updated from '%s' to '%s'",
+                            oldItem.getGradingGuide(), newItem.getGradingGuide()));
+                }
+
+                // Check Ghi chú (Note)
+                if (!java.util.Objects.equals(oldItem.getNote(), newItem.getNote())) {
+                    changes.add(String.format("The note changes from '%s' to '%s'",
+                            oldItem.getNote(), newItem.getNote()));
+                }
+
+                // Nếu phát hiện ra có sự lệch thông số cấu hình -> Add vào mảng Thay Đổi
+                if (!changes.isEmpty()) {
+                    diff.getChangedAssessments().add(new AssessmentDiffResponse.AssessmentChangeDTO(identifier, changes));
+                }
+            }
+        }
+
+        // 4. Quét danh sách mới: Tìm các bài kiểm tra được THÊM MỚI hoàn toàn
+        for (Assessment newItem : newList) {
+            String identifier = getIdentifier.apply(newItem);
+            if (!oldMap.containsKey(identifier)) {
+                diff.getAddedAssessments().add(identifier);
+            }
+        }
+
+        return diff;
     }
 
     @Transactional
@@ -167,8 +261,98 @@ public class EmbeddingService {
         try {
             return ImpactStatus.valueOf(aiResponse);
         } catch (IllegalArgumentException e) {
-            // Trường hợp AI trả lời lan man, mặc định coi là chưa được vá (Nguy hiểm)
             return ImpactStatus.REQUIRED;
+        }
+    }
+
+    public void saveComparisonHistory(UUID oldId, UUID newId, AssessmentDiffResponse assessmentResult, ComparisonResult analysis) {
+        try {
+            String assessmentJsonStr = objectMapper.writeValueAsString(assessmentResult);
+            String conceptJsonStr = objectMapper.writeValueAsString(analysis);
+
+            // 2. Build thực thể History
+            SyllabusComparisonHistory history = SyllabusComparisonHistory.builder()
+                    .oldSyllabusId(oldId)
+                    .newSyllabusId(newId)
+                    .assessmentDiffJson(assessmentJsonStr)
+                    .conceptDiffJson(conceptJsonStr)
+                    .build();
+
+            // 3. Khóa sổ ghi xuống Database
+            historyRepo.save(history);
+
+        } catch (JsonProcessingException e) {
+            log.error("Lỗi parse cấu trúc dữ liệu sang JSON để lưu lịch sử", e);
+            throw new RuntimeException("Save history failed");
+        }
+    }
+
+    public CompareSyllabusResponse getComparisonHistoryDetail(UUID oldId, UUID newId) {
+        SyllabusComparisonHistory history = historyRepo.findFirstByOldSyllabusIdAndNewSyllabusIdOrderByCreatedAtDesc(oldId, newId)
+                .orElseThrow(() -> new AppException(ErrorCode.AI_HISTORY_NOT_FOUND));
+        try {
+            AssessmentDiffResponse assessmentDiff = objectMapper.readValue(
+                    history.getAssessmentDiffJson(),
+                    AssessmentDiffResponse.class
+            );
+
+            ComparisonResult conceptDiff = objectMapper.readValue(
+                    history.getConceptDiffJson(),
+                    ComparisonResult.class
+            );
+
+            return new CompareSyllabusResponse(
+                    history.getOldSyllabusId(),
+                    history.getNewSyllabusId(),
+                    assessmentDiff,
+                    conceptDiff
+            );
+
+        } catch (JsonProcessingException e) {
+            log.error("Lỗi khi bóc tách dữ liệu JSON từ lịch sử hệ thống", e);
+            throw new RuntimeException("Đọc dữ liệu lịch sử thất bại do sai cấu trúc lưu trữ");
+        }
+    }
+
+    private boolean validateLatestAndSubsequentVersions(UUID oldId, UUID newId) {
+
+        Syllabus newSyllabus = syllabusRepo.findById(newId)
+                .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
+
+        UUID subjectId = newSyllabus.getSubject().getSubjectId();
+
+        List<Syllabus> versionChain = syllabusRepo.findBySubject_SubjectIdOrderByCreatedAtDesc(subjectId);
+
+        // PHÒNG THỦ: Chuỗi phiên bản tối thiểu phải có 2 bản ghi để cấu thành cặp đối chiếu
+        if (versionChain.size() < 2) {
+            throw new AppException(ErrorCode.SUBJECT_NOT_HAVE_TWO_SYLLABUS);
+        }
+
+        // 4. Tiến hành kiểm tra thứ hạng (Xác định quán quân và á quân)
+        UUID absoluteNewestId = versionChain.get(0).getSyllabusId();       // Vị trí 0: Mới nhất tuyệt đối
+        UUID absoluteSecondNewestId = versionChain.get(1).getSyllabusId(); // Vị trí 1: Cận cuối
+
+        boolean isNewestValid = newId.equals(absoluteNewestId);
+        boolean isOldValid = oldId.equals(absoluteSecondNewestId);
+
+        // 5. Nếu truyền sai thứ tự hoặc cố tình so sánh các bản ghi cũ rích -> Chặn đứng ngay lập tức!
+        return (isNewestValid && isOldValid) ? true : false;
+    }
+
+    @Transactional
+    public CompareSyllabusResponse compareTwoVersionSyllabus(UUID oldSyllabusId, UUID newSyllabusId, String userId){
+        var account = accountService.getAccountById(userId);
+        String roleName = account.getRole().getRoleName();
+        if (RoleName.STUDENT.toString().equals(roleName) || RoleName.LECTURER.toString().equals(roleName)) {
+            return getComparisonHistoryDetail(oldSyllabusId, newSyllabusId);
+        } else {
+            AssessmentDiffResponse assessmentResult = compareAssessmentConfiguration(oldSyllabusId, newSyllabusId);
+            ComparisonResult analysis = compareSyllabus(oldSyllabusId, newSyllabusId);
+
+            if(validateLatestAndSubsequentVersions(oldSyllabusId, newSyllabusId)){
+                saveComparisonHistory(oldSyllabusId, newSyllabusId, assessmentResult, analysis);
+            }
+            return new CompareSyllabusResponse(oldSyllabusId, newSyllabusId, assessmentResult, analysis);
         }
     }
 }

@@ -2,7 +2,6 @@ package com.example.smd.services;
 
 import com.example.smd.dto.request.SyllabusRequest;
 import com.example.smd.dto.response.syllabus.SyllabusResponse;
-import com.example.smd.entities.Department;
 import com.example.smd.entities.Subject;
 import com.example.smd.entities.Syllabus;
 import com.example.smd.entities.Assessment;
@@ -16,13 +15,7 @@ import com.example.smd.enums.SyllabusStatus;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.SyllabusMapper;
-import com.example.smd.repositories.SubjectRepository;
-import com.example.smd.repositories.SyllabusRepository;
-import com.example.smd.repositories.AssessmentRepository;
-import com.example.smd.repositories.SessionRepository;
-import com.example.smd.repositories.MaterialRepository;
-import com.example.smd.repositories.BlockRepository;
-import com.example.smd.repositories.SyllabusSourceRepository;
+import com.example.smd.repositories.*;
 import com.example.smd.mapper.AssessmentMapper;
 import com.example.smd.mapper.SessionMapper;
 import com.example.smd.mapper.MaterialMapper;
@@ -36,10 +29,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.UUID;
-
-import static org.apache.logging.log4j.ThreadContext.isEmpty;
 
 @Slf4j
 @Service
