@@ -36,22 +36,17 @@ public class DocumentService {
 
     @Transactional
     public List<DocumentResponse> getAll(UUID majorId, String status) {
-        List<UUID> documentId = taskV2Repository.findTargetIdsByType("MAJOR");
-        List<Document> documents;
-        if (majorId == null && status == null) {
-            documents = repository.findAllByMajorIsNull();
-        } else if (majorId == null && status != null) {
+        List<Document> documents = repository.findAllWithFilters(majorId, status);
+        if(majorId == null && status == null){
+            documents = repository.findAll();
+        } else if (majorId == null && status != null){
             documents = repository.findAllByMajorIsNullAndStatus(status);
         } else if (majorId != null && status == null) {
             documents = repository.findAllByMajor_MajorId(majorId);
         } else {
-            // majorId != null && status != null
             documents = repository.findAllWithFilters(majorId, status);
         }
-        List<Document> filteredDocuments = documents.stream()
-                .filter(doc -> !documentId.contains(doc.getDocumentId()))
-                .toList();
-        return mapper.toResponseList(filteredDocuments);
+        return mapper.toResponseList(documents);
     }
 
     public DocumentResponse getById(UUID id) {
