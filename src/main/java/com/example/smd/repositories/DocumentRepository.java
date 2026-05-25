@@ -22,4 +22,8 @@ public interface DocumentRepository extends JpaRepository<Document, UUID>, JpaSp
     List<Document> findAllByMajorIsNullAndStatus(String status);
 
     List<Document> findAllByMajorIsNull();
+
+    List<Document> findAllByMajor_MajorId(UUID majorId);
+
 }
+
