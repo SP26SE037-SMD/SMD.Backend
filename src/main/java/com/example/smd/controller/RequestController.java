@@ -1,5 +1,7 @@
 package com.example.smd.controller;
 
+import com.example.smd.dto.request.request.RequestCreateForHoCFDCRequest;
+import com.example.smd.dto.request.request.RequestCreateForVPRequest;
 import com.example.smd.dto.request.request.RequestCreateRequest;
 import com.example.smd.dto.request.request.RequestUpdateRequest;
 import com.example.smd.dto.response.PagedResponse;
@@ -34,6 +36,32 @@ public class RequestController {
 
     // ------------------------------------------------------------------ CREATE
 
+    @PostMapping("/hocfdc")
+    @Operation(summary = "Create a new request for HoCFDC")
+    public ResponseObject<RequestResponse> createForHoCFDC(
+            @RequestBody @Valid RequestCreateForHoCFDCRequest dto,
+            @AuthenticationPrincipal Jwt jwt) {
+
+        String userId = jwt.getClaimAsString("accountId");
+        return ResponseObject.<RequestResponse>builder()
+                .data(requestService.createForHoCFDC(dto, userId))
+                .message("Request created successfully")
+                .build();
+    }
+
+    @PostMapping("/vp")
+    @Operation(summary = "Create a new request for VP")
+    public ResponseObject<RequestResponse> createForVP(
+            @RequestBody @Valid RequestCreateForVPRequest dto,
+            @AuthenticationPrincipal Jwt jwt) {
+
+        String userId = jwt.getClaimAsString("accountId");
+        return ResponseObject.<RequestResponse>builder()
+                .data(requestService.createForVP(dto, userId))
+                .message("Request created successfully")
+                .build();
+    }
+
     @PostMapping
     @Operation(summary = "Create a new request")
     public ResponseObject<RequestResponse> create(
@@ -46,6 +74,7 @@ public class RequestController {
                 .message("Request created successfully")
                 .build();
     }
+
 
     // ------------------------------------------------------------------ READ
 
