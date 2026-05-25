@@ -258,6 +258,113 @@ public class TaskV2Service {
 
         TaskV2 savedTask = taskV2Repository.save(task);
 
+        // ===================== STATUS PROPAGATION =====================
+        // Áp dụng khi type là SUBJECT hoặc SYLLABUS
+        String taskType   = task.getType();
+        String taskAction = task.getAction();
+        String newStatus  = task.getStatus();
+
+        boolean isSubjectOrSyllabus = TaskType.SUBJECT.name().equals(taskType)
+                || TaskType.SYLLABUS.name().equals(taskType);
+
+        if (isSubjectOrSyllabus && task.getTargetId() != null) {
+
+            boolean isCreateAction = ActionType.CREATE.name().equals(taskAction);
+            boolean isUpdateAction = ActionType.UPDATE.name().equals(taskAction);
+
+            boolean isInProgressOrTodo = TaskStatus.IN_PROGRESS.name().equals(newStatus)
+                    || TaskStatus.TO_DO.name().equals(newStatus);
+            boolean isDone = TaskStatus.DONE.name().equals(newStatus);
+
+            // ---------- Action: CREATE ----------
+            if (isCreateAction) {
+
+                if (isInProgressOrTodo) {
+                    // Subject: nếu khác WAITING_SYLLABUS → chuyển sang WAITING_SYLLABUS
+                    if (TaskType.SUBJECT.name().equals(taskType)) {
+                        subjectRepository.findById(task.getTargetId()).ifPresent(subject -> {
+                            if (!SubjectStatus.WAITING_SYLLABUS.name().equals(subject.getStatus())) {
+                                subject.setStatus(SubjectStatus.WAITING_SYLLABUS.name());
+                                subjectRepository.save(subject);
+                                log.info("Subject {} status → WAITING_SYLLABUS", subject.getSubjectId());
+                            }
+                        });
+                    }
+                    // Syllabus: nếu khác DRAFT → chuyển về DRAFT
+                    if (TaskType.SYLLABUS.name().equals(taskType)) {
+                        syllabusRepository.findById(task.getTargetId()).ifPresent(syllabus -> {
+                            if (!SyllabusStatus.DRAFT.name().equals(syllabus.getStatus())) {
+                                syllabus.setStatus(SyllabusStatus.DRAFT.name());
+                                syllabusRepository.save(syllabus);
+                                log.info("Syllabus {} status → DRAFT", syllabus.getSyllabusId());
+                            }
+                        });
+                    }
+                }
+
+                if (isDone) {
+                    // Subject: nếu khác PENDING_REVIEW → chuyển sang PENDING_REVIEW
+                    if (TaskType.SUBJECT.name().equals(taskType)) {
+                        subjectRepository.findById(task.getTargetId()).ifPresent(subject -> {
+                            if (!SubjectStatus.PENDING_REVIEW.name().equals(subject.getStatus())) {
+                                subject.setStatus(SubjectStatus.PENDING_REVIEW.name());
+                                subjectRepository.save(subject);
+                                log.info("Subject {} status → PENDING_REVIEW", subject.getSubjectId());
+                            }
+                        });
+                    }
+                    // Syllabus: nếu khác PENDING_REVIEW → chuyển sang PENDING_REVIEW
+                    if (TaskType.SYLLABUS.name().equals(taskType)) {
+                        syllabusRepository.findById(task.getTargetId()).ifPresent(syllabus -> {
+                            if (!SyllabusStatus.PENDING_REVIEW.name().equals(syllabus.getStatus())) {
+                                syllabus.setStatus(SyllabusStatus.PENDING_REVIEW.name());
+                                syllabusRepository.save(syllabus);
+                                log.info("Syllabus {} status → PENDING_REVIEW", syllabus.getSyllabusId());
+                            }
+                        });
+                    }
+                }
+            }
+
+            // ---------- Action: UPDATE ----------
+            if (isUpdateAction) {
+
+                if (isInProgressOrTodo) {
+                    // Subject: giữ nguyên status hiện tại (không thay đổi)
+                    // Syllabus: nếu khác DRAFT → chuyển về DRAFT
+                    if (TaskType.SYLLABUS.name().equals(taskType)) {
+                        syllabusRepository.findById(task.getTargetId()).ifPresent(syllabus -> {
+                            if (!SyllabusStatus.DRAFT.name().equals(syllabus.getStatus())) {
+                                syllabus.setStatus(SyllabusStatus.DRAFT.name());
+                                syllabusRepository.save(syllabus);
+                                log.info("Syllabus {} status → DRAFT (UPDATE action)", syllabus.getSyllabusId());
+                            }
+                        });
+                    }
+                }
+
+                if (isDone) {
+                    // Subject: chuyển sang PENDING_REVIEW
+                    if (TaskType.SUBJECT.name().equals(taskType)) {
+                        subjectRepository.findById(task.getTargetId()).ifPresent(subject -> {
+                            subject.setStatus(SubjectStatus.PENDING_REVIEW.name());
+                            subjectRepository.save(subject);
+                            log.info("Subject {} status → PENDING_REVIEW (UPDATE action)", subject.getSubjectId());
+                        });
+                    }
+                    // Syllabus: chuyển sang PENDING_REVIEW
+                    if (TaskType.SYLLABUS.name().equals(taskType)) {
+                        syllabusRepository.findById(task.getTargetId()).ifPresent(syllabus -> {
+                            syllabus.setStatus(SyllabusStatus.PENDING_REVIEW.name());
+                            syllabusRepository.save(syllabus);
+                            log.info("Syllabus {} status → PENDING_REVIEW (UPDATE action)", syllabus.getSyllabusId());
+                        });
+                    }
+                }
+            }
+        }
+        // ===================== END STATUS PROPAGATION =====================
+
         return getTaskById(savedTask.getTaskId());
     }
 
@@ -297,6 +404,34 @@ public class TaskV2Service {
         }
 
         notificationService.createNotification(notifReq);
+
+        // ===================== ACCEPTED STATUS PROPAGATION =====================
+        if (Boolean.TRUE.equals(request) && task.getTargetId() != null) {
+            String taskType = task.getType();
+
+            // Type: SUBJECT → nếu Subject đang PENDING_REVIEW thì chuyển sang COMPLETED
+            if (TaskType.SUBJECT.name().equals(taskType)) {
+                subjectRepository.findById(task.getTargetId()).ifPresent(subject -> {
+                    if (SubjectStatus.PENDING_REVIEW.name().equals(subject.getStatus())) {
+                        subject.setStatus(SubjectStatus.COMPLETED.name());
+                        subjectRepository.save(subject);
+                        log.info("Subject {} status → COMPLETED (task accepted)", subject.getSubjectId());
+                    }
+                });
+            }
+
+            // Type: SYLLABUS → nếu Syllabus đang PENDING_REVIEW thì chuyển sang APPROVED
+            if (TaskType.SYLLABUS.name().equals(taskType)) {
+                syllabusRepository.findById(task.getTargetId()).ifPresent(syllabus -> {
+                    if (SyllabusStatus.PENDING_REVIEW.name().equals(syllabus.getStatus())) {
+                        syllabus.setStatus(SyllabusStatus.APPROVED.name());
+                        syllabusRepository.save(syllabus);
+                        log.info("Syllabus {} status → APPROVED (task accepted)", syllabus.getSyllabusId());
+                    }
+                });
+            }
+        }
+        // ===================== END ACCEPTED STATUS PROPAGATION =====================
 
         return getTaskById(savedTask.getTaskId());
     }

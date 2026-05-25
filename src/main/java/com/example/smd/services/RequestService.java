@@ -38,6 +38,40 @@ public class RequestService {
     // ------------------------------------------------------------------ CREATE
 
     @Transactional
+    public RequestResponse createForHoCFDC(com.example.smd.dto.request.request.RequestCreateForHoCFDCRequest dto, String createdByUserId) {
+        RequestCreateRequest createRequest = RequestCreateRequest.builder()
+                .title(dto.getTitle())
+                .content(dto.getContent())
+                .type(dto.getType())
+                .targetId(dto.getTargetId())
+                .build();
+
+        var hocfdc = accountRepository.findFirstByRole_RoleName("HoCFDC")
+                .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND));
+
+        createRequest.setReceivedById(hocfdc.getAccountId());
+
+        return create(createRequest, createdByUserId);
+    }
+
+    @Transactional
+    public RequestResponse createForVP(com.example.smd.dto.request.request.RequestCreateForVPRequest dto, String createdByUserId) {
+        RequestCreateRequest createRequest = RequestCreateRequest.builder()
+                .title(dto.getTitle())
+                .content(dto.getContent())
+                .type(dto.getType())
+                .targetId(dto.getTargetId())
+                .build();
+
+        var vp = accountRepository.findFirstByRole_RoleName("VP")
+                .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND));
+
+        createRequest.setReceivedById(vp.getAccountId());
+
+        return create(createRequest, createdByUserId);
+    }
+
+    @Transactional
     public RequestResponse create(RequestCreateRequest dto, String createdByUserId) {
         Request request = requestMapper.toEntity(dto);
 
