@@ -41,6 +41,10 @@ public class DocumentService {
             documents = repository.findAll();
         } else if (majorId == null && status != null){
             documents = repository.findAllByMajorIsNullAndStatus(status);
+        } else if (majorId != null && status == null) {
+            documents = repository.findAllByMajor_MajorId(majorId);
+        } else {
+            documents = repository.findAllWithFilters(majorId, status);
         }
         return mapper.toResponseList(documents);
     }

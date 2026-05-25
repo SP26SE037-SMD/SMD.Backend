@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Curriculum PDF Report</title>
+  <style>
+    /* --- CẤU HÌNH TRANG DỌC MẶC ĐỊNH (PORTRAIT) --- */
+    @page {
+        size: A4 portrait;
+        margin: 1.5cm;
+        @bottom-center {
+            content: "Trang " counter(page) " / " counter(pages);
+            font-family: "DejaVu Sans", sans-serif;
+            font-size: 9px;
+        }
+    }
+
+    /* --- CẤU HÌNH TRANG NGANG ĐẶC BIỆT (LANDSCAPE) CHO MA TRẬN CLO-PLO --- */
+    @page landscape_page {
+        size: A4 landscape;
+        margin: 1.2cm;
+        @bottom-center {
+            content: "Trang " counter(page) " / " counter(pages);
+            font-family: "DejaVu Sans", sans-serif;
+            font-size: 9px;
+        }
+    }
+
+    body {
+        font-family: "DejaVu Sans", sans-serif;
+        font-size: 11px;
+        color: #333;
+        line-height: 1.4;
+    }
+    h1, h2, h3, h4 {
+        color: #111;
+        font-weight: bold;
+    }
+    .cover-page {
+        text-align: center;
+        height: 100%;
+        page-break-after: always;
+        padding-top: 5cm;
+    }
+    .page-break {
+        page-break-before: always;
+    }
+    .section-title {
+        font-size: 14px;
+        font-weight: bold;
+        margin-top: 20px;
+        margin-bottom: 10px;
+        border-bottom: 1px solid #ddd;
+        padding-bottom: 5px;
+        text-transform: uppercase;
+    }
+
+    /* Định dạng các bảng thông thường */
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 15px;
+    }
+    th, td {
+        border: 1px solid #ccc;
+        padding: 6px;
+        text-align: left;
+        vertical-align: top;
+    }
+    th {
+        background-color: #f5f5f5;
+        font-weight: bold;
+    }
+    .text-center { text-align: center; }
+    .text-bold { font-weight: bold; }
+    .bg-group { background-color: #f0f0f0; font-weight: bold; }
+
+    /* --- CSS ĐỒNG BỘ ĐỂ FIX LỖI MA TRẬN CLO-PLO --- */
+    .matrix-section {
+        page: landscape_page; /* Kích hoạt xoay ngang trang giấy */
+        page-break-before: always; /* Luôn ngắt trang trước khi vào mục này */
+    }
+    .matrix-table {
+        width: 100%;
+        table-layout: fixed; /* Khóa cứng thuật toán co giãn cột của PDF Engine */
+        border-collapse: collapse;
+        font-size: 8.5px; /* Giảm size chữ để hiển thị vừa khít mười mấy cột PLO */
+        margin-top: 10px;
+    }
+    .matrix-table th, .matrix-table td {
+        border: 1px solid #333333;
+        padding: 4px 2px;
+        vertical-align: top;
+        word-wrap: break-word; /* Ép text dài tự động xuống dòng */
+        white-space: normal;  /* Chống tràn lề hàng ngang */
+    }
+    .matrix-table thead th {
+        background-color: #e6f2ff;
+        text-align: center;
+        font-weight: bold;
+    }
+    /* Phân bổ tỷ lệ chiều rộng cố định cho các cột chữ */
+    .col-subject { width: 14%; }
+    .col-clocode { width: 7%; text-align: center; }
+    .col-clodesc { width: 34%; } /* Cấp hẳn 34% không gian trang ngang cho nội dung mô tả CLO */
+    .col-plo { text-align: center; } /* Các cột PLO còn lại tự động chia đều khoảng trống */
+
+    /* --- PAGE 4: SUBJECT DETAIL TABLES --- */
+    .subject-detail-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20pt;
+      page-break-inside: avoid; /* BẮT BUỘC: Ép PDF không được cắt ngang 1 môn học sang 2 trang */
+      border: 1.5pt solid #1a3a6b;
+    }
+
+    .subject-detail-table th.subject-header {
+      background-color: #1a3a6b;
+      color: #ffffff;
+      padding: 8pt 10pt;
+      text-align: left;
+      font-size: 11pt;
+      text-transform: uppercase;
+      border: 1.5pt solid #1a3a6b;
+    }
+
+    .subject-detail-table th.subject-header .code-badge {
+      background-color: #ffffff;
+      color: #1a3a6b;
+      padding: 2pt 6pt;
+      border-radius: 3pt;
+      margin-right: 8pt;
+      font-weight: bold;
+      font-size: 10pt;
+    }
+
+    .subject-detail-table td {
+      border: 1px solid #b0b8c9;
+      padding: 6pt 8pt;
+      vertical-align: top;
+      font-size: 9.5pt;
+    }
+
+    .subject-detail-table td.lbl {
+      background-color: #e6edf7;
+      font-weight: bold;
+      color: #1a3a6b;
+      width: 22%; /* Độ rộng cố định cho nhãn */
+    }
+
+    .subject-detail-table td.val {
+      width: 28%; /* Độ rộng cố định cho giá trị */
+    }
+
+    .subject-detail-table td.desc-val {
+      text-align: justify;
+      line-height: 1.4;
+    }
+
+  </style>
+</head>
+<body>
+
+<!-- PAGE 1: BIA - MAJOR INFO -->
+<div class="cover">
+  <div class="badge">ACADEMIC PROGRAM</div>
+
+  <h1 th:text="${data.major.majorName}">Major Name</h1>
+  <div class="major-code" th:text="'Ma nganh: ' + ${data.major.majorCode}">Major Code</div>
+
+  <hr class="divider"/>
+
+  <div class="description-box"
+       th:if="${data.major.description != null and !#strings.isEmpty(data.major.description)}">
+    <strong>Introduction to the Major:</strong><br/>
+    <span th:text="${data.major.description}"></span>
+  </div>
+</div>
+
+<div class="section-title">Program OutCome - POs</div>
+<table>
+  <thead>
+  <tr>
+    <th style="width:15%">POs Code</th>
+    <th>Description</th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr th:each="po : ${data.major.pos}">
+    <td class="center" th:text="${po.poCode}"></td>
+    <td th:text="${po.description}"></td>
+  </tr>
+  </tbody>
+</table>
+
+<!-- PAGE 2: PLO TABLE + PO-PLO MATRIX -->
+<div class="page-break-before">
+  <div style="margin-bottom:14pt;">
+    <h2 th:text="${data.curriculum.curriculumName}">Curriculum Name</h2>
+    <p>
+      <strong>Curriculum Code:</strong>
+      <span th:text="${data.curriculum.curriculumCode}"></span>
+      &#160;|&#160;
+      <strong>Year of Application:</strong>
+      <span th:text="${data.curriculum.startYear}"></span>
+    </p>
+  </div>
+
+  <div class="section-title">Program Learning OutCome (PLOs)</div>
+  <table>
+    <thead>
+    <tr>
+      <th style="width:12%">PLOs Code</th>
+      <th>Description</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="plo : ${data.curriculum.plos}">
+      <td class="center" th:text="${plo.ploCode}"></td>
+      <td th:text="${plo.description}"></td>
+    </tr>
+    </tbody>
+  </table>
+
+  <div class="section-title">Mapping POs - PLOs</div>
+  <table>
+    <thead>
+    <tr>
+      <th style="width:12%">PLOs \ POs</th>
+      <th th:each="poH : ${data.curriculum.poHeaders}" th:text="${poH}"></th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="plo : ${data.curriculum.plos}">
+      <td style="font-weight:bold;" th:text="${plo.ploCode}"></td>
+      <td class="center" th:each="poH : ${data.curriculum.poHeaders}">
+          <span th:if="${data.curriculum.ploPoMappings[plo.ploCode] != null
+                         and data.curriculum.ploPoMappings[plo.ploCode].contains(poH)}">X</span>
+      </td>
+    </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- PAGE 3: KE HOACH GIANG DAY -->
+<div class="page-break-before">
+  <div class="section-title">Semester-based Teaching Plan</div>
+
+  <table>
+    <thead>
+    <tr>
+      <th style="width:7%">Semester</th>
+      <th style="width:13%">Subject Code</th>
+      <th>Course name</th>
+      <th style="width:8%">Credits</th>
+      <th style="width:12%">Level of Education</th>
+    </tr>
+    </thead>
+    <tbody>
+    <th:block th:each="grp : ${data.semesterPlan}">
+      <tr class="group-header">
+        <td colspan="5">
+          <span th:text="${grp.groupCode + ' - ' + grp.groupName}"></span>
+          <span th:if="${grp.groupType != null and !#strings.isEmpty(grp.groupType)}"
+                th:text="' (' + ${grp.groupType} + ')'"></span>
+          &#160;-&#160;
+          <span th:text="${grp.totalCredits} + ' TC'"></span>
+        </td>
+      </tr>
+      <tr th:each="row : ${grp.rows}">
+        <td class="center" th:text="${row.semester}"></td>
+        <td th:text="${row.subjectCode}"></td>
+        <td th:text="${row.subjectName}"></td>
+        <td class="center" th:text="${row.credits}"></td>
+        <td class="center" th:text="${row.degreeLevel}"></td>
+      </tr>
+    </th:block>
+    </tbody>
+  </table>
+</div>
+
+<!-- PAGE 4: CHI TIET HOC PHAN (SUBJECT CARDS) -->
+<div class="page-break-before">
+  <div class="section-title">Course Subject details</div>
+
+  <th:block th:each="sub, iterStat : ${data.subjects}">
+    <table class="subject-detail-table">
+      <thead>
+      <tr>
+        <th colspan="4" class="subject-header">
+          <span class="code-badge" th:text="${sub.subjectCode}">MÃ MÔN</span>
+          <span th:text="${sub.subjectName}">TÊN MÔN HỌC</span>
+        </th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr>
+        <td class="lbl">Credits:</td>
+        <td class="val" th:text="${sub.credits} + ' TC'"></td>
+        <td class="lbl">Level of Education:</td>
+        <td class="val" th:text="${sub.degreeLevel}"></td>
+      </tr>
+
+      <tr>
+        <td class="lbl">Theory / Prac / Self:</td>
+        <td class="val" th:text="${sub.theoryPeriods} + ' / ' + ${sub.practicalPeriods} + ' / ' + ${sub.selfStudyPeriods}"></td>
+        <td class="lbl">Department:</td>
+        <td class="val" th:text="${sub.departmentName}"></td>
+      </tr>
+
+      <tr>
+        <td class="lbl">Score Scale / Min:</td>
+        <td class="val" th:text="${sub.scoringScale} + ' / ' + ${sub.minToPass}"></td>
+        <td class="lbl">Minimum Bloom:</td>
+        <td class="val" th:text="${sub.minBloomLevel}"></td>
+      </tr>
+
+      <tr th:if="${sub.tool != null and !#strings.isEmpty(sub.tool)}">
+        <td class="lbl">Support Tools:</td>
+        <td class="val" colspan="3" th:text="${sub.tool}"></td>
+      </tr>
+
+      <tr th:if="${sub.description != null and !#strings.isEmpty(sub.description)}">
+        <td class="lbl">Description:</td>
+        <td class="val desc-val" colspan="3" th:text="${sub.description}"></td>
+      </tr>
+      </tbody>
+    </table>
+  </th:block>
+</div>
+
+<!-- PAGE 5: MA TRAN CLO-PLO (LANDSCAPE) -->
+<div class="page-break-before landscape-section">
+  <div class="section-title">MAPPING CLO - PLO</div>
+
+  <table class="matrix-table">
+    <thead>
+    <!-- [FIX] Khai báo width trên thead là anchor để table-layout:fixed hoạt động chính xác -->
+    <tr>
+      <th style="width:12%">Subject</th>
+      <th style="width:8%">CLO Code</th>
+      <!-- [FIX] Giữ 28% cho cột mô tả — đủ rộng để text xuống dòng thay vì bị nén -->
+      <th style="width:28%">CLO Description</th>
+      <th class="vert" th:each="ploH : ${data.cloPloMatrix.ploHeaders}">
+        <div class="rotated-text" th:text="${ploH}"></div>
+      </th>
+    </tr>
+    </thead>
+    <tbody>
+    <th:block th:each="grp : ${data.cloPloMatrix.subjectGroups}">
+      <th:block th:each="cloRow, cloStat : ${grp.cloRows}">
+        <tr>
+          <td class="subject-cell"
+              th:if="${cloStat.first}"
+              th:rowspan="${grp.cloCount}"
+              th:text="${grp.subjectCode + ' - ' + grp.subjectName}"></td>
+
+          <td th:text="${cloRow.cloCode}"></td>
+          <td th:text="${cloRow.cloName}"></td>
+
+          <td class="check" th:each="ploH : ${data.cloPloMatrix.ploHeaders}">
+            <span th:if="${cloRow.ploMapping.get(ploH) == true}">X</span>
+          </td>
+        </tr>
+      </th:block>
+    </th:block>
+    </tbody>
+  </table>
+</div>
+
+</body>
+</html>
