@@ -173,11 +173,6 @@ public class SyllabusService {
             }
         }
 
-        if (PloStatus.DRAFT.toString().equals(finalStatus)) {
-            if (!RoleName.HOPDC.toString().equals(account.getRole().getRoleName())) {
-                throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
-            }
-        }
 
         List<Syllabus> syllabuses;
 
@@ -212,11 +207,6 @@ public class SyllabusService {
             }
         }
 
-        if (SyllabusStatus.DRAFT.toString().equals(syllabus.getStatus())) {
-            if (!RoleName.HOPDC.toString().equals(account.getRole().getRoleName())) {
-                throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
-            }
-        }
         return syllabusRepository.findById(id)
                 .map(syllabusMapper::toResponse)
                 .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
