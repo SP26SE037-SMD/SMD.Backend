@@ -1,9 +1,12 @@
 package com.example.smd.services;
 
+import com.example.smd.dto.request.NotificationRequest;
 import com.example.smd.dto.request.request.RequestCreateRequest;
 import com.example.smd.dto.request.request.RequestUpdateRequest;
 import com.example.smd.dto.response.request.RequestResponse;
 import com.example.smd.entities.Request;
+import com.example.smd.enums.NotificationType;
+import com.example.smd.enums.SyllabusStatus;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.RequestMapper;
@@ -34,6 +37,9 @@ public class RequestService {
     MajorRepository      majorRepository;
     TaskV2Repository     taskV2Repository;
     SprintRepository     sprintRepository;
+
+    NotificationService notificationService;
+
 
     // ------------------------------------------------------------------ CREATE
 
@@ -89,6 +95,14 @@ public class RequestService {
 
         request.setStatus("PENDING");
 
+        NotificationRequest notifReq = NotificationRequest.builder()
+                .title("New Request")
+                .message("You have received a new request: " + request.getTitle())
+                .type(NotificationType.SYSTEM)
+                .accountId(request.getReceivedBy().getAccountId())
+                .build();
+        notificationService.createNotification(notifReq);
+
         return enrichFromEntity(requestRepository.save(request));
     }
 
@@ -134,7 +148,23 @@ public class RequestService {
                     accountRepository.findById(dto.getReceivedById())
                             .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND)));
         }
-
+        if(dto.getStatus().equalsIgnoreCase(SyllabusStatus.APPROVED.toString())){
+            NotificationRequest notifReq = NotificationRequest.builder()
+                    .title("Request Approved")
+                    .message("Your request has been approved: " + request.getTitle())
+                    .type(NotificationType.SYSTEM)
+                    .accountId(request.getCreatedBy().getAccountId())
+                    .build();
+            notificationService.createNotification(notifReq);
+        } else if(dto.getStatus().equalsIgnoreCase(SyllabusStatus.REJECTED.toString())){
+            NotificationRequest notifReq = NotificationRequest.builder()
+                    .title("Request Rejected")
+                    .message("Your request has been rejected: " + request.getTitle())
+                    .type(NotificationType.SYSTEM)
+                    .accountId(request.getCreatedBy().getAccountId())
+                    .build();
+            notificationService.createNotification(notifReq);
+        }
         return enrichFromEntity(requestRepository.save(request));
     }
 

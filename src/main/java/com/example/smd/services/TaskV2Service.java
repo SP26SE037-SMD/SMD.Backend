@@ -153,7 +153,7 @@ public class TaskV2Service {
     @Transactional
     public TaskV2Response createTask(TaskV2CreateRequest request, String userId) {
         TaskV2 task = taskV2Mapper.toEntity(request);
-        task.setStatus("TO_DO");
+        task.setStatus(TaskStatus.TO_DO.name());
         task.setCreatedBy(accountRepository.findById(UUID.fromString(userId))
                 .orElseThrow(() -> new RuntimeException("Account (createdBy) not found")));
 
@@ -172,7 +172,8 @@ public class TaskV2Service {
         // Nếu type=SYLLABUS và action=CREATE: update CLO status từ DRAFT -> INTERNAL_REVIEW
         if (TaskType.SYLLABUS.name().equals(request.getType()) && ActionType.CREATE.name().equals(request.getAction())) {
             if (request.getTargetId() != null) {
-                syllabusRepository.findByIdWithSubject(request.getTargetId()).ifPresent(syllabus -> {
+                var syllabus =
+                        syllabusRepository.findByIdWithSubject(request.getTargetId()).orElseThrow();
                     if (syllabus.getSubject() != null) {
                         UUID subjectId = syllabus.getSubject().getSubjectId();
                         List<CLOs> clos = closRepository.findBySubject_SubjectId(subjectId);
@@ -183,7 +184,25 @@ public class TaskV2Service {
                         }
                         closRepository.saveAll(clos);
                     }
-                });
+                    if (syllabus.getStatus() !=null && !SyllabusStatus.DRAFT.name().equals(syllabus.getStatus())) {
+                        syllabus.setStatus(SyllabusStatus.DRAFT.name());
+                        syllabusRepository.save(syllabus);
+                    }
+            }
+        }
+
+        //Action MODIFY, Type Subject --> set các CLOs liên quan về DRAFT
+        if (TaskType.SUBJECT.name().equals(request.getType()) && ActionType.MODIFY.name().equals(request.getAction())) {
+            if (request.getTargetId() != null) {
+                List<CLOs> clos = closRepository.findBySubject_SubjectId(request.getTargetId());
+                if(clos != null) {
+                    for (CLOs clo : clos) {
+                        if (!PloStatus.DRAFT.name().equals(clo.getStatus())) {
+                            clo.setStatus(PloStatus.DRAFT.name());
+                        }
+                    }
+                    closRepository.saveAll(clos);
+                }
             }
         }
 
@@ -481,7 +500,7 @@ public class TaskV2Service {
 
     /** Tự động set/xóa completedAt theo status DONE */
     private void applyCompletedAt(TaskV2 task) {
-        if ("DONE".equalsIgnoreCase(task.getStatus())) {
+        if (TaskStatus.DONE.name().equalsIgnoreCase(task.getStatus())) {
             if (task.getCompletedAt() == null) {
                 task.setCompletedAt(LocalDate.now());
             }

@@ -2,18 +2,14 @@ package com.example.smd.services;
 
 import com.example.smd.dto.request.MaterialRequest;
 import com.example.smd.dto.response.MaterialResponse;
-import com.example.smd.entities.CLOs;
 import com.example.smd.entities.Material;
 import com.example.smd.entities.Syllabus;
-import com.example.smd.enums.MaterialStatus;
-import com.example.smd.enums.PloStatus;
 import com.example.smd.enums.RoleName;
 import com.example.smd.enums.SyllabusStatus;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.MaterialMapper;
 import com.example.smd.repositories.MaterialRepository;
-import com.example.smd.repositories.SessionRepository;
 import com.example.smd.repositories.SyllabusRepository;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.AccessLevel;
@@ -149,7 +145,7 @@ public class MaterialService {
         // 3. Logic Phân quyền:
         // Nếu là STUDENT hoặc LECTURER, chỉ cho phép xem nếu status là PUBLISHED
         if (RoleName.STUDENT.toString().equals(roleName) || RoleName.LECTURER.toString().equals(roleName)) {
-            if (!MaterialStatus.PUBLISHED.toString().equalsIgnoreCase(material.getSyllabus().getStatus())) {
+            if (!SyllabusStatus.PUBLISHED.toString().equalsIgnoreCase(material.getSyllabus().getStatus())) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }

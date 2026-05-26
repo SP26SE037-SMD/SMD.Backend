@@ -95,7 +95,7 @@ public class AssessmentService {
         // 3. Logic Phân quyền:
         // Nếu là STUDENT hoặc LECTURER, chỉ cho phép xem nếu status là PUBLISHED
         if (RoleName.STUDENT.toString().equals(roleName) || RoleName.LECTURER.toString().equals(roleName)) {
-            if (!MaterialStatus.PUBLISHED.toString().equalsIgnoreCase(assessment.getSyllabus().getStatus())) {
+            if (!SyllabusStatus.PUBLISHED.toString().equalsIgnoreCase(assessment.getSyllabus().getStatus())) {
                 throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
             }
         }

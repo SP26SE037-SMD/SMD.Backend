@@ -10,8 +10,6 @@ import com.example.smd.dto.response.BlockSimpleResponse;
 import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.entities.Blocks;
 import com.example.smd.entities.Material;
-import com.example.smd.enums.MaterialStatus;
-import com.example.smd.enums.SyllabusStatus;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.BlockMapper;

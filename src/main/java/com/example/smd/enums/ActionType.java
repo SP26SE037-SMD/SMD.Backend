@@ -5,10 +5,9 @@ public enum ActionType {
     UPDATE,         // Cập nhật
     DELETE,         // Xóa
     SUBMIT,         // Nộp để review
-    APPROVE,        // Phê duyệt
-    REJECT,         // Từ chối
+    APPROVED,        // Phê duyệt
+    REJECTED,         // Từ chối
     PUBLISHED,        // Xuất bản
     ARCHIVE,        // Lưu trữ
-    RESTORE,        // Khôi phục
-    COMMENT         // Bình luận
+    MODIFY,         // Sửa đổi
 }
