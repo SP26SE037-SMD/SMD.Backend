@@ -15,6 +15,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
+@Table(name = "department_tasks")
 public class Sprint {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

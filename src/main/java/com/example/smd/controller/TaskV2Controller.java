@@ -5,6 +5,7 @@ import com.example.smd.dto.request.taskV2.TaskV2CreateVPRequest;
 import com.example.smd.dto.request.taskV2.TaskV2UpdateRequest;
 import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.ResponseObject;
+import com.example.smd.dto.response.SprintCurriculumResponse;
 import com.example.smd.dto.response.TaskV2Response;
 import com.example.smd.services.TaskV2Service;
 import io.swagger.v3.oas.annotations.Operation;
@@ -89,6 +90,13 @@ public class TaskV2Controller {
         taskV2Service.deleteTask(taskId);
         return ResponseEntity.noContent().build();
     }
+    @GetMapping("/{taskId}/sprint-curriculum")
+    @Operation(summary = "Get Sprint and Curriculum by Task ID",
+               description = "Trả về thông tin sprint và curriculum mà task thuộc về")
+    public ResponseEntity<SprintCurriculumResponse> getSprintAndCurriculumByTaskId(@PathVariable UUID taskId) {
+        return ResponseEntity.ok(taskV2Service.getSprintAndCurriculumByTaskId(taskId));
+    }
+
     @PostMapping("/batch/{sprintId}")
     @Operation(summary = "Create multiple tasks in a sprint", description = "Auto-create tasks from subjects of sprint's curriculum and department")
     public ResponseObject<Boolean> createBatch(

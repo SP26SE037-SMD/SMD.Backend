@@ -2,6 +2,7 @@ package com.example.smd.services;
 
 import com.example.smd.dto.request.taskV2.*;
 import com.example.smd.dto.response.SourceResponse;
+import com.example.smd.dto.response.SprintCurriculumResponse;
 import com.example.smd.dto.response.TaskV2Response;
 import com.example.smd.entities.*;
 import com.example.smd.enums.*;
@@ -436,6 +437,35 @@ public class TaskV2Service {
         return getTaskById(savedTask.getTaskId());
     }
 
+
+    // ===================== GET SPRINT & CURRICULUM BY TASK ID =====================
+
+    @Transactional(readOnly = true)
+    public SprintCurriculumResponse getSprintAndCurriculumByTaskId(UUID taskId) {
+        TaskV2 task = taskV2Repository.findById(taskId)
+                .orElseThrow(() -> new RuntimeException("Task not found"));
+
+        Sprint sprint = task.getSprint();
+        if (sprint == null) {
+            throw new RuntimeException("Task does not belong to any sprint");
+        }
+
+        // Reload sprint với curriculum để tránh lazy loading issue
+        sprint = sprintRepository.findById(sprint.getSprintId())
+                .orElseThrow(() -> new RuntimeException("Sprint not found"));
+
+        Curriculum curriculum = sprint.getCurriculum();
+        if (curriculum == null) {
+            throw new RuntimeException("Sprint does not have an associated curriculum");
+        }
+
+        return SprintCurriculumResponse.builder()
+                .sprintId(sprint.getSprintId())
+                .sprintName(sprint.getSprintName())
+                .curriculumId(curriculum.getCurriculumId())
+                .curriculumCode(curriculum.getCurriculumCode())
+                .build();
+    }
 
     // ===================== DELETE =====================
 

@@ -4,7 +4,6 @@ import com.example.smd.dto.response.*;
 import com.example.smd.dto.response.syllabus.SyllabusStructureResponse;
 import com.example.smd.dto.response.validate.CompareSyllabusResponse;
 import com.example.smd.entities.*;
-import com.example.smd.enums.ImpactStatus;
 import com.example.smd.enums.RoleName;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
@@ -18,7 +17,6 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -27,7 +25,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class EmbeddingService {
-    EmbeddingRepository embeddingRepo;
     BlockRepository blockRepo;
     SyllabusRepository syllabusRepo;
     MaterialRepository materialRepo;
@@ -38,24 +35,7 @@ public class EmbeddingService {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    @Transactional
-    public void createEmbedding(String text, Blocks block) {
-        List<Double> doubleList = gemini.getEmbeddingVector(text);
-
-        // 2. Chuyển thành chuỗi "[0.1, 0.2, ...]"
-        String vectorString = doubleList.stream()
-                .map(d -> String.format(Locale.US, "%.8f", d))
-                .collect(Collectors.joining(",", "[", "]"));
-
-        // 3. Gọi Native Query để INSERT
-        embeddingRepo.insertVector(
-                UUID.randomUUID(),
-                block.getBlockId(),
-                text,
-                Instant.now(),
-                vectorString
-        );
-    }
+    // createEmbedding removed: vector_embeddings table has been dropped
 
     @Transactional
     public SyllabusStructureResponse getSyllabusStructure(UUID syllabusId) {
@@ -200,70 +180,7 @@ public class EmbeddingService {
         return diff;
     }
 
-    @Transactional
-    public ImpactResponse checkImpact(String gapConcept, UUID descendantSubjectId) {
-
-        // 1. Lấy vector của kiến thức bị hổng (ví dụ: "Tính kế thừa")
-        List<Double> gapVector = gemini.getEmbeddingVector(gapConcept);
-
-        // 2. CHUẨN HÓA CHUỖI VECTOR (BẮT BUỘC: Không được có dấu cách)
-        String vectorStr = gapVector.stream()
-                .map(d -> String.format(Locale.US, "%.8f", d)) // Ép dùng dấu chấm thập phân (.)
-                .collect(Collectors.joining(",", "[", "]"));
-
-        // 3. Tìm đoạn văn liên quan nhất trong giáo trình Môn B (Hậu duệ)
-        // Giả sử dùng hàm tương tự findSimilarArticles_Final
-        // 3. Gọi Repo với chuỗi đã chuẩn hóa
-        List<SimilarityResult> matches = embeddingRepo.findTopSimilarContent(descendantSubjectId, vectorStr);
-
-        System.out.println("DEBUG - VectorStr: " + vectorStr.substring(0, 50) + "...");
-        System.out.println("DEBUG - SyllabusID: " + descendantSubjectId);
-        System.out.println("Tổng số match tìm thấy: " + matches.size());
-
-        if (matches.isEmpty()) {
-            return ImpactResponse.builder()
-                    .impactStatus(ImpactStatus.NO_IMPACT)
-                    .chapterTitle("Not defined")
-                    .similarity(0.0)
-                    .removeContent(gapConcept).build();
-        }
-
-        SimilarityResult topMatch = matches.get(0);
-        double distance = ((Number) topMatch.getDistance()).doubleValue();// Lấy khoảng cách đoạn giống nhất
-//        double similarity = Math.pow(1.0 - distance, 2);
-        double similarity = 1.0 - distance;
-
-//        Trong buổi bảo vệ, nếu thầy cô hỏi tại sao chọn ngưỡng 0.35,
-//        bạn có thể trả lời: "Do đặc thù văn phong giáo trình giữa các môn học
-//        có sự khác biệt về thuật ngữ chuyên môn, nên em sử dụng ngưỡng 0.35
-//        để đảm bảo không bỏ sót các mối liên hệ ngữ nghĩa tiềm tàng
-//        trước khi đưa vào mô hình ngôn ngữ lớn (LLM) để phân tích sâu".
-        if (similarity > 0.35) {
-            // 3. KHÁC BIỆT Ở ĐÂY: Dùng AI để phân loại
-            String contentText = (String) topMatch.getContentBody();
-            return ImpactResponse.builder()
-                    .impactStatus(determineImpactType(gapConcept, contentText))
-                    .similarity(similarity)
-                    .chapterTitle(topMatch.getChapterTitle())
-                    .removeContent(gapConcept).build();
-            // Trả về: REQUIRED (Lỗ hổng lan truyền) hoặc RESOLVED (Đã được dạy lại)
-        }
-
-        return ImpactResponse.builder()
-                .impactStatus(ImpactStatus.NO_IMPACT)
-                .similarity(similarity)
-                .chapterTitle(topMatch.getChapterTitle())
-                .removeContent(gapConcept).build();
-    }
-
-    public ImpactStatus determineImpactType(String gapConcept, String contextText) {
-        String aiResponse = gemini.determineImapact(gapConcept, contextText).trim().toUpperCase();
-        try {
-            return ImpactStatus.valueOf(aiResponse);
-        } catch (IllegalArgumentException e) {
-            return ImpactStatus.REQUIRED;
-        }
-    }
+    // checkImpact and determineImpactType removed: vector_embeddings table has been dropped
 
     public void saveComparisonHistory(UUID oldId, UUID newId, AssessmentDiffResponse assessmentResult, ComparisonResult analysis) {
         try {
