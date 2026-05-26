@@ -41,7 +41,6 @@ import java.util.stream.Collectors;
 public class BlockService {
     BlockRepository blockRepository;
     MaterialRepository materialRepository;
-    EmbeddingService embeddingService;
     BlockMapper blockMapper;
 
     // 1. Create List Blocks (Bulk Insert)
@@ -85,12 +84,6 @@ public class BlockService {
 
         List<Blocks> savedBlocks = blockRepository.saveAll(blocksList);
 
-        for (Blocks block : savedBlocks) {
-            if (block.getContentText() != null && !block.getContentText().isBlank()) {
-                embeddingService.createEmbedding(block.getContentText(), block);
-            }
-        }
-
         return savedBlocks.stream()
                 .map(blockMapper::toResponse)
                 .toList();
@@ -116,9 +109,6 @@ public class BlockService {
                 .build();
 
         Blocks savedBlock = blockRepository.save(newBlock);
-        if (savedBlock.getContentText() != null && !savedBlock.getContentText().isBlank()) {
-            embeddingService.createEmbedding(savedBlock.getContentText(), savedBlock);
-        }
         return blockMapper.toResponse(savedBlock);
     }
 
@@ -293,15 +283,6 @@ public class BlockService {
         }
 
         List<Blocks> savedBlocks = blockRepository.saveAll(toSave);
-
-        // Tạo embedding cho các block mới có nội dung
-        for (Blocks block : savedBlocks) {
-            if (block.getCreatedAt() == null // block vừa được persist lần đầu
-                    && block.getContentText() != null
-                    && !block.getContentText().isBlank()) {
-                embeddingService.createEmbedding(block.getContentText(), block);
-            }
-        }
 
         // Trả về toàn bộ blocks còn lại của material (đã sắp xếp theo idx)
         return blockRepository.findAllByMaterial_MaterialIdOrderByIdxAsc(materialId)

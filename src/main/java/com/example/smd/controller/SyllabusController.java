@@ -4,7 +4,6 @@ import com.example.smd.dto.request.SyllabusActionLogRequest;
 import com.example.smd.dto.request.SyllabusRequest;
 import com.example.smd.dto.response.AssessmentDiffResponse;
 import com.example.smd.dto.response.ComparisonResult;
-import com.example.smd.dto.response.ImpactResponse;
 import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.dto.response.syllabus.SyllabusResponse;
 import com.example.smd.dto.response.validate.CompareSyllabusResponse;
@@ -29,8 +28,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -212,22 +209,6 @@ public class SyllabusController {
                         .build();
         }
 
-        @PostMapping("/check-impact")
-        public ResponseObject<List<ImpactResponse>> checkProgramImpact(
-                        @RequestParam("rootId") UUID rootId,
-                        @RequestBody List<String> removedConcepts) {
-
-                // Gọi Service để quét qua toàn bộ chuỗi môn học phụ thuộc
-                List<ImpactResponse> impactReports = new ArrayList<>();
-                for (String removedConcept : removedConcepts) {
-                        var response = embeddingService.checkImpact(removedConcept, rootId);
-                        impactReports.add(response);
-                }
-                return ResponseObject.<List<ImpactResponse>>builder()
-                                .data(impactReports)
-                                .message("Compare syllabus successfully")
-                                .build();
-        }
 
         @GetMapping("/pending-review/department")
         @Operation(summary = "Get Pending Review Syllabuses by Department", description = "Lấy danh sách các Đề cương đang chờ duyệt thuộc Phòng ban của người dùng hiện tại.")
