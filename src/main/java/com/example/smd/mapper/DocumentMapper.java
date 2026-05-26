@@ -20,6 +20,8 @@ public interface DocumentMapper {
     @Mapping(target = "documentId", ignore = true)
     void updateDocument(@MappingTarget Document document, DocumentRequest request);
 
+    @Mapping(target = "majorId", source = "major.majorId")
     DocumentResponse toDocumentResponse(Document document);
-    List<DocumentResponse> toResponseList(List<Document> documents);
+
+    List<DocumentResponse> toDocumentResponseList(List<Document> documents);
 }

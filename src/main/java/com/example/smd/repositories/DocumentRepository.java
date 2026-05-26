@@ -1,7 +1,7 @@
 package com.example.smd.repositories;
 
 import com.example.smd.entities.Document;
-import com.example.smd.entities.Regulation;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -18,7 +18,8 @@ public interface DocumentRepository extends JpaRepository<Document, UUID>, JpaSp
 
     List<Document> findAllByMajorIsNullAndStatus(String status);
 
-    List<Document> findAllByMajorIsNull();
+    @EntityGraph(attributePaths = {"major"})
+    List<Document> findAll();
 
     List<Document> findAllByMajor_MajorId(UUID majorId);
 

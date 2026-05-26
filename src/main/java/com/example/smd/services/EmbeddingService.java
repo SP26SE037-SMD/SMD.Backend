@@ -61,7 +61,7 @@ public class EmbeddingService {
 
         return SyllabusStructureResponse.builder()
                 .syllabusName(syllabus.getSyllabusName())
-                .version(syllabus.getSubject().getSubjectCode()) // Ví dụ lấy mã môn làm version
+                .version(syllabus.getSubject().getSubjectCode())
                 .chapters(chapterDTOs)
                 .build();
     }
