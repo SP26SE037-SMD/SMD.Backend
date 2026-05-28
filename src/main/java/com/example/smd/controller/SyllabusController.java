@@ -1,4 +1,4 @@
-package com.example.smd.controller;
+        package com.example.smd.controller;
 
 import com.example.smd.dto.request.SyllabusActionLogRequest;
 import com.example.smd.dto.request.SyllabusRequest;

@@ -51,6 +51,8 @@ public class CurriculumService {
     PoPloMappingRepository poPloMappingRepository;
     SubjectRepository subjectRepository;
     CurriculumGroupSubjectRepository curriculumGroupSubjectRepository;
+    CLOsRepository closRepository;
+    SyllabusRepository syllabusRepository;
 
     /**
      * Lấy danh sách curriculum với phân trang và bộ lọc
@@ -328,7 +330,95 @@ public class CurriculumService {
         curriculum.setStatus(curriculumStatus.toString());
         Curriculum updatedCurriculum = curriculumRepository.save(curriculum);
 
+        // Khi chuyển sang PUBLISHED: cascade publish PLOs, Subjects, CLOs, Syllabuses
+        if (CurriculumStatus.PUBLISHED.equals(curriculumStatus)) {
+            publishCurriculumCascade(curriculum);
+        }
+
         return curriculumMapper.toCurriculumResponse(updatedCurriculum);
+    }
+
+    /**
+     * Cascade publish khi Curriculum chuyển sang PUBLISHED:
+     * 1. Các PLOs thuộc curriculum -> PUBLISHED
+     * 2. Các môn (Subject) thuộc curriculum:
+     *    - IsApproved = true, ApprovedDate = now
+     *    - Các CLOs thuộc môn chưa PUBLISHED -> PUBLISHED
+     * 3. Với mỗi môn: lấy 1 Syllabus có status = APPROVED -> chuyển sang PUBLISHED
+     */
+    private void publishCurriculumCascade(Curriculum curriculum) {
+        java.time.Instant now = java.time.Instant.now();
+
+        // 1. Publish tất cả PLOs thuộc curriculum
+        List<PLOs> plos = plOsRepository.findByCurriculum_CurriculumId(curriculum.getCurriculumId());
+        for (PLOs plo : plos) {
+            if (!PloStatus.PUBLISHED.toString().equals(plo.getStatus())) {
+                plo.setStatus(PloStatus.PUBLISHED.toString());
+            }
+        }
+        if (!plos.isEmpty()) {
+            plOsRepository.saveAll(plos);
+        }
+
+        // 2. Lấy danh sách subject thuộc curriculum
+        List<Curriculum_Group_Subject> mappings = curriculumGroupSubjectRepository
+                .findAllByCurriculumIdOrderBySemester(curriculum.getCurriculumId());
+
+        // Dùng Set để tránh xử lý trùng lặp cùng một Subject
+        Set<UUID> processedSubjectIds = new HashSet<>();
+        List<Subject> subjectsToSave = new ArrayList<>();
+        List<CLOs> closToSave = new ArrayList<>();
+        List<com.example.smd.entities.Syllabus> syllabusesToSave = new ArrayList<>();
+
+        for (Curriculum_Group_Subject mapping : mappings) {
+            Subject subject = mapping.getSubject();
+            UUID subjectId = subject.getSubjectId();
+
+            if (processedSubjectIds.contains(subjectId)) {
+                continue;
+            }
+            processedSubjectIds.add(subjectId);
+
+            // 2a. Cập nhật IsApproved và ApprovedDate cho Subject
+            subject.setIsApproved(true);
+            subject.setApprovedDate(now);
+            subjectsToSave.add(subject);
+
+            // 2b. Publish các CLOs chưa PUBLISHED thuộc môn này
+            List<CLOs> closOfSubject = closRepository.findBySubject_SubjectId(subjectId);
+            for (CLOs clo : closOfSubject) {
+                if (!PloStatus.PUBLISHED.toString().equals(clo.getStatus())) {
+                    clo.setStatus(PloStatus.PUBLISHED.toString());
+                    closToSave.add(clo);
+                }
+            }
+
+            // 3. Tìm 1 Syllabus có status = APPROVED thuộc môn này -> chuyển sang PUBLISHED
+            List<com.example.smd.entities.Syllabus> approvedSyllabuses =
+                    syllabusRepository.findBySubject_SubjectIdAndStatus(
+                            subjectId, com.example.smd.enums.SyllabusStatus.APPROVED.toString());
+            if (!approvedSyllabuses.isEmpty()) {
+                // Lấy Syllabus đầu tiên có status APPROVED
+                com.example.smd.entities.Syllabus syllabus = approvedSyllabuses.get(0);
+                syllabus.setStatus(com.example.smd.enums.SyllabusStatus.PUBLISHED.toString());
+                syllabus.setApprovedDate(now);
+                syllabusesToSave.add(syllabus);
+            }
+        }
+
+        if (!subjectsToSave.isEmpty()) {
+            subjectRepository.saveAll(subjectsToSave);
+        }
+        if (!closToSave.isEmpty()) {
+            closRepository.saveAll(closToSave);
+        }
+        if (!syllabusesToSave.isEmpty()) {
+            syllabusRepository.saveAll(syllabusesToSave);
+        }
+
+        log.info("Cascade publish completed for curriculum: {} — PLOs: {}, Subjects: {}, CLOs: {}, Syllabuses: {}",
+                curriculum.getCurriculumId(), plos.size(), processedSubjectIds.size(),
+                closToSave.size(), syllabusesToSave.size());
     }
 
     /**

@@ -155,8 +155,6 @@ public class SubjectController {
                         "| :--- | :--- | :--- |\n" +
                         "| **DRAFT** | **Khởi tạo:** HoCF mới tạo mã và tên môn học. Thông tin cơ bản đang được nhập liệu. | Chỉ hiển thị nội bộ cho HoCF. |\n"
                         +
-                        "| **DEFINED** | **Đã xác định:** Bản mô tả môn học và số tín chỉ đã hoàn thiện, sẵn sàng để đưa vào dự thảo Curriculum trình VP. | Có thể gán vào Curriculum DRAFT. |\n"
-                        +
                         "| **WAITING_SYLLABUS** | **Chờ Syllabus:** Curriculum chứa môn này đã được VP duyệt. Hệ thống đang đợi HoPDC nộp Syllabus chi tiết. | **Mở quyền soạn thảo Syllabus.** |\n"
                         +
                         "| **PENDING_REVIEW** | **Chờ thẩm định:** Syllabus chi tiết đã nộp và đang đợi Hội đồng phân công Reviewer đánh giá. | Khóa chỉnh sửa nội dung Syllabus. |\n"
@@ -181,8 +179,6 @@ public class SubjectController {
                         "| Status | Mô tả chi tiết (Nghiệp vụ) | Ràng buộc hệ thống |\n" +
                         "| :--- | :--- | :--- |\n" +
                         "| **DRAFT** | **Khởi tạo:** HoCF mới tạo mã và tên môn học. Thông tin cơ bản đang được nhập liệu. | Chỉ hiển thị nội bộ cho HoCF. |\n"
-                        +
-                        "| **DEFINED** | **Đã xác định:** Bản mô tả môn học và số tín chỉ đã hoàn thiện, sẵn sàng để đưa vào dự thảo Curriculum trình VP. | Có thể gán vào Curriculum DRAFT. |\n"
                         +
                         "| **WAITING_SYLLABUS** | **Chờ Syllabus:** Curriculum chứa môn này đã được VP duyệt. Hệ thống đang đợi HoPDC nộp Syllabus chi tiết. | **Mở quyền soạn thảo Syllabus.** |\n"
                         +
