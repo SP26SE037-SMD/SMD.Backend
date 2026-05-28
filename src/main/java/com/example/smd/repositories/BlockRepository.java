@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -33,4 +34,7 @@ public interface BlockRepository extends JpaRepository<Blocks, UUID> {
     @Modifying
     @Query("UPDATE Blocks b SET b.idx = b.idx + 1 WHERE b.idx >= :newIdx AND b.material.materialId = :materialId")
     void shiftBlocksIndex(@Param("newIdx") int newIdx, @Param("materialId") UUID materialId);
+
+    @Query("SELECT b FROM Blocks b JOIN b.material m JOIN m.syllabus s WHERE b.contentText = :contentText AND s.syllabusId = :syllabusId")
+    Optional<Blocks> findByContentTextAndSyllabusId(@Param("contentText") String contentText, @Param("syllabusId") UUID syllabusId);
 }

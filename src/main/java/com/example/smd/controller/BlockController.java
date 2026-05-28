@@ -214,4 +214,15 @@ public class BlockController {
                 .message("Cập nhật blocks thành công")
                 .build();
     }
+
+    @GetMapping("/search")
+    public ResponseObject<BlockResponse> getBlock(
+            @RequestParam String content,
+            @RequestParam UUID syllabusId) {
+        return ResponseObject.<BlockResponse>builder()
+                .status(1000)
+                .data(blockService.getBlockByNameAndSyllabus(content, syllabusId))
+                .message("Truy vấn danh sách block thành công")
+                .build();
+    }
 }

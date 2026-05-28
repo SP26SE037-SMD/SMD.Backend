@@ -307,7 +307,7 @@ public class SessionService {
 
 
 
-    public SessionValidationResult validate(List<SessionRequest> inputs, UUID syllabusId) {
+    public SessionValidationResult validate(List<SessionRequest> inputs, UUID syllabusId, int duration) {
         SessionValidationResult result = new SessionValidationResult();
 
         Syllabus syllabus = syllabusRepository.findByIdWithSubject(syllabusId)
@@ -321,14 +321,14 @@ public class SessionService {
         // 1. Tính quỹ Lý thuyết (Quy đổi an toàn từ Giờ -> Tiết)
         double inputTotalTheoryHours = inputs.stream()
                 .filter(s -> "THEORY".equalsIgnoreCase(s.getSessionType()))
-                .mapToDouble(s -> s.getDuration() != null ? s.getDuration() : 0.0) // Dùng Double để nhận số lẻ 1.5, 2.25
+                .mapToDouble(s -> s.getDuration() != null ? s.getDuration() : 0.0)
                 .sum();
         double dbTotalTheoryHours = existingDbSessions.stream()
                 .filter(s -> "THEORY".equalsIgnoreCase(s.getSessionType()))
-                .mapToDouble(s -> s.getDuration() != null ? s.getDuration() : 0.0) // Dùng Double để nhận số lẻ 1.5, 2.25
+                .mapToDouble(s -> s.getDuration() != null ? s.getDuration() : 0.0)
                 .sum();
-        int inputTotalTheoryPeriods = (int) Math.round(inputTotalTheoryHours / 50);
-        int dbTotalTheoryPeriods = (int) Math.round(dbTotalTheoryHours / 50);
+        int inputTotalTheoryPeriods = (int) Math.round(inputTotalTheoryHours / duration);
+        int dbTotalTheoryPeriods = (int) Math.round(dbTotalTheoryHours / duration);
         int remainingTheory = (masterSubject.getTheoryPeriods() != null ? masterSubject.getTheoryPeriods() : 0) - inputTotalTheoryPeriods - dbTotalTheoryPeriods;
 
         // 2. Tính quỹ Thực hành (Tương tự)
@@ -340,8 +340,8 @@ public class SessionService {
                 .filter(s -> "PRACTICE".equalsIgnoreCase(s.getSessionType()))
                 .mapToDouble(s -> s.getDuration() != null ? s.getDuration() : 0.0)
                 .sum();
-        int inputTotalPracticePeriods = (int) Math.round(inputTotalPracticeHours / 50);
-        int dbTotalPracticePeriods = (int) Math.round(dbTotalPracticeHours / 50);
+        int inputTotalPracticePeriods = (int) Math.round(inputTotalPracticeHours / duration);
+        int dbTotalPracticePeriods = (int) Math.round(dbTotalPracticeHours / duration);
         int remainingPractice = (masterSubject.getPracticalPeriods() != null ? masterSubject.getPracticalPeriods() : 0) - inputTotalPracticePeriods - dbTotalPracticePeriods;
 
         // (Tùy chọn) Tính tổng giờ tự học nếu có bắt validate
