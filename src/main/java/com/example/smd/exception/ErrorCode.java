@@ -155,6 +155,8 @@ public enum ErrorCode {
     INVALID_SYLLABUS_STATUS(18002, "The syllabus status is invalid.", HttpStatus.BAD_REQUEST),
     SYLLABUS_NOT_EDITABLE(18003, "Syllabus can only be modified when in DRAFT or REVISION_REQUESTED status", HttpStatus.BAD_REQUEST),
     SYLLABUS_NOT_CREATE(18004, "Subject must be in WAITING_SYLLABUS or COMPLETED status to create a Syllabus", HttpStatus.BAD_REQUEST),
+    SAME_SYLLABUS_ID(18005,"Old Syllabus and New Syllabus is the same" ,HttpStatus.BAD_REQUEST ),
+
 
     //CURRICULUM_GROUP_SUBJECT
     CURRICULUM_GROUP_SUBJECT_ALREADY_EXISTS(20001, "This subject is already added to this curriculum", HttpStatus.BAD_REQUEST),
@@ -306,8 +308,7 @@ public enum ErrorCode {
     // General
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),
     INVALID_KEY(1000, "Invalid message key", HttpStatus.BAD_REQUEST),
-    ACCESS_DENIED_FOR_ROLE(8888, "Your role does not have permission to view this content", HttpStatus.FORBIDDEN),
-    ;
+    ACCESS_DENIED_FOR_ROLE(8888, "Your role does not have permission to view this content", HttpStatus.FORBIDDEN);
 
 
 
