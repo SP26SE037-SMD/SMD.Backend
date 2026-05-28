@@ -46,7 +46,7 @@ public class DocumentService {
         } else {
             documents = repository.findAllWithFilters(majorId, status);
         }
-        return mapper.toResponseList(documents);
+        return mapper.toDocumentResponseList(documents);
     }
 
     public DocumentResponse getById(UUID id) {
