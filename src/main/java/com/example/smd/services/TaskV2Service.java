@@ -208,7 +208,7 @@ public class TaskV2Service {
 
         if (savedTask.getAccount() != null) {
             NotificationRequest notifReq = NotificationRequest.builder()
-                    .title("New Task Assigned")
+                    .title("New Task")
                     .message("You have been assigned a new task: " + savedTask.getTaskName())
                     .type(NotificationType.TASK)
                     .accountId(savedTask.getAccount().getAccountId())
@@ -268,7 +268,6 @@ public class TaskV2Service {
         log.info("Updating status of task {} to {}", taskId, request);
         TaskV2 task = taskV2Repository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Task not found"));
-        String oldStatus = task.getStatus();
 
         if (request != null) {
             task.setStatus(request);
@@ -451,7 +450,7 @@ public class TaskV2Service {
                 });
             }
         }
-        // ===================== END ACCEPTED STATUS PROPAGATION =====================
+        // ===================== END =====================
 
         return getTaskById(savedTask.getTaskId());
     }
@@ -697,15 +696,13 @@ public class TaskV2Service {
         }
 
         if (hopdcAccount != null && !savedTasks.isEmpty()) {
-            for (TaskV2 savedTask : savedTasks) {
                 NotificationRequest notifReq = NotificationRequest.builder()
-                        .title("New Task Assigned in Sprint")
-                        .message("You have been assigned a new task in sprint: " + savedTask.getTaskName())
+                        .title("New Department Tasks")
+                        .message("You have been assigned a new department tasks: " )
                         .type(NotificationType.TASK)
                         .accountId(hopdcAccount.getAccountId())
                         .build();
                 notificationService.createNotification(notifReq);
-            }
         }
 
         return true;
@@ -728,7 +725,7 @@ public class TaskV2Service {
 
         if (task.getAccount() != null) {
             NotificationRequest notifReq = NotificationRequest.builder()
-                    .title("New Task Assigned")
+                    .title("New Task")
                     .message("You have been assigned a new task: " + task.getTaskName())
                     .type(NotificationType.TASK)
                     .accountId(task.getAccount().getAccountId())

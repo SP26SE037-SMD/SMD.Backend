@@ -234,6 +234,9 @@ public class SyllabusService {
         Syllabus newSyllabus = syllabusRepository.findById(newSyllabusId)
                 .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
 
+        if(oldSyllabusId == newSyllabusId){
+            throw new AppException(ErrorCode.SAME_SYLLABUS_ID);
+        }
         // 1. Copy Assessment
         List<Assessment> oldAssessments = assessmentRepository.findBySyllabus_SyllabusId(oldSyllabusId);
         List<Assessment> newAssessments = oldAssessments.stream().map(old -> {
