@@ -118,7 +118,6 @@ public class SyllabusService {
         return syllabusMapper.toResponse(syllabusRepository.save(syllabus));
     }
 
-    // 4. Xóa đệm (Soft Delete)
     @Transactional
     public void delete(UUID id, String accountId) {
         //Kiểm tra Role tạo
@@ -132,18 +131,20 @@ public class SyllabusService {
         Syllabus syllabus = syllabusRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
 
-        if ("DRAFT".equals(syllabus.getStatus())) {
-            // Xóa các bảng con trước để tránh FK constraint violation
-            assessmentRepository.deleteAll(assessmentRepository.findBySyllabus_SyllabusId(id));
-            sessionRepository.deleteAll(sessionRepository.findBySyllabus_SyllabusId(id));
-            // materials đã có CascadeType.ALL trên Syllabus entity, sẽ tự xóa
-            // nhưng syllabus_sources không có cascade → xóa thủ công
-            syllabusSourceRepository.deleteAll(syllabusSourceRepository.findBySyllabus_SyllabusId(id));
-            syllabusRepository.delete(syllabus);
-        } else {
-            syllabus.setStatus("ARCHIVED");
-            syllabusRepository.save(syllabus);
+        // Xóa Blocks của từng Material trước (Material không có CascadeType.ALL → Blocks)
+        List<Material> materials = materialRepository.findBySyllabus_SyllabusId(id);
+        for (Material material : materials) {
+            blockRepository.deleteAllByMaterial_MaterialId(material.getMaterialId());
         }
+        materialRepository.deleteAll(materials);
+
+        // Xóa các bảng con còn lại không có cascade
+        assessmentRepository.deleteAll(assessmentRepository.findBySyllabus_SyllabusId(id));
+        sessionRepository.deleteAll(sessionRepository.findBySyllabus_SyllabusId(id));
+        syllabusSourceRepository.deleteAll(syllabusSourceRepository.findBySyllabus_SyllabusId(id));
+
+        // Hard delete Syllabus
+        syllabusRepository.delete(syllabus);
     }
 
     // 5. Get All by Subject
