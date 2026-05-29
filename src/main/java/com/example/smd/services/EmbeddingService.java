@@ -231,7 +231,7 @@ public class EmbeddingService {
         }
     }
 
-    private boolean validateLatestAndSubsequentVersions(UUID oldId, UUID newId) {
+    public boolean validateLatestAndSubsequentVersions(UUID oldId, UUID newId) {
 
         Syllabus newSyllabus = syllabusRepo.findById(newId)
                 .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));

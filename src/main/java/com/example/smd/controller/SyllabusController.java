@@ -207,6 +207,24 @@ public class SyllabusController {
                         .build();
         }
 
+        @PostMapping("/save-compare-version")
+        public ResponseObject<CompareSyllabusResponse> saveComparisonHistory(UUID oldId, UUID newId, AssessmentDiffResponse assessmentResult, ComparisonResult analysis) {
+                if(embeddingService.validateLatestAndSubsequentVersions(oldId, newId)){
+                        embeddingService.saveComparisonHistory(oldId, newId, assessmentResult, analysis);
+                }
+
+                var compareSyllabusResponse = new CompareSyllabusResponse();
+                compareSyllabusResponse.setNewSyllabusId(newId);
+                compareSyllabusResponse.setOldSyllabusId(oldId);
+                compareSyllabusResponse.setAssessmentDiffResponse(assessmentResult);
+                compareSyllabusResponse.setComparisonResult(analysis);
+
+                return ResponseObject.<CompareSyllabusResponse>builder()
+                        .data(compareSyllabusResponse)
+                        .message("Save syllabus successfully")
+                        .build();
+        }
+
 
         @GetMapping("/pending-review/department")
         @Operation(summary = "Get Pending Review Syllabuses by Department", description = "Lấy danh sách các Đề cương đang chờ duyệt thuộc Phòng ban của người dùng hiện tại.")

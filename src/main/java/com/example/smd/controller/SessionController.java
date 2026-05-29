@@ -149,10 +149,11 @@ public class  SessionController {
     )
     public ResponseObject<SessionValidationResult> validateSession(
             @RequestBody List<SessionRequest> inputs,
-            @PathVariable("syllabusId") UUID syllabusId) {
+            @PathVariable("syllabusId") UUID syllabusId,
+            @RequestParam int duration) {
         return ResponseObject.<SessionValidationResult>builder()
                 .status(1000)
-                .data(sessionService.validate(inputs, syllabusId))
+                .data(sessionService.validate(inputs, syllabusId, duration))
                 .message("Validate session successfully")
                 .build();
     }

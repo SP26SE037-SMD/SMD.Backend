@@ -288,4 +288,10 @@ public class BlockService {
                 .map(blockMapper::toResponse)
                 .toList();
     }
+
+    public BlockResponse getBlockByNameAndSyllabus(String content, UUID syllabusId) {
+        var block = blockRepository.findByContentTextAndSyllabusId(content, syllabusId)
+                .orElseThrow(() -> new AppException(ErrorCode.BLOCK_NOT_FOUND));
+        return blockMapper.toResponse(block);
+    }
 }
