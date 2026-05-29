@@ -139,8 +139,6 @@ public class SyllabusController {
                         +
                         "| **PENDING_REVIEW** | **Chờ duyệt:** Đề cương đã hoàn thiện, đang đợi Hội đồng/HoD phân công Reviewer thẩm định. | Khóa chỉnh sửa tạm thời. |\n"
                         +
-                        "| **REVISION_REQUESTED**| **Yêu cầu chỉnh sửa:** Reviewer đã gửi Feedback. Giảng viên cần cập nhật nội dung theo yêu cầu. | Mở lại quyền chỉnh sửa. |\n"
-                        +
                         "| **APPROVED** | **Đã duyệt:** Nội dung đã thông qua về mặt chuyên môn, sẵn sàng để đóng gói ban hành. | Khóa toàn bộ nội dung. |\n"
                         +
                         "| **PUBLISHED** | **Ban hành:** Đề cương chính thức có hiệu lực. Sinh viên bắt đầu được xem tài liệu và CLO. | Khóa vĩnh viễn (Read-only). |\n"
@@ -171,7 +169,7 @@ public class SyllabusController {
         }
 
         @DeleteMapping("/{id}/account/{accountId}")
-        @Operation(summary = "Delete syllabus", description = "Sets status to 'ARCHIVED' instead of physical deletion")
+        @Operation(summary = "Delete syllabus")
         @PreAuthorize("hasAuthority('SYLLABUS_DELETE')")
         public ResponseObject<Void> delete(
                         @PathVariable UUID id,

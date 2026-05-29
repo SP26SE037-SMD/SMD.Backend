@@ -234,28 +234,11 @@ public class TaskV2Service {
         } else {
             task.setAccount(null);
         }
+        task.setIsAccepted(null);
 
         applyCompletedAt(task);
 
         TaskV2 savedTask = taskV2Repository.save(task);
-        NotificationRequest notifReq = null;
-        if (Boolean.TRUE.equals(request.getIsAccepted())) {
-            notifReq = NotificationRequest.builder()
-                    .title("Task was Accepted")
-                    .message("The task '" + savedTask.getTaskName() + "' has been accepted.")
-                    .type(NotificationType.TASK)
-                    .accountId(savedTask.getAccount().getAccountId())
-                    .build();
-        } else {
-            notifReq = NotificationRequest.builder()
-                    .title("Task was Rejected")
-                    .message("The task '" + savedTask.getTaskName() + "' has been rejected. Please review the comments to know the reason.")
-                    .type(NotificationType.TASK)
-                    .accountId(savedTask.getAccount().getAccountId())
-                    .build();
-        }
-
-        notificationService.createNotification(notifReq);
 
         return getTaskById(savedTask.getTaskId());
     }
