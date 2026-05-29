@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class SessionService {
 
-
+    private final SystemSettingService systemSettingService;
     private final AccountService accountService;
     private final SessionRepository sessionRepository;
     private final SyllabusRepository syllabusRepository;
@@ -177,12 +177,6 @@ public class SessionService {
             throw new AppException(ErrorCode.SESSION_NUMBER_EXISTS);
         }
 
-//        sessionRegulationValidationService.validateDurationByRegulation(
-//            request.getSyllabusId(),
-//            request.getDuration(),
-//            sessionId
-//        );
-
         session.setSyllabus(syllabus);
         session.setSessionType(newType);
         sessionMapper.updateEntity(session, request);
@@ -255,7 +249,6 @@ public class SessionService {
     }
 
 
-
     @Transactional
     public boolean deleteSession(UUID sessionId, String accountId) {
         var account = accountService.getAccountById(accountId);
@@ -307,7 +300,9 @@ public class SessionService {
 
 
 
-    public SessionValidationResult validate(List<SessionRequest> inputs, UUID syllabusId, int duration) {
+    public SessionValidationResult validate(List<SessionRequest> inputs, UUID syllabusId) {
+        var setting = systemSettingService.getDetailByCode("SESSION_MINUTE");
+        var duration = Integer.parseInt(setting.getValue());
         SessionValidationResult result = new SessionValidationResult();
 
         Syllabus syllabus = syllabusRepository.findByIdWithSubject(syllabusId)
