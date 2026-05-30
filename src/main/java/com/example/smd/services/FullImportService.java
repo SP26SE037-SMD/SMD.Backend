@@ -59,6 +59,8 @@ public class FullImportService {
     CurriculumGroupSubjectRepository curriculumGroupSubjectRepository;
     SourceRepository sourceRepository;
     ProposedSourceRepository proposedSourceRepository;
+    // [THÊM] Khai báo PrerequisiteRepository để lưu môn tiên quyết
+    PrerequisiteRepository prerequisiteRepository;
 
     @Transactional
     public ImportFullCurriculumResponse importFullCurriculum(MultipartFile file) {
@@ -95,12 +97,6 @@ public class FullImportService {
                 regulationMap = initZeroLayerValidation(majorContext.parsedMajorCode);
             }
 
-            // 👉 THÊM 3 DÒNG NÀY ĐỂ DEBUG:
-            log.info("=== KIỂM TRA DỮ LIỆU REGULATION MAP ===");
-            log.info("Số lượng môn học trong Map: " + regulationMap.size());
-            log.info("Danh sách các Mã môn (Keys) trong Map: " + regulationMap.keySet());
-            // ===========================================
-
             // 3. Parse and Validate Subject
             Sheet subjectSheet = workbook.getSheet("Subject");
             if (subjectSheet != null) {
@@ -128,10 +124,6 @@ public class FullImportService {
             if (majorContext.parsedMajorCode != null) {
                 sourceRegulationMap = initSourceZeroLayerValidation(majorContext.parsedMajorCode);
             }
-            // 👉 THÊM 3 DÒNG NÀY ĐỂ DEBUG:
-            log.info("=== KIỂM TRA DỮ LIỆU REGULATION SOURCE ===");
-            log.info("Số lượng môn học trong Map: " + sourceRegulationMap.size());
-            log.info("Danh sách các Mã môn (Keys) trong Map: " + sourceRegulationMap.keySet());
 
             // 6. Parse and Validate Source
             Sheet sourceSheet = workbook.getSheet("Source");
@@ -255,6 +247,35 @@ public class FullImportService {
                     }
                 }
                 curriculumGroupSubjectRepository.saveAll(semContext.mappingsToSave);
+            }
+
+            // [THÊM] Insert Prerequisites - lấy Subject thật từ DB trước khi lưu
+            if (!semContext.prerequisitesToSave.isEmpty()) {
+                for (Subject_Prerequisite prereq : semContext.prerequisitesToSave) {
+                    // Lấy Subject thật (môn học chính) từ DB bằng code giữ chỗ
+                    String subjectCode = prereq.getSubject().getSubjectCode();
+                    String prereqCode = prereq.getPrerequisiteSubject().getSubjectCode();
+
+                    Subject realSubject = subjectRepository.findBySubjectCode(subjectCode).orElse(null);
+                    Subject realPrereqSubject = subjectRepository.findBySubjectCode(prereqCode).orElse(null);
+
+                    if (realSubject == null || realPrereqSubject == null) {
+                        log.warn("Skipping prerequisite [{} -> {}]: subject not found in DB", subjectCode, prereqCode);
+                        continue;
+                    }
+
+                    // Chống lặp dưới DB
+                    boolean alreadyExists = prerequisiteRepository
+                            .existsBySubject_SubjectIdAndPrerequisiteSubject_SubjectId(
+                                    realSubject.getSubjectId(), realPrereqSubject.getSubjectId());
+                    if (!alreadyExists) {
+                        Subject_Prerequisite entity = Subject_Prerequisite.builder()
+                                .subject(realSubject)
+                                .prerequisiteSubject(realPrereqSubject)
+                                .build();
+                        prerequisiteRepository.save(entity);
+                    }
+                }
             }
 
             // Insert Sources & ProposedSources
@@ -868,6 +889,7 @@ public class FullImportService {
         return hasErrors;
     }
 
+    // [THÊM] Logic đọc và validate cột Prerequisite
     private boolean parseAndValidateSemesterMapping(
             Sheet sheet,
             SemesterImportContext ctx,
@@ -885,6 +907,22 @@ public class FullImportService {
         try {
             List<CurriculumGroupSubjectImportDTO> rows = ExcelImporter.importFromSheet(sheet,
                     CurriculumGroupSubjectImportDTO.class);
+
+            // [THÊM] Bước 2.1: First pass - xây dựng Map<subjectCode, semester> để dùng cho validate học kỳ tiên quyết
+            Map<String, Integer> subjectSemesterMap = new HashMap<>();
+            for (CurriculumGroupSubjectImportDTO row : rows) {
+                String subjectCode = trim(row.getSubjectCode());
+                String semesterRaw = trim(row.getSemester());
+                if (subjectCode != null && semesterRaw != null) {
+                    try {
+                        int semNo = Integer.parseInt(semesterRaw);
+                        subjectSemesterMap.put(subjectCode.toUpperCase(), semNo);
+                    } catch (Exception ignored) {
+                        // Sẽ được validate ở vòng lặp chính bên dưới
+                    }
+                }
+            }
+
             for (int i = 0; i < rows.size(); i++) {
                 int rowNumber = i + 2;
                 CurriculumGroupSubjectImportDTO row = rows.get(i);
@@ -961,6 +999,58 @@ public class FullImportService {
                 ctx.details.add(ImportCurriculumGroupSubjectResult.builder()
                         .rowNumber(rowNumber).groupCode(groupCode).subjectCode(subjectCode).semester(semesterRaw)
                         .status("SUCCESS").message("Validated").build());
+
+                // [THÊM] Bước 2.2 & 2.3: Đọc và validate cột Prerequisite
+                String prerequisiteRaw = trim(row.getPrerequisite());
+                if (prerequisiteRaw != null && !prerequisiteRaw.isEmpty()) {
+                    String[] prereqCodes = prerequisiteRaw.split(",");
+                    for (String prereqRaw : prereqCodes) {
+                        String prereqCode = prereqRaw.trim().toUpperCase();
+                        if (prereqCode.isEmpty())
+                            continue;
+
+                        // Validate: Không được tự làm tiên quyết cho chính mình
+                        if (prereqCode.equalsIgnoreCase(subjectCode)) {
+                            ctx.details.add(buildSemFail(rowNumber, groupCode, subjectCode, semesterRaw,
+                                    "Prerequisite error: Subject [" + subjectCode + "] cannot be its own prerequisite"));
+                            hasErrors = true;
+                            continue;
+                        }
+
+                        // Validate: Mã tiên quyết PHẢI tồn tại trong subCtx.fileSubjectCodes (sheet Subject)
+                        if (!subCtx.fileSubjectCodes.contains(prereqCode)) {
+                            ctx.details.add(buildSemFail(rowNumber, groupCode, subjectCode, semesterRaw,
+                                    "Prerequisite error: Prerequisite code [" + prereqCode + "] not found in Subject sheet"));
+                            hasErrors = true;
+                            continue;
+                        }
+
+                        // Validate: Học kỳ của môn học KHÔNG ĐƯỢC nhỏ hơn học kỳ của môn tiên quyết
+                        Integer prereqSemester = subjectSemesterMap.get(prereqCode);
+                        if (prereqSemester != null && semesterNo < prereqSemester) {
+                            ctx.details.add(buildSemFail(rowNumber, groupCode, subjectCode, semesterRaw,
+                                    "Prerequisite error: Subject [" + subjectCode + "] (semester " + semesterNo
+                                            + ") cannot have prerequisite [" + prereqCode + "] (semester " + prereqSemester
+                                            + ") which is in a later semester"));
+                            hasErrors = true;
+                            continue;
+                        }
+
+                        // Tránh lặp cặp tiên quyết trong file
+                        String pairKey = subjectCode.toUpperCase() + "->" + prereqCode;
+                        if (!ctx.uniquePrerequisitePairs.add(pairKey)) {
+                            // Bỏ qua cặp lặp, không cần error vì đây chỉ là duplicate trong file
+                            continue;
+                        }
+
+                        // [THÊM] Bước 2.4: Tạo đối tượng Subject_Prerequisite với Subject giả giữ chỗ
+                        Subject_Prerequisite prereqEntity = Subject_Prerequisite.builder()
+                                .subject(Subject.builder().subjectCode(subjectCode).build())
+                                .prerequisiteSubject(Subject.builder().subjectCode(prereqCode).build())
+                                .build();
+                        ctx.prerequisitesToSave.add(prereqEntity);
+                    }
+                }
             }
         } catch (Exception e) {
             log.error("Semester mapping parse error", e);
@@ -1087,9 +1177,6 @@ public class FullImportService {
                 List<String> missingSourcesInSheet = new ArrayList<>();
                 for (String regCode : regulationMap.keySet()) {
                     if (!ctx.fileSourceCodes.contains(regCode.toUpperCase())) {
-                        // Cũng check DB — nếu source đã tồn tại thì được tính là "đã có"
-//                        if (!sourceRepository.existsBySourceCode(regulationMap.get(regCode).sourceCode)) {
-//                        }
                         missingSourcesInSheet.add(regulationMap.get(regCode).sourceCode);
                     }
                 }
@@ -1160,17 +1247,6 @@ public class FullImportService {
         return map;
     }
 
-    private String generateNASubjectCode(String subjectName) {
-        if (subjectName == null || subjectName.trim().isEmpty())
-            return "N/A_UNKNOWN";
-        String normalized = Normalizer.normalize(subjectName.trim(), Normalizer.Form.NFD);
-        String noDiacritics = normalized.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
-        String noSpaces = noDiacritics.replaceAll("[^a-zA-Z0-9]", "");
-        return "N/A_" + noSpaces;
-    }
-
-
-
     private Map<String, SourceRegulationDTO> initSourceZeroLayerValidation(String majorCode) {
         Map<String, SourceRegulationDTO> map = new HashMap<>();
         if (majorCode == null || majorCode.isEmpty())
@@ -1223,6 +1299,15 @@ public class FullImportService {
         }
 
         return map;
+    }
+
+    private String generateNASubjectCode(String subjectName) {
+        if (subjectName == null || subjectName.trim().isEmpty())
+            return "N/A_UNKNOWN";
+        String normalized = Normalizer.normalize(subjectName.trim(), Normalizer.Form.NFD);
+        String noDiacritics = normalized.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
+        String noSpaces = noDiacritics.replaceAll("[^a-zA-Z0-9]", "");
+        return "N/A_" + noSpaces;
     }
 
     private ImportCurriculumGroupSubjectResult buildSemFail(
@@ -1314,6 +1399,14 @@ public class FullImportService {
     // INTERNAL CONTEXT CLASSES
     // ==========================================
 
+    private static class SourceImportContext {
+        Set<String> fileSourceCodes = new HashSet<>();
+        List<SourceImportDTO> rowsToSave = new ArrayList<>();
+        List<ImportSourceResult> details = new ArrayList<>();
+    }
+
+    // [THÊM] Khai báo PrerequisiteRepository để lưu môn tiên quyết - see field declarations
+
     private static class SourceRegulationDTO {
         String sourceCode;
         List<String> subjectCode;
@@ -1331,12 +1424,6 @@ public class FullImportService {
             this.publisher = publisher;
             this.publicationYear = publicationYear;
         }
-    }
-
-    private static class SourceImportContext {
-        Set<String> fileSourceCodes = new HashSet<>();
-        List<SourceImportDTO> rowsToSave = new ArrayList<>();
-        List<ImportSourceResult> details = new ArrayList<>();
     }
 
     private static class SubjectRegulationDTO {
@@ -1401,5 +1488,9 @@ public class FullImportService {
     private static class SemesterImportContext {
         List<Curriculum_Group_Subject> mappingsToSave = new ArrayList<>();
         List<ImportCurriculumGroupSubjectResult> details = new ArrayList<>();
+        // [THÊM] Danh sách môn tiên quyết cần lưu vào DB
+        List<Subject_Prerequisite> prerequisitesToSave = new ArrayList<>();
+        // [THÊM] Tránh lặp cặp tiên quyết trong cùng 1 file
+        Set<String> uniquePrerequisitePairs = new HashSet<>();
     }
 }

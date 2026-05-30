@@ -54,4 +54,7 @@ public class SubjectImportDTO {
 
     @ExcelColumn(name = "Self Study Period", order = 14)
     String selfStudyPeriods;
+
+    @ExcelColumn(name = "Prerequisites", order = 15)
+    String prerequisitesCode;
 }
