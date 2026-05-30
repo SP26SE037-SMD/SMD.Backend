@@ -118,9 +118,7 @@ public class PdfExtractService {
         regulations.add(createRegulation("SOURCE_DOCUMENTS", "Main Textbooks and Reference List",
                 reference, savedMajor));
         regulationRepository.saveAll(regulations);
-        var result =
-                "Major: " + String.valueOf(savedMajor.getMajorId()) ;
-        return result;
+        return String.valueOf(savedMajor.getMajorId());
     }
 
     private Major createOrGetMajor(ProgramInfoDTO programInfo) {
