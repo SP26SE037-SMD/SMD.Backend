@@ -30,6 +30,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayInputStream;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Tag(name = "Curriculum Group Subject", description = "Curriculum" +
@@ -239,6 +240,20 @@ public class CurriculumGroupSubjectController {
             .message("Get semester mappings successfully")
             .build();
         }
-
+        @GetMapping("/subjects/{subjectId}/curricula")
+        @Operation(
+                summary = "Get curricula containing a subject",
+                description = "Trả về danh sách các curriculumId (Set) mà môn học (subjectId) có mặt trong bảng mapping Curriculum_Group_Subject."
+        )
+        public ResponseObject<Set<UUID>> getCurriculaBySubject(
+                @Parameter(description = "Subject ID (UUID, required)", required = true)
+                @PathVariable UUID subjectId
+        ) {
+                return ResponseObject.<Set<UUID>>builder()
+                        .status(1000)
+                        .data(curriculumGroupSubjectService.getCurriculumIdsBySubjectId(subjectId))
+                        .message("Get curricula by subject successfully")
+                        .build();
+        }
 
 }
