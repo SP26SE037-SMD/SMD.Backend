@@ -35,7 +35,7 @@ public class SyllabusComparisonHistory {
     String conceptDiffJson;
 
     @Column(name = "is_selected_compare")
-    boolean isSelectedCompare;
+    boolean selectedCompare;
 
     @Column(name = "created_at")
     Instant createdAt;

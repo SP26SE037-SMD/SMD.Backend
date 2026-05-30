@@ -209,7 +209,7 @@ public class EmbeddingService {
     }
 
     public SyllabusComparisonHistory getComparisonHistoryDetailForStudent(UUID newSyllabusId) {
-        return historyRepo.findFirstByNewSyllabusIdAndIsSelectedTrueOrderByCreatedAtDesc(newSyllabusId)
+        return historyRepo.findFirstByNewSyllabusIdAndSelectedCompareTrueOrderByCreatedAtDesc(newSyllabusId)
                 .orElseThrow(() -> new AppException(ErrorCode.AI_HISTORY_NOT_FOUND));
     }
 
