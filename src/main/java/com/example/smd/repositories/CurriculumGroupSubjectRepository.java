@@ -104,4 +104,9 @@ public interface CurriculumGroupSubjectRepository extends JpaRepository<Curricul
     Set<UUID> findAllSubjectIdsByCurriculum(
             @Param("curriculumId") UUID curriculumId);
 
+    @Query("SELECT DISTINCT cgs.curriculum.curriculumId FROM Curriculum_Group_Subject cgs " +
+            "WHERE cgs.subject.subjectId = :subjectId")
+    Set<UUID> findAllCurriculumIdsBySubjectId(
+            @Param("subjectId") UUID subjectId);
+
 }

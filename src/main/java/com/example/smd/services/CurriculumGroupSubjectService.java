@@ -774,4 +774,14 @@ public class CurriculumGroupSubjectService {
                 .message("Imported successfully")
                 .build();
     }
+
+    /**
+     * Lấy danh sách curriculumId mà một subject có mặt (distinct).
+     */
+    public Set<UUID> getCurriculumIdsBySubjectId(UUID subjectId) {
+        if (!subjectRepository.existsById(subjectId)) {
+            throw new AppException(ErrorCode.SUBJECT_NOT_FOUND);
+        }
+        return curriculumGroupSubjectRepository.findAllCurriculumIdsBySubjectId(subjectId);
+    }
 }
