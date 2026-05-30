@@ -3,10 +3,12 @@ package com.example.smd.services;
 import com.example.smd.dto.excel.SubjectImportDTO;
 import com.example.smd.dto.request.subject.SubjectRequest;
 import com.example.smd.dto.response.PrerequisiteResponse;
+import com.example.smd.dto.response.SourceResponse;
 import com.example.smd.dto.response.SubjectResponse;
 import com.example.smd.dto.response.subject.ImportSubjectResponse;
 import com.example.smd.dto.response.subject.ImportSubjectResult;
 import com.example.smd.entities.Department;
+import com.example.smd.entities.ProposedSource;
 import com.example.smd.entities.Subject;
 import com.example.smd.enums.RoleName;
 import com.example.smd.enums.SubjectStatus;
@@ -47,6 +49,7 @@ public class SubjectService {
     SubjectRepository subjectRepository;
     DepartmentRepository departmentRepository;
     PrerequisiteRepository prerequisiteRepository;
+    ProposedSourceRepository proposedSourceRepository;
     AccountService accountService;
     SubjectMapper subjectMapper;
     PrerequisiteMapper prerequisiteMapper;
@@ -149,6 +152,9 @@ public class SubjectService {
                     .toList();
             response.setPreRequisite(prerequisites);
 
+            // 4. Bổ sung danh sách tài liệu tham khảo
+            response.setSources(fetchSources(subject.getSubjectId()));
+
             return response;
         });
     }
@@ -226,6 +232,7 @@ public class SubjectService {
                 .map(prerequisiteMapper::toResponse)
                 .toList();
         response.setPreRequisite(prerequisites);
+        response.setSources(fetchSources(id));
 
         return response;
     }
@@ -266,6 +273,9 @@ public class SubjectService {
                 .toList();
         response.setPreRequisite(prerequisites);
 
+        // 5. Bổ sung danh sách tài liệu tham khảo
+        response.setSources(fetchSources(subject.getSubjectId()));
+
         return response;
     }
 
@@ -289,6 +299,7 @@ public class SubjectService {
                 .map(prerequisiteMapper::toResponse)
                 .toList();
         response.setPreRequisite(prerequisites);
+        response.setSources(fetchSources(subjectId));
 
         return response;
     }
@@ -319,6 +330,7 @@ public class SubjectService {
                 .map(prerequisiteMapper::toResponse)
                 .toList();
         response.setPreRequisite(prerequisites);
+        response.setSources(fetchSources(subjectId));
 
         return response;
     }
@@ -588,7 +600,33 @@ public class SubjectService {
                             .toList();
                     response.setPreRequisite(prerequisites);
 
+                    // Bổ sung danh sách tài liệu tham khảo
+                    response.setSources(fetchSources(subject.getSubjectId()));
+
                     return response;
+                })
+                .toList();
+    }
+
+    /**
+     * Lấy danh sách tài liệu tham khảo (Source) của môn học dưới dạng SourceResponse.
+     * Sử dụng JOIN FETCH để tránh N+1 query.
+     */
+    private List<SourceResponse> fetchSources(UUID subjectId) {
+        return proposedSourceRepository.fetchWithSourceBySubjectId(subjectId)
+                .stream()
+                .map(ps -> {
+                    var src = ps.getSource();
+                    return SourceResponse.builder()
+                            .sourceId(src.getSourceId() != null ? src.getSourceId().toString() : null)
+                            .sourceCode(src.getSourceCode())
+                            .sourceName(src.getSourceName())
+                            .type(src.getType())
+                            .author(src.getAuthor())
+                            .publisher(src.getPublisher())
+                            .publishedYear(src.getPublishedYear())
+                            .url(src.getUrl())
+                            .build();
                 })
                 .toList();
     }

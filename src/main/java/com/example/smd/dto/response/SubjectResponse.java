@@ -41,6 +41,7 @@ public class SubjectResponse {
     // Trả về UUID của khoa để tiện cho việc truy vấn phía Frontend
     DepartmentResponse department;
     List<PrerequisiteResponse> preRequisite;
+    List<SourceResponse> sources;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+7")
     Instant createdAt;

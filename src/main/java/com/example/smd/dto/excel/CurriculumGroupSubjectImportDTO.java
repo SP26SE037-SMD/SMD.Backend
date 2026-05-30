@@ -21,4 +21,8 @@ public class CurriculumGroupSubjectImportDTO {
 
     @ExcelColumn(name = "Semester", order = 3, required = true)
     String semester;
+
+    // [THÊM] Cột chứa danh sách mã môn tiên quyết, cách nhau bằng dấu phẩy
+    @ExcelColumn(name = "Prerequisite", order = 4, required = false)
+    String prerequisite;
 }
