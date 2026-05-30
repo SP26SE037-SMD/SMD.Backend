@@ -4,5 +4,4 @@ public enum SprintStatus {
     PLANNING,
     IN_PROGRESS,
     COMPLETED,
-    CANCELLED
 }

@@ -7,6 +7,7 @@ import com.example.smd.exception.ErrorCode;
 import com.example.smd.services.GeminiService;
 import com.example.smd.services.RegulationService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -112,5 +113,27 @@ public class RegulationController {
                 .message("Create major and import rule successfully")
                 .data(response)
                 .build();
+    }
+    @PostMapping(value = "/extract-pdf", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(
+            summary = "Extract subjects from PDF curriculum file (returns formatted string)"
+    )
+    public ResponseObject<String> extractSubjectsAndReference(
+            @Parameter(description = "PDF file of the training curriculum (chương trình đào tạo)")
+            @RequestParam("file") MultipartFile file
+    ) {
+        try {
+            String result = regulationService.extractSubjectsAndReferenceFromPdf(file);
+            return ResponseObject.<String>builder()
+                    .status(1000)
+                    .data(result)
+                    .message("PDF subject extraction completed successfully")
+                    .build();
+        } catch (Exception e) {
+            return ResponseObject.<String>builder()
+                    .status(9999)
+                    .message("Failed to extract subjects from PDF: " + e.getMessage())
+                    .build();
+        }
     }
 }
