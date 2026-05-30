@@ -7,21 +7,11 @@ public enum CurriculumStatus {
 
     @Schema(description = "Draft: Initial creation by HoC/FDC, not visible to others")
     DRAFT,
-
-    @Schema(description = "Structure Reviewed: Approved by Vice President (VP) to continue internal development")
-    STRUCTURE_REVIEW,
-
-    @Schema(description = "Structure Approved:The program was approved by the Vice President, who assigned the task of drafting the detailed curriculum to HoPDC.")
-    STRUCTURE_APPROVED,
-
     @Schema(description = "Syllabus Developing: HoC/FDC and Departments are creating detailed syllabuses")
     SYLLABUS_DEVELOP,
 
     @Schema(description = "Final Review: Final overall content review by HoC/FDC before submitting to VP")
     FINAL_REVIEW,
-
-    @Schema(description = "Signed: Officially signed and enacted by the Vice President")
-    SIGNED,
 
     @Schema(description = "Published: Curriculum and Syllabuses are now public and viewable")
     PUBLISHED,

@@ -36,34 +36,34 @@
     <!-- Header -->
     <div class="header">
       <h1>⚠️ Task Overdue Alert</h1>
-      <p>Hệ thống SMD - Nhắc nhở Task Quá Hạn</p>
+      <p>SMD System - Overdue Task Reminder</p>
     </div>
 
     <!-- Body -->
     <div class="body">
-      <div class="badge">🔴 QUÁ HẠN</div>
-      <p class="greeting">Xin chào <strong>{{recipientName}}</strong>,</p>
+      <div class="badge">🔴 OVERDUE</div>
+      <p class="greeting">Dear <strong>{{recipientName}}</strong>,</p>
 
       <div class="task-card">
-        <div class="label">Task cần xử lý ngay</div>
+        <div class="label">Tasks that need immediate attention.</div>
         <div class="task-name">{{taskName}}</div>
         <div class="meta">
-          Ngày tới hạn: <span>{{dueDate}}</span>
+          Due date: <span>{{dueDate}}</span>
           &nbsp;|&nbsp;
-          Đã quá hạn <span>{{overdueDays}} ngày</span>
+          Overdue <span>{{overdueDays}} day</span>
         </div>
       </div>
 
       <div class="alert-box">
-        📌 Task này đã <strong>vượt quá ngày tới hạn</strong>. Vui lòng cập nhật trạng thái hoặc liên hệ người phụ trách để giải quyết sớm nhất có thể.
+        📌 This task has <strong>past the deadline</strong>. Please update the status or contact the person in charge to resolve the issue as soon as possible.
       </div>
 
-      <a class="cta-btn" href="#">Xem Chi Tiết Task →</a>
+      <a class="cta-btn" href="https://syllabus.io.vn/">View Task Details →</a>
     </div>
 
     <!-- Footer -->
     <div class="footer">
-      <p>© {{year}} SMD System. Email này được gửi tự động, vui lòng không trả lời.</p>
+      <p>© {{year}} SMD System. This email was sent automatically; please do not reply.</p>
     </div>
   </div>
 </body>

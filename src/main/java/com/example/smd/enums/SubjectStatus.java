@@ -8,9 +8,6 @@ public enum SubjectStatus {
     @Schema(description = "Draft: Initial creation, subject details are being drafted")
     DRAFT,
 
-    @Schema(description = "Defined: Subject description completed and submitted for Curriculum approval")
-    DEFINED,
-
     @Schema(description = "Waiting Syllabus: Curriculum approved, now waiting for detailed Syllabus development")
     WAITING_SYLLABUS,
 

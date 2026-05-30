@@ -71,28 +71,6 @@ public class EmailService {
         sendMessage(mimeMessage);
         log.info("Welcome email sent to: {}", toEmail);
     }
-
-    /**
-     * Gửi test email
-     */
-    public void sendTestEmail(String toEmail,
-                              String recipientName,
-                              String message)
-            throws MessagingException, IOException {
-
-        String htmlBody =
-                emailTemplateService.buildTestEmail(recipientName, message);
-
-        MimeMessage mimeMessage = buildMimeMessage(
-                toEmail,
-                "Test Email from SMD System",
-                htmlBody
-        );
-
-        sendMessage(mimeMessage);
-        log.info("Test email sent to: {}", toEmail);
-    }
-
     /**
      * Gửi email thông báo tạo account hàng loạt theo cơ chế chạy song song.
      */
