@@ -127,7 +127,7 @@ public class CLOsController {
     }
 
     @PatchMapping("/subject/{subjectId}/status")
-    @PreAuthorize("hasAuthority('CLOS_UPDATE_STATUS')")
+//    @PreAuthorize("hasAuthority('CLOS_UPDATE_STATUS')")
     @Operation(
             summary = "Update CLOs Status (Cập nhật trạng thái Chuẩn đầu ra môn học)",
             description = "### 🔄 Quy trình điều phối và ánh xạ CLO (Mapping Workflow):\n" +
