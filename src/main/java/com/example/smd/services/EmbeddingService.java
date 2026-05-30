@@ -248,17 +248,18 @@ public class EmbeddingService {
     }
 
     public SyllabusComparisonHistory selectHistoryCompare(UUID historyId){
-        var history = historyRepo.findById(historyId)
+        var historySearch = historyRepo.findById(historyId)
                 .orElseThrow(() -> new AppException(ErrorCode.AI_HISTORY_NOT_FOUND));
 
-        var historyList = historyRepo.findByOldSyllabusIdAndNewSyllabusIdOrderByCreatedAtDesc(history.getOldSyllabusId(), history.getNewSyllabusId());
-        for (int i = 0; i < historyList.size(); i++) {
-            if(historyList.get(i).isSelectedCompare()){
+        var historyList = historyRepo.findByOldSyllabusIdAndNewSyllabusIdOrderByCreatedAtDesc(historySearch.getOldSyllabusId(), historySearch.getNewSyllabusId());
+        for (SyllabusComparisonHistory history : historyList) {
+            if (history.isSelectedCompare()) {
                 history.setSelectedCompare(false);
-                break;
+                historyRepo.save(history);
+                break; // Dừng lại ngay khi đã clear trạng thái của thằng cũ
             }
         }
-        history.setSelectedCompare(true);
-        return historyRepo.save(history);
+        historySearch.setSelectedCompare(true);
+        return historyRepo.save(historySearch);
     }
 }
