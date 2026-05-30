@@ -193,6 +193,7 @@ public class EmbeddingService {
                     .newSyllabusId(newId)
                     .assessmentDiffJson(assessmentJsonStr)
                     .conceptDiffJson(conceptJsonStr)
+                    .selectedCompare(false)
                     .build();
 
             // 3. Khóa sổ ghi xuống Database
