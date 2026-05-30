@@ -204,31 +204,13 @@ public class EmbeddingService {
         }
     }
 
-    public CompareSyllabusResponse getComparisonHistoryDetail(UUID oldId, UUID newId) {
-        SyllabusComparisonHistory history = historyRepo.findFirstByOldSyllabusIdAndNewSyllabusIdOrderByCreatedAtDesc(oldId, newId)
+    public List<SyllabusComparisonHistory> getComparisonHistoryDetailForHoPDC(UUID newSyllabusId) {
+        return historyRepo.findByNewSyllabusIdOrderByCreatedAtDesc(newSyllabusId);
+    }
+
+    public SyllabusComparisonHistory getComparisonHistoryDetailForStudent(UUID newSyllabusId) {
+        return historyRepo.findFirstByNewSyllabusIdAndSelectedCompareTrueOrderByCreatedAtDesc(newSyllabusId)
                 .orElseThrow(() -> new AppException(ErrorCode.AI_HISTORY_NOT_FOUND));
-        try {
-            AssessmentDiffResponse assessmentDiff = objectMapper.readValue(
-                    history.getAssessmentDiffJson(),
-                    AssessmentDiffResponse.class
-            );
-
-            ComparisonResult conceptDiff = objectMapper.readValue(
-                    history.getConceptDiffJson(),
-                    ComparisonResult.class
-            );
-
-            return new CompareSyllabusResponse(
-                    history.getOldSyllabusId(),
-                    history.getNewSyllabusId(),
-                    assessmentDiff,
-                    conceptDiff
-            );
-
-        } catch (JsonProcessingException e) {
-            log.error("Lỗi khi bóc tách dữ liệu JSON từ lịch sử hệ thống", e);
-            throw new RuntimeException("Đọc dữ liệu lịch sử thất bại do sai cấu trúc lưu trữ");
-        }
     }
 
     public boolean validateLatestAndSubsequentVersions(UUID oldId, UUID newId) {
@@ -257,19 +239,25 @@ public class EmbeddingService {
     }
 
     @Transactional
-    public CompareSyllabusResponse compareTwoVersionSyllabus(UUID oldSyllabusId, UUID newSyllabusId, String userId){
-        var account = accountService.getAccountById(userId);
-        String roleName = account.getRole().getRoleName();
-        if (RoleName.STUDENT.toString().equals(roleName) || RoleName.LECTURER.toString().equals(roleName)) {
-            return getComparisonHistoryDetail(oldSyllabusId, newSyllabusId);
-        } else {
-            AssessmentDiffResponse assessmentResult = compareAssessmentConfiguration(oldSyllabusId, newSyllabusId);
-            ComparisonResult analysis = compareSyllabus(oldSyllabusId, newSyllabusId);
+    public CompareSyllabusResponse compareTwoVersionSyllabus(UUID oldSyllabusId, UUID newSyllabusId) {
+        AssessmentDiffResponse assessmentResult = compareAssessmentConfiguration(oldSyllabusId, newSyllabusId);
+        ComparisonResult analysis = compareSyllabus(oldSyllabusId, newSyllabusId);
+        return new CompareSyllabusResponse(oldSyllabusId, newSyllabusId, assessmentResult, analysis);
 
-            if(validateLatestAndSubsequentVersions(oldSyllabusId, newSyllabusId)){
-                saveComparisonHistory(oldSyllabusId, newSyllabusId, assessmentResult, analysis);
+    }
+
+    public SyllabusComparisonHistory selectHistoryCompare(UUID historyId){
+        var history = historyRepo.findById(historyId)
+                .orElseThrow(() -> new AppException(ErrorCode.AI_HISTORY_NOT_FOUND));
+
+        var historyList = historyRepo.findByOldSyllabusIdAndNewSyllabusIdOrderByCreatedAtDesc(history.getOldSyllabusId(), history.getNewSyllabusId());
+        for (int i = 0; i < historyList.size(); i++) {
+            if(historyList.get(i).isSelectedCompare()){
+                history.setSelectedCompare(false);
+                break;
             }
-            return new CompareSyllabusResponse(oldSyllabusId, newSyllabusId, assessmentResult, analysis);
         }
+        history.setSelectedCompare(true);
+        return historyRepo.save(history);
     }
 }

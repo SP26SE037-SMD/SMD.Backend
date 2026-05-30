@@ -198,11 +198,9 @@ public class SyllabusController {
         @PostMapping("/compare")
         public ResponseObject<CompareSyllabusResponse> compareSyllabusVersions(
                         @RequestParam("oldSyllabusId") UUID oldSyllabusId,
-                        @RequestParam("newSyllabusId") UUID newSyllabusId,
-                        @AuthenticationPrincipal Jwt jwt) {
-                String userId = jwt.getClaimAsString("accountId");
+                        @RequestParam("newSyllabusId") UUID newSyllabusId) {
                 return ResponseObject.<CompareSyllabusResponse>builder()
-                        .data(embeddingService.compareTwoVersionSyllabus(oldSyllabusId, newSyllabusId, userId))
+                        .data(embeddingService.compareTwoVersionSyllabus(oldSyllabusId, newSyllabusId))
                         .message("Compare syllabus successfully")
                         .build();
         }
@@ -261,5 +259,39 @@ public class SyllabusController {
                                 .status(1000)
                                 .message("Syllabus data copied successfully")
                                 .build();
+        }
+
+        @PutMapping("/selected-compare-syllabus")
+        @Operation(summary = "Selected compare syllabus", description = "Selected compare syllabus for student diff view")
+        public ResponseObject<SyllabusComparisonHistory> selectHistoryCompare(
+                @RequestParam("historyId") UUID historyId) {
+                embeddingService.selectHistoryCompare(historyId);
+                return ResponseObject.<SyllabusComparisonHistory>builder()
+                        .status(1000)
+                        .data(embeddingService.selectHistoryCompare(historyId))
+                        .message("Selected compare syllabus successfully")
+                        .build();
+        }
+
+        @GetMapping("/{newSyllabusId}/get-syllabus-compare/HoPDC")
+        @Operation(summary = "Get all compare syllabus", description = "Get all compare syllabus for student diff view")
+        public ResponseObject<List<SyllabusComparisonHistory>> getHistoryCompareHoPDC(
+                @PathVariable("newSyllabusId") UUID newSyllabusId) {
+                return ResponseObject.<List<SyllabusComparisonHistory>>builder()
+                        .status(1000)
+                        .data(embeddingService.getComparisonHistoryDetailForHoPDC(newSyllabusId))
+                        .message("Get all compare syllabus successfully")
+                        .build();
+        }
+
+        @GetMapping("/{newSyllabusId}/get-syllabus-compare/student")
+        @Operation(summary = "Get all compare syllabus", description = "Get all compare syllabus for student diff view")
+        public ResponseObject<SyllabusComparisonHistory> getHistoryCompareStudent(
+                @PathVariable("newSyllabusId") UUID newSyllabusId) {
+                return ResponseObject.<SyllabusComparisonHistory>builder()
+                        .status(1000)
+                        .data(embeddingService.getComparisonHistoryDetailForStudent(newSyllabusId))
+                        .message("Get all compare syllabus successfully")
+                        .build();
         }
 }
