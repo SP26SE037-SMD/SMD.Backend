@@ -244,7 +244,6 @@ public class EmbeddingService {
         AssessmentDiffResponse assessmentResult = compareAssessmentConfiguration(oldSyllabusId, newSyllabusId);
         ComparisonResult analysis = compareSyllabus(oldSyllabusId, newSyllabusId);
         return new CompareSyllabusResponse(oldSyllabusId, newSyllabusId, assessmentResult, analysis);
-
     }
 
     public SyllabusComparisonHistory selectHistoryCompare(UUID historyId){

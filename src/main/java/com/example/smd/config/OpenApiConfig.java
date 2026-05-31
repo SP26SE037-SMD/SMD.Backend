@@ -18,9 +18,9 @@ public class OpenApiConfig {
     @Bean
     public OpenAPI customOpenAPI() {
         return new OpenAPI()
-                .servers(List.of(
-                        new Server().url("https://api.syllabus.io.vn").description("Production Server")
-                ))
+//                .servers(List.of(
+//                        new Server().url("https://api.syllabus.io.vn").description("Production Server")
+//                ))
                 .info(new Info()
                         .title("SMD API Documentation")
                         .version("1.0.0")

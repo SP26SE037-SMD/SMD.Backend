@@ -4,7 +4,6 @@ import com.example.smd.dto.request.RegulationRequest;
 import com.example.smd.dto.response.*;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
-import com.example.smd.services.GeminiService;
 import com.example.smd.services.RegulationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -13,7 +12,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -99,15 +97,13 @@ public class RegulationController {
             @RequestParam("file") MultipartFile file,
             @AuthenticationPrincipal Jwt jwt) throws IOException {
         String userId = jwt.getClaimAsString("accountId");
-        // 1. Validate file đầu vào (Basic)
+
         if (file.isEmpty()) {
             throw new AppException(ErrorCode.FILE_UPLOAD_FAILED, "File tải lên không được để trống.");
         }
 
-        // 2. Gọi Service xử lý luồng AI (Upload -> Prompt -> Parse JSON)
         String response = regulationService.startImportProcess(file, userId);
 
-        // 3. Trả về kết quả cho Frontend
         return ResponseObject.<String>builder()
                 .status(1000)
                 .message("Create major and import rule successfully")

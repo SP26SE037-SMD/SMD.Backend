@@ -8,7 +8,6 @@ import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.dto.response.syllabus.SyllabusResponse;
 import com.example.smd.dto.response.validate.CompareSyllabusResponse;
 import com.example.smd.entities.SyllabusComparisonHistory;
-import com.example.smd.enums.RoleName;
 import com.example.smd.enums.SyllabusActionType;
 import com.example.smd.enums.SyllabusStatus;
 import com.example.smd.services.AccountService;
