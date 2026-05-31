@@ -13,8 +13,11 @@ import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
@@ -95,13 +98,15 @@ public class CloSessionMappingController {
 
     @PostMapping("/syllabus/{syllabusId}/validate")
     @Operation(summary = "Check a CLO-Session Mapping")
-    public ResponseObject<SessionCloMappingValidationResult> checkMapping(
+    public ResponseObject<String> checkMapping(
             @PathVariable("syllabusId") UUID syllabusId,
-            @RequestBody List<CloSessionMappingRequest> cloSessionMappingRequest) {
-        return ResponseObject.<SessionCloMappingValidationResult>builder()
+            @RequestBody List<CloSessionMappingRequest> cloSessionMappingRequest,
+            @AuthenticationPrincipal Jwt jwt) throws IOException {
+        String userId = jwt.getClaimAsString("accountId");
+        return ResponseObject.<String>builder()
                 .status(1000)
-                .data(service.checkMapping(cloSessionMappingRequest, syllabusId))
-                .message("CLO-Session mapping deleted successfully")
+                .data(service.startCLOSessionMappingProcess(cloSessionMappingRequest, syllabusId, userId))
+                .message("The system solve CLO-Session-Mapping process.")
                 .build();
     }
 }

@@ -2,6 +2,7 @@ package com.example.smd.dto.response.validate;
 
 import com.example.smd.dto.response.AssessmentDiffResponse;
 import com.example.smd.dto.response.ComparisonResult;
+import com.example.smd.dto.response.SessionDiffResponse;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
@@ -21,4 +22,5 @@ public class CompareSyllabusResponse {
     UUID newSyllabusId;
     AssessmentDiffResponse assessmentDiffResponse;
     ComparisonResult comparisonResult;
+    SessionDiffResponse sessionDiffResponse;
 }
