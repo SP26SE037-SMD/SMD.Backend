@@ -1,6 +1,5 @@
 package com.example.smd.controller;
 
-import com.example.smd.dto.request.session.SessionMaterialBlockBulkRequest;
 import com.example.smd.dto.request.session.SessionRequest;
 import com.example.smd.dto.request.session.SessionNumberListRequest;
 import com.example.smd.dto.response.PagedResponse;
@@ -9,7 +8,6 @@ import com.example.smd.dto.response.SessionResponse;
 import com.example.smd.dto.response.validate.SessionValidationResult;
 import com.example.smd.services.SessionService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -83,7 +81,7 @@ public class  SessionController {
     }
 
     @PostMapping("/bluk")
-    @PreAuthorize("hasAuthority('SYLLABUS_UPDATE')")
+//    @PreAuthorize("hasAuthority('SYLLABUS_UPDATE')")
     @Operation(summary = "Create new session")
     public ResponseObject<List<SessionResponse>> createSessionBluk(@Valid @RequestBody List<SessionRequest> request, @AuthenticationPrincipal Jwt jwt) {
         String userId = jwt.getClaimAsString("accountId");

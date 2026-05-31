@@ -348,7 +348,7 @@ public class SessionService {
                 .filter(s -> "SELF_STUDY".equalsIgnoreCase(s.getSessionType()))
                 .mapToInt(s -> s.getDuration() != null ? s.getDuration() : 0)
                 .sum();
-        int remainingSelfStudy = (masterSubject.getSelfStudyPeriods() != null ? masterSubject.getSelfStudyPeriods() : 0) - inputTotalSelfStudyHours - dbTotalSelfStudyHours;
+        int remainingSelfStudy = (masterSubject.getSelfStudyPeriods() != null ? masterSubject.getSelfStudyPeriods() * 60 : 0) - inputTotalSelfStudyHours - dbTotalSelfStudyHours;
 
         // Set vào DTO
         result.setRemainingQuotas(new SessionValidationResult.RemainingQuota(remainingTheory, remainingPractice, 0));
@@ -381,11 +381,11 @@ public class SessionService {
         if (remainingSelfStudy > 0) {
             // Trường hợp THIẾU
             result.addError("SELF_STUDY_SHORTAGE",
-                    "Self-study allocation is short by " + remainingSelfStudy + " hour(s).");
+                    "Self-study allocation is short by " + remainingSelfStudy + " minute(s).");
         } else if (remainingSelfStudy < 0) {
             // Trường hợp DƯ
             result.addError("SELF_STUDY_SURPLUS",
-                    "Self-study allocation exceeded by " + Math.abs(remainingSelfStudy) + " hour(s).");
+                    "Self-study allocation exceeded by " + Math.abs(remainingSelfStudy) + " minute(s).");
         }
 
         return result;
