@@ -31,6 +31,9 @@ public class SyllabusComparisonHistory {
     @Column(name = "assessment_diff_json", columnDefinition = "TEXT")
     String assessmentDiffJson;
 
+    @Column(name = "session_diff_json", columnDefinition = "TEXT")
+    String sessionDiffJson;
+
     @Column(name = "concept_diff_json", columnDefinition = "TEXT")
     String conceptDiffJson;
 

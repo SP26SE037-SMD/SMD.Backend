@@ -8,6 +8,8 @@ import com.example.smd.entities.*;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.CloSessionMappingMapper;
+import com.example.smd.realtime.RealtimePayload;
+import com.example.smd.realtime.RealtimePublisher;
 import com.example.smd.repositories.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -15,11 +17,17 @@ import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -32,6 +40,7 @@ public class CloSessionMappingService {
     SyllabusRepository syllabusRepository;
     SubjectRepository subjectRepository;
     GeminiService geminiService;
+    RealtimePublisher realtimePublisher;
 
     @Transactional
     public CloSessionMappingResponse createMapping(CloSessionMappingRequest request) {
@@ -118,7 +127,9 @@ public class CloSessionMappingService {
         }
     }
 
-    public SessionCloMappingValidationResult checkMapping (List<CloSessionMappingRequest> request, UUID syllabusId) {
+    @Async
+    @Transactional
+    public void checkMapping (List<CloSessionMappingRequest> request, UUID syllabusId, String accountId) {
 
         Syllabus syllabus = syllabusRepository.findById(syllabusId)
                 .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
@@ -148,9 +159,19 @@ public class CloSessionMappingService {
             String sessionJsonString = objectMapper.writeValueAsString(sessionJsonData);
             String cloJsonString = objectMapper.writeValueAsString(cloJsonData);
 
-            return geminiService.checkSessionCloMapping(sessionJsonString, cloJsonString, currentMapping);
+            var sessionMappingResult = geminiService.checkSessionCloMapping(sessionJsonString, cloJsonString, currentMapping);
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    realtimePublisher.publishToAccount(accountId,
+                            RealtimePayload.status("VALIDATE_MAPPING_SUCCESS", sessionMappingResult));
+                    log.info("VALIDATE_MAPPING_SUCCESS: {}", sessionMappingResult);
+                }
+            });
+            geminiService.checkSessionCloMapping(sessionJsonString, cloJsonString, currentMapping);
         } catch (JsonProcessingException e) {
-            // Bắn ra lỗi Runtime hoặc Custom Exception của hệ thống bác
+            realtimePublisher.publishToAccount(accountId,
+                    RealtimePayload.status("VALIDATE_MAPPING_FAIL", "AI failed to generate valid content, please try again!"));
             throw new RuntimeException("Lỗi khi parse đối tượng sang JSON String", e);
         }
     }
@@ -193,5 +214,11 @@ public class CloSessionMappingService {
         } catch (Exception e) {
             throw new RuntimeException("Lỗi khi parse mapping data cho AI Prompt", e);
         }
+    }
+
+    @Transactional
+    public String startCLOSessionMappingProcess(List<CloSessionMappingRequest> request, UUID syllabusId, String accountId) throws IOException {
+        checkMapping(request, syllabusId, accountId);
+        return "The system is processing the CLO-Session-Mapping, please wait for a notification!";
     }
 }
