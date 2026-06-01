@@ -18,6 +18,7 @@ import com.example.smd.repositories.SubjectRepository;
 import com.example.smd.repositories.SyllabusRepository;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -29,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SessionService {
@@ -331,7 +333,7 @@ public class SessionService {
                 .filter(s -> "PRACTICE".equalsIgnoreCase(s.getSessionType()))
                 .mapToDouble(s -> s.getDuration() != null ? s.getDuration() : 0.0)
                 .sum();
-        double dbTotalPracticeHours = inputs.stream()
+        double dbTotalPracticeHours = existingDbSessions.stream()
                 .filter(s -> "PRACTICE".equalsIgnoreCase(s.getSessionType()))
                 .mapToDouble(s -> s.getDuration() != null ? s.getDuration() : 0.0)
                 .sum();
@@ -344,7 +346,7 @@ public class SessionService {
                 .filter(s -> "SELF_STUDY".equalsIgnoreCase(s.getSessionType()))
                 .mapToInt(s -> s.getDuration() != null ? s.getDuration() : 0)
                 .sum();
-        int dbTotalSelfStudyHours = inputs.stream()
+        int dbTotalSelfStudyHours = existingDbSessions.stream()
                 .filter(s -> "SELF_STUDY".equalsIgnoreCase(s.getSessionType()))
                 .mapToInt(s -> s.getDuration() != null ? s.getDuration() : 0)
                 .sum();
