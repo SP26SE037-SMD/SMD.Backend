@@ -19,7 +19,7 @@ public class OpenApiConfig {
     public OpenAPI customOpenAPI() {
         return new OpenAPI()
                 .servers(List.of(
-                        new Server().url("https://api.syllabus.io.vn").description("Production Server")
+                        new Server().url("https://api.syllabus.io.vn").description("Production server")
                 ))
                 .info(new Info()
                         .title("SMD API Documentation")

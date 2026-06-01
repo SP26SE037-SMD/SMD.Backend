@@ -651,7 +651,10 @@ public class FullImportService {
                 String subjectCode = trim(row.getSubjectCode());
                 String subjectName = trim(row.getSubjectName());
                 String departmentCode = trim(row.getDepartmentCode());
-
+                String prerequisitesRaw = trim(row.getPrerequisitesCode());
+                if (prerequisitesRaw != null && !prerequisitesRaw.isEmpty()) {
+                    ctx.prereqMap.put(subjectCode.toUpperCase(), prerequisitesRaw);
+                }
                 List<String> missingCols = new ArrayList<>();
                 if (subjectCode == null) {
                     missingCols.add("Subject Code");
@@ -890,39 +893,48 @@ public class FullImportService {
     }
 
     // [THÊM] Logic đọc và validate cột Prerequisite
+
     private boolean parseAndValidateSemesterMapping(
             Sheet sheet,
             SemesterImportContext ctx,
             SubjectImportContext subCtx,
             GroupImportContext grpCtx,
             CurriculumImportContext curCtx,
-            Map<String, SubjectRegulationDTO> regulationMap) {
+            Map<String, SubjectRegulationDTO> regulationMap) { // <-- GIỮ LẠI THAM SỐ NÀY
+
         boolean hasErrors = false;
         Set<String> subjectCodesInFile = new HashSet<>();
 
-        // Find existing curriculum subjects to prevent duplicates if modifying an
-        // existing curriculum
-        // Removed DB checks as requested.
+        // [QUAN TRỌNG] Bộ Tracker để gom nhóm các kết quả/lỗi theo Mã môn
+        Map<String, ImportCurriculumGroupSubjectResult> resultTracker = new LinkedHashMap<>();
 
         try {
             List<CurriculumGroupSubjectImportDTO> rows = ExcelImporter.importFromSheet(sheet,
                     CurriculumGroupSubjectImportDTO.class);
 
-            // [THÊM] Bước 2.1: First pass - xây dựng Map<subjectCode, semester> để dùng cho validate học kỳ tiên quyết
+            // 1. Quét trước toàn bộ để map SubjectCode -> Semester, Row, Group
             Map<String, Integer> subjectSemesterMap = new HashMap<>();
-            for (CurriculumGroupSubjectImportDTO row : rows) {
-                String subjectCode = trim(row.getSubjectCode());
-                String semesterRaw = trim(row.getSemester());
-                if (subjectCode != null && semesterRaw != null) {
+            Map<String, Integer> subjectRowMap = new HashMap<>();
+            Map<String, String> subjectGroupMap = new HashMap<>();
+
+            for (int i = 0; i < rows.size(); i++) {
+                int rowNumber = i + 2;
+                CurriculumGroupSubjectImportDTO row = rows.get(i);
+                String sc = trim(row.getSubjectCode());
+                String semRaw = trim(row.getSemester());
+                String grp = trim(row.getGroupCode());
+
+                if (sc != null && semRaw != null) {
                     try {
-                        int semNo = Integer.parseInt(semesterRaw);
-                        subjectSemesterMap.put(subjectCode.toUpperCase(), semNo);
-                    } catch (Exception ignored) {
-                        // Sẽ được validate ở vòng lặp chính bên dưới
-                    }
+                        int semNo = Integer.parseInt(semRaw);
+                        subjectSemesterMap.put(sc.toUpperCase(), semNo);
+                        subjectRowMap.put(sc.toUpperCase(), rowNumber);
+                        subjectGroupMap.put(sc.toUpperCase(), grp != null ? grp : "");
+                    } catch (Exception ignored) {}
                 }
             }
 
+            // 2. VÒNG LẶP CHÍNH XỬ LÝ SEMESTER MAPPING
             for (int i = 0; i < rows.size(); i++) {
                 int rowNumber = i + 2;
                 CurriculumGroupSubjectImportDTO row = rows.get(i);
@@ -932,15 +944,13 @@ public class FullImportService {
                 String semesterRaw = trim(row.getSemester());
 
                 if (subjectCode == null || semesterRaw == null) {
-                    ctx.details.add(buildSemFail(rowNumber, groupCode, subjectCode, semesterRaw,
-                            "Missing required fields: Subject Code, Semester"));
+                    recordSemError(resultTracker, rowNumber, groupCode, subjectCode, semesterRaw, "Missing required fields: Subject Code, Semester");
                     hasErrors = true;
                     continue;
                 }
 
                 if (!subjectCodesInFile.add(subjectCode.toUpperCase())) {
-                    ctx.details.add(buildSemFail(rowNumber, groupCode, subjectCode, semesterRaw,
-                            "Duplicate subject in mapping file"));
+                    recordSemError(resultTracker, rowNumber, groupCode, subjectCode, semesterRaw, "Duplicate subject in mapping file");
                     hasErrors = true;
                     continue;
                 }
@@ -948,19 +958,16 @@ public class FullImportService {
                 int semesterNo;
                 try {
                     semesterNo = Integer.parseInt(semesterRaw);
-                    if (semesterNo <= 0)
-                        throw new Exception();
+                    if (semesterNo <= 0) throw new Exception();
                 } catch (Exception e) {
-                    ctx.details.add(
-                            buildSemFail(rowNumber, groupCode, subjectCode, semesterRaw, "Invalid semester value"));
+                    recordSemError(resultTracker, rowNumber, groupCode, subjectCode, semesterRaw, "Invalid semester value");
                     hasErrors = true;
                     continue;
                 }
 
                 // Verify Subject exists in Subject sheet
                 if (!subCtx.fileSubjectCodes.contains(subjectCode.toUpperCase())) {
-                    ctx.details.add(buildSemFail(rowNumber, groupCode, subjectCode, semesterRaw,
-                            "This Subject Code is not in the Subject Sheet"));
+                    recordSemError(resultTracker, rowNumber, groupCode, subjectCode, semesterRaw, "This Subject Code is not in the Subject Sheet");
                     hasErrors = true;
                     continue;
                 }
@@ -968,90 +975,102 @@ public class FullImportService {
                 // Verify Group exists in Group sheet (if provided)
                 if (groupCode != null && !groupCode.isEmpty()) {
                     if (!grpCtx.fileGroupCodes.contains(groupCode.toUpperCase())) {
-                        ctx.details.add(buildSemFail(rowNumber, groupCode, subjectCode, semesterRaw,
-                                "This Group Code is not in the Sheet Group"));
+                        recordSemError(resultTracker, rowNumber, groupCode, subjectCode, semesterRaw, "This Group Code is not in the Sheet Group");
                         hasErrors = true;
                         continue;
                     }
                 }
 
-                // ZERO-LAYER VALIDATION for Semester
+                // ==========================================================
+                // [ĐÃ KHÔI PHỤC] ZERO-LAYER VALIDATION FOR SEMESTER
+                // ==========================================================
                 if (regulationMap.containsKey(subjectCode.toUpperCase())) {
                     SubjectRegulationDTO regDto = regulationMap.get(subjectCode.toUpperCase());
                     if (regDto.semester != null && !regDto.semester.equals(semesterNo)) {
-                        ctx.details.add(buildSemFail(rowNumber, groupCode, subjectCode, semesterRaw,
-                                "Wrong semester specified (Standard: " + regDto.semester + ", Excel: " + semesterNo
-                                        + ")"));
+                        recordSemError(resultTracker, rowNumber, groupCode, subjectCode, semesterRaw,
+                                "Wrong semester specified (Standard: " + regDto.semester + ", Excel: " + semesterNo + ")");
                         hasErrors = true;
                         continue;
                     }
                 }
+                // ==========================================================
 
+                // Nếu không có lỗi gì ở vòng lặp 1 thì đánh dấu SUCCESS vào Tracker
+                if (!resultTracker.containsKey(subjectCode.toUpperCase())) {
+                    resultTracker.put(subjectCode.toUpperCase(), ImportCurriculumGroupSubjectResult.builder()
+                            .rowNumber(rowNumber).groupCode(groupCode).subjectCode(subjectCode).semester(semesterRaw)
+                            .status("SUCCESS").message("Validated").build());
+                }
+
+                // Lưu mapping của Semester chờ save DB
                 Curriculum_Group_Subject mapping = Curriculum_Group_Subject.builder()
                         .semester(semesterNo)
-                        // Temporary dummy subjects/groups to hold the code, replaced during insertion
-                        // phase
                         .subject(Subject.builder().subjectCode(subjectCode).build())
                         .group(groupCode != null ? Group.builder().groupCode(groupCode).build() : null)
                         .build();
-
                 ctx.mappingsToSave.add(mapping);
-                ctx.details.add(ImportCurriculumGroupSubjectResult.builder()
-                        .rowNumber(rowNumber).groupCode(groupCode).subjectCode(subjectCode).semester(semesterRaw)
-                        .status("SUCCESS").message("Validated").build());
+            }
 
-                // [THÊM] Bước 2.2 & 2.3: Đọc và validate cột Prerequisite
-                String prerequisiteRaw = trim(row.getPrerequisite());
-                if (prerequisiteRaw != null && !prerequisiteRaw.isEmpty()) {
-                    String[] prereqCodes = prerequisiteRaw.split(",");
-                    for (String prereqRaw : prereqCodes) {
-                        String prereqCode = prereqRaw.trim().toUpperCase();
-                        if (prereqCode.isEmpty())
-                            continue;
+            // ==============================================================================
+            // 3. [THỰC HIỆN CROSS-VALIDATION MÔN TIÊN QUYẾT]
+            // ==============================================================================
+            for (Map.Entry<String, String> entry : subCtx.prereqMap.entrySet()) {
+                String subjectCode = entry.getKey();
+                String preReqsRaw = entry.getValue();
 
-                        // Validate: Không được tự làm tiên quyết cho chính mình
-                        if (prereqCode.equalsIgnoreCase(subjectCode)) {
-                            ctx.details.add(buildSemFail(rowNumber, groupCode, subjectCode, semesterRaw,
-                                    "Prerequisite error: Subject [" + subjectCode + "] cannot be its own prerequisite"));
-                            hasErrors = true;
-                            continue;
-                        }
+                Integer subjectSem = subjectSemesterMap.get(subjectCode);
+                if (subjectSem == null) continue;
 
-                        // Validate: Mã tiên quyết PHẢI tồn tại trong subCtx.fileSubjectCodes (sheet Subject)
-                        if (!subCtx.fileSubjectCodes.contains(prereqCode)) {
-                            ctx.details.add(buildSemFail(rowNumber, groupCode, subjectCode, semesterRaw,
-                                    "Prerequisite error: Prerequisite code [" + prereqCode + "] not found in Subject sheet"));
-                            hasErrors = true;
-                            continue;
-                        }
+                Integer rowNum = subjectRowMap.get(subjectCode);
+                String grpCode = subjectGroupMap.get(subjectCode);
 
-                        // Validate: Học kỳ của môn học KHÔNG ĐƯỢC nhỏ hơn học kỳ của môn tiên quyết
-                        Integer prereqSemester = subjectSemesterMap.get(prereqCode);
-                        if (prereqSemester != null && semesterNo < prereqSemester) {
-                            ctx.details.add(buildSemFail(rowNumber, groupCode, subjectCode, semesterRaw,
-                                    "Prerequisite error: Subject [" + subjectCode + "] (semester " + semesterNo
-                                            + ") cannot have prerequisite [" + prereqCode + "] (semester " + prereqSemester
-                                            + ") which is in a later semester"));
-                            hasErrors = true;
-                            continue;
-                        }
+                String[] preReqCodes = preReqsRaw.split(",");
+                for (String preReqCodeRaw : preReqCodes) {
+                    String cleanPreReq = preReqCodeRaw.trim().toUpperCase();
+                    if (cleanPreReq.isEmpty()) continue;
 
-                        // Tránh lặp cặp tiên quyết trong file
-                        String pairKey = subjectCode.toUpperCase() + "->" + prereqCode;
-                        if (!ctx.uniquePrerequisitePairs.add(pairKey)) {
-                            // Bỏ qua cặp lặp, không cần error vì đây chỉ là duplicate trong file
-                            continue;
-                        }
-
-                        // [THÊM] Bước 2.4: Tạo đối tượng Subject_Prerequisite với Subject giả giữ chỗ
-                        Subject_Prerequisite prereqEntity = Subject_Prerequisite.builder()
-                                .subject(Subject.builder().subjectCode(subjectCode).build())
-                                .prerequisiteSubject(Subject.builder().subjectCode(prereqCode).build())
-                                .build();
-                        ctx.prerequisitesToSave.add(prereqEntity);
+                    // 3.1
+                    if (cleanPreReq.equals(subjectCode.toUpperCase())) {
+                        recordSemError(resultTracker, rowNum, grpCode, subjectCode, String.valueOf(subjectSem), "A subject cannot be its own prerequisite");
+                        hasErrors = true;
+                        continue;
                     }
+
+                    // 3.2
+                    if (!subCtx.fileSubjectCodes.contains(cleanPreReq)) {
+                        recordSemError(resultTracker, rowNum, grpCode, subjectCode, String.valueOf(subjectSem), "Prerequisite Subject Code [" + cleanPreReq + "] is not found in the Subject Sheet");
+                        hasErrors = true;
+                        continue;
+                    }
+
+                    Integer preReqSem = subjectSemesterMap.get(cleanPreReq);
+
+                    // 3.3
+                    if (preReqSem != null && subjectSem < preReqSem) {
+                        recordSemError(resultTracker, rowNum, grpCode, subjectCode, String.valueOf(subjectSem),
+                                "Prerequisite Logic Error: Subject [" + subjectCode + "] in Semester " + subjectSem +
+                                        " cannot require Prerequisite [" + cleanPreReq + "] which is in Semester " + preReqSem);
+                        hasErrors = true;
+                        continue;
+                    }
+
+                    // 3.4
+                    String uniquePair = subjectCode.toUpperCase() + "-" + cleanPreReq;
+                    if (!ctx.uniquePrerequisitePairs.add(uniquePair)) {
+                        continue;
+                    }
+
+                    Subject_Prerequisite sp = Subject_Prerequisite.builder()
+                            .subject(Subject.builder().subjectCode(subjectCode).build())
+                            .prerequisiteSubject(Subject.builder().subjectCode(cleanPreReq).build())
+                            .build();
+                    ctx.prerequisitesToSave.add(sp);
                 }
             }
+
+            // 4. Đẩy toàn bộ dữ liệu đã được gộp từ Map ra list kết quả cuối cùng
+            ctx.details.addAll(resultTracker.values());
+
         } catch (Exception e) {
             log.error("Semester mapping parse error", e);
             hasErrors = true;
@@ -1170,6 +1189,7 @@ public class FullImportService {
                 ctx.details.add(ImportSourceResult.builder()
                         .sourceCode(sourceCode).status("SUCCESS").message("Validated").build());
             }
+
 
             // === VALIDATE COMPLETENESS: Đảm bảo sheet Source có đủ TẤT CẢ source trong
             // SOURCE_DOCUMENTS ===
@@ -1395,6 +1415,35 @@ public class FullImportService {
                 .build();
     }
 
+    // Hàm Helper gom nhóm các lỗi của cùng 1 môn học vào chung 1 object
+    private void recordSemError(Map<String, ImportCurriculumGroupSubjectResult> tracker,
+                                int rowNumber, String groupCode, String subjectCode,
+                                String semester, String message) {
+        String key = subjectCode != null ? subjectCode.toUpperCase() : "UNKNOWN_ROW_" + rowNumber;
+        ImportCurriculumGroupSubjectResult existing = tracker.get(key);
+
+        if (existing == null) {
+            tracker.put(key, ImportCurriculumGroupSubjectResult.builder()
+                    .rowNumber(rowNumber)
+                    .groupCode(groupCode != null ? groupCode : "")
+                    .subjectCode(subjectCode)
+                    .semester(semester)
+                    .status("FAILED")
+                    .message(message)
+                    .build());
+        } else {
+            if ("SUCCESS".equals(existing.getStatus())) {
+                existing.setStatus("FAILED");
+                existing.setMessage(message);
+            } else {
+                // Nếu đã FAILED rồi thì nối thêm chuỗi thông báo mới vào
+                if (!existing.getMessage().contains(message)) {
+                    existing.setMessage(existing.getMessage() + ";\n" + message);
+                }
+            }
+        }
+    }
+
     // ==========================================
     // INTERNAL CONTEXT CLASSES
     // ==========================================
@@ -1477,6 +1526,7 @@ public class FullImportService {
         Set<String> fileSubjectCodes = new HashSet<>();
         List<Subject> subjectsToSave = new ArrayList<>();
         List<ImportSubjectResult> details = new ArrayList<>();
+        Map<String, String> prereqMap = new HashMap<>();
     }
 
     private static class GroupImportContext {
