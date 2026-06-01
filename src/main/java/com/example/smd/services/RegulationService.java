@@ -466,7 +466,7 @@ public class RegulationService {
                         }
                     }
 
-                    if (pageText.contains("list of monographs") ||
+                    if (pageText.contains("******** ") ||
                             Pattern.compile("(?i)(appendix|accreditation|curriculum\\s+mapping|notes:|note:)").matcher(pageText).find()) {
                         log.info("[PDF-REFERENCE] Kết thúc section tài liệu tham khảo tại trang {}", page.getPageNumber());
                         break;
