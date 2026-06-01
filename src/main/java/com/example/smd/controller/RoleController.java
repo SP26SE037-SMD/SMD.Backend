@@ -26,7 +26,6 @@ public class RoleController {
 
     private final RoleService roleService;
 
-    // API lấy danh sách vai trò có phân trang và tìm kiếm
     @GetMapping
     @Operation(summary = "Get all roles with pagination and search")
     public ResponseObject<PagedResponse<RoleResponse>> getAllRoles(

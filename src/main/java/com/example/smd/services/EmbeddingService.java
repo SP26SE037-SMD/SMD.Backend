@@ -31,7 +31,7 @@ public class EmbeddingService {
     AssessmentRepository assessmentRepo;
     GeminiService gemini;
     SyllabusComparisonHistoryRepository historyRepo;
-    AccountService accountService;
+    SessionRepository sessionRepo;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -180,11 +180,92 @@ public class EmbeddingService {
         return diff;
     }
 
+    public SessionDiffResponse compareSessionConfiguration(UUID oldId, UUID newId) {
+        // 1. Lấy danh sách session cũ và mới từ database theo Syllabus ID
+        List<Session> oldList = sessionRepo.findBySyllabus_SyllabusId(oldId);
+        List<Session> newList = sessionRepo.findBySyllabus_SyllabusId(newId);
+        SessionDiffResponse diff = new SessionDiffResponse();
+
+        // 2. Định nghĩa hàm tạo Identifier: Sử dụng Session Number làm gốc
+        java.util.function.Function<Session, String> getIdentifier = s -> {
+            Integer num = (s.getSessionNumber() != null) ? s.getSessionNumber() : 0;
+            return String.format("Session %d", num);
+        };
+
+        // 3. Chuyển list sang Map để tìm kiếm nhanh với O(1)
+        Map<String, Session> oldMap = oldList.stream()
+                .collect(Collectors.toMap(getIdentifier, s -> s, (existing, replacement) -> existing));
+        Map<String, Session> newMap = newList.stream()
+                .collect(Collectors.toMap(getIdentifier, s -> s, (existing, replacement) -> existing));
+
+        // 4. Quét danh sách cũ: Tìm các Session bị XÓA hoặc bị THAY ĐỔI nội dung
+        for (Session oldItem : oldList) {
+            String identifier = getIdentifier.apply(oldItem);
+
+            if (!newMap.containsKey(identifier)) {
+                // Session không còn tồn tại ở bản mới -> Đã bị xóa
+                diff.getRemovedSessions().add(String.format("%s: %s", identifier, oldItem.getSessionTitle()));
+            } else {
+                // Session tồn tại ở cả 2 bản -> Tiến hành so sánh sâu (Deep Compare)
+                Session newItem = newMap.get(identifier);
+                List<String> changes = new ArrayList<>();
+
+                // Check Tiêu đề bài học / Chương (sessionTitle)
+                if (!java.util.Objects.equals(oldItem.getSessionTitle(), newItem.getSessionTitle())) {
+                    changes.add(String.format("The session title changes from '%s' to '%s'",
+                            oldItem.getSessionTitle(), newItem.getSessionTitle()));
+                }
+
+                // Check Loại hình buổi học (sessionType - ví dụ: Lecture, Lab, Seminar)
+                if (!java.util.Objects.equals(oldItem.getSessionType(), newItem.getSessionType())) {
+                    changes.add(String.format("The session type changes from '%s' to '%s'",
+                            oldItem.getSessionType(), newItem.getSessionType()));
+                }
+
+                // Check Thời lượng buổi học (duration - phút)
+                if (!java.util.Objects.equals(oldItem.getDuration(), newItem.getDuration())) {
+                    changes.add(String.format("The duration has changed from %d minutes to %d minutes.",
+                            oldItem.getDuration() != null ? oldItem.getDuration() : 0,
+                            newItem.getDuration() != null ? newItem.getDuration() : 0));
+                }
+
+                // Check Phương pháp giảng dạy (teachingMethods)
+                if (!java.util.Objects.equals(oldItem.getTeachingMethods(), newItem.getTeachingMethods())) {
+                    changes.add(String.format("Teaching methods updated from '%s' to '%s'",
+                            oldItem.getTeachingMethods(), newItem.getTeachingMethods()));
+                }
+
+                // Check Chủ đề chi tiết (sessionTopic)
+                if (!java.util.Objects.equals(oldItem.getSessionTopic(), newItem.getSessionTopic())) {
+                    changes.add(String.format("The session topic changes from '%s' to '%s'",
+                            oldItem.getSessionTopic(), newItem.getSessionTopic()));
+                }
+
+                // Nếu phát hiện có bất kỳ sự thay đổi nào -> Đưa vào danh sách Thay Đổi
+                if (!changes.isEmpty()) {
+                    diff.getChangedSessions().add(new SessionDiffResponse.SessionChangeDTO(
+                            String.format("%s: %s", identifier, newItem.getSessionTitle()), changes));
+                }
+            }
+        }
+
+        // 5. Quét danh sách mới: Tìm các Session được THÊM MỚI hoàn toàn
+        for (Session newItem : newList) {
+            String identifier = getIdentifier.apply(newItem);
+            if (!oldMap.containsKey(identifier)) {
+                diff.getAddedSessions().add(String.format("%s: %s", identifier, newItem.getSessionTitle()));
+            }
+        }
+
+        return diff;
+    }
+
     // checkImpact and determineImpactType removed: vector_embeddings table has been dropped
 
-    public void saveComparisonHistory(UUID oldId, UUID newId, AssessmentDiffResponse assessmentResult, ComparisonResult analysis) {
+    public void saveComparisonHistory(UUID oldId, UUID newId, AssessmentDiffResponse assessmentResult, ComparisonResult analysis, SessionDiffResponse sessionResult) {
         try {
             String assessmentJsonStr = objectMapper.writeValueAsString(assessmentResult);
+            String sessionJsonStr = objectMapper.writeValueAsString(sessionResult);
             String conceptJsonStr = objectMapper.writeValueAsString(analysis);
 
             // 2. Build thực thể History
@@ -192,6 +273,7 @@ public class EmbeddingService {
                     .oldSyllabusId(oldId)
                     .newSyllabusId(newId)
                     .assessmentDiffJson(assessmentJsonStr)
+                    .sessionDiffJson(sessionJsonStr)
                     .conceptDiffJson(conceptJsonStr)
                     .selectedCompare(false)
                     .build();
@@ -243,8 +325,8 @@ public class EmbeddingService {
     public CompareSyllabusResponse compareTwoVersionSyllabus(UUID oldSyllabusId, UUID newSyllabusId) {
         AssessmentDiffResponse assessmentResult = compareAssessmentConfiguration(oldSyllabusId, newSyllabusId);
         ComparisonResult analysis = compareSyllabus(oldSyllabusId, newSyllabusId);
-        return new CompareSyllabusResponse(oldSyllabusId, newSyllabusId, assessmentResult, analysis);
-
+        SessionDiffResponse sessionResult = compareSessionConfiguration(oldSyllabusId, newSyllabusId);
+        return new CompareSyllabusResponse(oldSyllabusId, newSyllabusId, assessmentResult, analysis, sessionResult);
     }
 
     public SyllabusComparisonHistory selectHistoryCompare(UUID historyId){
@@ -256,7 +338,7 @@ public class EmbeddingService {
             if (history.isSelectedCompare()) {
                 history.setSelectedCompare(false);
                 historyRepo.save(history);
-                break; // Dừng lại ngay khi đã clear trạng thái của thằng cũ
+                break;
             }
         }
         historySearch.setSelectedCompare(true);

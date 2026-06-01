@@ -18,6 +18,7 @@ import com.example.smd.repositories.SubjectRepository;
 import com.example.smd.repositories.SyllabusRepository;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -29,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SessionService {
@@ -331,7 +333,7 @@ public class SessionService {
                 .filter(s -> "PRACTICE".equalsIgnoreCase(s.getSessionType()))
                 .mapToDouble(s -> s.getDuration() != null ? s.getDuration() : 0.0)
                 .sum();
-        double dbTotalPracticeHours = inputs.stream()
+        double dbTotalPracticeHours = existingDbSessions.stream()
                 .filter(s -> "PRACTICE".equalsIgnoreCase(s.getSessionType()))
                 .mapToDouble(s -> s.getDuration() != null ? s.getDuration() : 0.0)
                 .sum();
@@ -340,15 +342,15 @@ public class SessionService {
         int remainingPractice = (masterSubject.getPracticalPeriods() != null ? masterSubject.getPracticalPeriods() : 0) - inputTotalPracticePeriods - dbTotalPracticePeriods;
 
         // (Tùy chọn) Tính tổng giờ tự học nếu có bắt validate
-        int inputTotalSelfStudyHours = inputs.stream()
-                .filter(s -> "SELF_STUDY".equalsIgnoreCase(s.getSessionType()))
-                .mapToInt(s -> s.getDuration() != null ? s.getDuration() : 0)
-                .sum();
-        int dbTotalSelfStudyHours = inputs.stream()
-                .filter(s -> "SELF_STUDY".equalsIgnoreCase(s.getSessionType()))
-                .mapToInt(s -> s.getDuration() != null ? s.getDuration() : 0)
-                .sum();
-        int remainingSelfStudy = (masterSubject.getSelfStudyPeriods() != null ? masterSubject.getSelfStudyPeriods() : 0) - inputTotalSelfStudyHours - dbTotalSelfStudyHours;
+//        int inputTotalSelfStudyHours = inputs.stream()
+//                .filter(s -> "SELF_STUDY".equalsIgnoreCase(s.getSessionType()))
+//                .mapToInt(s -> s.getDuration() != null ? s.getDuration() : 0)
+//                .sum();
+//        int dbTotalSelfStudyHours = existingDbSessions.stream()
+//                .filter(s -> "SELF_STUDY".equalsIgnoreCase(s.getSessionType()))
+//                .mapToInt(s -> s.getDuration() != null ? s.getDuration() : 0)
+//                .sum();
+//        int remainingSelfStudy = (masterSubject.getSelfStudyPeriods() != null ? masterSubject.getSelfStudyPeriods() * 60 : 0) - inputTotalSelfStudyHours - dbTotalSelfStudyHours;
 
         // Set vào DTO
         result.setRemainingQuotas(new SessionValidationResult.RemainingQuota(remainingTheory, remainingPractice, 0));
@@ -377,16 +379,16 @@ public class SessionService {
                     "Practice allocation exceeded by " + Math.abs(remainingPractice) + " period(s).");
         }
 
-        // -- Validate Tự học (Self-study) --
-        if (remainingSelfStudy > 0) {
-            // Trường hợp THIẾU
-            result.addError("SELF_STUDY_SHORTAGE",
-                    "Self-study allocation is short by " + remainingSelfStudy + " hour(s).");
-        } else if (remainingSelfStudy < 0) {
-            // Trường hợp DƯ
-            result.addError("SELF_STUDY_SURPLUS",
-                    "Self-study allocation exceeded by " + Math.abs(remainingSelfStudy) + " hour(s).");
-        }
+//        // -- Validate Tự học (Self-study) --
+//        if (remainingSelfStudy > 0) {
+//            // Trường hợp THIẾU
+//            result.addError("SELF_STUDY_SHORTAGE",
+//                    "Self-study allocation is short by " + remainingSelfStudy + " minute(s).");
+//        } else if (remainingSelfStudy < 0) {
+//            // Trường hợp DƯ
+//            result.addError("SELF_STUDY_SURPLUS",
+//                    "Self-study allocation exceeded by " + Math.abs(remainingSelfStudy) + " minute(s).");
+//        }
 
         return result;
     }

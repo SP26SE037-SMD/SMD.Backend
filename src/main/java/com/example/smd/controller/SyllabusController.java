@@ -5,10 +5,10 @@ import com.example.smd.dto.request.SyllabusRequest;
 import com.example.smd.dto.response.AssessmentDiffResponse;
 import com.example.smd.dto.response.ComparisonResult;
 import com.example.smd.dto.response.ResponseObject;
+import com.example.smd.dto.response.SessionDiffResponse;
 import com.example.smd.dto.response.syllabus.SyllabusResponse;
 import com.example.smd.dto.response.validate.CompareSyllabusResponse;
 import com.example.smd.entities.SyllabusComparisonHistory;
-import com.example.smd.enums.RoleName;
 import com.example.smd.enums.SyllabusActionType;
 import com.example.smd.enums.SyllabusStatus;
 import com.example.smd.services.AccountService;
@@ -206,9 +206,9 @@ public class SyllabusController {
         }
 
         @PostMapping("/save-compare-version")
-        public ResponseObject<CompareSyllabusResponse> saveComparisonHistory(UUID oldId, UUID newId, AssessmentDiffResponse assessmentResult, ComparisonResult analysis) {
+        public ResponseObject<CompareSyllabusResponse> saveComparisonHistory(UUID oldId, UUID newId, AssessmentDiffResponse assessmentResult, ComparisonResult analysis, SessionDiffResponse sessionDiffResponse) {
                 if(embeddingService.validateLatestAndSubsequentVersions(oldId, newId)){
-                        embeddingService.saveComparisonHistory(oldId, newId, assessmentResult, analysis);
+                        embeddingService.saveComparisonHistory(oldId, newId, assessmentResult, analysis, sessionDiffResponse);
                 }
 
                 var compareSyllabusResponse = new CompareSyllabusResponse();
