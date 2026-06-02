@@ -91,25 +91,6 @@ public class RegulationController {
                 .message("Delete regulation successfully")
                 .build();
     }
-
-    @PostMapping(value = "/extract", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseObject<String> extractMasterDataFromPdf(
-            @RequestParam("file") MultipartFile file,
-            @AuthenticationPrincipal Jwt jwt) throws IOException {
-        String userId = jwt.getClaimAsString("accountId");
-
-        if (file.isEmpty()) {
-            throw new AppException(ErrorCode.FILE_UPLOAD_FAILED, "File tải lên không được để trống.");
-        }
-
-        String response = regulationService.startImportProcess(file, userId);
-
-        return ResponseObject.<String>builder()
-                .status(1000)
-                .message("Create major and import rule successfully")
-                .data(response)
-                .build();
-    }
     @PostMapping(value = "/extract-pdf", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(
             summary = "Extract subjects from PDF curriculum file (returns formatted string)"
