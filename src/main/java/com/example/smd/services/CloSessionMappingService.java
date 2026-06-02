@@ -38,9 +38,7 @@ public class CloSessionMappingService {
     CLOsRepository cloRepository;
     SessionRepository sessionRepository;
     SyllabusRepository syllabusRepository;
-    SubjectRepository subjectRepository;
-    GeminiService geminiService;
-    RealtimePublisher realtimePublisher;
+    CloMappingExecutor cloMapping;
 
     @Transactional
     public CloSessionMappingResponse createMapping(CloSessionMappingRequest request) {
@@ -127,14 +125,38 @@ public class CloSessionMappingService {
         }
     }
 
-    @Async
-    @Transactional
-    public void checkMapping (List<CloSessionMappingRequest> request, UUID syllabusId, String accountId) {
+    public String startCLOSessionMappingProcess(List<CloSessionMappingRequest> request, UUID syllabusId, String accountId) throws IOException {
+        cloMapping.checkMapping(request, syllabusId, accountId);
+        return "The system is processing the CLO-Session-Mapping, please wait for a notification!";
+    }
+}
 
+@Slf4j
+@Service
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+class CloMappingExecutor {
+
+    private final SyllabusRepository syllabusRepository;
+    private final SubjectRepository subjectRepository;
+    private final CLOsRepository cloRepository;
+    private final SessionRepository sessionRepository;
+    private final GeminiService geminiService;
+    private final RealtimePublisher realtimePublisher;
+
+    @Async // Thần chú để Spring đẩy toàn bộ hàm này chạy trên một Thread ngầm riêng biệt
+    public void checkMapping(List<CloSessionMappingRequest> request, UUID syllabusId, String accountId) {
+
+        realtimePublisher.publishToAccount(accountId,
+                RealtimePayload.status("VALIDATE_MAPPING_PROCESS", "Currently being processed."));
+        log.info("VALIDATE_MAPPING_PROCESS: {}", "Currently being processed.");
+
+        // Lấy dữ liệu từ DB (Chạy loáng một cái là xong, DB Connection giải phóng liền)
         Syllabus syllabus = syllabusRepository.findById(syllabusId)
                 .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
         Subject subject = subjectRepository.findById(syllabus.getSubject().getSubjectId())
                 .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
+
         List<CLOs> cloList = cloRepository.findBySubject_SubjectId(subject.getSubjectId());
         List<Map<String, String>> cloJsonData = cloList.stream().map(clo -> {
             Map<String, String> map = new HashMap<>();
@@ -148,11 +170,12 @@ public class CloSessionMappingService {
         List<Map<String, String>> sessionJsonData = sessionList.stream().map(a -> {
             Map<String, String> map = new HashMap<>();
             map.put("session_id", a.getSessionId().toString());
-            map.put("chapter_title", a.getSessionTitle()); // Type của câu hỏi
-            map.put("session_topic", a.getSessionTopic()); // Kỹ năng cốt lõi
-            map.put("teaching_method", a.getTeachingMethods()); // Rubric/Hướng dẫn chấm
+            map.put("chapter_title", a.getSessionTitle());
+            map.put("session_topic", a.getSessionTopic());
+            map.put("teaching_method", a.getTeachingMethods());
             return map;
         }).collect(Collectors.toList());
+
         ObjectMapper objectMapper = new ObjectMapper();
         try {
             String currentMapping = buildSessionCloMappingForAI(request);
@@ -160,25 +183,20 @@ public class CloSessionMappingService {
             String cloJsonString = objectMapper.writeValueAsString(cloJsonData);
 
             var sessionMappingResult = geminiService.checkSessionCloMapping(sessionJsonString, cloJsonString, currentMapping);
-            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-                @Override
-                public void afterCommit() {
-                    realtimePublisher.publishToAccount(accountId,
-                            RealtimePayload.status("VALIDATE_MAPPING_SUCCESS", sessionMappingResult));
-                    log.info("VALIDATE_MAPPING_SUCCESS: {}", sessionMappingResult);
-                }
-            });
-            geminiService.checkSessionCloMapping(sessionJsonString, cloJsonString, currentMapping);
+
+            realtimePublisher.publishToAccount(accountId,
+                    RealtimePayload.status("VALIDATE_MAPPING_SUCCESS", sessionMappingResult));
+            log.info("VALIDATE_MAPPING_SUCCESS: {}", sessionMappingResult);
+
         } catch (JsonProcessingException e) {
             realtimePublisher.publishToAccount(accountId,
                     RealtimePayload.status("VALIDATE_MAPPING_FAIL", "AI failed to generate valid content, please try again!"));
-            throw new RuntimeException("Lỗi khi parse đối tượng sang JSON String", e);
+            log.error("Lỗi khi parse đối tượng sang JSON String", e);
         }
     }
 
+    // Hàm bổ trợ này đi theo hàm checkMapping sang class mới luôn
     public String buildSessionCloMappingForAI(List<CloSessionMappingRequest> requests) {
-
-        // 1. LẤY ID TỪ REQUEST
         Set<UUID> sessionIds = requests.stream()
                 .map(req -> UUID.fromString(req.getSessionId()))
                 .collect(Collectors.toSet());
@@ -187,18 +205,15 @@ public class CloSessionMappingService {
                 .map(req -> UUID.fromString(req.getCloId()))
                 .collect(Collectors.toSet());
 
-        // 2. GỌI DATABASE ĐỂ LẤY THỰC THỂ (Optional: Dùng hàm JOIN FETCH để tránh LazyLoad)
         List<Session> sessionFromDb = sessionRepository.findAllById(sessionIds);
         List<CLOs> closFromDb = cloRepository.findAllById(cloIds);
 
-        // 3. TẠO MAP CHUYỂN ĐỔI: Chuyển ID (UUID) sang ID dạng String để đối chiếu
         Map<String, String> sessionIdMap = sessionFromDb.stream()
                 .collect(Collectors.toMap(a -> a.getSessionId().toString(), a -> a.getSessionId().toString()));
 
         Map<String, String> cloIdToCodeMap = closFromDb.stream()
                 .collect(Collectors.toMap(clo -> clo.getCloId().toString(), CLOs::getCloCode));
 
-        // 4. GOM NHÓM DỮ LIỆU: KEY = Session ID, VALUE = List<CLO Code>
         Map<String, List<String>> mappingResult = requests.stream()
                 .filter(req -> sessionIdMap.containsKey(req.getSessionId().toString())
                         && cloIdToCodeMap.containsKey(req.getCloId().toString()))
@@ -207,18 +222,11 @@ public class CloSessionMappingService {
                         Collectors.mapping(req -> cloIdToCodeMap.get(req.getCloId().toString()), Collectors.toList())
                 ));
 
-        // 5. PARSE SANG JSON STRING
         try {
             ObjectMapper objectMapper = new ObjectMapper();
             return objectMapper.writeValueAsString(mappingResult);
         } catch (Exception e) {
             throw new RuntimeException("Lỗi khi parse mapping data cho AI Prompt", e);
         }
-    }
-
-    @Transactional
-    public String startCLOSessionMappingProcess(List<CloSessionMappingRequest> request, UUID syllabusId, String accountId) throws IOException {
-        checkMapping(request, syllabusId, accountId);
-        return "The system is processing the CLO-Session-Mapping, please wait for a notification!";
     }
 }
