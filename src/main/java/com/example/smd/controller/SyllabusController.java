@@ -206,19 +206,13 @@ public class SyllabusController {
         }
 
         @PostMapping("/save-compare-version")
-        public ResponseObject<CompareSyllabusResponse> saveComparisonHistory(UUID oldId, UUID newId, AssessmentDiffResponse assessmentResult, ComparisonResult analysis, SessionDiffResponse sessionDiffResponse) {
-                if(embeddingService.validateLatestAndSubsequentVersions(oldId, newId)){
-                        embeddingService.saveComparisonHistory(oldId, newId, assessmentResult, analysis, sessionDiffResponse);
+        public ResponseObject<SyllabusComparisonHistory> saveComparisonHistory(@RequestBody CompareSyllabusResponse compareSyllabusResponse) {
+                SyllabusComparisonHistory result = new  SyllabusComparisonHistory();
+                if(embeddingService.validateLatestAndSubsequentVersions(compareSyllabusResponse.getOldSyllabusId(), compareSyllabusResponse.getNewSyllabusId())) {
+                        result = embeddingService.saveComparisonHistory(compareSyllabusResponse.getOldSyllabusId(), compareSyllabusResponse.getNewSyllabusId(), compareSyllabusResponse.getAssessmentDiffResponse(), compareSyllabusResponse.getComparisonResult(), compareSyllabusResponse.getSessionDiffResponse());
                 }
-
-                var compareSyllabusResponse = new CompareSyllabusResponse();
-                compareSyllabusResponse.setNewSyllabusId(newId);
-                compareSyllabusResponse.setOldSyllabusId(oldId);
-                compareSyllabusResponse.setAssessmentDiffResponse(assessmentResult);
-                compareSyllabusResponse.setComparisonResult(analysis);
-
-                return ResponseObject.<CompareSyllabusResponse>builder()
-                        .data(compareSyllabusResponse)
+                return ResponseObject.<SyllabusComparisonHistory>builder()
+                        .data(result)
                         .message("Save syllabus successfully")
                         .build();
         }
