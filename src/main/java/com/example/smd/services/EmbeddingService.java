@@ -4,7 +4,6 @@ import com.example.smd.dto.response.*;
 import com.example.smd.dto.response.syllabus.SyllabusStructureResponse;
 import com.example.smd.dto.response.validate.CompareSyllabusResponse;
 import com.example.smd.entities.*;
-import com.example.smd.enums.RoleName;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.repositories.*;
@@ -262,7 +261,7 @@ public class EmbeddingService {
 
     // checkImpact and determineImpactType removed: vector_embeddings table has been dropped
 
-    public void saveComparisonHistory(UUID oldId, UUID newId, AssessmentDiffResponse assessmentResult, ComparisonResult analysis, SessionDiffResponse sessionResult) {
+    public SyllabusComparisonHistory saveComparisonHistory(UUID oldId, UUID newId, AssessmentDiffResponse assessmentResult, ComparisonResult analysis, SessionDiffResponse sessionResult) {
         try {
             String assessmentJsonStr = objectMapper.writeValueAsString(assessmentResult);
             String sessionJsonStr = objectMapper.writeValueAsString(sessionResult);
@@ -280,7 +279,7 @@ public class EmbeddingService {
 
             // 3. Khóa sổ ghi xuống Database
             historyRepo.save(history);
-
+            return history;
         } catch (JsonProcessingException e) {
             log.error("Lỗi parse cấu trúc dữ liệu sang JSON để lưu lịch sử", e);
             throw new RuntimeException("Save history failed");
