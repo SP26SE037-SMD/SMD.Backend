@@ -85,12 +85,39 @@ public class RubricService {
     @Transactional
     public String getRubricsBySyllabusIdAsText(String syllabusId) {
         List<RubricResponse> rubrics = getRubricsBySyllabusId(syllabusId);
-        try {
-            return objectMapper.writeValueAsString(rubrics);
-        } catch (JsonProcessingException e) {
-            log.error("Failed to serialize rubrics to text", e);
-            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION, "Failed to serialize rubrics");
+
+        if (rubrics == null || rubrics.isEmpty()) {
+            return "Không có dữ liệu Rubric cho môn học này.";
         }
+
+        StringBuilder rubricContent = new StringBuilder();
+        for (RubricResponse rubric : rubrics) {
+            // Nén thông tin Rubric
+            rubricContent.append(String.format("📌 Rubric: %s (Mã: %s)\n", rubric.getName(), rubric.getCode()));
+
+            if (rubric.getCriteria() != null) {
+                for (CriterionResponse criteria : rubric.getCriteria()) {
+                    // Nén thông tin Tiêu chí (Criterion)
+                    // Dùng String.valueOf để tránh lỗi format nếu weight là kiểu Double/Float
+                    rubricContent.append(String.format("   ▪ Tiêu chí: %s (Trọng số: %s%%)\n",
+                            criteria.getName(),
+                            String.valueOf(criteria.getWeight())));
+
+                    if (criteria.getLevels() != null) {
+                        for (CriteriaLevelResponse level : criteria.getLevels()) {
+                            // Nén thông tin Mức độ (Level)
+                            rubricContent.append(String.format("      - Mức %s: %s\n",
+                                    level.getCode(),
+                                    level.getDescription()));
+                        }
+                    }
+                }
+            }
+            rubricContent.append("\n"); // Cách dòng giữa các Rubric để AI dễ nhìn
+        }
+
+        // Trả về chuỗi văn bản thuần túy (Plain text)
+        return rubricContent.toString().trim();
     }
 
     @Transactional
