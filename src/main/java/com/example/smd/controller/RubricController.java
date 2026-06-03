@@ -48,15 +48,7 @@ public class RubricController {
                 .build();
     }
 
-    @PostMapping
-    @Operation(summary = "Tạo mới Rubric (kèm criteria và levels)")
-    public ResponseObject<RubricResponse> createRubric(@RequestBody RubricRequest request) {
-        return ResponseObject.<RubricResponse>builder()
-                .status(1000)
-                .data(rubricService.createRubric(request))
-                .message("Tạo Rubric thành công")
-                .build();
-    }
+
 
     @GetMapping("/{id}")
     @Operation(summary = "Lấy thông tin chi tiết Rubric theo ID")
@@ -68,15 +60,6 @@ public class RubricController {
                 .build();
     }
 
-    @GetMapping
-    @Operation(summary = "Lấy danh sách tất cả Rubric")
-    public ResponseObject<List<RubricResponse>> getAllRubrics() {
-        return ResponseObject.<List<RubricResponse>>builder()
-                .status(1000)
-                .data(rubricService.getAllRubrics())
-                .message("Lấy danh sách Rubric thành công")
-                .build();
-    }
 
     @GetMapping("/syllabus/{syllabusId}")
     @Operation(summary = "Lấy danh sách Rubric theo Syllabus ID (JSON response)")
@@ -96,16 +79,6 @@ public class RubricController {
                 .body(rubricService.getRubricsBySyllabusIdAsText(syllabusId));
     }
 
-    @PutMapping("/{id}")
-    @Operation(summary = "Cập nhật Rubric theo ID (ghi đè toàn bộ criteria và levels)")
-    public ResponseObject<RubricResponse> updateRubric(@PathVariable String id,
-                                                       @RequestBody RubricRequest request) {
-        return ResponseObject.<RubricResponse>builder()
-                .status(1000)
-                .data(rubricService.updateRubric(id, request))
-                .message("Cập nhật Rubric thành công")
-                .build();
-    }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Xoá Rubric theo ID (kèm toàn bộ criteria và levels)")
@@ -119,47 +92,6 @@ public class RubricController {
 
     // ==================== RUBRIC CRITERION APIs ====================
 
-    @PostMapping("/{rubricId}/criteria")
-    @Operation(summary = "Tạo mới Criterion cho Rubric")
-    public ResponseObject<CriterionResponse> createCriterion(@PathVariable String rubricId,
-                                                              @RequestBody CriterionRequest request) {
-        return ResponseObject.<CriterionResponse>builder()
-                .status(1000)
-                .data(rubricService.createCriterion(rubricId, request))
-                .message("Tạo Criterion thành công")
-                .build();
-    }
-
-    @GetMapping("/criteria/{criterionId}")
-    @Operation(summary = "Lấy thông tin Criterion theo ID")
-    public ResponseObject<CriterionResponse> getCriterionById(@PathVariable String criterionId) {
-        return ResponseObject.<CriterionResponse>builder()
-                .status(1000)
-                .data(rubricService.getCriterionById(criterionId))
-                .message("Lấy Criterion thành công")
-                .build();
-    }
-
-    @PutMapping("/criteria/{criterionId}")
-    @Operation(summary = "Cập nhật Criterion theo ID")
-    public ResponseObject<CriterionResponse> updateCriterion(@PathVariable String criterionId,
-                                                              @RequestBody CriterionRequest request) {
-        return ResponseObject.<CriterionResponse>builder()
-                .status(1000)
-                .data(rubricService.updateCriterion(criterionId, request))
-                .message("Cập nhật Criterion thành công")
-                .build();
-    }
-
-    @DeleteMapping("/criteria/{criterionId}")
-    @Operation(summary = "Xoá Criterion theo ID")
-    public ResponseObject<Void> deleteCriterion(@PathVariable String criterionId) {
-        rubricService.deleteCriterion(criterionId);
-        return ResponseObject.<Void>builder()
-                .status(1000)
-                .message("Xoá Criterion thành công")
-                .build();
-    }
 
     // ==================== RUBRIC LEVEL APIs ====================
 
@@ -214,47 +146,4 @@ public class RubricController {
                 .build();
     }
 
-    // ==================== CRITERIA LEVEL APIs ====================
-
-    @PostMapping("/criteria/{criterionId}/levels")
-    @Operation(summary = "Tạo mới CriteriaLevel (gắn level vào criterion)")
-    public ResponseObject<CriteriaLevelResponse> createCriteriaLevel(@PathVariable String criterionId,
-                                                                       @RequestBody CriteriaLevelRequest request) {
-        return ResponseObject.<CriteriaLevelResponse>builder()
-                .status(1000)
-                .data(rubricService.createCriteriaLevel(criterionId, request))
-                .message("Tạo CriteriaLevel thành công")
-                .build();
-    }
-
-    @GetMapping("/criteria-levels/{id}")
-    @Operation(summary = "Lấy thông tin CriteriaLevel theo ID")
-    public ResponseObject<CriteriaLevelResponse> getCriteriaLevelById(@PathVariable String id) {
-        return ResponseObject.<CriteriaLevelResponse>builder()
-                .status(1000)
-                .data(rubricService.getCriteriaLevelById(id))
-                .message("Lấy CriteriaLevel thành công")
-                .build();
-    }
-
-    @PutMapping("/criteria-levels/{id}")
-    @Operation(summary = "Cập nhật CriteriaLevel theo ID")
-    public ResponseObject<CriteriaLevelResponse> updateCriteriaLevel(@PathVariable String id,
-                                                                       @RequestBody CriteriaLevelRequest request) {
-        return ResponseObject.<CriteriaLevelResponse>builder()
-                .status(1000)
-                .data(rubricService.updateCriteriaLevel(id, request))
-                .message("Cập nhật CriteriaLevel thành công")
-                .build();
-    }
-
-    @DeleteMapping("/criteria-levels/{id}")
-    @Operation(summary = "Xoá CriteriaLevel theo ID")
-    public ResponseObject<Void> deleteCriteriaLevel(@PathVariable String id) {
-        rubricService.deleteCriteriaLevel(id);
-        return ResponseObject.<Void>builder()
-                .status(1000)
-                .message("Xoá CriteriaLevel thành công")
-                .build();
-    }
 }

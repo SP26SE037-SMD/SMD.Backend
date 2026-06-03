@@ -217,16 +217,14 @@ public class SubjectController {
                                 .build();
         }
 
-        @PatchMapping("/curriculum/{curriculum_id}/department/{department_id}/decision")
+        @PatchMapping("/curriculum/{curriculum_id}/decision")
         @PreAuthorize("hasAuthority('SUBJECT_UPDATE')")
         @Operation(summary = "Update Decision Number for all subjects in Curriculum and Department", description = "Cập nhật đồng loạt số quyết định và ngày phê duyệt cho các môn học thuộc Khoa và Khung chương trình cụ thể.")
         public ResponseObject<Integer> updateBulkDecision(
                         @Parameter(description = "ID của Khung chương trình", required = true) @RequestParam UUID curriculumId,
 
-                        @Parameter(description = "ID của Khoa/Bộ môn", required = true) @RequestParam UUID departmentId,
-
                         @Parameter(description = "Số quyết định ban hành", required = true) @RequestParam String decisionNo) {
-                int updatedCount = subjectService.updateDecisionOnly(curriculumId, departmentId, decisionNo);
+                int updatedCount = subjectService.updateDecisionOnly(curriculumId,  decisionNo);
                 return ResponseObject.<Integer>builder()
                                 .status(1000)
                                 .data(updatedCount)

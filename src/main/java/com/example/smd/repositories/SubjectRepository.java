@@ -117,17 +117,15 @@ public interface SubjectRepository extends JpaRepository<Subject, UUID>, JpaSpec
         UPDATE subjects s
         SET decision_no = :decisionNo,
             approved_date = :approvedDate
-        WHERE s.department_id = :departmentId
-        AND s.subject_id IN (
+        WHERE s.subject_id IN (
             SELECT cgs.subject_id
             FROM curriculum_group_subject cgs
-            WHERE cg.curriculum_id = :curriculumId
+            WHERE cgs.curriculum_id = :curriculumId
         )
     """, nativeQuery = true)
     int updateDecisionInfoByCurriculumAndDepartment(
             @Param("decisionNo") String decisionNo,
             @Param("approvedDate") java.time.Instant approvedDate,
-            @Param("curriculumId") UUID curriculumId,
-            @Param("departmentId") UUID departmentId
+            @Param("curriculumId") UUID curriculumId
     );
 }
