@@ -100,6 +100,7 @@ public class SecurityConfig {
                 "http://localhost:3001",
                 "https://smd-syllabus-ebon.vercel.app",
                 "https://api.syllabus.io.vn",
+                "https://smdview.vercel.app",
                 "https://syllabus.io.vn"
         ));
 
