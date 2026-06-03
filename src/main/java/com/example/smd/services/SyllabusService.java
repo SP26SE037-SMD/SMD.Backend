@@ -118,6 +118,35 @@ public class SyllabusService {
         return syllabusMapper.toResponse(syllabusRepository.save(syllabus));
     }
 
+    // 4. Publish Syllabus: APPROVED → PUBLISHED, auto-archive other PUBLISHED of same subject
+    @Transactional
+    public SyllabusResponse publishSyllabus(UUID syllabusId) {
+        Syllabus syllabus = syllabusRepository.findByIdWithSubject(syllabusId)
+                .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
+
+        // Chỉ cho phép publish khi đang ở trạng thái APPROVED
+        if (!SyllabusStatus.APPROVED.toString().equals(syllabus.getStatus())) {
+            throw new AppException(ErrorCode.INVALID_SYLLABUS_STATUS);
+        }
+
+        UUID subjectId = syllabus.getSubject().getSubjectId();
+
+        // Archive tất cả syllabus PUBLISHED khác cùng subject
+        List<Syllabus> publishedSyllabuses = syllabusRepository
+                .findBySubject_SubjectIdAndStatus(subjectId, SyllabusStatus.PUBLISHED.toString());
+
+        for (Syllabus published : publishedSyllabuses) {
+            if (!published.getSyllabusId().equals(syllabusId)) {
+                published.setStatus(SyllabusStatus.ARCHIVED.toString());
+                syllabusRepository.save(published);
+            }
+        }
+
+        // Chuyển syllabus hiện tại sang PUBLISHED
+        syllabus.setStatus(SyllabusStatus.PUBLISHED.toString());
+        return syllabusMapper.toResponse(syllabusRepository.save(syllabus));
+    }
+
     @Transactional
     public void delete(UUID id, String accountId) {
         //Kiểm tra Role tạo

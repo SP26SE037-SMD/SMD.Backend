@@ -168,6 +168,36 @@ public class SyllabusController {
                                 .build();
         }
 
+        @PatchMapping("/{syllabusId}/publish")
+//        @PreAuthorize("hasAuthority('SYLLABUS_UPDATE_STATUS')")
+        @Operation(
+                summary = "Publish a Syllabus (Ban hành Đề cương)",
+                description = "Chuyển trạng thái Đề cương từ **APPROVED** sang **PUBLISHED**. " +
+                        "Trước khi ban hành, hệ thống tự động chuyển tất cả Đề cương **PUBLISHED** khác " +
+                        "cùng môn học sang trạng thái **ARCHIVED**. " +
+                        "Chỉ áp dụng cho Đề cương đang ở trạng thái APPROVED."
+        )
+        public ResponseObject<SyllabusResponse> publishSyllabus(
+                        @PathVariable UUID syllabusId,
+                        @AuthenticationPrincipal Jwt jwt) {
+                String accountId = jwt.getClaimAsString("accountId");
+                var account = accountService.getAccountById(accountId);
+
+                SyllabusResponse response = syllabusService.publishSyllabus(syllabusId);
+
+                SyllabusActionLogRequest logRequest = new SyllabusActionLogRequest();
+                logRequest.setSyllabusId(UUID.fromString(response.getSyllabusId()));
+                logRequest.setActionByEmail(account.getEmail());
+                logRequest.setActionType(SyllabusActionType.PUBLISH.toString());
+                logRequest.setNote("Hệ thống: Ban hành đề cương chính thức cho môn học.");
+                syllabusActionLogService.createLog(logRequest);
+
+                return ResponseObject.<SyllabusResponse>builder()
+                                .data(response)
+                                .message("Syllabus published successfully")
+                                .build();
+        }
+
         @DeleteMapping("/{id}/account/{accountId}")
         @Operation(summary = "Delete syllabus")
         @PreAuthorize("hasAuthority('SYLLABUS_DELETE')")
