@@ -399,7 +399,7 @@ public class SubjectService {
     }
 
     @Transactional
-    public int updateDecisionOnly(UUID curriculumId, UUID departmentId, String decisionNo) {
+    public int updateDecisionOnly(UUID curriculumId, String decisionNo) {
 
         // 1. Kiểm tra mã quyết định không được rỗng
         if (decisionNo == null || decisionNo.trim().isEmpty()) {
@@ -410,17 +410,14 @@ public class SubjectService {
         if (!curriculumRepository.existsById(curriculumId)) {
             throw new AppException(ErrorCode.CURRICULUM_NOT_FOUND);
         }
-        if (!departmentRepository.existsById(departmentId)) {
-            throw new AppException(ErrorCode.DEPARTMENT_NOT_FOUND);
-        }
 
         // 3. Thực hiện cập nhật thông tin pháp lý
         // Mặc định lấy ngày hiện tại làm ngày phê duyệt (Approved Date)
         return subjectRepository.updateDecisionInfoByCurriculumAndDepartment(
                 decisionNo.trim(),
-                java.time.Instant.now(),
-                curriculumId,
-                departmentId);
+                Instant.now(),
+                curriculumId
+        );
     }
 
     @Transactional

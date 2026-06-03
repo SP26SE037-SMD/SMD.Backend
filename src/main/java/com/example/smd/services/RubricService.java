@@ -33,29 +33,6 @@ public class RubricService {
 
     // ===================== RUBRIC CRUD =====================
 
-    @Transactional
-    public RubricResponse createRubric(RubricRequest request) {
-        UUID syllabusId = UUID.fromString(request.getSyllabusId());
-        Syllabus syllabus = syllabusRepository.findById(syllabusId)
-                .orElseThrow(() -> new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION, "Syllabus not found"));
-
-        if (rubricRepository.existsByCode(request.getCode())) {
-            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION, "Rubric code already exists: " + request.getCode());
-        }
-
-        Rubric rubric = Rubric.builder()
-                .syllabus(syllabus)
-                .code(request.getCode())
-                .name(request.getName())
-                .build();
-        rubric = rubricRepository.save(rubric);
-
-        if (request.getCriteria() != null) {
-            saveCriteria(rubric, request.getCriteria());
-        }
-
-        return toRubricResponse(rubricRepository.findById(rubric.getRubricId()).orElseThrow());
-    }
 
     @Transactional
     public RubricResponse getRubricById(String id) {
@@ -64,12 +41,6 @@ public class RubricService {
         return toRubricResponse(rubric);
     }
 
-    @Transactional
-    public List<RubricResponse> getAllRubrics() {
-        return rubricRepository.findAll().stream()
-                .map(this::toRubricResponse)
-                .collect(Collectors.toList());
-    }
 
     @Transactional
     public List<RubricResponse> getRubricsBySyllabusId(String syllabusId) {
@@ -120,38 +91,6 @@ public class RubricService {
         return rubricContent.toString().trim();
     }
 
-    @Transactional
-    public RubricResponse updateRubric(String id, RubricRequest request) {
-        Rubric rubric = rubricRepository.findById(UUID.fromString(id))
-                .orElseThrow(() -> new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION, "Rubric not found"));
-
-        if (!rubric.getCode().equals(request.getCode()) && rubricRepository.existsByCode(request.getCode())) {
-            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION, "Rubric code already exists: " + request.getCode());
-        }
-
-        if (request.getSyllabusId() != null) {
-            UUID syllabusId = UUID.fromString(request.getSyllabusId());
-            Syllabus syllabus = syllabusRepository.findById(syllabusId)
-                    .orElseThrow(() -> new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION, "Syllabus not found"));
-            rubric.setSyllabus(syllabus);
-        }
-
-        rubric.setCode(request.getCode());
-        rubric.setName(request.getName());
-        rubric = rubricRepository.save(rubric);
-
-        if (request.getCriteria() != null) {
-            // Xoá toàn bộ criteria cũ (cascade xoá criteria_level)
-            List<RubricCriterion> oldCriteria = rubricCriterionRepository.findByRubric_RubricIdOrderByDisplayOrderAsc(rubric.getRubricId());
-            for (RubricCriterion criterion : oldCriteria) {
-                criteriaLevelRepository.deleteByCriterion_CriterionId(criterion.getCriterionId());
-            }
-            rubricCriterionRepository.deleteByRubric_RubricId(rubric.getRubricId());
-            saveCriteria(rubric, request.getCriteria());
-        }
-
-        return toRubricResponse(rubricRepository.findById(rubric.getRubricId()).orElseThrow());
-    }
 
     @Transactional
     public void deleteRubric(String id) {
@@ -168,58 +107,7 @@ public class RubricService {
 
     // ===================== RUBRIC CRITERION CRUD =====================
 
-    @Transactional
-    public CriterionResponse createCriterion(String rubricId, CriterionRequest request) {
-        Rubric rubric = rubricRepository.findById(UUID.fromString(rubricId))
-                .orElseThrow(() -> new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION, "Rubric not found"));
 
-        RubricCriterion criterion = RubricCriterion.builder()
-                .rubric(rubric)
-                .code(request.getCode())
-                .criterionName(request.getCriterionName())
-                .weight(request.getWeight())
-                .displayOrder(request.getDisplayOrder())
-                .build();
-        criterion = rubricCriterionRepository.save(criterion);
-
-        if (request.getLevels() != null) {
-            saveCriteriaLevels(criterion, request.getLevels());
-        }
-        return toCriterionResponse(rubricCriterionRepository.findById(criterion.getCriterionId()).orElseThrow());
-    }
-
-    @Transactional
-    public CriterionResponse getCriterionById(String criterionId) {
-        RubricCriterion criterion = rubricCriterionRepository.findById(UUID.fromString(criterionId))
-                .orElseThrow(() -> new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION, "Criterion not found"));
-        return toCriterionResponse(criterion);
-    }
-
-    @Transactional
-    public CriterionResponse updateCriterion(String criterionId, CriterionRequest request) {
-        RubricCriterion criterion = rubricCriterionRepository.findById(UUID.fromString(criterionId))
-                .orElseThrow(() -> new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION, "Criterion not found"));
-
-        criterion.setCode(request.getCode());
-        criterion.setCriterionName(request.getCriterionName());
-        criterion.setWeight(request.getWeight());
-        criterion.setDisplayOrder(request.getDisplayOrder());
-        criterion = rubricCriterionRepository.save(criterion);
-
-        if (request.getLevels() != null) {
-            criteriaLevelRepository.deleteByCriterion_CriterionId(criterion.getCriterionId());
-            saveCriteriaLevels(criterion, request.getLevels());
-        }
-        return toCriterionResponse(rubricCriterionRepository.findById(criterion.getCriterionId()).orElseThrow());
-    }
-
-    @Transactional
-    public void deleteCriterion(String criterionId) {
-        RubricCriterion criterion = rubricCriterionRepository.findById(UUID.fromString(criterionId))
-                .orElseThrow(() -> new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION, "Criterion not found"));
-        criteriaLevelRepository.deleteByCriterion_CriterionId(criterion.getCriterionId());
-        rubricCriterionRepository.delete(criterion);
-    }
 
     // ===================== RUBRIC LEVEL CRUD =====================
 
@@ -267,49 +155,6 @@ public class RubricService {
 
     // ===================== CRITERIA LEVEL CRUD =====================
 
-    @Transactional
-    public CriteriaLevelResponse createCriteriaLevel(String criterionId, CriteriaLevelRequest request) {
-        RubricCriterion criterion = rubricCriterionRepository.findById(UUID.fromString(criterionId))
-                .orElseThrow(() -> new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION, "Criterion not found"));
-
-        RubricLevel level = rubricLevelRepository.findByLevelCode(request.getLevelCode())
-                .orElseThrow(() -> new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION, "RubricLevel with code '" + request.getLevelCode() + "' not found"));
-
-        CriteriaLevel criteriaLevel = CriteriaLevel.builder()
-                .criterion(criterion)
-                .level(level)
-                .description(request.getDescription())
-                .build();
-        criteriaLevel = criteriaLevelRepository.save(criteriaLevel);
-        return toCriteriaLevelResponse(criteriaLevel);
-    }
-
-    @Transactional
-    public CriteriaLevelResponse getCriteriaLevelById(String id) {
-        CriteriaLevel criteriaLevel = criteriaLevelRepository.findById(UUID.fromString(id))
-                .orElseThrow(() -> new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION, "CriteriaLevel not found"));
-        return toCriteriaLevelResponse(criteriaLevel);
-    }
-
-    @Transactional
-    public CriteriaLevelResponse updateCriteriaLevel(String id, CriteriaLevelRequest request) {
-        CriteriaLevel criteriaLevel = criteriaLevelRepository.findById(UUID.fromString(id))
-                .orElseThrow(() -> new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION, "CriteriaLevel not found"));
-
-        RubricLevel level = rubricLevelRepository.findByLevelCode(request.getLevelCode())
-                .orElseThrow(() -> new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION, "RubricLevel with code '" + request.getLevelCode() + "' not found"));
-
-        criteriaLevel.setLevel(level);
-        criteriaLevel.setDescription(request.getDescription());
-        return toCriteriaLevelResponse(criteriaLevelRepository.save(criteriaLevel));
-    }
-
-    @Transactional
-    public void deleteCriteriaLevel(String id) {
-        CriteriaLevel criteriaLevel = criteriaLevelRepository.findById(UUID.fromString(id))
-                .orElseThrow(() -> new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION, "CriteriaLevel not found"));
-        criteriaLevelRepository.delete(criteriaLevel);
-    }
 
     // ===================== PRIVATE HELPERS =====================
 

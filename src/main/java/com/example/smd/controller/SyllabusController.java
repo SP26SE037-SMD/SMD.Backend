@@ -169,7 +169,6 @@ public class SyllabusController {
         }
 
         @PatchMapping("/{syllabusId}/publish")
-//        @PreAuthorize("hasAuthority('SYLLABUS_UPDATE_STATUS')")
         @Operation(
                 summary = "Publish a Syllabus (Ban hành Đề cương)",
                 description = "Chuyển trạng thái Đề cương từ **APPROVED** sang **PUBLISHED**. " +
