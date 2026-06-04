@@ -284,6 +284,7 @@ public enum ErrorCode {
     FEEDBACK_FORM_NOT_FOUND(29020, "Feedback form not found", HttpStatus.NOT_FOUND),
     FEEDBACK_SECTION_NOT_FOUND(29021, "Feedback form section not found", HttpStatus.NOT_FOUND),
     APP_SCRIPT_CALL_FAILED(29022, "Failed to call App Script service", HttpStatus.BAD_GATEWAY),
+    FEEDBACK_FORM_STILL_ACTIVE(29023, "Cannot delete a form that is still active. Please deactivate it first.", HttpStatus.CONFLICT),
 
     // REVIEW TASK
     REVIEW_TASK_NOT_FOUND(30001, "Review task not found", HttpStatus.NOT_FOUND),

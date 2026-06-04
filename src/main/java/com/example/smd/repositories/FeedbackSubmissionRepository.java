@@ -11,13 +11,13 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface FeedbackSubmissionRepository extends JpaRepository<FeedbackSubmission, UUID> {
-    @EntityGraph(attributePaths = {"account", "curriculum", "feedbackAnswers", "feedbackAnswers.question", "feedbackAnswers.selectedOption"})
+    @EntityGraph(attributePaths = {"account", "formRecord", "feedbackAnswers", "feedbackAnswers.question", "feedbackAnswers.selectedOption"})
     @Query("select fs from FeedbackSubmission fs where fs.id = :id")
     Optional<FeedbackSubmission> findDetailedById(@Param("id") UUID id);
 
-    @EntityGraph(attributePaths = {"account", "curriculum", "feedbackAnswers", "feedbackAnswers.question", "feedbackAnswers.selectedOption"})
-    List<FeedbackSubmission> findByCurriculum_CurriculumId(UUID curriculumId);
+    @EntityGraph(attributePaths = {"account", "formRecord", "feedbackAnswers", "feedbackAnswers.question", "feedbackAnswers.selectedOption"})
+    List<FeedbackSubmission> findByFormRecord_Id(UUID formRecordId);
 
-    @EntityGraph(attributePaths = {"account", "curriculum", "feedbackAnswers", "feedbackAnswers.question", "feedbackAnswers.selectedOption"})
+    @EntityGraph(attributePaths = {"account", "formRecord", "feedbackAnswers", "feedbackAnswers.question", "feedbackAnswers.selectedOption"})
     List<FeedbackSubmission> findByAccount_AccountId(UUID accountId);
 }
