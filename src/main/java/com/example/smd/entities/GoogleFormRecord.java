@@ -27,6 +27,10 @@ public class GoogleFormRecord {
     @JoinColumn(name = "curriculum_id", nullable = false)
     Curriculum curriculum;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "department_id", nullable = false)
+    Department department;
+
     @Column(name = "google_form_id", length = 200)
     String googleFormId;
 
