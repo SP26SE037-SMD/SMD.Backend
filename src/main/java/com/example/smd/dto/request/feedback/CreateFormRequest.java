@@ -13,7 +13,8 @@ import java.util.UUID;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class CreateFormRequest {
     UUID curriculumId;
-    String formType;
+    UUID departmentId;
+    String formName;
     String description;
     Instant closeAt;
 }

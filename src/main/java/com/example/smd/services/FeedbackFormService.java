@@ -40,6 +40,7 @@ public class FeedbackFormService {
     final FeedbackSubmissionRepository submissionRepo;
     final FeedbackAnswerRepository answerRepo;
     final CurriculumRepository curriculumRepo;
+    final DepartmentRepository departmentRepo;
     final AccountRepository accountRepository;
 
     final ObjectMapper objectMapper = new ObjectMapper();
@@ -61,16 +62,23 @@ public class FeedbackFormService {
         if (req == null || req.getCurriculumId() == null) {
             throw new AppException(ErrorCode.FEEDBACK_CURRICULUM_ID_REQUIRED);
         }
-        if (req.getFormType() == null || req.getFormType().isBlank()) {
+        if (req.getFormName() == null || req.getFormName().isBlank()) {
             throw new AppException(ErrorCode.FEEDBACK_FORM_TYPE_REQUIRED);
         }
 
         Curriculum curriculum = curriculumRepo.findById(req.getCurriculumId())
                 .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));
 
+        Department department = null;
+        if (req.getDepartmentId() != null) {
+            department = departmentRepo.findById(req.getDepartmentId())
+                    .orElseThrow(() -> new AppException(ErrorCode.DEPARTMENT_NOT_FOUND));
+        }
+
         GoogleFormRecord record = GoogleFormRecord.builder()
                 .curriculum(curriculum)
-                .formType(req.getFormType().trim())
+                .department(department)
+                .formType(req.getFormName().trim())
                 .formDescription(req.getDescription())
                 .closedAt(req.getCloseAt())
                 .isActive(false)
@@ -83,6 +91,17 @@ public class FeedbackFormService {
     @Transactional(readOnly = true)
     public List<FormRecordResponse> getFormsByCurriculum(UUID curriculumId) {
         return formRecordRepo.findByCurriculum_CurriculumId(curriculumId)
+                .stream()
+                .map(this::toFormRecordResponse)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<FormRecordResponse> getFormsByDepartment(UUID departmentId) {
+        if (!departmentRepo.existsById(departmentId)) {
+            throw new AppException(ErrorCode.DEPARTMENT_NOT_FOUND);
+        }
+        return formRecordRepo.findByDepartment_DepartmentId(departmentId)
                 .stream()
                 .map(this::toFormRecordResponse)
                 .toList();
@@ -602,6 +621,10 @@ public class FeedbackFormService {
         return FormRecordResponse.builder()
                 .id(record.getId().toString())
                 .curriculumId(record.getCurriculum().getCurriculumId().toString())
+                .departmentId(record.getDepartment() != null
+                        ? record.getDepartment().getDepartmentId().toString() : null)
+                .departmentName(record.getDepartment() != null
+                        ? record.getDepartment().getDepartmentName() : null)
                 .googleFormId(record.getGoogleFormId())
                 .formUrl(record.getFormUrl())
                 .formEditUrl(record.getEditUrl())

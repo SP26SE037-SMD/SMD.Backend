@@ -35,6 +35,12 @@ public class FeedbackFormController {
         return ResponseEntity.ok(feedbackFormService.getFormsByCurriculum(curriculumId));
     }
 
+    @GetMapping("/by-department")
+    @Operation(summary = "Lay danh sach forms theo department")
+    public ResponseEntity<List<FormRecordResponse>> getFormsByDepartment(@RequestParam UUID departmentId) {
+        return ResponseEntity.ok(feedbackFormService.getFormsByDepartment(departmentId));
+    }
+
     @GetMapping("/{formId}")
     @Operation(summary = "Chi tiet form")
     public ResponseEntity<FormDetailResponse> getFormDetail(@PathVariable UUID formId) {
