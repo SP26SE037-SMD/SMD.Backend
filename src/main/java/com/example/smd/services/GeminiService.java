@@ -454,15 +454,14 @@ public class GeminiService  {
             maxAttempts = 3,
             backoff = @Backoff(delay = 2000) // Thử lại sau 2 giây, tối đa 3 lần
     )
-    public AssessmentCloMappingValidationResult checkAssessmentCloMapping(String assessmentList, String cloList, String currentMapping, String rubricList) {
+    public AssessmentCloMappingValidationResult checkAssessmentCloMapping(String assessmentList, String cloList, String currentMapping) {
         // 1. Lấy ĐÚNG Template dành cho việc Check Compliance
         String template = promptTemplateService.get(PromptKey.ASSESSMENT_CLO_MAPPING_PROMPT);
 
         // 2. Dùng replace để an toàn với ký tự đặc biệt (%)
         String prompt = template.replace("{ASSESSMENT_LIST}", assessmentList)
                 .replace("{CLO_LIST}", cloList)
-                .replace("{CURRENT_MAPPING}", currentMapping)
-                .replace("{RUBRIC_LIST}", rubricList);
+                .replace("{CURRENT_MAPPING}", currentMapping);
 
         // 3. Gọi AI
         String response = gemini.prompt(prompt, apiGenerateUrl);

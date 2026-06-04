@@ -156,7 +156,7 @@ public enum ErrorCode {
     SYLLABUS_NOT_EDITABLE(18003, "Syllabus can only be modified when in DRAFT or REVISION_REQUESTED status", HttpStatus.BAD_REQUEST),
     SYLLABUS_NOT_CREATE(18004, "Subject must be in WAITING_SYLLABUS or COMPLETED status to create a Syllabus", HttpStatus.BAD_REQUEST),
     SAME_SYLLABUS_ID(18005,"Old Syllabus and New Syllabus is the same" ,HttpStatus.BAD_REQUEST ),
-
+    SAVE_COMPARE_SYLLABUS(18006, "Comparisons are only permitted between the latest version and the immediately preceding version.",HttpStatus.BAD_REQUEST),
 
     //CURRICULUM_GROUP_SUBJECT
     CURRICULUM_GROUP_SUBJECT_ALREADY_EXISTS(20001, "This subject is already added to this curriculum", HttpStatus.BAD_REQUEST),

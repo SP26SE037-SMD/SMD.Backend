@@ -8,9 +8,12 @@ import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.dto.response.SessionDiffResponse;
 import com.example.smd.dto.response.syllabus.SyllabusResponse;
 import com.example.smd.dto.response.validate.CompareSyllabusResponse;
+import com.example.smd.entities.Syllabus;
 import com.example.smd.entities.SyllabusComparisonHistory;
 import com.example.smd.enums.SyllabusActionType;
 import com.example.smd.enums.SyllabusStatus;
+import com.example.smd.exception.AppException;
+import com.example.smd.exception.ErrorCode;
 import com.example.smd.services.AccountService;
 import com.example.smd.services.EmbeddingService;
 import com.example.smd.services.SyllabusActionLogService;
@@ -236,16 +239,22 @@ public class SyllabusController {
 
         @PostMapping("/save-compare-version")
         public ResponseObject<SyllabusComparisonHistory> saveComparisonHistory(@RequestBody CompareSyllabusResponse compareSyllabusResponse) {
-//                SyllabusComparisonHistory result = new  SyllabusComparisonHistory();
-//                if(embeddingService.validateLatestAndSubsequentVersions(compareSyllabusResponse.getOldSyllabusId(), compareSyllabusResponse.getNewSyllabusId())) {
-//                        result = embeddingService.saveComparisonHistory(compareSyllabusResponse.getOldSyllabusId(), compareSyllabusResponse.getNewSyllabusId(), compareSyllabusResponse.getAssessmentDiffResponse(), compareSyllabusResponse.getComparisonResult(), compareSyllabusResponse.getSessionDiffResponse());
-//                }
-//                return ResponseObject.<SyllabusComparisonHistory>builder()
-//                        .data(result)
-//                        .message("Save syllabus successfully")
-//                        .build();
-                  return ResponseObject.<SyllabusComparisonHistory>builder()
-                        .data(embeddingService.saveComparisonHistory(compareSyllabusResponse.getOldSyllabusId(), compareSyllabusResponse.getNewSyllabusId(), compareSyllabusResponse.getAssessmentDiffResponse(), compareSyllabusResponse.getComparisonResult(), compareSyllabusResponse.getSessionDiffResponse()))
+                SyllabusComparisonHistory result = new  SyllabusComparisonHistory();
+                if(embeddingService.validateLatestAndSubsequentVersions(compareSyllabusResponse.getOldSyllabusId(), compareSyllabusResponse.getNewSyllabusId())) {
+                        result = embeddingService.saveComparisonHistory(compareSyllabusResponse.getOldSyllabusId(), compareSyllabusResponse.getNewSyllabusId(), compareSyllabusResponse.getAssessmentDiffResponse(), compareSyllabusResponse.getComparisonResult(), compareSyllabusResponse.getSessionDiffResponse());
+                } else {
+                        throw new AppException(ErrorCode.SAVE_COMPARE_SYLLABUS);
+                }
+                return ResponseObject.<SyllabusComparisonHistory>builder()
+                        .data(result)
+                        .message("Save syllabus successfully")
+                        .build();
+        }
+
+        @PostMapping("/validate-compare-version")
+        public ResponseObject<Boolean> validateComparisonHistory(@RequestParam UUID oldSyllabusId, @RequestParam UUID newSyllabusId) {
+                return ResponseObject.<Boolean>builder()
+                        .data(embeddingService.validateLatestAndSubsequentVersions(oldSyllabusId, newSyllabusId))
                         .message("Save syllabus successfully")
                         .build();
         }
