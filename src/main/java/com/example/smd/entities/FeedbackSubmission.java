@@ -26,9 +26,10 @@ public class FeedbackSubmission {
     @JoinColumn(name = "account_id")
     Account account;
 
+
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "curriculum_id")
-    Curriculum curriculum;
+    @JoinColumn(name = "form_id")
+    GoogleFormRecord formRecord;
 
     @OneToMany(mappedBy = "submission", fetch = FetchType.LAZY)
     List<FeedbackAnswer> feedbackAnswers;

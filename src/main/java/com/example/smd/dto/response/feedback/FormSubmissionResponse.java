@@ -14,7 +14,7 @@ import java.util.List;
 public class FormSubmissionResponse {
     String id;
     String accountId;
-    String curriculumId;
+    String formRecordId;
     Instant submittedAt;
     List<FormSubmissionAnswerResponse> answers;
 }

@@ -209,7 +209,34 @@ public class FeedbackFormService {
     @Transactional
     public void deleteForm(UUID formId) {
         GoogleFormRecord record = findFormRecord(formId);
+
+        // Chỉ cho phép xóa khi form chưa được kích hoạt (isActive = false)
+        if (Boolean.TRUE.equals(record.getIsActive())) {
+            throw new AppException(ErrorCode.FEEDBACK_FORM_STILL_ACTIVE);
+        }
+
+        // 1. Lấy danh sách submission thuộc form này
+        List<FeedbackSubmission> submissions = submissionRepo.findByFormRecord_Id(formId);
+        if (!submissions.isEmpty()) {
+            List<UUID> submissionIds = submissions.stream()
+                    .map(FeedbackSubmission::getId)
+                    .toList();
+
+            // 2. Xóa FeedbackAnswer trước (có FK trỏ cả submission_id và selected_option_id)
+            answerRepo.deleteBySubmission_IdIn(submissionIds);
+
+            // 3. Xóa FeedbackSubmission
+            submissionRepo.deleteAll(submissions);
+        }
+
+        // 4. Xóa FormQuestionMapping
+        questionMappingRepo.deleteByFormRecord_Id(formId);
+
+        // 5. Xóa GoogleFormRecord — Hibernate cascade (CascadeType.ALL) tự xóa:
+        //    FeedbackFormSection → FeedbackFormQuestion → FeedbackFormOption
         formRecordRepo.delete(record);
+
+        log.info("Form {} and all related data deleted successfully.", formId);
     }
 
     @Transactional
@@ -464,7 +491,7 @@ public class FeedbackFormService {
 
         FeedbackSubmission submission = FeedbackSubmission.builder()
                 .account(account)
-                .curriculum(formRecord.getCurriculum())
+                .formRecord(formRecord)
                 .build();
         submission = submissionRepo.save(submission);
 
@@ -518,7 +545,7 @@ public class FeedbackFormService {
     public List<FormSubmissionResponse> getSubmissions(UUID formId) {
         GoogleFormRecord record = findFormRecord(formId);
 
-        return submissionRepo.findByCurriculum_CurriculumId(record.getCurriculum().getCurriculumId())
+        return submissionRepo.findByFormRecord_Id(record.getId())
                 .stream()
                 .map(this::toSubmissionResponse)
                 .toList();
@@ -528,7 +555,7 @@ public class FeedbackFormService {
     public FeedbackReportResponse generateReport(UUID formId) {
         GoogleFormRecord record = findFormRecord(formId);
         List<FeedbackSubmission> submissions = submissionRepo
-                .findByCurriculum_CurriculumId(record.getCurriculum().getCurriculumId());
+                .findByFormRecord_Id(record.getId());
 
         Map<UUID, AggregateQuestion> aggregates = new LinkedHashMap<>();
 
@@ -660,8 +687,8 @@ public class FeedbackFormService {
                 .accountId(submission.getAccount() != null && submission.getAccount().getAccountId() != null
                         ? submission.getAccount().getAccountId().toString()
                         : null)
-                .curriculumId(submission.getCurriculum() != null && submission.getCurriculum().getCurriculumId() != null
-                        ? submission.getCurriculum().getCurriculumId().toString()
+                .formRecordId(submission.getFormRecord() != null && submission.getFormRecord().getId() != null
+                        ? submission.getFormRecord().getId().toString()
                         : null)
                 .submittedAt(submission.getSubmittedAt())
                 .answers(answers)
