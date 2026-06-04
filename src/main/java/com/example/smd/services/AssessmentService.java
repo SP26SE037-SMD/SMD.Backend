@@ -342,7 +342,7 @@ public class AssessmentService {
 
         if (finalCount > 2) {
             result.addError("MULTIPLE_FINAL_ASSESSMENTS",
-                    "You cannot have more than 1 final assessment. Currently, there are " + finalCount + ".");
+                    "You cannot have more than 2 final assessment. Currently, there are " + finalCount + ".");
         }
 
         // Ràng buộc B: (Tùy chọn) Khống chế số lượng cột điểm tối đa (Ví dụ: Tối đa 6 bài)
