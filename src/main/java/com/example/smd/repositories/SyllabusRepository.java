@@ -43,4 +43,11 @@ public interface SyllabusRepository extends JpaRepository<Syllabus, UUID> {
     Optional<Syllabus> findByIdWithSubject(@Param("id") UUID id);
 
     List<Syllabus> findBySubject_SubjectIdOrderByCreatedAtDesc(UUID subjectId);
+
+    @Query("SELECT s FROM Syllabus s " +
+            "JOIN FETCH s.subject sub " +       // Nạp chủ động Subject
+            "WHERE sub.subjectId = :subjectId " +
+            "AND s.approvedDate IS NOT NULL " +
+            "ORDER BY s.approvedDate DESC")
+    List<Syllabus> findApprovedSyllabusBySubjectOrderByApprovedDateDesc(@Param("subjectId") UUID subjectId);
 }

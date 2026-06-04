@@ -32,7 +32,6 @@ public class CloAssessmentMappingService {
     SyllabusRepository syllabusRepository;
     SubjectRepository subjectRepository;
     GeminiService geminiService;
-    RubricService rubricService;
 
     @Transactional
     public CloAssessmentMappingResponse createMapping(CloAssessmentMappingRequest request) {
@@ -149,8 +148,8 @@ public class CloAssessmentMappingService {
             String currentMapping = buildAssessmentCloMappingForAI(request);
             String assessmentJsonString = objectMapper.writeValueAsString(assessmentJsonData);
             String cloJsonString = objectMapper.writeValueAsString(cloJsonData);
-            String rubricString = rubricService.getRubricsBySyllabusIdAsText(syllabusId.toString());
-            return geminiService.checkAssessmentCloMapping(assessmentJsonString, cloJsonString, currentMapping, rubricString);
+
+            return geminiService.checkAssessmentCloMapping(assessmentJsonString, cloJsonString, currentMapping);
         } catch (JsonProcessingException e) {
             // Bắn ra lỗi Runtime hoặc Custom Exception của hệ thống bác
             throw new RuntimeException("Lỗi khi parse đối tượng sang JSON String", e);
