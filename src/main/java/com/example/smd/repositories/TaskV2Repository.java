@@ -99,4 +99,8 @@ public interface TaskV2Repository extends JpaRepository<TaskV2, UUID>, JpaSpecif
 
     @Query("SELECT t.targetId FROM TaskV2 t WHERE t.type = :type")
     List<UUID> findTargetIdsByType(@Param("type") String type);
+
+    @Modifying
+    @Query("DELETE FROM TaskV2 t WHERE t.sprint.sprintId IN :sprintIds")
+    void deleteBySprintIds(@Param("sprintIds") List<UUID> sprintIds);
 }
