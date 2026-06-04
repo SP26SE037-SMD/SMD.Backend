@@ -9,5 +9,6 @@ import java.util.UUID;
 
 public interface GoogleFormRecordRepository extends JpaRepository<GoogleFormRecord, UUID> {
     List<GoogleFormRecord> findByCurriculum_CurriculumId(UUID curriculumId);
+    List<GoogleFormRecord> findByDepartment_DepartmentId(UUID departmentId);
     Optional<GoogleFormRecord> findByGoogleFormId(String googleFormId);
 }
