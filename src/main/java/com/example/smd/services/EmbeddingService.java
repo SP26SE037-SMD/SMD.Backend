@@ -1,6 +1,7 @@
 package com.example.smd.services;
 
 import com.example.smd.dto.response.*;
+import com.example.smd.dto.response.syllabus.SyllabusResponse;
 import com.example.smd.dto.response.syllabus.SyllabusStructureResponse;
 import com.example.smd.dto.response.validate.CompareSyllabusResponse;
 import com.example.smd.entities.*;
@@ -295,6 +296,7 @@ public class EmbeddingService {
                 .orElseThrow(() -> new AppException(ErrorCode.AI_HISTORY_NOT_FOUND));
     }
 
+    @Transactional
     public boolean validateLatestAndSubsequentVersions(UUID oldId, UUID newId) {
 
         Syllabus newSyllabus = syllabusRepo.findById(newId)
@@ -302,16 +304,24 @@ public class EmbeddingService {
 
         UUID subjectId = newSyllabus.getSubject().getSubjectId();
 
-        List<Syllabus> versionChain = syllabusRepo.findBySubject_SubjectIdOrderByCreatedAtDesc(subjectId);
-
+        List<Syllabus> versionChain = syllabusRepo.findApprovedSyllabusBySubjectOrderByApprovedDateDesc(subjectId);
+        List<SyllabusResponse> versionChainResponse = versionChain.stream().map(s -> {
+            SyllabusResponse dto = new SyllabusResponse();
+            dto.setSyllabusId(s.getSyllabusId().toString());
+            dto.setSyllabusName(s.getSyllabusName());
+            dto.setStatus(s.getStatus());
+            dto.setCreatedAt(s.getCreatedAt());
+            dto.setApprovedDate(s.getApprovedDate());
+            return dto;
+        }).collect(Collectors.toList());
         // PHÒNG THỦ: Chuỗi phiên bản tối thiểu phải có 2 bản ghi để cấu thành cặp đối chiếu
         if (versionChain.size() < 2) {
             throw new AppException(ErrorCode.SUBJECT_NOT_HAVE_TWO_SYLLABUS);
         }
 
         // 4. Tiến hành kiểm tra thứ hạng (Xác định quán quân và á quân)
-        UUID absoluteNewestId = versionChain.get(0).getSyllabusId();       // Vị trí 0: Mới nhất tuyệt đối
-        UUID absoluteSecondNewestId = versionChain.get(1).getSyllabusId(); // Vị trí 1: Cận cuối
+        UUID absoluteNewestId = versionChain.get(0).getSyllabusId();
+        UUID absoluteSecondNewestId = versionChain.get(1).getSyllabusId();
 
         boolean isNewestValid = newId.equals(absoluteNewestId);
         boolean isOldValid = oldId.equals(absoluteSecondNewestId);
