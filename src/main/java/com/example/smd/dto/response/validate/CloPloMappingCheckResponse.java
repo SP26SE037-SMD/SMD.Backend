@@ -60,10 +60,6 @@ public class CloPloMappingCheckResponse {
         @JsonProperty("clo_code")
         private String cloCode;
 
-        // Sửa 3: Khớp đúng chữ "plo_code" và dùng kiểu String
-        @JsonProperty("plo_code")
-        private String ploCode;
-
         @JsonProperty("warning")
         private String warning;
     }

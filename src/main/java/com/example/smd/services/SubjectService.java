@@ -10,14 +10,18 @@ import com.example.smd.dto.response.subject.ImportSubjectResult;
 import com.example.smd.entities.Department;
 import com.example.smd.entities.ProposedSource;
 import com.example.smd.entities.Subject;
+import com.example.smd.entities.Syllabus;
 import com.example.smd.enums.RoleName;
 import com.example.smd.enums.SubjectStatus;
+import com.example.smd.enums.SyllabusStatus;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.PrerequisiteMapper;
 import com.example.smd.mapper.SubjectMapper;
 import com.example.smd.repositories.*;
 import com.example.smd.services.excelService.ExcelImporter;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
@@ -34,11 +38,8 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -82,37 +83,24 @@ public class SubjectService {
 
     @Transactional
     public Page<SubjectResponse> getAll(String search, String searchBy, String status, UUID departmentId,
-            Pageable pageable, String accountId) {
+                                        Pageable pageable, String accountId) {
 
-        // 1. Lấy Account và xử lý phân quyền NGAY TẠI ĐẦU HÀM (Ngoài Specification)
+        // 1. Lấy Account và xử lý phân quyền tại đầu hàm
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
 
-        // Chuẩn hóa status
+        // Chuẩn hóa status của Subject
         String finalStatus = (status == null || status.trim().isEmpty() || status.equalsIgnoreCase("all"))
                 ? null
                 : status.trim().toUpperCase();
 
-        // Ép buộc Role thấp chỉ được xem PUBLISHED
-        if (RoleName.STUDENT.toString().equals(roleName) || RoleName.LECTURER.toString().equals(roleName)) {
-            if (!SubjectStatus.COMPLETED.toString().equals(finalStatus)) {
-                throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
-            }
-        }
-
-        if (SubjectStatus.DRAFT.toString().equals(finalStatus)) {
-            if (!RoleName.HOCFDC.toString().equals(account.getRole().getRoleName())) {
-                throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
-            }
-        }
-
-        // Biến finalStatus này sẽ được dùng trong closure của Specification
         final String effectiveStatus = finalStatus;
 
+        // --- BƯỚC A: ĐỊNH NGHĨA SPECIFICATION (CHỈ LÀM NHIỆM VỤ LỌC - KHÔNG FETCH) ---
         Specification<Subject> spec = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
-            // A. Search Logic (Code hoặc Name)
+            // 1. Search Logic (Code hoặc Name)
             if (search != null && !search.trim().isEmpty()) {
                 String searchPattern = "%" + search.trim().toLowerCase() + "%";
                 if ("name".equalsIgnoreCase(searchBy)) {
@@ -120,31 +108,67 @@ public class SubjectService {
                 } else if ("code".equalsIgnoreCase(searchBy)) {
                     predicates.add(cb.like(cb.lower(root.get("subjectCode")), searchPattern));
                 } else {
-                    // Mặc định search cả 2 nếu searchBy không xác định
                     predicates.add(cb.or(
                             cb.like(cb.lower(root.get("subjectName")), searchPattern),
                             cb.like(cb.lower(root.get("subjectCode")), searchPattern)));
                 }
             }
 
-            // B. Filter by Status (Sử dụng biến effectiveStatus đã xử lý phân quyền)
+            // 2. Filter by Status của Subject
             if (effectiveStatus != null) {
                 predicates.add(cb.equal(root.get("status"), effectiveStatus));
             }
 
-            // C. Filter by Department ID
+            // 3. Filter by Department ID
             if (departmentId != null) {
                 predicates.add(cb.equal(root.get("department").get("departmentId"), departmentId));
+            }
+
+            // 4. Ép buộc Role thấp chỉ được xem các Subject có ít nhất 1 syllabus PUBLISHED
+            if (RoleName.STUDENT.toString().equals(roleName) || RoleName.LECTURER.toString().equals(roleName)) {
+                Join<Subject, Syllabus> syllabusJoin = root.join("syllabuses", JoinType.INNER);
+
+                // Ép cả 2 vế về chữ thường (.toLowerCase()) để chắc chắn khớp dữ liệu hoa/thường dưới DB
+                String publishedStatusLower = SyllabusStatus.PUBLISHED.toString().toLowerCase();
+                predicates.add(cb.equal(cb.lower(syllabusJoin.get("status")), publishedStatusLower));
+            }
+
+            // Bắt buộc phải có DISTINCT cho câu query lấy data để tránh trùng lặp Subject khi INNER JOIN
+            if (query.getResultType() != Long.class && query.getResultType() != long.class) {
+                query.distinct(true);
             }
 
             return cb.and(predicates.toArray(new Predicate[0]));
         };
 
-        // 2. Query và Map sang Response
-        return subjectRepository.findAll(spec, pageable).map(subject -> {
+        // --- BƯỚC B: TRUY VẤN PHÂN TRANG BAN ĐẦU ---
+        Page<Subject> subjectPage = subjectRepository.findAll(spec, pageable);
+
+        if (subjectPage.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        // --- BƯỚC C: NẠP DATA (EAGER LOAD) CHO ĐÚNG TRANG ĐÓ ---
+        // Gom tất cả ID của trang hiện tại lại
+        List<UUID> subjectIds = subjectPage.getContent().stream()
+                .map(Subject::getSubjectId)
+                .toList();
+
+        // Gọi hàm chuyên dụng nạp kèm department và clos thông qua @EntityGraph
+        List<Subject> subjectsWithData = subjectRepository.findBySubjectIdIn(subjectIds);
+
+        // Đưa vào Map để tìm kiếm nhanh theo ID
+        Map<UUID, Subject> subjectMapById = subjectsWithData.stream()
+                .collect(Collectors.toMap(Subject::getSubjectId, s -> s));
+
+        // --- BƯỚC D: MAP SANG RESPONSE DTO ---
+        return subjectPage.map(pureSubject -> {
+            // Lấy đối tượng Subject đã có đầy đủ data department và clos từ Map
+            Subject subject = subjectMapById.getOrDefault(pureSubject.getSubjectId(), pureSubject);
+
             SubjectResponse response = subjectMapper.toSubjectResponse(subject);
 
-            // 3. Xử lý Prerequisites (Vẫn dùng repository hiện tại của bạn)
+            // Xử lý Prerequisites
             List<PrerequisiteResponse> prerequisites = prerequisiteRepository
                     .findBySubject_SubjectId(subject.getSubjectId())
                     .stream()
@@ -152,7 +176,7 @@ public class SubjectService {
                     .toList();
             response.setPreRequisite(prerequisites);
 
-            // 4. Bổ sung danh sách tài liệu tham khảo
+            // Bổ sung danh sách tài liệu tham khảo
             response.setSources(fetchSources(subject.getSubjectId()));
 
             return response;
