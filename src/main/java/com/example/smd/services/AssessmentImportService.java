@@ -41,6 +41,32 @@ public class AssessmentImportService {
     private static final String CATEGORY_FORMATIVE = "FORMATIVE";
     private static final String CATEGORY_SUMMATIVE = "SUMMATIVE";
 
+    /**
+     * Bảng quy tắc: Type (viết hoa) → tập Question Type hợp lệ (viết hoa).
+     *
+     * <pre>
+     * Formative:
+     *   QUIZ         → Multiple Choice, Essay
+     *   LAB          → Practical Exam, Assignment
+     *   PRESENTATION → Presentation
+     *
+     * Summative:
+     *   MIDTERM → Multiple Choice, Essay, Case Study
+     *   PROJECT → Project-based
+     *   FINAL   → Practical Exam, Essay, Case Study, Multiple Choice
+     * </pre>
+     */
+    private static final Map<String, Set<String>> ALLOWED_QUESTION_TYPES_BY_TYPE = Map.of(
+            // ── Formative ──
+            "QUIZ",         Set.of("MULTIPLE CHOICE", "ESSAY"),
+            "LAB",          Set.of("PRACTICAL EXAM", "ASSIGNMENT"),
+            "PRESENTATION", Set.of("PRESENTATION"),
+            // ── Summative ──
+            "MIDTERM",      Set.of("MULTIPLE CHOICE", "ESSAY", "CASE STUDY"),
+            "PROJECT",      Set.of("PROJECT-BASED"),
+            "FINAL",        Set.of("PRACTICAL EXAM", "ESSAY", "CASE STUDY", "MULTIPLE CHOICE")
+    );
+
     // ─── Dependencies ─────────────────────────────────────────────────────
     private final SyllabusRepository syllabusRepository;
     private final CLOsRepository closRepository;
@@ -91,13 +117,16 @@ public class AssessmentImportService {
 
         // ── Bước 2: Validate (gom lỗi) ────────────────────────────────────
 
-        // 2a. Validate Category & Type theo quy tắc Formative/Summative
+        // 2a. Validate Category & Type & Question Type
         validateCategoryTypePairs(rows, result);
 
-        // 2b. Validate CLO-Mapping — CLO phải thuộc Subject
+        // 2b. Validate kiểu số: Part, Weight, Duration phải là số hợp lệ
+        validateNumericFields(rows, result);
+
+        // 2c. Validate CLO-Mapping — CLO phải thuộc Subject
         validateCloMappings(rows, subjectId, result);
 
-        // 2c. Validate tổng Weight == 100
+        // 2d. Validate tổng Weight == 100 (chỉ chạy nếu format đã đúng)
         validateTotalWeight(rows, result);
 
         // ── Bước 3: Nếu có lỗi → Return sớm, KHÔNG lưu DB ───────────────
@@ -147,61 +176,198 @@ public class AssessmentImportService {
     }
 
     // ═══════════════════════════════════════════════════════════════════ //
-    //                     STEP 2a: VALIDATE CATEGORY / TYPE             //
+    //           STEP 2a: VALIDATE CATEGORY / TYPE / QUESTION TYPE       //
     // ═══════════════════════════════════════════════════════════════════ //
 
     /**
-     * Kiểm tra từng dòng: Category và Type phải hợp lệ và đúng cặp.
-     * <ul>
-     *   <li>Formative  → Type phải thuộc {Lab, Presentation, Quiz}</li>
-     *   <li>Summative → Type phải thuộc {Final, Midterm, Project}</li>
-     * </ul>
+     * Validate toàn bộ 3 tầng: Category → Type → Question Type.
+     *
+     * <p>Quy tắc đầy đủ:
+     * <pre>
+     * Formative:
+     *   Quiz         → Question Type ∈ {Multiple Choice, Essay}
+     *   Lab          → Question Type ∈ {Practical Exam, Assignment}
+     *   Presentation → Question Type ∈ {Presentation}
+     *
+     * Summative:
+     *   Midterm → Question Type ∈ {Multiple Choice, Essay, Case Study}
+     *   Project → Question Type ∈ {Project-based}
+     *   Final   → Question Type ∈ {Practical Exam, Essay, Case Study, Multiple Choice}
+     * </pre>
+     *
+     * <p>Chiến lược gom lỗi: lỗi Type chặn validate Question Type ở dòng đó
+     * (không có ý nghĩa khi Type đã sai).
      */
     private void validateCategoryTypePairs(List<AssessmentImportDTO> rows, AssessmentImportResult result) {
         for (AssessmentImportDTO row : rows) {
-            String cat  = (row.getCategory() == null ? "" : row.getCategory().trim()).toUpperCase();
-            String type = (row.getType()     == null ? "" : row.getType().trim()).toUpperCase();
+            String cat          = normalise(row.getCategory());
+            String type         = normalise(row.getType());
+            String questionType = normalise(row.getQuestionType());
 
-            // Validate trường bắt buộc không được rỗng
+            // ── 1. Validate trường bắt buộc ──────────────────────────────
             if (cat.isBlank()) {
                 result.addError("MISSING_REQUIRED_FIELD",
                         String.format("Row %d: Column 'Category' is required.", row.getRowNumber()),
                         row.getRowNumber());
-                continue;
+                continue; // không thể validate tiếp khi Category rỗng
             }
             if (type.isBlank()) {
                 result.addError("MISSING_REQUIRED_FIELD",
                         String.format("Row %d: Column 'Type' is required.", row.getRowNumber()),
                         row.getRowNumber());
-                continue;
+                continue; // không thể validate Question Type khi Type rỗng
             }
 
-            // Validate cặp Category – Type
-            if (CATEGORY_FORMATIVE.equals(cat)) {
-                if (!FORMATIVE_TYPES.contains(type)) {
-                    result.addError("CATEGORY_TYPE_MISMATCH",
-                            String.format("Row %d: Category 'Formative' requires Type to be one of %s, but got '%s'.",
-                                    row.getRowNumber(), FORMATIVE_TYPES, row.getType()),
-                            row.getRowNumber());
-                }
-            } else if (CATEGORY_SUMMATIVE.equals(cat)) {
-                if (!SUMMATIVE_TYPES.contains(type)) {
-                    result.addError("CATEGORY_TYPE_MISMATCH",
-                            String.format("Row %d: Category 'Summative' requires Type to be one of %s, but got '%s'.",
-                                    row.getRowNumber(), SUMMATIVE_TYPES, row.getType()),
-                            row.getRowNumber());
-                }
-            } else {
+            // ── 2. Validate Category phải là Formative hoặc Summative ─────
+            boolean isFormative = CATEGORY_FORMATIVE.equals(cat);
+            boolean isSummative = CATEGORY_SUMMATIVE.equals(cat);
+
+            if (!isFormative && !isSummative) {
                 result.addError("INVALID_CATEGORY",
                         String.format("Row %d: Unknown Category '%s'. Expected 'Formative' or 'Summative'.",
                                 row.getRowNumber(), row.getCategory()),
                         row.getRowNumber());
+                continue; // Category sai → không validate Type/QuestionType nữa
+            }
+
+            // ── 3. Validate cặp Category → Type ──────────────────────────
+            Set<String> allowedTypes = isFormative ? FORMATIVE_TYPES : SUMMATIVE_TYPES;
+            if (!allowedTypes.contains(type)) {
+                result.addError("CATEGORY_TYPE_MISMATCH",
+                        String.format("Row %d: Category '%s' requires Type to be one of %s, but got '%s'.",
+                                row.getRowNumber(),
+                                row.getCategory(),
+                                formatAllowedSet(allowedTypes),
+                                row.getType()),
+                        row.getRowNumber());
+                // Type đã sai → validate Question Type sẽ vô nghĩa, skip
+                continue;
+            }
+
+            // ── 4. Validate Question Type theo Type ───────────────────────
+            if (!questionType.isBlank()) {
+                Set<String> allowedQTypes = ALLOWED_QUESTION_TYPES_BY_TYPE.getOrDefault(type, Set.of());
+                if (!allowedQTypes.contains(questionType)) {
+                    result.addError("QUESTION_TYPE_MISMATCH",
+                            String.format(
+                                    "Row %d: Type '%s' requires Question Type to be one of %s, but got '%s'.",
+                                    row.getRowNumber(),
+                                    row.getType(),
+                                    formatAllowedSet(allowedQTypes),
+                                    row.getQuestionType()),
+                            row.getRowNumber());
+                }
+            }
+            // Question Type có thể để trống — không bắt buộc ở tầng này
+        }
+    }
+
+    // ─── Helpers dùng riêng cho validate ─────────────────────────────────
+
+    /**
+     * Chuẩn hoá chuỗi: trim + toUpperCase. Trả về chuỗi rỗng nếu null.
+     * Dùng để so sánh không phân biệt hoa thường và khoảng trắng thừa.
+     */
+    private String normalise(String raw) {
+        return raw == null ? "" : raw.trim().toUpperCase();
+    }
+
+    /**
+     * Format tập hợp thành chuỗi dạng [A, B, C] có chữ hoa đầu mỗi từ
+     * để thông báo lỗi thân thiện với người dùng.
+     */
+    private String formatAllowedSet(Set<String> keys) {
+        return keys.stream()
+                .map(k -> Arrays.stream(k.split(" "))
+                        .map(w -> w.substring(0, 1).toUpperCase() + w.substring(1).toLowerCase())
+                        .collect(Collectors.joining(" ")))
+                .sorted()
+                .collect(Collectors.joining(", ", "[", "]"));
+    }
+
+    // ═══════════════════════════════════════════════════════════════════ //
+    //              STEP 2b: VALIDATE NUMERIC FIELDS                     //
+    // ═══════════════════════════════════════════════════════════════════ //
+
+    /**
+     * Kiểm tra các cột số bắt buộc/tùy chọn phải có định dạng số hợp lệ.
+     *
+     * <ul>
+     *   <li><b>Weight</b>   — bắt buộc, phải là số thực dương (VD: 30, 30.5)</li>
+     *   <li><b>Part</b>     — tùy chọn, nếu có thì phải là số nguyên dương</li>
+     *   <li><b>Duration</b> — tùy chọn, nếu có thì phải là số nguyên dương</li>
+     * </ul>
+     *
+     * <p>Gom toàn bộ lỗi trên tất cả các dòng trước khi trả về —
+     * không dừng sớm ({@code return}) sau lỗi đầu tiên.
+     */
+    private void validateNumericFields(List<AssessmentImportDTO> rows, AssessmentImportResult result) {
+        for (AssessmentImportDTO row : rows) {
+            int rowNo = row.getRowNumber();
+
+            // ── Weight: bắt buộc, số thực dương ─────────────────────────
+            String weightRaw = row.getWeight();
+            if (weightRaw == null || weightRaw.isBlank()) {
+                result.addError("MISSING_REQUIRED_FIELD",
+                        String.format("Row %d: Column 'Weight' is required.", rowNo),
+                        rowNo);
+            } else {
+                try {
+                    double w = Double.parseDouble(weightRaw.trim());
+                    if (w <= 0) {
+                        result.addError("INVALID_WEIGHT",
+                                String.format("Row %d: Weight must be a positive number, but got '%s'.", rowNo, weightRaw.trim()),
+                                rowNo);
+                    }
+                } catch (NumberFormatException e) {
+                    result.addError("INVALID_WEIGHT_FORMAT",
+                            String.format("Row %d: Weight '%s' is not a valid number (only digits and '.' are allowed).",
+                                    rowNo, weightRaw.trim()),
+                            rowNo);
+                }
+            }
+
+            // ── Part: tùy chọn, nếu có thì phải là số nguyên dương ──────
+            String partRaw = row.getPart();
+            if (partRaw != null && !partRaw.isBlank()) {
+                try {
+                    int p = Integer.parseInt(partRaw.trim());
+                    if (p <= 0) {
+                        result.addError("INVALID_PART",
+                                String.format("Row %d: Part must be a positive integer, but got '%s'.", rowNo, partRaw.trim()),
+                                rowNo);
+                    }
+                } catch (NumberFormatException e) {
+                    result.addError("INVALID_PART_FORMAT",
+                            String.format("Row %d: Part '%s' is not a valid integer (only digits are allowed).",
+                                    rowNo, partRaw.trim()),
+                            rowNo);
+                }
+            }
+
+            // ── Duration: tùy chọn, nếu có thì phải là số nguyên dương ──
+            String durationRaw = row.getDuration();
+            if (durationRaw != null && !durationRaw.isBlank()) {
+                try {
+                    int d = Integer.parseInt(durationRaw.trim());
+                    if (d <= 0) {
+                        result.addError("INVALID_DURATION",
+                                String.format("Row %d: Duration must be a positive integer (minutes), but got '%s'.",
+                                        rowNo, durationRaw.trim()),
+                                rowNo);
+                    }
+                } catch (NumberFormatException e) {
+                    result.addError("INVALID_DURATION_FORMAT",
+                            String.format("Row %d: Duration '%s' is not a valid integer (only digits are allowed).",
+                                    rowNo, durationRaw.trim()),
+                            rowNo);
+                }
             }
         }
     }
 
     // ═══════════════════════════════════════════════════════════════════ //
-    //                     STEP 2b: VALIDATE CLO MAPPING                 //
+    //                     STEP 2c: VALIDATE CLO MAPPING                 //
     // ═══════════════════════════════════════════════════════════════════ //
 
     /**
@@ -232,34 +398,26 @@ public class AssessmentImportService {
     }
 
     // ═══════════════════════════════════════════════════════════════════ //
-    //                     STEP 2c: VALIDATE TOTAL WEIGHT                //
+    //                     STEP 2d: VALIDATE TOTAL WEIGHT                //
     // ═══════════════════════════════════════════════════════════════════ //
 
     /**
      * Tính tổng cột Weight của toàn bộ các dòng import.
+     * Bước này chỉ chạy SAU KHI {@link #validateNumericFields} đã pass,
+     * nên {@code Double.parseDouble} ở đây sẽ không throw exception.
      * Báo lỗi tổng quan (rowNumber = -1) nếu tổng ≠ 100.
      */
     private void validateTotalWeight(List<AssessmentImportDTO> rows, AssessmentImportResult result) {
-        double total = 0.0;
+        // Nếu đã có lỗi format số ở bước trước → skip (tổng không có ý nghĩa)
+        boolean hasNumericError = result.getErrors().stream()
+                .anyMatch(e -> e.getCode().startsWith("INVALID_WEIGHT") || e.getCode().equals("MISSING_REQUIRED_FIELD"));
+        if (hasNumericError) return;
 
-        for (AssessmentImportDTO row : rows) {
-            if (row.getWeight() == null || row.getWeight().isBlank()) {
-                result.addError("MISSING_REQUIRED_FIELD",
-                        String.format("Row %d: Column 'Weight' is required.", row.getRowNumber()),
-                        row.getRowNumber());
-                return; // Không thể tính tổng nếu có dòng thiếu weight
-            }
-            try {
-                total += Double.parseDouble(row.getWeight().trim());
-            } catch (NumberFormatException e) {
-                result.addError("INVALID_WEIGHT_FORMAT",
-                        String.format("Row %d: Weight '%s' is not a valid number.", row.getRowNumber(), row.getWeight()),
-                        row.getRowNumber());
-                return;
-            }
-        }
+        double total = rows.stream()
+                .mapToDouble(row -> Double.parseDouble(row.getWeight().trim()))
+                .sum();
 
-        // Làm tròn để tránh lỗi floating-point (VD: 99.99999999)
+        // Làm tròn 2 chữ số thập phân để tránh lỗi floating-point (VD: 99.99999999)
         double rounded = Math.round(total * 100.0) / 100.0;
         if (rounded != 100.0) {
             result.addError("WEIGHT_NOT_100",
