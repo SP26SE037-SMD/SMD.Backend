@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,6 +23,9 @@ public class SessionValidationResult {
     @Builder.Default
     private List<ValidationError> errors = new ArrayList<>();
 
+    @Builder.Default
+    private List<ContentLineValidationError> warnings = new ArrayList<>();
+
     // Thống kê số tiết còn dư/thiếu để Frontend hiển thị UI
     private RemainingQuota remainingQuotas;
 
@@ -32,10 +36,6 @@ public class SessionValidationResult {
         this.isValid = false; // Tự động chuyển thành false khi có lỗi
     }
 
-    public void addError(String code, String message, Integer week) {
-        this.errors.add(new ValidationError(code, message, week));
-        this.isValid = false;
-    }
 
     // ================= CLASS CON (INNER CLASSES) ================= //
 
@@ -56,5 +56,18 @@ public class SessionValidationResult {
         private int theory;      // Số tiết lý thuyết còn lại cần phân bổ
         private int practice;    // Số tiết thực hành còn lại cần phân bổ
         private int selfStudy;   // (Tùy chọn) Số giờ tự học còn lại
+    }
+
+    @Data
+    @Builder
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class ContentLineValidationError {
+        private String code;
+        private String message;
+        private Integer sessionNumber;
+        private Integer lineIndex;
+        private String lineContent;
+        private Double similarityScore;
     }
 }
