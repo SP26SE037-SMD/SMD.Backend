@@ -626,6 +626,7 @@ public class TaskV2Service {
                     .taskName(subject.getSubjectCode() + " - " + subject.getSubjectName())
                     .description("Create Syllabus and CLOs of " + subject.getSubjectCode())
                     .priority(Priority.HIGH.toString())
+                    .dueDate(LocalDate.from(sprint.getEndDate()))
                     .build();
 
             task.setSprint(sprint);

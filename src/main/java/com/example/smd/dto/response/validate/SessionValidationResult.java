@@ -62,7 +62,7 @@ public class SessionValidationResult {
     @Builder
     @AllArgsConstructor
     @NoArgsConstructor
-    public class ContentLineValidationError {
+    public static class ContentLineValidationError {
         private String code;
         private String message;
         private Integer sessionNumber;

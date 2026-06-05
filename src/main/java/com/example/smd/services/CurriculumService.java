@@ -53,6 +53,8 @@ public class CurriculumService {
     CurriculumGroupSubjectRepository curriculumGroupSubjectRepository;
     CLOsRepository closRepository;
     SyllabusRepository syllabusRepository;
+    SprintRepository sprintRepository;
+    TaskV2Repository taskV2Repository;
 
     /**
      * Lấy danh sách curriculum với phân trang và bộ lọc
@@ -531,7 +533,7 @@ public class CurriculumService {
 
     @Transactional
     public void delete(UUID id, String accountId) {
-        // Kiểm tra Role tạo
+        // Kiểm tra Role
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
         if (!RoleName.HOCFDC.toString().equals(roleName)) {
@@ -542,10 +544,36 @@ public class CurriculumService {
                 .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));
 
         if (CurriculumStatus.DRAFT.toString().equals(curriculum.getStatus())) {
+            // 1. Xóa PO_PLO_Mapping liên quan đến các PLO của curriculum này
+            poPloMappingRepository.deleteAll(
+                    poPloMappingRepository.findByPlo_Curriculum_CurriculumId(id)
+            );
+
+            // 2. Xóa toàn bộ PLOs thuộc curriculum
+            List<PLOs> plos = plOsRepository.findByCurriculum_CurriculumId(id);
+            if (!plos.isEmpty()) {
+                plOsRepository.deleteAll(plos);
+            }
+
+            // 3. Xóa TaskV2 thuộc các Sprint của curriculum
+            List<Sprint> sprints = sprintRepository.findAllByCurriculum_CurriculumId(id);
+            if (!sprints.isEmpty()) {
+                List<UUID> sprintIds = sprints.stream()
+                        .map(Sprint::getSprintId)
+                        .toList();
+                taskV2Repository.deleteBySprintIds(sprintIds);
+
+                // 4. Xóa các Sprint thuộc curriculum
+                sprintRepository.deleteAll(sprints);
+            }
+
+            // 5. Xóa curriculum
             curriculumRepository.delete(curriculum);
+            log.info("Curriculum {} and all related data deleted successfully.", id);
         } else {
             curriculum.setStatus(CurriculumStatus.ARCHIVED.toString());
             curriculumRepository.save(curriculum);
+            log.info("Curriculum {} archived (status set to ARCHIVED).", id);
         }
     }
 

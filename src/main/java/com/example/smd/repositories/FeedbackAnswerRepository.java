@@ -8,4 +8,6 @@ import java.util.UUID;
 
 public interface FeedbackAnswerRepository extends JpaRepository<FeedbackAnswer, UUID> {
     List<FeedbackAnswer> findBySubmission_Id(UUID submissionId);
+
+    void deleteBySubmission_IdIn(List<UUID> submissionIds);
 }

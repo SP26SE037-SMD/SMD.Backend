@@ -13,6 +13,8 @@ import java.time.Instant;
 public class FormRecordResponse {
     String id;
     String curriculumId;
+    String departmentId;
+    String departmentName;
     String googleFormId;
     String formUrl;
     String formEditUrl;

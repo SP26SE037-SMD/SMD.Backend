@@ -44,4 +44,13 @@ public interface SessionRepository extends JpaRepository<Session, UUID>, JpaSpec
     @Override
     @EntityGraph(attributePaths = {"syllabus"})
     Page<Session> findAll(@Nullable Specification<Session> spec, Pageable pageable);
+
+    /**
+     * Xóa toàn bộ Session thuộc về một Syllabus.
+     * Dùng trong luồng Import Excel theo kiểu "Replace" (xóa cũ, thêm mới).
+     * Được gọi bên trong @Transactional nên không cần @Modifying riêng.
+     */
+    @Modifying
+    @Query("DELETE FROM Session s WHERE s.syllabus.syllabusId = :syllabusId")
+    void deleteAllBySyllabus_SyllabusId(@Param("syllabusId") UUID syllabusId);
 }

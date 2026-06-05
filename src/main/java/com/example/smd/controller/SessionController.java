@@ -5,6 +5,7 @@ import com.example.smd.dto.request.session.SessionNumberListRequest;
 import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.ResponseObject;
 import com.example.smd.dto.response.SessionResponse;
+import com.example.smd.dto.response.validate.SessionImportResult;
 import com.example.smd.dto.response.validate.SessionValidationResult;
 import com.example.smd.services.SessionService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -12,13 +13,18 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
+
 
 @Tag(name = "Session", description = "Session Management APIs")
 @RestController
@@ -154,4 +160,63 @@ public class  SessionController {
                 .message("Validate session successfully")
                 .build();
     }
+
+    // ------------------------------------------------------------------ //
+    //                      IMPORT FROM EXCEL                             //
+    // ------------------------------------------------------------------ //
+
+    @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAuthority('SYLLABUS_UPDATE')")
+    @Operation(
+            summary = "Import danh sách Session từ file Excel",
+            description = """
+                    Upload file Excel (.xlsx) để import hàng loạt Session vào một Syllabus.
+                    
+                    **Cấu trúc file Excel (bắt đầu từ dòng 2, dòng 1 là header):**
+                    | Cột 0 | Cột 1 | Cột 2 | Cột 3 | Cột 4 | Cột 5 |
+                    |---|---|---|---|---|---|
+                    | Session Number | Title | Teaching Methods | Topic | Type | CLO-Mapping |
+                    
+                    - **Type**: THEORY | PRACTICE | SELF_STUDY
+                    - **CLO-Mapping**: Các mã CLO cách nhau bởi dấu phẩy, VD: `CLO1, CLO2`
+                    
+                    **Luồng xử lý:**
+                    1. Đọc và parse dữ liệu Excel.
+                    2. Validate CLO — kiểm tra mã CLO có hợp lệ với Subject không.
+                    3. Validate Quota — kiểm tra tổng tiết lý thuyết/thực hành so với quy định.
+                    4. Nếu có lỗi → trả về **HTTP 400** với danh sách lỗi chi tiết, KHÔNG lưu DB.
+                    5. Nếu hợp lệ → xóa Session cũ (Replace mode) và lưu mới vào DB.
+                    
+                    **Response khi lỗi (HTTP 400):** `isValid = false`, `errors` chứa danh sách lỗi.
+                    **Response khi thành công (HTTP 200):** `isValid = true`, `savedCount` = số session đã lưu.
+                    """
+    )
+    public ResponseEntity<ResponseObject<SessionImportResult>> importSessions(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("syllabusId") UUID syllabusId,
+            @RequestParam("subjectId") UUID subjectId) {
+
+        SessionImportResult result = sessionService.importSessionsFromExcel(file, syllabusId, subjectId);
+
+        if (!result.isValid()) {
+            // Có lỗi validate → trả về 400 Bad Request kèm chi tiết lỗi
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(ResponseObject.<SessionImportResult>builder()
+                            .status(4000)
+                            .message("Import failed due to validation errors. No data was saved.")
+                            .data(result)
+                            .build());
+        }
+
+        // Thành công → 200 OK
+        return ResponseEntity.ok(
+                ResponseObject.<SessionImportResult>builder()
+                        .status(1000)
+                        .message("Import successful. " + result.getSavedCount() + " session(s) saved.")
+                        .data(result)
+                        .build()
+        );
+    }
 }
+

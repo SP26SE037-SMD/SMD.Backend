@@ -1,13 +1,13 @@
 package com.example.smd.services;
 
+import jakarta.persistence.criteria.Predicate;
+import com.example.smd.dto.excel.SessionImportDTO;
 import com.example.smd.dto.request.session.SessionRequest;
 import com.example.smd.dto.request.session.SessionNumberListRequest;
 import com.example.smd.dto.response.SessionResponse;
+import com.example.smd.dto.response.validate.SessionImportResult;
 import com.example.smd.dto.response.validate.SessionValidationResult;
-import com.example.smd.entities.Blocks;
-import com.example.smd.entities.Session;
-import com.example.smd.entities.Subject;
-import com.example.smd.entities.Syllabus;
+import com.example.smd.entities.*;
 import com.example.smd.enums.*;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
@@ -16,9 +16,7 @@ import com.example.smd.repositories.BlockRepository;
 import com.example.smd.repositories.SessionRepository;
 import com.example.smd.repositories.SubjectRepository;
 import com.example.smd.repositories.SyllabusRepository;
-import jakarta.persistence.criteria.Predicate;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import com.example.smd.repositories.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -27,7 +25,13 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.apache.commons.text.similarity.JaroWinklerSimilarity;
+import org.springframework.web.multipart.MultipartFile;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -46,14 +50,19 @@ public class SessionService {
     private final BlockRepository blockRepository;
 
     private static final double SIMILARITY_THRESHOLD = 0.90;
+    private final CLOsRepository closRepository;
+    private final CloSessionMappingRepository cloSessionMappingRepository;
+
+    // ============================================================ //
+    // READ / QUERY //
+    // ============================================================ //
 
     @Transactional(readOnly = true)
     public Page<SessionResponse> getAllSessions(UUID syllabusId,
-                                                String search,
-                                                int page,
-                                                int size,
-                                                String[] sort
-    ) {
+            String search,
+            int page,
+            int size,
+            String[] sort) {
         List<Sort.Order> orders = new ArrayList<>();
         if (sort[0].contains(",")) {
             for (String sortOrder : sort) {
@@ -63,7 +72,6 @@ public class SessionService {
         } else {
             orders.add(new Sort.Order(getSortDirection(sort[1]), sort[0]));
         }
-
 
         Pageable pagingSort = PageRequest.of(page, size, Sort.by(orders));
 
@@ -81,8 +89,7 @@ public class SessionService {
                 predicates.add(cb.or(
                         cb.like(cb.lower(cb.coalesce(root.get("sessionTitle"), "")), pattern),
                         cb.like(cb.lower(cb.coalesce(root.get("content"), "")), pattern),
-                        cb.like(cb.lower(cb.coalesce(root.get("teachingMethods"), "")), pattern)
-                ));
+                        cb.like(cb.lower(cb.coalesce(root.get("teachingMethods"), "")), pattern)));
             }
 
             return cb.and(predicates.toArray(new Predicate[0]));
@@ -122,6 +129,10 @@ public class SessionService {
                 .map(sessionMapper::toResponse)
                 .toList();
     }
+
+    // ============================================================ //
+    // CREATE / UPDATE / DELETE //
+    // ============================================================ //
 
     @Transactional
     public SessionResponse createSession(SessionRequest request, String accountId) {
@@ -193,7 +204,7 @@ public class SessionService {
     }
 
     @Transactional
-    public List<SessionResponse> createSessionsBluk (List<SessionRequest> requests, String accountId) {
+    public List<SessionResponse> createSessionsBluk(List<SessionRequest> requests, String accountId) {
         // 1. Kiểm tra quyền (Chỉ cần check 1 lần cho toàn bộ request)
         var account = accountService.getAccountById(accountId);
         String roleName = account.getRole().getRoleName();
@@ -203,10 +214,12 @@ public class SessionService {
 
         List<Session> sessionsToSave = new ArrayList<>();
 
-        // Cache Syllabus lại để tránh gọi DB nhiều lần nếu các session đều thuộc chung 1 Syllabus
+        // Cache Syllabus lại để tránh gọi DB nhiều lần nếu các session đều thuộc chung
+        // 1 Syllabus
         Map<UUID, Syllabus> syllabusCache = new HashMap<>();
 
-        // Dùng Set để track các session_number đang được tạo trong cùng list này để tránh duplicate
+        // Dùng Set để track các session_number đang được tạo trong cùng list này để
+        // tránh duplicate
         Set<String> sessionNumberTracker = new HashSet<>();
 
         for (SessionRequest request : requests) {
@@ -255,7 +268,6 @@ public class SessionService {
                 .collect(Collectors.toList());
     }
 
-
     @Transactional
     public boolean deleteSession(UUID sessionId, String accountId) {
         var account = accountService.getAccountById(accountId);
@@ -282,7 +294,8 @@ public class SessionService {
         }
 
         List<Integer> distinctNumbers = request.getSessionNumbers().stream().distinct().toList();
-        List<Session> sessions = sessionRepository.findBySyllabus_SyllabusIdAndSessionNumberIn(syllabusId, distinctNumbers);
+        List<Session> sessions = sessionRepository.findBySyllabus_SyllabusIdAndSessionNumberIn(syllabusId,
+                distinctNumbers);
 
         if (sessions.size() != distinctNumbers.size()) {
             throw new AppException(ErrorCode.SESSION_NOT_FOUND);
@@ -304,9 +317,12 @@ public class SessionService {
         }
         return Sort.Direction.ASC;
     }
+    // ============================================================ //
+    // VALIDATE (QUOTA) //
+    // ============================================================ //
 
     public SessionValidationResult validate(List<SessionRequest> inputs, UUID syllabusId) {
-        if(inputs == null || inputs.isEmpty()) {
+        if (inputs == null || inputs.isEmpty()) {
             throw new AppException(ErrorCode.SESSION_LIST_REQUIRED);
         }
         SessionValidationResult result = validateSessionType(inputs, syllabusId);
@@ -327,6 +343,7 @@ public class SessionService {
 
         // LẤY DỮ LIỆU HIỆN TẠI TỪ DATABASE
         List<Session> existingDbSessions = sessionRepository.findBySyllabus_SyllabusId(syllabusId);
+
         // 1. Tính quỹ Lý thuyết (Quy đổi an toàn từ Giờ -> Tiết)
         double inputTotalTheoryHours = inputs.stream()
                 .filter(s -> "THEORY".equalsIgnoreCase(s.getSessionType()))
@@ -338,7 +355,8 @@ public class SessionService {
                 .sum();
         int inputTotalTheoryPeriods = (int) Math.round(inputTotalTheoryHours / duration);
         int dbTotalTheoryPeriods = (int) Math.round(dbTotalTheoryHours / duration);
-        int remainingTheory = (masterSubject.getTheoryPeriods() != null ? masterSubject.getTheoryPeriods() : 0) - inputTotalTheoryPeriods - dbTotalTheoryPeriods;
+        int remainingTheory = (masterSubject.getTheoryPeriods() != null ? masterSubject.getTheoryPeriods() : 0)
+                - inputTotalTheoryPeriods - dbTotalTheoryPeriods;
 
         // 2. Tính quỹ Thực hành (Tương tự)
         double inputTotalPracticeHours = inputs.stream()
@@ -351,18 +369,21 @@ public class SessionService {
                 .sum();
         int inputTotalPracticePeriods = (int) Math.round(inputTotalPracticeHours / duration);
         int dbTotalPracticePeriods = (int) Math.round(dbTotalPracticeHours / duration);
-        int remainingPractice = (masterSubject.getPracticalPeriods() != null ? masterSubject.getPracticalPeriods() : 0) - inputTotalPracticePeriods - dbTotalPracticePeriods;
+        int remainingPractice = (masterSubject.getPracticalPeriods() != null ? masterSubject.getPracticalPeriods() : 0)
+                - inputTotalPracticePeriods - dbTotalPracticePeriods;
 
         // (Tùy chọn) Tính tổng giờ tự học nếu có bắt validate
-//        int inputTotalSelfStudyHours = inputs.stream()
-//                .filter(s -> "SELF_STUDY".equalsIgnoreCase(s.getSessionType()))
-//                .mapToInt(s -> s.getDuration() != null ? s.getDuration() : 0)
-//                .sum();
-//        int dbTotalSelfStudyHours = existingDbSessions.stream()
-//                .filter(s -> "SELF_STUDY".equalsIgnoreCase(s.getSessionType()))
-//                .mapToInt(s -> s.getDuration() != null ? s.getDuration() : 0)
-//                .sum();
-//        int remainingSelfStudy = (masterSubject.getSelfStudyPeriods() != null ? masterSubject.getSelfStudyPeriods() * 60 : 0) - inputTotalSelfStudyHours - dbTotalSelfStudyHours;
+        // int inputTotalSelfStudyHours = inputs.stream()
+        // .filter(s -> "SELF_STUDY".equalsIgnoreCase(s.getSessionType()))
+        // .mapToInt(s -> s.getDuration() != null ? s.getDuration() : 0)
+        // .sum();
+        // int dbTotalSelfStudyHours = existingDbSessions.stream()
+        // .filter(s -> "SELF_STUDY".equalsIgnoreCase(s.getSessionType()))
+        // .mapToInt(s -> s.getDuration() != null ? s.getDuration() : 0)
+        // .sum();
+        // int remainingSelfStudy = (masterSubject.getSelfStudyPeriods() != null ?
+        // masterSubject.getSelfStudyPeriods() * 60 : 0) - inputTotalSelfStudyHours -
+        // dbTotalSelfStudyHours;
 
         // Set vào DTO
         result.setRemainingQuotas(new SessionValidationResult.RemainingQuota(remainingTheory, remainingPractice, 0));
@@ -391,21 +412,23 @@ public class SessionService {
                     "Practice allocation exceeded by " + Math.abs(remainingPractice) + " period(s).");
         }
 
-//        // -- Validate Tự học (Self-study) --
-//        if (remainingSelfStudy > 0) {
-//            // Trường hợp THIẾU
-//            result.addError("SELF_STUDY_SHORTAGE",
-//                    "Self-study allocation is short by " + remainingSelfStudy + " minute(s).");
-//        } else if (remainingSelfStudy < 0) {
-//            // Trường hợp DƯ
-//            result.addError("SELF_STUDY_SURPLUS",
-//                    "Self-study allocation exceeded by " + Math.abs(remainingSelfStudy) + " minute(s).");
-//        }
+        // // -- Validate Tự học (Self-study) --
+        // if (remainingSelfStudy > 0) {
+        // // Trường hợp THIẾU
+        // result.addError("SELF_STUDY_SHORTAGE",
+        // "Self-study allocation is short by " + remainingSelfStudy + " minute(s).");
+        // } else if (remainingSelfStudy < 0) {
+        // // Trường hợp DƯ
+        // result.addError("SELF_STUDY_SURPLUS",
+        // "Self-study allocation exceeded by " + Math.abs(remainingSelfStudy) + "
+        // minute(s).");
+        // }
 
         return result;
     }
 
-    private List<SessionValidationResult.ContentLineValidationError> validateContentSession(List<SessionRequest> inputs, UUID syllabusId) {
+    private List<SessionValidationResult.ContentLineValidationError> validateContentSession(List<SessionRequest> inputs,
+            UUID syllabusId) {
         List<SessionValidationResult.ContentLineValidationError> result = new ArrayList<>();
 
         List<Blocks> allBlocks = blockRepository.findAllBlocksBySyllabusIdUrgent(syllabusId);
@@ -501,11 +524,14 @@ public class SessionService {
                     }
                 }
 
-                // Nếu dòng H2 này trong Request gõ lệch hoàn toàn so với các H2 của H1 đó trong DB
+                // Nếu dòng H2 này trong Request gõ lệch hoàn toàn so với các H2 của H1 đó trong
+                // DB
                 if (!isH2Matched) {
                     result.add(SessionValidationResult.ContentLineValidationError.builder()
                             .code("SESSION_CONTENT_LINE_MISMATCH")
-                            .message(String.format("The heading '%s' in SessionTopic does not match any subheading of chapter '%s' in the document.", subTopic, reqTitle))
+                            .message(String.format(
+                                    "The heading '%s' in SessionTopic does not match any subheading of chapter '%s' in the document.",
+                                    subTopic, reqTitle))
                             .sessionNumber(request.getSessionNumber())
                             .lineIndex(1)
                             .lineContent(reqTitle)
@@ -521,7 +547,8 @@ public class SessionService {
      * Hàm Helper 1: Làm sạch chuỗi, hạ chữ thường, xóa khoảng trắng thừa
      */
     private String cleanString(String input) {
-        if (input == null) return "";
+        if (input == null)
+            return "";
         return input.trim().replaceAll("\\s+", " ").toLowerCase();
     }
 
@@ -530,7 +557,8 @@ public class SessionService {
      */
     private List<String> parseSubTopics(String topic) {
         List<String> subTopics = new ArrayList<>();
-        if (topic == null) return subTopics;
+        if (topic == null)
+            return subTopics;
 
         // Tách đoạn văn thành các dòng độc lập qua ký tự xuống dòng (Enter)
         String[] lines = topic.split("\\r?\\n");
@@ -544,5 +572,334 @@ public class SessionService {
             }
         }
         return subTopics;
+    }
+    // ============================================================ //
+    // IMPORT SESSION FROM EXCEL //
+    // ============================================================ //
+
+    /**
+     * Nhận file Excel và import danh sách Session vào Syllabus.
+     *
+     * <p>
+     * <b>Business Flow:</b>
+     * <ol>
+     * <li>Đọc và parse file Excel thành {@link SessionImportDTO}.</li>
+     * <li>Validate CLO — kiểm tra mã CLO trong file có tồn tại trong Subject hay
+     * không.</li>
+     * <li>Validate Quota — gọi hàm {@link #validate} để kiểm tra số tiết lý
+     * thuyết/thực hành.</li>
+     * <li>Nếu có bất kỳ lỗi nào → trả về ngay, KHÔNG lưu DB.</li>
+     * <li>Nếu hợp lệ → xem comment bên trong về chiến lược Replace/Upsert.</li>
+     * </ol>
+     *
+     * @param file       File Excel (.xlsx) được upload từ FE
+     * @param syllabusId UUID của Syllabus cần import vào
+     * @param subjectId  UUID của Subject (dùng để lấy danh sách CLO hợp lệ)
+     * @return {@link SessionImportResult} chứa danh sách lỗi hoặc kết quả success
+     */
+    @Transactional
+    public SessionImportResult importSessionsFromExcel(MultipartFile file,
+            UUID syllabusId,
+            UUID subjectId) {
+        // ── Bước 0: Validate tham số đầu vào ─────────────────────────────
+        Syllabus syllabus = syllabusRepository.findByIdWithSubject(syllabusId)
+                .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
+
+        // Lấy duration từ SystemSetting
+        var setting = systemSettingService.getDetailByCode("SESSION_MINUTE");
+        int sessionMinutes = Integer.parseInt(setting.getValue());
+
+        // ── Bước 1: Đọc file Excel ────────────────────────────────────────
+        List<SessionImportDTO> importRows;
+        try {
+            importRows = parseExcelFile(file, sessionMinutes);
+        } catch (IOException e) {
+            log.error("Failed to read Excel file: {}", e.getMessage(), e);
+            SessionImportResult result = new SessionImportResult();
+            result.addError("FILE_READ_ERROR",
+                    "Cannot read the Excel file. Please ensure it is a valid .xlsx file.", null);
+            return result;
+        }
+
+        SessionImportResult result = new SessionImportResult();
+        result.setTotalRows(importRows.size());
+
+        if (importRows.isEmpty()) {
+            result.addError("EMPTY_FILE", "The Excel file contains no data rows.", null);
+            return result;
+        }
+
+        // ── Bước 2a: Validate CLO ─────────────────────────────────────────
+        validateCloMappings(importRows, subjectId, result);
+
+        // ── Bước 2b: Validate Quota (tận dụng hàm validate() có sẵn) ─────
+        // Map sang List<SessionRequest> để truyền vào hàm validate
+        // Lưu ý: validate() sẽ đọc existingDbSessions từ DB. Trong luồng REPLACE,
+        // cần xóa session cũ trước khi validate để số tiết không bị tính đôi.
+        // Ở đây ta validate TRƯỚC khi xóa, nên existingDbSessions = [] nếu syllabus
+        // chưa có session,
+        // hoặc phải truyền vào list trống nếu muốn validate độc lập.
+        List<SessionRequest> sessionRequests = mapToSessionRequests(importRows, syllabusId, sessionMinutes);
+        SessionValidationResult quotaResult = validate(sessionRequests, syllabusId);
+
+        // Merge lỗi quota vào result tổng
+        result.mergeErrors(quotaResult);
+
+        // ── Bước 3: Nếu có lỗi → Return sớm, KHÔNG lưu DB ───────────────
+        if (!result.isValid()) {
+            return result;
+        }
+
+        // ── Bước 4: Lưu DB (Transactional) ───────────────────────────────
+        // TODO [DECISION POINT - CẦN XEM XÉT]:
+        // Hiện tại đang dùng chiến lược "REPLACE" (xóa toàn bộ Session cũ rồi insert
+        // mới).
+        // Hãy comment/uncomment block tùy theo quyết định:
+        //
+        // Chiến lược A - REPLACE (xóa cũ, thêm mới): ← ĐANG DÙNG
+        // Ưu điểm : Đơn giản, đảm bảo dữ liệu sạch, không conflict số Session.
+        // Nhược điểm: Mất toàn bộ Session cũ (kể cả Session không có trong file).
+        //
+        // Chiến lược B - UPSERT (giữ Session cũ, chỉ thêm/cập nhật Session trong file):
+        // Ưu điểm : An toàn hơn, không mất dữ liệu ngoài file.
+        // Nhược điểm: Logic phức tạp hơn, cần match theo sessionNumber.
+
+        // [REPLACE] Xóa CLO mapping trước, sau đó xóa Session cũ (tránh FK constraint)
+        cloSessionMappingRepository.deleteBySession_Syllabus_SyllabusId(syllabusId);
+        sessionRepository.deleteAllBySyllabus_SyllabusId(syllabusId);
+        sessionRepository.flush(); // Đảm bảo DELETE được flush trước INSERT
+
+        // Lưu Session và CLO mapping mới
+        int savedCount = saveSessionsAndMappings(importRows, syllabus, subjectId);
+
+        result.setSavedCount(savedCount);
+        return result;
+    }
+
+    // ============================================================ //
+    // PRIVATE HELPERS //
+    // ============================================================ //
+
+    /**
+     * Đọc file Excel và map từng dòng thành {@link SessionImportDTO}.
+     *
+     * <p>
+     * Cấu trúc cột file Excel (0-indexed):
+     * 
+     * <pre>
+     *   Col 0: Session Number  — Số thứ tự buổi học (số nguyên)
+     *   Col 1: Title           — Tiêu đề/Chương
+     *   Col 2: Teaching Methods— Phương pháp giảng dạy
+     *   Col 3: Topic           — Nội dung/Chủ đề
+     *   Col 4: Type            — THEORY | PRACTICE | SELF_STUDY
+     *   Col 5: CLO-Mapping     — Danh sách mã CLO, cách nhau bằng dấu phẩy (VD: "CLO1, CLO2")
+     * </pre>
+     *
+     * @param sessionMinutes tham số unused nhưng để dành cho mở rộng sau
+     */
+    private List<SessionImportDTO> parseExcelFile(MultipartFile file, int sessionMinutes) throws IOException {
+        List<SessionImportDTO> rows = new ArrayList<>();
+
+        try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
+            Sheet sheet = workbook.getSheetAt(0);
+
+            // Bắt đầu từ dòng index 1 để bỏ qua dòng header (index 0)
+            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+                Row row = sheet.getRow(i);
+                if (row == null || isRowEmpty(row))
+                    continue;
+
+                Integer sessionNumber = (int) getNumericCellValue(row, 0);
+                String sessionTitle = getStringCellValue(row, 1);
+                String teachingMethods = getStringCellValue(row, 2);
+                String sessionTopic = getStringCellValue(row, 3);
+                String sessionType = getStringCellValue(row, 4).toUpperCase().trim();
+                String cloMappingRaw = getStringCellValue(row, 5);
+
+                // Tách và chuẩn hoá danh sách mã CLO
+                List<String> cloCodes = Arrays.stream(cloMappingRaw.split(","))
+                        .map(String::trim)
+                        .map(String::toUpperCase)
+                        .filter(s -> !s.isEmpty())
+                        .collect(Collectors.toList());
+
+                rows.add(SessionImportDTO.builder()
+                        .sessionNumber(sessionNumber)
+                        .sessionTitle(sessionTitle)
+                        .teachingMethods(teachingMethods)
+                        .sessionTopic(sessionTopic)
+                        .sessionType(sessionType)
+                        .cloCodes(cloCodes)
+                        .rowIndex(i + 1) // 1-indexed để FE hiển thị số dòng cho người dùng
+                        .build());
+            }
+        }
+
+        return rows;
+    }
+
+    /**
+     * Validate toàn bộ mã CLO trong danh sách import.
+     * Truy vấn DB một lần để lấy tất cả CLO Code hợp lệ thuộc Subject,
+     * sau đó duyệt từng dòng để kiểm tra.
+     * Lỗi được gộp vào {@code result} — KHÔNG throw exception để gom hết lỗi một
+     * lần.
+     */
+    private void validateCloMappings(List<SessionImportDTO> importRows,
+            UUID subjectId,
+            SessionImportResult result) {
+        // Tải 1 lần toàn bộ CLO hợp lệ của Subject
+        Set<String> validCloCodes = closRepository.findBySubject_SubjectId(subjectId)
+                .stream()
+                .map(clo -> clo.getCloCode().toUpperCase().trim())
+                .collect(Collectors.toSet());
+
+        for (SessionImportDTO row : importRows) {
+            if (row.getCloCodes() == null || row.getCloCodes().isEmpty())
+                continue;
+
+            for (String cloCode : row.getCloCodes()) {
+                if (!validCloCodes.contains(cloCode)) {
+                    result.addError(
+                            "CLO_INVALID",
+                            String.format("Row %d (Session %d): CLO code '%s' does not belong to this Subject.",
+                                    row.getRowIndex(), row.getSessionNumber(), cloCode),
+                            row.getRowIndex());
+                }
+            }
+        }
+    }
+
+    /**
+     * Map từ {@link SessionImportDTO} sang {@link SessionRequest} để truyền vào
+     * hàm {@link #validate(List, UUID)} — kiểm tra quota tiết lý thuyết / thực
+     * hành.
+     * Duration = sessionMinutes (1 session tương đương 1 tiết = SESSION_MINUTE
+     * phút).
+     */
+    private List<SessionRequest> mapToSessionRequests(List<SessionImportDTO> importRows,
+            UUID syllabusId,
+            int sessionMinutes) {
+        return importRows.stream()
+                .map(row -> SessionRequest.builder()
+                        .syllabusId(syllabusId)
+                        .sessionNumber(row.getSessionNumber())
+                        .sessionTitle(row.getSessionTitle())
+                        .teachingMethods(row.getTeachingMethods())
+                        .sessionTopic(row.getSessionTopic())
+                        .sessionType(row.getSessionType())
+                        .duration(sessionMinutes) // 1 session = 1 tiết = SESSION_MINUTE phút
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Lưu danh sách Session và CLO_Session mapping xuống DB.
+     * Được gọi SAU KHI toàn bộ validate đã pass và Session cũ đã bị xóa
+     * (replace-mode).
+     * Tải trước toàn bộ CLO entity để tránh N+1 query.
+     *
+     * @return Số Session đã lưu thành công
+     */
+    private int saveSessionsAndMappings(List<SessionImportDTO> importRows,
+            Syllabus syllabus,
+            UUID subjectId) {
+        // Pre-load toàn bộ CLO entity một lần (tránh N+1)
+        Map<String, CLOs> cloMap = closRepository.findBySubject_SubjectId(subjectId)
+                .stream()
+                .collect(Collectors.toMap(
+                        clo -> clo.getCloCode().toUpperCase().trim(),
+                        clo -> clo));
+
+        int savedCount = 0;
+
+        for (SessionImportDTO row : importRows) {
+            // Xây dựng Session entity
+            Session session = Session.builder()
+                    .syllabus(syllabus)
+                    .sessionNumber(row.getSessionNumber())
+                    .sessionTitle(row.getSessionTitle())
+                    .teachingMethods(row.getTeachingMethods())
+                    .sessionTopic(row.getSessionTopic())
+                    .sessionType(row.getSessionType())
+                    // duration: theo yêu cầu, bám theo SystemSetting SESSION_MINUTE
+                    // Nếu muốn lấy duration từ file Excel thì đọc từ row và gán ở đây
+                    .build();
+
+            Session saved = sessionRepository.save(session);
+            savedCount++;
+
+            // Lưu CLO_Session mapping
+            if (row.getCloCodes() != null && !row.getCloCodes().isEmpty()) {
+                List<CLO_Session> mappings = row.getCloCodes().stream()
+                        .map(cloCode -> cloMap.get(cloCode.toUpperCase().trim()))
+                        .filter(Objects::nonNull)
+                        .map(clo -> CLO_Session.builder()
+                                .clo(clo)
+                                .session(saved)
+                                .build())
+                        .collect(Collectors.toList());
+
+                cloSessionMappingRepository.saveAll(mappings);
+            }
+        }
+
+        return savedCount;
+    }
+
+    // ============================================================ //
+    // EXCEL CELL HELPERS //
+    // ============================================================ //
+
+    /** Trả về giá trị số của cell. Trả về 0 nếu cell null hoặc không phải số. */
+    private double getNumericCellValue(Row row, int cellIndex) {
+        Cell cell = row.getCell(cellIndex);
+        if (cell == null)
+            return 0;
+        return switch (cell.getCellType()) {
+            case NUMERIC -> cell.getNumericCellValue();
+            case STRING -> {
+                try {
+                    yield Double.parseDouble(cell.getStringCellValue().trim());
+                } catch (NumberFormatException e) {
+                    yield 0;
+                }
+            }
+            default -> 0;
+        };
+    }
+
+    /** Trả về giá trị String của cell. Trả về chuỗi rỗng nếu cell null. */
+    private String getStringCellValue(Row row, int cellIndex) {
+        Cell cell = row.getCell(cellIndex);
+        if (cell == null)
+            return "";
+        return switch (cell.getCellType()) {
+            case STRING -> cell.getStringCellValue().trim();
+            case NUMERIC -> String.valueOf((long) cell.getNumericCellValue());
+            case BOOLEAN -> String.valueOf(cell.getBooleanCellValue());
+            default -> "";
+        };
+    }
+
+    /**
+     * Kiểm tra xem một Row có rỗng hoàn toàn không (tất cả cell đều blank/null).
+     */
+    private boolean isRowEmpty(Row row) {
+        if (row == null)
+            return true;
+
+        for (int c = row.getFirstCellNum(); c < row.getLastCellNum(); c++) {
+            Cell cell = row.getCell(c);
+            if (cell != null && cell.getCellType() != CellType.BLANK) {
+                // [FIX] Bổ sung: Nếu là kiểu chuỗi nhưng cắt khoảng trắng đi mà rỗng thì vẫn
+                // coi là Blank
+                if (cell.getCellType() == CellType.STRING && cell.getStringCellValue().trim().isEmpty()) {
+                    continue;
+                }
+                return false; // Có ít nhất 1 ô chứa dữ liệu thực sự
+            }
+        }
+        return true;
     }
 }
