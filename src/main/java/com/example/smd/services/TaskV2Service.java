@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -626,7 +627,7 @@ public class TaskV2Service {
                     .taskName(subject.getSubjectCode() + " - " + subject.getSubjectName())
                     .description("Create Syllabus and CLOs of " + subject.getSubjectCode())
                     .priority(Priority.HIGH.toString())
-                    .dueDate(LocalDate.from(sprint.getEndDate()))
+                    .dueDate(sprint.getEndDate().atZone(ZoneId.systemDefault()).toLocalDate())
                     .build();
 
             task.setSprint(sprint);
