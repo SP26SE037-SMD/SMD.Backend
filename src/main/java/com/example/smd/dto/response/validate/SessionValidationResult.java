@@ -36,6 +36,11 @@ public class SessionValidationResult {
         this.isValid = false; // Tự động chuyển thành false khi có lỗi
     }
 
+    public void addWarning(List<ContentLineValidationError> warnings) {
+        this.setWarnings(warnings);
+        this.isValid = false;
+    }
+
 
     // ================= CLASS CON (INNER CLASSES) ================= //
 
