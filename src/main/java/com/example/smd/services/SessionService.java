@@ -1,11 +1,10 @@
 package com.example.smd.services;
 
-import com.example.smd.dto.request.session.SessionMaterialBlockBulkRequest;
 import com.example.smd.dto.request.session.SessionRequest;
 import com.example.smd.dto.request.session.SessionNumberListRequest;
 import com.example.smd.dto.response.SessionResponse;
 import com.example.smd.dto.response.validate.SessionValidationResult;
-import com.example.smd.entities.Assessment;
+import com.example.smd.entities.Blocks;
 import com.example.smd.entities.Session;
 import com.example.smd.entities.Subject;
 import com.example.smd.entities.Syllabus;
@@ -13,6 +12,7 @@ import com.example.smd.enums.*;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.SessionMapper;
+import com.example.smd.repositories.BlockRepository;
 import com.example.smd.repositories.SessionRepository;
 import com.example.smd.repositories.SubjectRepository;
 import com.example.smd.repositories.SyllabusRepository;
@@ -26,8 +26,10 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.apache.commons.text.similarity.JaroWinklerSimilarity;
 
 import java.util.*;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -41,6 +43,9 @@ public class SessionService {
     private final SyllabusRepository syllabusRepository;
     private final SessionMapper sessionMapper;
     private final SubjectRepository subjectRepository;
+    private final BlockRepository blockRepository;
+
+    private static final double SIMILARITY_THRESHOLD = 0.90;
 
     @Transactional(readOnly = true)
     public Page<SessionResponse> getAllSessions(UUID syllabusId,
@@ -300,9 +305,16 @@ public class SessionService {
         return Sort.Direction.ASC;
     }
 
-
-
     public SessionValidationResult validate(List<SessionRequest> inputs, UUID syllabusId) {
+        if(inputs == null || inputs.isEmpty()) {
+            throw new AppException(ErrorCode.SESSION_LIST_REQUIRED);
+        }
+        SessionValidationResult result = validateSessionType(inputs, syllabusId);
+        result.setWarnings(validateContentSession(inputs, syllabusId));
+        return result;
+    }
+
+    private SessionValidationResult validateSessionType(List<SessionRequest> inputs, UUID syllabusId) {
         var setting = systemSettingService.getDetailByCode("SESSION_MINUTE");
         var duration = Integer.parseInt(setting.getValue());
         SessionValidationResult result = new SessionValidationResult();
@@ -391,5 +403,146 @@ public class SessionService {
 //        }
 
         return result;
+    }
+
+    private List<SessionValidationResult.ContentLineValidationError> validateContentSession(List<SessionRequest> inputs, UUID syllabusId) {
+        List<SessionValidationResult.ContentLineValidationError> result = new ArrayList<>();
+
+        List<Blocks> allBlocks = blockRepository.findAllBlocksBySyllabusIdUrgent(syllabusId);
+        if (allBlocks.isEmpty()) {
+            throw new AppException(ErrorCode.BLOCK_LIST_EMPTY);
+        }
+
+        Map<String, List<Blocks>> dbHierarchy = new HashMap<>();
+        String currentH1Key = null;
+
+        for (Blocks block : allBlocks) {
+            if ("H1".equalsIgnoreCase(block.getBlockStyle())) {
+                currentH1Key = cleanString(block.getContentText());
+                dbHierarchy.put(currentH1Key, new ArrayList<>());
+            } else if ("H2".equalsIgnoreCase(block.getBlockType()) && currentH1Key != null) {
+                dbHierarchy.get(currentH1Key).add(block);
+            }
+        }
+
+        JaroWinklerSimilarity similarityMeasure = new JaroWinklerSimilarity();
+
+        for (SessionRequest request : inputs) {
+            String reqTitle = request.getSessionTitle();
+            String reqTopic = request.getSessionTopic();
+
+            if (reqTitle == null || reqTitle.trim().isEmpty()) {
+                result.add(SessionValidationResult.ContentLineValidationError.builder()
+                        .code("SESSION_CONTENT_LINE_MISMATCH")
+                        .message("The reqTitle is empty.")
+                        .sessionNumber(request.getSessionNumber())
+                        .lineIndex(0)
+                        .similarityScore(0.0)
+                        .build());
+                continue;
+            }
+
+            String cleanReqTitle = cleanString(reqTitle);
+            String matchedH1KeyInDb = null;
+            double highestH1Score = 0;
+
+            for (String dbH1Key : dbHierarchy.keySet()) {
+                double score = similarityMeasure.apply(cleanReqTitle, dbH1Key);
+                if (score > highestH1Score) {
+                    highestH1Score = score;
+                    if (score >= SIMILARITY_THRESHOLD) {
+                        matchedH1KeyInDb = dbH1Key;
+                    }
+                }
+            }
+
+            if (matchedH1KeyInDb == null) {
+                result.add(SessionValidationResult.ContentLineValidationError.builder()
+                        .code("H1_NOT_FOUND")
+                        .message("No chapters in the document matching the title were found.")
+                        .sessionNumber(request.getSessionNumber())
+                        .lineIndex(0)
+                        .lineContent(reqTitle)
+                        .similarityScore(highestH1Score)
+                        .build());
+                continue;
+            }
+
+            List<Blocks> h2BlocksInDb = dbHierarchy.get(matchedH1KeyInDb);
+
+            if (reqTopic == null || reqTopic.trim().isEmpty()) {
+                result.add(SessionValidationResult.ContentLineValidationError.builder()
+                        .code("SESSION_CONTENT_LINE_MISMATCH")
+                        .message("The session topic is empty.")
+                        .sessionNumber(request.getSessionNumber())
+                        .lineIndex(1)
+                        .similarityScore(0.0)
+                        .build());
+                continue;
+            }
+
+            List<String> requestSubTopics = parseSubTopics(reqTopic);
+            for (String subTopic : requestSubTopics) {
+                String cleanSubTopic = cleanString(subTopic);
+                boolean isH2Matched = false;
+                double highestH2Score = 0;
+
+                for (Blocks dbH2Block : h2BlocksInDb) {
+                    String cleanDbH2 = cleanString(dbH2Block.getContentText());
+                    double score = similarityMeasure.apply(cleanSubTopic, cleanDbH2);
+
+                    if (score > highestH2Score) {
+                        highestH2Score = score;
+                    }
+
+                    if (score >= SIMILARITY_THRESHOLD) {
+                        isH2Matched = true;
+                        break;
+                    }
+                }
+
+                // Nếu dòng H2 này trong Request gõ lệch hoàn toàn so với các H2 của H1 đó trong DB
+                if (!isH2Matched) {
+                    result.add(SessionValidationResult.ContentLineValidationError.builder()
+                            .code("SESSION_CONTENT_LINE_MISMATCH")
+                            .message(String.format("The heading '%s' in SessionTopic does not match any subheading of chapter '%s' in the document.", subTopic, reqTitle))
+                            .sessionNumber(request.getSessionNumber())
+                            .lineIndex(1)
+                            .lineContent(reqTitle)
+                            .similarityScore(highestH2Score)
+                            .build());
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Hàm Helper 1: Làm sạch chuỗi, hạ chữ thường, xóa khoảng trắng thừa
+     */
+    private String cleanString(String input) {
+        if (input == null) return "";
+        return input.trim().replaceAll("\\s+", " ").toLowerCase();
+    }
+
+    /**
+     * Hàm Helper 2: Cắt chuỗi theo dòng và lọc lấy các dòng tiêu đề chính (X.Y.)
+     */
+    private List<String> parseSubTopics(String topic) {
+        List<String> subTopics = new ArrayList<>();
+        if (topic == null) return subTopics;
+
+        // Tách đoạn văn thành các dòng độc lập qua ký tự xuống dòng (Enter)
+        String[] lines = topic.split("\\r?\\n");
+
+        for (String line : lines) {
+            String trimmed = line.trim();
+            // Chỉ lấy những dòng bắt đầu bằng định dạng số mục (Ví dụ: "1.1.", "1.2 ")
+            // Bỏ qua các dòng mô tả nội dung chi tiết dạng gạch đầu dòng "-" hoặc "*"
+            if (!trimmed.isEmpty() && Pattern.matches("^\\d+\\.\\d+.*", trimmed)) {
+                subTopics.add(trimmed);
+            }
+        }
+        return subTopics;
     }
 }
