@@ -26,7 +26,9 @@ public class SessionImportResult {
 
     /** Danh sách lỗi chi tiết — rỗng nếu isValid = true */
     @Builder.Default
-    private List<ImportError> errors = new ArrayList<>();
+    private List<ImportError> importErrors = new ArrayList<>();
+
+    private SessionValidationResult validateError;
 
     /** Số dòng đọc được từ file Excel */
     private int totalRows;
@@ -37,16 +39,14 @@ public class SessionImportResult {
     // ------------------------------------------------------------------ //
 
     public void addError(String code, String message, Integer rowIndex) {
-        this.errors.add(new ImportError(code, message, rowIndex));
+        this.importErrors.add(new ImportError(code, message, rowIndex));
         this.isValid = false;
     }
 
     /** Merge toàn bộ lỗi từ SessionValidationResult (validate quota) vào result hiện tại */
     public void mergeErrors(SessionValidationResult quotaResult) {
         if (!quotaResult.isValid()) {
-            for (SessionValidationResult.ValidationError e : quotaResult.getErrors()) {
-                this.errors.add(new ImportError(e.getCode(), e.getMessage(), null));
-            }
+            this.validateError = quotaResult;
             this.isValid = false;
         }
     }

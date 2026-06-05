@@ -8,7 +8,6 @@ import com.example.smd.dto.response.SubjectResponse;
 import com.example.smd.dto.response.subject.ImportSubjectResponse;
 import com.example.smd.dto.response.subject.ImportSubjectResult;
 import com.example.smd.entities.Department;
-import com.example.smd.entities.ProposedSource;
 import com.example.smd.entities.Subject;
 import com.example.smd.entities.Syllabus;
 import com.example.smd.enums.RoleName;

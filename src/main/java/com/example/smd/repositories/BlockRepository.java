@@ -25,6 +25,13 @@ public interface BlockRepository extends JpaRepository<Blocks, UUID> {
 
     Page<Blocks> findAllByMaterial_MaterialId(UUID materialId, Pageable pageable);
 
+    @Query("SELECT b FROM Blocks b " +
+            "JOIN FETCH b.material m " +
+            "WHERE m.syllabus.syllabusId = :syllabusId " +
+            "AND (b.blockType = 'H1' OR b.blockType = 'H2') " +
+            "ORDER BY m.materialId ASC, b.idx ASC")
+    List<Blocks> findAllBlocksBySyllabusIdUrgent(@Param("syllabusId") UUID syllabusId);
+
     @Query("SELECT b.contentText FROM Blocks b " +
             "WHERE b.material.materialId = :materialId " +
             "AND b.blockType IN ('H1', 'H2') " +
