@@ -1,24 +1,26 @@
 package com.example.smd.controller;
 
 import com.example.smd.dto.request.AssessmentRequest;
-import com.example.smd.dto.request.session.SessionMaterialBlockBulkRequest;
 import com.example.smd.dto.response.AssessmentResponse;
 import com.example.smd.dto.response.PagedResponse;
 import com.example.smd.dto.response.ResponseObject;
+import com.example.smd.dto.response.validate.AssessmentImportResult;
 import com.example.smd.dto.response.validate.AssessmentValidationResult;
-import com.example.smd.dto.response.validate.SessionValidationResult;
-import com.example.smd.entities.Assessment;
+import com.example.smd.services.AssessmentImportService;
 import com.example.smd.services.AssessmentService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
@@ -31,6 +33,7 @@ import java.util.UUID;
 public class AssessmentController {
 
     private final AssessmentService assessmentService;
+    private final AssessmentImportService assessmentImportService;
 
     @GetMapping
     @Operation(summary = "Get all assessments with pagination and filters")
@@ -143,5 +146,59 @@ public class AssessmentController {
                 .data(assessmentService.validate(inputs, syllabusId))
                 .message("Validate assessment successfully")
                 .build();
+    }
+
+    // ------------------------------------------------------------------ //
+    //                      IMPORT FROM EXCEL                             //
+    // ------------------------------------------------------------------ //
+
+    @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAuthority('SYLLABUS_UPDATE')")
+    @Operation(
+            summary = "Import danh sách Assessment từ file Excel",
+            description = """
+                    Upload file Excel (.xlsx) để import hàng loạt Assessment vào một Syllabus.
+
+                    **Cấu trúc file Excel (dòng 1 là header, dữ liệu từ dòng 2):**
+                    | Category | Type | Part | Weight | Completion Criteria | Duration | Question Type | Knowledge Skill | Grading Guide | Note | CLO-Mapping |
+
+                    **Quy tắc Category ↔ Type:**
+                    - `Formative` → Type phải thuộc: `Lab`, `Presentation`, `Quiz`
+                    - `Summative` → Type phải thuộc: `Final`, `Midterm`, `Project`
+
+                    **Validate CLO-Mapping:** Mã CLO phải thuộc Subject của Syllabus.
+
+                    **Validate Weight:** Tổng trọng số của toàn bộ Assessment phải đúng bằng 100%.
+
+                    **Response khi lỗi (HTTP 400):** `isValid = false`, `errors` chứa danh sách lỗi theo dòng.
+                    **Response khi thành công (HTTP 200):** `isValid = true`, `savedCount` = số assessment đã lưu.
+                    """
+    )
+    public ResponseEntity<ResponseObject<AssessmentImportResult>> importAssessments(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("syllabusId") UUID syllabusId,
+            @RequestParam("subjectId") UUID subjectId) {
+
+        AssessmentImportResult result = assessmentImportService.importFromExcel(file, syllabusId, subjectId);
+
+        if (!result.isValid()) {
+            // Có lỗi validate → 400 Bad Request kèm chi tiết lỗi theo từng dòng
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(ResponseObject.<AssessmentImportResult>builder()
+                            .status(4000)
+                            .message("Import failed due to validation errors. No data was saved.")
+                            .data(result)
+                            .build());
+        }
+
+        // Thành công → 200 OK
+        return ResponseEntity.ok(
+                ResponseObject.<AssessmentImportResult>builder()
+                        .status(1000)
+                        .message("Import successful. " + result.getSavedCount() + " assessment(s) saved.")
+                        .data(result)
+                        .build()
+        );
     }
 }
