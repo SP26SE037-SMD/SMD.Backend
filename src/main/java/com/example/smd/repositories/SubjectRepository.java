@@ -28,10 +28,13 @@ public interface SubjectRepository extends JpaRepository<Subject, UUID>, JpaSpec
             "WHERE s.subjectId = :id")
     Optional<Subject> findDetailById(@Param("id") UUID id);
 
-    // Đối với danh sách, dùng EntityGraph là cách an toàn nhất để phân trang ở mức Database
     @EntityGraph(attributePaths = {"department", "clos"})
     @Override
     Page<Subject> findAll(Specification<Subject> spec, Pageable pageable);
+
+    // HÀM MỚI: Dùng để nạp toàn bộ dữ liệu Department và CLOs của các Subject trong trang hiện tại
+    @EntityGraph(attributePaths = {"department", "clos"})
+    List<Subject> findBySubjectIdIn(List<UUID> subjectIds);
 
     @Query("SELECT s FROM Subject s JOIN FETCH s.department WHERE s.department.departmentId = :deptId")
     List<Subject> findAllByDepartmentId(@Param("deptId") UUID deptId);
