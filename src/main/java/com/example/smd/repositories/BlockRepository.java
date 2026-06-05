@@ -28,7 +28,7 @@ public interface BlockRepository extends JpaRepository<Blocks, UUID> {
     @Query("SELECT b FROM Blocks b " +
             "JOIN FETCH b.material m " +
             "WHERE m.syllabus.syllabusId = :syllabusId " +
-            "AND (b.blockStyle = 'H1' OR b.blockType = 'H2') " +
+            "AND (b.blockType = 'H1' OR b.blockType = 'H2') " +
             "ORDER BY m.materialId ASC, b.idx ASC")
     List<Blocks> findAllBlocksBySyllabusIdUrgent(@Param("syllabusId") UUID syllabusId);
 

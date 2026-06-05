@@ -326,7 +326,7 @@ public class SessionService {
             throw new AppException(ErrorCode.SESSION_LIST_REQUIRED);
         }
         SessionValidationResult result = validateSessionType(inputs, syllabusId);
-        result.setWarnings(validateContentSession(inputs, syllabusId));
+        result.addWarning(validateContentSession(inputs, syllabusId));
         return result;
     }
 
@@ -432,6 +432,13 @@ public class SessionService {
         List<SessionValidationResult.ContentLineValidationError> result = new ArrayList<>();
 
         List<Blocks> allBlocks = blockRepository.findAllBlocksBySyllabusIdUrgent(syllabusId);
+        if (allBlocks == null || allBlocks.isEmpty()) {
+            log.warn("=== BUG CHECK: Danh sách allBlocks trống rỗng (0 phần tử) ===");
+        } else {
+            log.warn("=== BUG CHECK: Tìm thấy {} blocks ===", allBlocks.size());
+            allBlocks.forEach(b -> log.warn("Block ID: {} | Style: {} | Type: {} | Content: {}",
+                    b.getBlockId(), b.getBlockStyle(), b.getBlockType(), b.getContentText()));
+        }
         if (allBlocks.isEmpty()) {
             throw new AppException(ErrorCode.BLOCK_LIST_EMPTY);
         }
@@ -671,7 +678,6 @@ public class SessionService {
 
         // Lưu Session và CLO mapping mới
         int savedCount = saveSessionsAndMappings(importRows, syllabus, subjectId);
-
         result.setSavedCount(savedCount);
         return result;
     }
