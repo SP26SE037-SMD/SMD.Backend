@@ -31,4 +31,14 @@ public interface AssessmentRepository extends JpaRepository<Assessment, UUID>, J
     @Query("SELECT COALESCE(SUM(a.weight), 0) FROM Assessment a WHERE a.syllabus.syllabusId = :syllabusId AND a.assessmentId <> :assessmentId")
     Double sumWeightBySyllabusIdAndAssessmentIdNot(@Param("syllabusId") UUID syllabusId,
                                                    @Param("assessmentId") UUID assessmentId);
+
+    /**
+     * Xóa toàn bộ Assessment của một Syllabus.
+     * Dùng trong luồng Import Excel theo chiến lược REPLACE.
+     * Phải gọi SAU KHI đã xóa CLO_Assessment mapping để tránh FK constraint.
+     */
+    @Modifying
+    @Query("DELETE FROM Assessment a WHERE a.syllabus.syllabusId = :syllabusId")
+    void deleteAllBySyllabus_SyllabusId(@Param("syllabusId") UUID syllabusId);
 }
+
