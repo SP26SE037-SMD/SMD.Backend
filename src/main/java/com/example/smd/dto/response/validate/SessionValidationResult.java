@@ -24,7 +24,10 @@ public class SessionValidationResult {
     private List<ValidationError> errors = new ArrayList<>();
 
     @Builder.Default
-    private List<ContentLineValidationError> warnings = new ArrayList<>();
+    private List<ContentLineValidationError> warningsContent = new ArrayList<>();
+
+    @Builder.Default
+    private List<ContentLineValidationError> warningsCovered = new ArrayList<>();
 
     // Thống kê số tiết còn dư/thiếu để Frontend hiển thị UI
     private RemainingQuota remainingQuotas;
@@ -36,9 +39,13 @@ public class SessionValidationResult {
         this.isValid = false; // Tự động chuyển thành false khi có lỗi
     }
 
-    public void addWarning(List<ContentLineValidationError> warnings) {
-        this.setWarnings(warnings);
+    public void addWarning(List<ContentLineValidationError> warnings, boolean isValidateContent) {
         this.isValid = false;
+        if(isValidateContent) {
+            this.setWarningsContent(warnings);
+        } else {
+            this.setWarningsCovered(warnings);
+        }
     }
 
 
