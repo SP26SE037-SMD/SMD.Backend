@@ -49,7 +49,6 @@ public class SyllabusService {
     SessionMapper sessionMapper;
     MaterialMapper materialMapper;
     BlockMapper blockMapper;
-    SyllabusSourceRepository syllabusSourceRepository;
 
     // 1. Tạo mới
     @Transactional
@@ -170,7 +169,6 @@ public class SyllabusService {
         // Xóa các bảng con còn lại không có cascade
         assessmentRepository.deleteAll(assessmentRepository.findBySyllabus_SyllabusId(id));
         sessionRepository.deleteAll(sessionRepository.findBySyllabus_SyllabusId(id));
-        syllabusSourceRepository.deleteAll(syllabusSourceRepository.findBySyllabus_SyllabusId(id));
 
         // Hard delete Syllabus
         syllabusRepository.delete(syllabus);

@@ -43,8 +43,6 @@ public class Syllabus {
     @OneToMany(mappedBy = "syllabus", fetch = FetchType.LAZY)
     List<Assessment> assessments;
 
-    @OneToMany(mappedBy = "syllabus", fetch = FetchType.LAZY)
-    List<Syllabus_Source> syllabusSources;
 
     // Trong class Syllabus
     @OneToMany(mappedBy = "syllabus", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
