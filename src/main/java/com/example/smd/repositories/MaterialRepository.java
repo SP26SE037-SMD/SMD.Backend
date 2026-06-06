@@ -21,7 +21,8 @@ public interface MaterialRepository extends JpaRepository<Material, UUID> {
     @EntityGraph(attributePaths = {"syllabus"})
     List<Material> findBySyllabus_SyllabusId(UUID syllabusId);
 
-
+    @EntityGraph(attributePaths = {"syllabus"})
+    List<Material> findBySyllabus_SyllabusIdOrderByIdAsc(UUID syllabusId);
 
     @Query(value = """
         SELECT DISTINCT ON (m.id) m.* FROM material m

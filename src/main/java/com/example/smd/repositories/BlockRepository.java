@@ -27,10 +27,10 @@ public interface BlockRepository extends JpaRepository<Blocks, UUID> {
 
     @Query("SELECT b FROM Blocks b " +
             "JOIN FETCH b.material m " +
-            "WHERE m.syllabus.syllabusId = :syllabusId " +
+            "WHERE m.materialId = :materialId " +
             "AND (b.blockType = 'H1' OR b.blockType = 'H2') " +
-            "ORDER BY m.materialId ASC, b.idx ASC")
-    List<Blocks> findAllBlocksBySyllabusIdUrgent(@Param("syllabusId") UUID syllabusId);
+            "ORDER BY m.id ASC, b.idx ASC")
+    List<Blocks> findAllBlocksByMaterialIdUrgent(@Param("materialId") UUID materialId);
 
     @Query("SELECT b.contentText FROM Blocks b " +
             "WHERE b.material.materialId = :materialId " +

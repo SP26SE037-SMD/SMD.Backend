@@ -48,6 +48,7 @@ public class SessionService {
     private final SessionMapper sessionMapper;
     private final SubjectRepository subjectRepository;
     private final BlockRepository blockRepository;
+    private final MaterialRepository materialRepository;
 
     private static final double SIMILARITY_THRESHOLD = 0.90;
     private final CLOsRepository closRepository;
@@ -326,7 +327,9 @@ public class SessionService {
             throw new AppException(ErrorCode.SESSION_LIST_REQUIRED);
         }
         SessionValidationResult result = validateSessionType(inputs, syllabusId);
-        result.addWarning(validateContentSession(inputs, syllabusId));
+        SessionValidationResult resultContent = validateContentSession(inputs, syllabusId);
+        result.addWarning(resultContent.getWarningsCovered(), false);
+        result.addWarning(resultContent.getWarningsContent(), true);
         return result;
     }
 
@@ -427,33 +430,49 @@ public class SessionService {
         return result;
     }
 
-    private List<SessionValidationResult.ContentLineValidationError> validateContentSession(List<SessionRequest> inputs,
+    private SessionValidationResult validateContentSession(List<SessionRequest> inputs,
             UUID syllabusId) {
-        List<SessionValidationResult.ContentLineValidationError> result = new ArrayList<>();
 
-        List<Blocks> allBlocks = blockRepository.findAllBlocksBySyllabusIdUrgent(syllabusId);
-        if (allBlocks == null || allBlocks.isEmpty()) {
-            log.warn("=== BUG CHECK: Danh sách allBlocks trống rỗng (0 phần tử) ===");
-        } else {
-            log.warn("=== BUG CHECK: Tìm thấy {} blocks ===", allBlocks.size());
-            allBlocks.forEach(b -> log.warn("Block ID: {} | Style: {} | Type: {} | Content: {}",
-                    b.getBlockId(), b.getBlockStyle(), b.getBlockType(), b.getContentText()));
-        }
-        if (allBlocks.isEmpty()) {
-            throw new AppException(ErrorCode.BLOCK_LIST_EMPTY);
-        }
+        //Validate Content
+        List<SessionValidationResult.ContentLineValidationError> resultContent = new ArrayList<>();
 
         Map<String, List<Blocks>> dbHierarchy = new HashMap<>();
-        String currentH1Key = null;
+        Set<String> matchedH1Keys = new HashSet<>();
+        Set<UUID> matchedH2BlockIds = new HashSet<>();
 
-        for (Blocks block : allBlocks) {
-            if ("H1".equalsIgnoreCase(block.getBlockStyle())) {
-                currentH1Key = cleanString(block.getContentText());
-                dbHierarchy.put(currentH1Key, new ArrayList<>());
-            } else if ("H2".equalsIgnoreCase(block.getBlockType()) && currentH1Key != null) {
-                dbHierarchy.get(currentH1Key).add(block);
+        List<Material> materialList = materialRepository.findBySyllabus_SyllabusIdOrderByIdAsc(syllabusId);
+        for(Material material : materialList) {
+            String currentH1Key = null;
+            List<Blocks> allBlocks = blockRepository.findAllBlocksByMaterialIdUrgent(material.getMaterialId());
+            if (allBlocks == null || allBlocks.isEmpty()) {
+                log.warn("=== BUG CHECK: Danh sách allBlocks trống rỗng (0 phần tử) ===");
+            } else {
+                log.warn("=== BUG CHECK: Tìm thấy {} blocks ===", allBlocks.size());
+                allBlocks.forEach(b -> log.warn("Block ID: {} | Style: {} | Type: {} | Content: {}",
+                        b.getBlockId(), b.getBlockStyle(), b.getBlockType(), b.getContentText()));
+            }
+
+            if (allBlocks.isEmpty()) {
+                throw new AppException(ErrorCode.BLOCK_LIST_EMPTY);
+            }
+
+            for (Blocks block : allBlocks) {
+                if ("H1".equalsIgnoreCase(block.getBlockType())) {
+                    currentH1Key = cleanString(block.getContentText());
+                    dbHierarchy.putIfAbsent(currentH1Key, new ArrayList<>());
+                } else if ("H2".equalsIgnoreCase(block.getBlockType()) && currentH1Key != null) {
+                    dbHierarchy.get(currentH1Key).add(block);
+                }
             }
         }
+
+        log.error("==================================================");
+        log.error("===> TRẠNG THÁI MAP ĐỂ KIỂM TRA CHẮC CHẮN <===");
+        log.error("1. Map có bị rỗng (empty) không? -> {}", dbHierarchy.isEmpty());
+        log.error("2. Số lượng Key (H1) trong Map hiện tại: {} chương", dbHierarchy.size());
+        log.error("3. Danh sách các Key đang có: {}", dbHierarchy.keySet());
+        log.error("4. Toàn bộ cấu trúc thô của Map: {}", dbHierarchy.toString());
+        log.error("==================================================");
 
         JaroWinklerSimilarity similarityMeasure = new JaroWinklerSimilarity();
 
@@ -462,7 +481,7 @@ public class SessionService {
             String reqTopic = request.getSessionTopic();
 
             if (reqTitle == null || reqTitle.trim().isEmpty()) {
-                result.add(SessionValidationResult.ContentLineValidationError.builder()
+                resultContent.add(SessionValidationResult.ContentLineValidationError.builder()
                         .code("SESSION_CONTENT_LINE_MISMATCH")
                         .message("The reqTitle is empty.")
                         .sessionNumber(request.getSessionNumber())
@@ -487,7 +506,7 @@ public class SessionService {
             }
 
             if (matchedH1KeyInDb == null) {
-                result.add(SessionValidationResult.ContentLineValidationError.builder()
+                resultContent.add(SessionValidationResult.ContentLineValidationError.builder()
                         .code("H1_NOT_FOUND")
                         .message("No chapters in the document matching the title were found.")
                         .sessionNumber(request.getSessionNumber())
@@ -498,10 +517,11 @@ public class SessionService {
                 continue;
             }
 
+            matchedH1Keys.add(matchedH1KeyInDb);
             List<Blocks> h2BlocksInDb = dbHierarchy.get(matchedH1KeyInDb);
 
             if (reqTopic == null || reqTopic.trim().isEmpty()) {
-                result.add(SessionValidationResult.ContentLineValidationError.builder()
+                resultContent.add(SessionValidationResult.ContentLineValidationError.builder()
                         .code("SESSION_CONTENT_LINE_MISMATCH")
                         .message("The session topic is empty.")
                         .sessionNumber(request.getSessionNumber())
@@ -527,6 +547,7 @@ public class SessionService {
 
                     if (score >= SIMILARITY_THRESHOLD) {
                         isH2Matched = true;
+                        matchedH2BlockIds.add(dbH2Block.getBlockId());
                         break;
                     }
                 }
@@ -534,18 +555,60 @@ public class SessionService {
                 // Nếu dòng H2 này trong Request gõ lệch hoàn toàn so với các H2 của H1 đó trong
                 // DB
                 if (!isH2Matched) {
-                    result.add(SessionValidationResult.ContentLineValidationError.builder()
+                    resultContent.add(SessionValidationResult.ContentLineValidationError.builder()
                             .code("SESSION_CONTENT_LINE_MISMATCH")
                             .message(String.format(
                                     "The heading '%s' in SessionTopic does not match any subheading of chapter '%s' in the document.",
                                     subTopic, reqTitle))
                             .sessionNumber(request.getSessionNumber())
                             .lineIndex(1)
-                            .lineContent(reqTitle)
+                            .lineContent(subTopic)
                             .similarityScore(highestH2Score)
                             .build());
                 }
             }
+        }
+
+        //Validate Covered
+        List<SessionValidationResult.ContentLineValidationError> resultCovered = new ArrayList<>();
+
+        for (Map.Entry<String, List<Blocks>> entry : dbHierarchy.entrySet()) {
+            String dbH1Key = entry.getKey();
+            List<Blocks> dbH2Blocks = entry.getValue();
+
+            // TẦNG 1: Kiểm tra độ phủ cấp Chương (H1)
+            if (!matchedH1Keys.contains(dbH1Key)) {
+                resultCovered.add(SessionValidationResult.ContentLineValidationError.builder()
+                        .code("CHAPTER_OMISSION")
+                        .message(String.format("CRITICAL: The entire '%s' defined in the syllabus is completely missing from the teaching schedule.", dbH1Key))
+                        .sessionNumber(0)
+                        .lineIndex(0)
+                        .similarityScore(0.0)
+                        .build());
+                continue;
+            }
+
+            // TẦNG 2: Kiểm tra độ phủ cấp Đề mục con (H2)
+            for (Blocks dbH2Block : dbH2Blocks) {
+                if (!matchedH2BlockIds.contains(dbH2Block.getBlockId())) {
+                    resultCovered.add(SessionValidationResult.ContentLineValidationError.builder()
+                            .code("SUBTOPIC_OMISSION_WARNING") // Lỗi vừa/Nhắc nhở: Sót mục con
+                            .message(String.format("WARNING: The sub-heading '%s' of '%s' is not covered in any training session.",
+                                    dbH2Block.getContentText(), dbH1Key))
+                            .sessionNumber(0)
+                            .lineIndex(1)
+                            .lineContent(dbH2Block.getContentText())
+                            .similarityScore(0.0)
+                            .build());
+                }
+            }
+        }
+        SessionValidationResult result = new SessionValidationResult();
+        if(!resultCovered.isEmpty()) {
+            result.addWarning(resultCovered, false);
+        }
+        if(!resultContent.isEmpty()) {
+            result.addWarning(resultContent, true);
         }
         return result;
     }
@@ -568,14 +631,13 @@ public class SessionService {
             return subTopics;
 
         // Tách đoạn văn thành các dòng độc lập qua ký tự xuống dòng (Enter)
-        String[] lines = topic.split("\\r?\\n");
+        String[] lines = topic.split("~");
 
         for (String line : lines) {
             String trimmed = line.trim();
-            // Chỉ lấy những dòng bắt đầu bằng định dạng số mục (Ví dụ: "1.1.", "1.2 ")
-            // Bỏ qua các dòng mô tả nội dung chi tiết dạng gạch đầu dòng "-" hoặc "*"
-            if (!trimmed.isEmpty() && Pattern.matches("^\\d+\\.\\d+.*", trimmed)) {
-                subTopics.add(trimmed);
+            String cleanLine = trimmed.replaceFirst("^-\\s*", "").trim();
+            if (!cleanLine.isEmpty() && Pattern.matches("^\\d+(\\.\\d+)?\\..*", cleanLine)) {
+                subTopics.add(cleanLine);
             }
         }
         return subTopics;
