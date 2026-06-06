@@ -557,19 +557,6 @@ public class SessionService {
                     }
                 }
 
-//                for (Blocks dbH2Block : h2BlocksInDb) {
-//                    String cleanDbH2 = cleanString(dbH2Block.getContentText());
-//                    double score = similarityMeasure.apply(cleanSubTopic, cleanDbH2);
-//                    log.info("[VALIDATE] Chuỗi từ Request: '{}' -> Đã kích hoạt ĐÃ PHỦ cho Block ID: {} | Nội dung DB: '{}' | Score: '{}",
-//                            subTopic, dbH2Block.getBlockId(), dbH2Block.getContentText(), score);
-//                    if (score > highestH2Score) {
-//                        highestH2Score = score;
-//                        if (score >= SIMILARITY_THRESHOLD) {
-//                            bestMatchH2Block = dbH2Block;
-//                        }
-//                    }
-//                }
-
                 if (bestMatchH2Block != null) {
                     isH2Matched = true;
                     matchedH2BlockIds.add(bestMatchH2Block.getBlockId());
