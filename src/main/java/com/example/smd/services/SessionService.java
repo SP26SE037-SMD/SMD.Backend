@@ -538,6 +538,7 @@ public class SessionService {
             List<String> requestSubTopics = parseSubTopics(reqTopic);
             for (String subTopic : requestSubTopics) {
                 String cleanSubTopic = cleanString(subTopic);
+                Blocks bestMatchH2Block = null;
                 boolean isH2Matched = false;
                 double highestH2Score = 0;
 
@@ -554,6 +555,26 @@ public class SessionService {
                         matchedH2BlockIds.add(dbH2Block.getBlockId());
                         break;
                     }
+                }
+
+//                for (Blocks dbH2Block : h2BlocksInDb) {
+//                    String cleanDbH2 = cleanString(dbH2Block.getContentText());
+//                    double score = similarityMeasure.apply(cleanSubTopic, cleanDbH2);
+//                    log.info("[VALIDATE] Chuỗi từ Request: '{}' -> Đã kích hoạt ĐÃ PHỦ cho Block ID: {} | Nội dung DB: '{}' | Score: '{}",
+//                            subTopic, dbH2Block.getBlockId(), dbH2Block.getContentText(), score);
+//                    if (score > highestH2Score) {
+//                        highestH2Score = score;
+//                        if (score >= SIMILARITY_THRESHOLD) {
+//                            bestMatchH2Block = dbH2Block;
+//                        }
+//                    }
+//                }
+
+                if (bestMatchH2Block != null) {
+                    isH2Matched = true;
+                    matchedH2BlockIds.add(bestMatchH2Block.getBlockId());
+                    log.info("💚 [ADD SUCCESS] Chuỗi từ Request: '{}' -> Đã kích hoạt ĐÃ PHỦ cho Block ID: {} | Nội dung DB: '{}'",
+                            subTopic, bestMatchH2Block.getBlockId(), bestMatchH2Block.getContentText());
                 }
 
                 // Nếu dòng H2 này trong Request gõ lệch hoàn toàn so với các H2 của H1 đó trong
@@ -618,9 +639,24 @@ public class SessionService {
      * Hàm Helper 1: Làm sạch chuỗi, hạ chữ thường, xóa khoảng trắng thừa
      */
     private String cleanString(String input) {
-        if (input == null)
-            return "";
-        return input.trim().replaceAll("\\s+", " ").toLowerCase();
+        if (input == null) return "";
+
+        // 1. Hạ chữ thường và cắt khoảng trắng 2 đầu
+        String clean = input.trim().toLowerCase();
+
+        // 2. Xóa bỏ ký tự gạch đầu dòng hoặc dấu sao nếu có (- hoặc *)
+        clean = clean.replaceFirst("^[-*]\\s*", "");
+
+        // 3. PHÁT SÚNG QUYẾT ĐỊNH: Xóa sạch các số mục "1. ", "1.1 ", "2. " ở đầu câu
+        // Nó sẽ biến "1. the history..." thành "the history..." để khít 100% với Request của giảng viên
+        clean = clean.replaceFirst("^\\d+(\\.\\d+)*\\.?\\s*", "");
+
+        // 4. Xóa bỏ các ký tự đặc biệt như dấu gạch ngang "-" trong chuỗi "Vovinam - Viet Vo Dao"
+        // để tránh việc lệch điểm do khoảng trắng quanh dấu gạch ngang
+        clean = clean.replaceAll("[^a-zA-Z0-9\\s]", "");
+
+        // 5. Chuẩn hóa khoảng trắng thừa ở giữa chuỗi
+        return clean.replaceAll("\\s+", " ").trim();
     }
 
     /**
@@ -636,8 +672,10 @@ public class SessionService {
 
         for (String line : lines) {
             String trimmed = line.trim();
-            String cleanLine = trimmed.replaceFirst("^-\\s*", "").trim();
-            if (!cleanLine.isEmpty() && Pattern.matches("^\\d+(\\.\\d+)?\\..*", cleanLine)) {
+
+            String cleanLine = trimmed.replaceFirst("^[-*]\\s*", "").trim();
+
+            if (!cleanLine.isEmpty()) {
                 subTopics.add(cleanLine);
             }
         }
