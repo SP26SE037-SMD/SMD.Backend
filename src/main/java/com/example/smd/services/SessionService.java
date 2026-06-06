@@ -328,8 +328,12 @@ public class SessionService {
         }
         SessionValidationResult result = validateSessionType(inputs, syllabusId);
         SessionValidationResult resultContent = validateContentSession(inputs, syllabusId);
-        result.addWarning(resultContent.getWarningsCovered(), false);
-        result.addWarning(resultContent.getWarningsContent(), true);
+        if(!resultContent.getWarningsCovered().isEmpty()) {
+            result.addWarning(resultContent.getWarningsCovered(), false);
+        }
+        if(!resultContent.getWarningsContent().isEmpty()) {
+            result.addWarning(resultContent.getWarningsContent(), true);
+        }
         return result;
     }
 
@@ -604,12 +608,8 @@ public class SessionService {
             }
         }
         SessionValidationResult result = new SessionValidationResult();
-        if(!resultCovered.isEmpty()) {
-            result.addWarning(resultCovered, false);
-        }
-        if(!resultContent.isEmpty()) {
-            result.addWarning(resultContent, true);
-        }
+        result.addWarning(resultCovered, false);
+        result.addWarning(resultContent, true);
         return result;
     }
 
