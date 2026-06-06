@@ -33,9 +33,5 @@ public interface SourceRepository extends JpaRepository<Source, UUID> {
                         @Param("search") String search,
                         Pageable pageable);
 
-        @Query("SELECT DISTINCT src FROM Source src " +
-                        "JOIN Syllabus_Source ss ON src.sourceId = ss.source.sourceId " +
-                        "JOIN Syllabus syl ON ss.syllabus.syllabusId = syl.syllabusId " +
-                        "WHERE syl.subject.subjectId = :subjectId")
-        List<Source> findAllBySubjectId(@Param("subjectId") UUID subjectId);
+
 }
