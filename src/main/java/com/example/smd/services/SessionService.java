@@ -587,6 +587,7 @@ public class SessionService {
                         .message(String.format("CRITICAL: The entire '%s' defined in the syllabus is completely missing from the teaching schedule.", dbH1Key))
                         .sessionNumber(0)
                         .lineIndex(0)
+                        .lineContent(dbH1Key)
                         .similarityScore(0.0)
                         .build());
                 continue;
