@@ -718,7 +718,8 @@ public class SessionService {
                 Integer sessionNumber = (int) getNumericCellValue(row, 0);
                 String sessionTitle = getStringCellValue(row, 1);
                 String teachingMethods = getStringCellValue(row, 2);
-                String sessionTopic = getStringCellValue(row, 3);
+                // Chỉ cột Topic mới chuẩn hóa ký tự xuống dòng (Alt+Enter) thành '~'
+                String sessionTopic = normalizeLineBreaks(getStringCellValue(row, 3));
                 String sessionType = getStringCellValue(row, 4).toUpperCase().trim();
                 String cloMappingRaw = getStringCellValue(row, 5);
 
@@ -886,6 +887,27 @@ public class SessionService {
             case BOOLEAN -> String.valueOf(cell.getBooleanCellValue());
             default -> "";
         };
+    }
+
+    /**
+     * Chuẩn hóa tất cả kiểu ký tự ngắt dòng về \n thống nhất.
+     *
+     * <p>Người dùng Excel thường dùng Alt+Enter để xuống dòng trong một ô.
+     * Tùy OS, Excel lưu ký tự này dưới dạng:
+     * <ul>
+     *   <li>{@code \r\n} — Windows (Carriage Return + Line Feed)</li>
+     *   <li>{@code \r}   — macOS cũ / một số phiên bản Excel</li>
+     * </ul>
+     * Hàm này ép tất cả về {@code \n} để DB lưu sạch và FE hiển thị nhất quán.
+     *
+     * @param input Chuỗi thô đọc từ Apache POI
+     * @return Chuỗi đã chuẩn hóa, hoặc chuỗi rỗng nếu input là null
+     */
+    private String normalizeLineBreaks(String input) {
+        if (input == null)
+            return "";
+        // Thay \r\n (Windows) và \r (macOS cũ) và \n (Unix) về dấu ~ thống nhất
+        return input.replace("\r\n", "~").replace("\r", "~").replace("\n", "~");
     }
 
     /**
