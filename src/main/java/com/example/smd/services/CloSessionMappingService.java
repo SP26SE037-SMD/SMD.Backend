@@ -165,6 +165,7 @@ class CloMappingExecutor {
             map.put("clo_id", clo.getCloId().toString());
             map.put("clo_code", clo.getCloCode());
             map.put("description", clo.getDescription());
+            map.put("bloom_level", clo.getBloomLevel());
             return map;
         }).collect(Collectors.toList());
 
