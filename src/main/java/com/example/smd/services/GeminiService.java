@@ -530,6 +530,7 @@ public class GeminiService  {
                     RealtimePayload.status("VALIDATE_MAPPING_FAIL", "AI failed to generate valid content, please try again!"));
             log.error("Lỗi khi parse đối tượng sang JSON String", e);
             log.error("Failed to parse Gemini response: {}", response);
+            log.info("VALIDATE_MAPPING_FAIL: {}", "AI failed to generate valid content, please try again!");
             throw new AppException(ErrorCode.AI_GENERATION_FAILED);
         }
     }

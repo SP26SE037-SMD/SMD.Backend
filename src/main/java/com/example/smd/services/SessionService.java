@@ -50,7 +50,7 @@ public class SessionService {
     private final BlockRepository blockRepository;
     private final MaterialRepository materialRepository;
 
-    private static final double SIMILARITY_THRESHOLD = 0.90;
+    private static final double SIMILARITY_THRESHOLD = 0.95;
     private final CLOsRepository closRepository;
     private final CloSessionMappingRepository cloSessionMappingRepository;
 
@@ -550,6 +550,11 @@ public class SessionService {
                         highestH2Score = score;
                     }
 
+                    if (cleanDbH2.contains("solidarity") || cleanSubTopic.contains("solidarity")) {
+                        log.info("🔥 [TRACKING H2 SCORE] Input GV: '{}' | DB đang so sánh: '{}' | Điểm Jaro-Winkler: {}",
+                                cleanSubTopic, cleanDbH2, score);
+                    }
+
                     if (score >= SIMILARITY_THRESHOLD) {
                         isH2Matched = true;
                         matchedH2BlockIds.add(dbH2Block.getBlockId());
@@ -605,7 +610,7 @@ public class SessionService {
             for (Blocks dbH2Block : dbH2Blocks) {
                 if (!matchedH2BlockIds.contains(dbH2Block.getBlockId())) {
                     resultCovered.add(SessionValidationResult.ContentLineValidationError.builder()
-                            .code("SUBTOPIC_OMISSION_WARNING") // Lỗi vừa/Nhắc nhở: Sót mục con
+                            .code("SUBTOPIC_OMISSION_WARNING")
                             .message(String.format("WARNING: The sub-heading '%s' of '%s' is not covered in any training session.",
                                     dbH2Block.getContentText(), dbH1Key))
                             .sessionNumber(0)
