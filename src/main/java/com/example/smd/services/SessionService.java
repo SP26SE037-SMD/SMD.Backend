@@ -636,26 +636,26 @@ public class SessionService {
             return result;
         }
 
-        // ── Bước 2a: Validate CLO ─────────────────────────────────────────
-        validateCloMappings(importRows, subjectId, result);
-
-        // ── Bước 2b: Validate Quota (tận dụng hàm validate() có sẵn) ─────
-        // Map sang List<SessionRequest> để truyền vào hàm validate
-        // Lưu ý: validate() sẽ đọc existingDbSessions từ DB. Trong luồng REPLACE,
-        // cần xóa session cũ trước khi validate để số tiết không bị tính đôi.
-        // Ở đây ta validate TRƯỚC khi xóa, nên existingDbSessions = [] nếu syllabus
-        // chưa có session,
-        // hoặc phải truyền vào list trống nếu muốn validate độc lập.
-        List<SessionRequest> sessionRequests = mapToSessionRequests(importRows, syllabusId, sessionMinutes);
-        SessionValidationResult quotaResult = validate(sessionRequests, syllabusId);
-
-        // Merge lỗi quota vào result tổng
-        result.mergeErrors(quotaResult);
-
-        // ── Bước 3: Nếu có lỗi → Return sớm, KHÔNG lưu DB ───────────────
-        if (!result.isValid()) {
-            return result;
-        }
+//        // ── Bước 2a: Validate CLO ─────────────────────────────────────────
+//        validateCloMappings(importRows, subjectId, result);
+//
+//        // ── Bước 2b: Validate Quota (tận dụng hàm validate() có sẵn) ─────
+//        // Map sang List<SessionRequest> để truyền vào hàm validate
+//        // Lưu ý: validate() sẽ đọc existingDbSessions từ DB. Trong luồng REPLACE,
+//        // cần xóa session cũ trước khi validate để số tiết không bị tính đôi.
+//        // Ở đây ta validate TRƯỚC khi xóa, nên existingDbSessions = [] nếu syllabus
+//        // chưa có session,
+//        // hoặc phải truyền vào list trống nếu muốn validate độc lập.
+//        List<SessionRequest> sessionRequests = mapToSessionRequests(importRows, syllabusId, sessionMinutes);
+//        SessionValidationResult quotaResult = validate(sessionRequests, syllabusId);
+//
+//        // Merge lỗi quota vào result tổng
+//        result.mergeErrors(quotaResult);
+//
+//        // ── Bước 3: Nếu có lỗi → Return sớm, KHÔNG lưu DB ───────────────
+//        if (!result.isValid()) {
+//            return result;
+//        }
 
         // ── Bước 4: Lưu DB (Transactional) ───────────────────────────────
         // TODO [DECISION POINT - CẦN XEM XÉT]:
