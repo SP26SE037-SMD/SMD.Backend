@@ -550,11 +550,6 @@ public class SessionService {
                         highestH2Score = score;
                     }
 
-                    if (cleanDbH2.contains("solidarity") || cleanSubTopic.contains("solidarity")) {
-                        log.info("🔥 [TRACKING H2 SCORE] Input GV: '{}' | DB đang so sánh: '{}' | Điểm Jaro-Winkler: {}",
-                                cleanSubTopic, cleanDbH2, score);
-                    }
-
                     if (score >= SIMILARITY_THRESHOLD) {
                         isH2Matched = true;
                         matchedH2BlockIds.add(dbH2Block.getBlockId());
