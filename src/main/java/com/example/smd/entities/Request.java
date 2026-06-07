@@ -21,7 +21,7 @@ public class Request {
     @Column(name = "request_id")
     UUID requestId;
 
-    @Column(name = "title", nullable = false, length = 50)
+    @Column(name = "title", nullable = false, length = 100)
     String title;
 
     @Column(name = "content", columnDefinition = "TEXT")
