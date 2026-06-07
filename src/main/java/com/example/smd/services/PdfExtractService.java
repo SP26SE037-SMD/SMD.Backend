@@ -364,7 +364,7 @@ public class PdfExtractService {
                     
                     if (!insideRefSection) {
                         boolean hasContentMarkers = pageText.contains("b) books, textbooks") ||
-                                                    pageText.contains("list of reference books") ||
+                                                    pageText.contains("*List of Reference Books") ||
                                                     pageText.contains("reference code") ||
                                                     pageText.contains("index reference code");
                                                     
@@ -462,8 +462,8 @@ public class PdfExtractService {
                         }
                     }
                     
-                    if (pageText.contains("list of monographs") || 
-                        Pattern.compile("(?i)(appendix|accreditation|curriculum\\s+mapping|notes:|note:)").matcher(pageText).find()) {
+                    if (pageText.contains("********") || pageText.contains("List of monographs and journals of the training discipline") ||
+                    Pattern.compile("(?i)(appendix|accreditation|curriculum\\s+mapping|notes:|note:)").matcher(pageText).find()) {
                         log.info("[PDF-REFERENCE] Kết thúc section tài liệu tham khảo tại trang {}", page.getPageNumber());
                         break; 
                     }
