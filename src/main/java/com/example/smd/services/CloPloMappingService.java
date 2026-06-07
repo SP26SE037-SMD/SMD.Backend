@@ -182,8 +182,11 @@ public class CloPloMappingService {
                 .orElseThrow(() -> new AppException(ErrorCode.SUBJECT_NOT_FOUND));
         List<CLOs> cloList = cloRepository.findBySubject_SubjectId(subject.getSubjectId());
         String userCloList = cloList.stream()
-                .map(clo -> clo.getCloCode() + ": " + clo.getDescription())
+                .map(clo -> "Code: " + clo.getCloCode()
+                        + ", Description: " + clo.getDescription()
+                        + ", bloomLevel: " + clo.getBloomLevel()) // <-- Bổ sung trường này ở đây
                 .collect(Collectors.joining("\n"));
+
 
         Curriculum curriculum = curriculumRepository.findById(curriculumId)
                 .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));

@@ -18,6 +18,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -145,6 +146,7 @@ class CloMappingExecutor {
     private final RealtimePublisher realtimePublisher;
 
     @Async // Thần chú để Spring đẩy toàn bộ hàm này chạy trên một Thread ngầm riêng biệt
+    @Transactional
     public void checkMapping(List<CloSessionMappingRequest> request, UUID syllabusId, String accountId) {
 
         realtimePublisher.publishToAccount(accountId,
@@ -189,9 +191,10 @@ class CloMappingExecutor {
                 public void afterCommit() {
                     realtimePublisher.publishToAccount(accountId,
                             RealtimePayload.status("VALIDATE_MAPPING_SUCCESS", sessionMappingResult));
+                    log.info("VALIDATE_MAPPING_SUCCESS: {}", sessionMappingResult);
                 }
             });
-            log.info("VALIDATE_MAPPING_SUCCESS: {}", sessionMappingResult);
+
 
         } catch (JsonProcessingException e) {
             realtimePublisher.publishToAccount(accountId,
