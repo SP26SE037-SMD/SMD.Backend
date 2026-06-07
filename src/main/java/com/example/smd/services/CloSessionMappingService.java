@@ -182,15 +182,20 @@ class CloMappingExecutor {
             String sessionJsonString = objectMapper.writeValueAsString(sessionJsonData);
             String cloJsonString = objectMapper.writeValueAsString(cloJsonData);
 
-            var sessionMappingResult = geminiService.checkSessionCloMapping(sessionJsonString, cloJsonString, currentMapping);
+            var sessionMappingResult = geminiService.checkSessionCloMapping(sessionJsonString, cloJsonString, currentMapping, accountId);
 
-            realtimePublisher.publishToAccount(accountId,
-                    RealtimePayload.status("VALIDATE_MAPPING_SUCCESS", sessionMappingResult));
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    realtimePublisher.publishToAccount(accountId,
+                            RealtimePayload.status("VALIDATE_MAPPING_SUCCESS", sessionMappingResult));
+                }
+            });
             log.info("VALIDATE_MAPPING_SUCCESS: {}", sessionMappingResult);
 
         } catch (JsonProcessingException e) {
             realtimePublisher.publishToAccount(accountId,
-                    RealtimePayload.status("VALIDATE_MAPPING_FAIL", "AI failed to generate valid content, please try again!"));
+                    RealtimePayload.status("VALIDATE_MAPPING_FAIL", "Failed to parse JSON data, please try again!"));
             log.error("Lỗi khi parse đối tượng sang JSON String", e);
         }
     }
