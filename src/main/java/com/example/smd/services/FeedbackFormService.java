@@ -59,15 +59,15 @@ public class FeedbackFormService {
 
     @Transactional
     public FormRecordResponse createForm(CreateFormRequest req) {
-        if (req == null || req.getCurriculumId() == null) {
-            throw new AppException(ErrorCode.FEEDBACK_CURRICULUM_ID_REQUIRED);
+        Curriculum curriculum = null;
+        if (req.getCurriculumId() != null) {
+            curriculum = curriculumRepo.findById(req.getCurriculumId())
+                    .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));
         }
         if (req.getFormName() == null || req.getFormName().isBlank()) {
             throw new AppException(ErrorCode.FEEDBACK_FORM_TYPE_REQUIRED);
         }
 
-        Curriculum curriculum = curriculumRepo.findById(req.getCurriculumId())
-                .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));
 
         Department department = null;
         if (req.getDepartmentId() != null) {
