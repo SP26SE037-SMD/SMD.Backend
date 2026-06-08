@@ -274,6 +274,7 @@ public class TaskV2Service {
 
             boolean isCreateAction = ActionType.CREATE.name().equals(taskAction);
             boolean isUpdateAction = ActionType.UPDATE.name().equals(taskAction);
+            boolean isModifyAction = ActionType.MODIFY.name().equals(taskAction);
 
             boolean isInProgressOrTodo = TaskStatus.IN_PROGRESS.name().equals(newStatus)
                     || TaskStatus.TO_DO.name().equals(newStatus);
@@ -365,6 +366,34 @@ public class TaskV2Service {
                     }
                 }
             }
+            // ---------- Action: MODIFY ----------
+            if (isModifyAction) {
+                if (isInProgressOrTodo) {
+                    // Subject: nếu khác WAITING_SYLLABUS → chuyển sang WAITING_SYLLABUS
+                    if (TaskType.SUBJECT.name().equals(taskType)) {
+                        subjectRepository.findById(task.getTargetId()).ifPresent(subject -> {
+                            if (!SubjectStatus.WAITING_SYLLABUS.name().equals(subject.getStatus())) {
+                                subject.setStatus(SubjectStatus.WAITING_SYLLABUS.name());
+                                subjectRepository.save(subject);
+                                log.info("Subject {} status → WAITING_SYLLABUS", subject.getSubjectId());
+                            }
+                        });
+                    }
+                }
+
+                if (isDone) {
+                    // Subject: chuyển sang PENDING_REVIEW
+                    if (TaskType.SUBJECT.name().equals(taskType)) {
+                        subjectRepository.findById(task.getTargetId()).ifPresent(subject -> {
+                            subject.setStatus(SubjectStatus.PENDING_REVIEW.name());
+                            subjectRepository.save(subject);
+                            log.info("Subject {} status → PENDING_REVIEW (UPDATE action)", subject.getSubjectId());
+                        });
+                    }
+                }
+            }
+
+
         }
         // ===================== END STATUS PROPAGATION =====================
 
