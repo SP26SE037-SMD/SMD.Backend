@@ -143,6 +143,7 @@ public class SyllabusService {
 
         // Chuyển syllabus hiện tại sang PUBLISHED
         syllabus.setStatus(SyllabusStatus.PUBLISHED.toString());
+        syllabus.setApprovedDate(Instant.now());
         return syllabusMapper.toResponse(syllabusRepository.save(syllabus));
     }
 

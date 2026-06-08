@@ -445,16 +445,16 @@ public class TaskV2Service {
     @Transactional(readOnly = true)
     public SprintCurriculumResponse getSprintAndCurriculumByTaskId(UUID taskId) {
         TaskV2 task = taskV2Repository.findById(taskId)
-                .orElseThrow(() -> new RuntimeException("Task not found"));
+                .orElseThrow(() -> new AppException(ErrorCode.TASK_NOT_FOUND));
 
         Sprint sprint = task.getSprint();
         if (sprint == null) {
-            throw new RuntimeException("Task does not belong to any sprint");
+            throw new AppException(ErrorCode.SPRINT_NOT_FOUND, "Task does not belong to any sprint");
         }
 
         // Reload sprint với curriculum để tránh lazy loading issue
         sprint = sprintRepository.findById(sprint.getSprintId())
-                .orElseThrow(() -> new RuntimeException("Sprint not found"));
+                .orElseThrow(() -> new AppException(ErrorCode.SPRINT_NOT_FOUND));
 
         Curriculum curriculum = sprint.getCurriculum();
         if (curriculum == null) {
