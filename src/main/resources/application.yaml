@@ -97,7 +97,7 @@ logging:
 gemini:
   api-key: ${GEMINI_API_KEY}
   generate:
-    url: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
+    url: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent
   check:
     url: https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent
   vector-embedding:
