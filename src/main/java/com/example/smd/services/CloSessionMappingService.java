@@ -39,7 +39,7 @@ public class CloSessionMappingService {
     CLOsRepository cloRepository;
     SessionRepository sessionRepository;
     SyllabusRepository syllabusRepository;
-    CloMappingExecutor cloMapping;
+    CloSessionMappingExecutor cloSessionMapping;
 
     @Transactional
     public CloSessionMappingResponse createMapping(CloSessionMappingRequest request) {
@@ -127,7 +127,7 @@ public class CloSessionMappingService {
     }
 
     public String startCLOSessionMappingProcess(List<CloSessionMappingRequest> request, UUID syllabusId, String accountId) throws IOException {
-        cloMapping.checkMapping(request, syllabusId, accountId);
+        cloSessionMapping.checkMapping(request, syllabusId, accountId);
         return "The system is processing the CLO-Session-Mapping, please wait for a notification!";
     }
 }
@@ -136,7 +136,7 @@ public class CloSessionMappingService {
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-class CloMappingExecutor {
+class CloSessionMappingExecutor {
 
     private final SyllabusRepository syllabusRepository;
     private final SubjectRepository subjectRepository;
@@ -145,7 +145,7 @@ class CloMappingExecutor {
     private final GeminiService geminiService;
     private final RealtimePublisher realtimePublisher;
 
-    @Async // Thần chú để Spring đẩy toàn bộ hàm này chạy trên một Thread ngầm riêng biệt
+    @Async
     @Transactional
     public void checkMapping(List<CloSessionMappingRequest> request, UUID syllabusId, String accountId) {
 
