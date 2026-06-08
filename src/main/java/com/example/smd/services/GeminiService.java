@@ -166,7 +166,7 @@ public class GeminiService  {
      */
     @Retryable(
             retryFor = { HttpServerErrorException.class },
-            maxAttempts = 3,
+            maxAttempts = 10,
             backoff = @Backoff(delay = 2000) // Thử lại sau 2 giây, tối đa 3 lần
     )
     @Transactional
@@ -185,7 +185,7 @@ public class GeminiService  {
     @Transactional
     @Retryable(
             retryFor = { HttpServerErrorException.class },
-            maxAttempts = 3,
+            maxAttempts = 10,
             backoff = @Backoff(delay = 2000) // Thử lại sau 2 giây, tối đa 3 lần
     )
     public ComparisonResult compareSyllabus(SyllabusStructureResponse oldStruct, SyllabusStructureResponse newStruct) {
@@ -218,7 +218,7 @@ public class GeminiService  {
      */
     @Retryable(
             retryFor = { HttpServerErrorException.class },
-            maxAttempts = 3,
+            maxAttempts = 10,
             backoff = @Backoff(delay = 2000) // Thử lại sau 2 giây, tối đa 3 lần
     )
     public String determineImapact(String gapConcept, String contextText){
@@ -233,8 +233,8 @@ public class GeminiService  {
      */
     @Retryable(
             retryFor = { HttpServerErrorException.class },
-            maxAttempts = 3,
-            backoff = @Backoff(delay = 5000) // Thử lại sau 2 giây, tối đa 3 lần
+            maxAttempts = 10,
+            backoff = @Backoff(delay = 2000) // Thử lại sau 2 giây, tối đa 3 lần
     )
     public ProgramRegulationResponse extractMasterDataFromPdf(byte[] fileData, String contentType, String accountId) {
         // 0. Phân quyền (Tùy chọn theo logic của bạn)
@@ -331,8 +331,8 @@ public class GeminiService  {
      */
     @Retryable(
             retryFor = { HttpServerErrorException.class },
-            maxAttempts = 3,
-            backoff = @Backoff(delay = 5000) // Thử lại sau 2 giây, tối đa 3 lần
+            maxAttempts = 10,
+            backoff = @Backoff(delay = 2000) // Thử lại sau 2 giây, tối đa 3 lần
     )
     public ComplianceCheckResponse checkPoPloCompliance(String masterRule, String userList) {
         // 1. Lấy ĐÚNG Template dành cho việc Check Compliance
@@ -370,7 +370,7 @@ public class GeminiService  {
 
     @Retryable(
             retryFor = { HttpServerErrorException.class },
-            maxAttempts = 3,
+            maxAttempts = 10,
             backoff = @Backoff(delay = 5000) // Thử lại sau 2 giây, tối đa 3 lần
     )
     public PoPloMappingCheckResponse checkPoPloMapping(String poList, String ploList, String currentMapping) {
@@ -410,7 +410,7 @@ public class GeminiService  {
 
     @Retryable(
             retryFor = { HttpServerErrorException.class },
-            maxAttempts = 3,
+            maxAttempts = 10,
             backoff = @Backoff(delay = 2000) // Thử lại sau 2 giây, tối đa 3 lần
     )
     public CloPloMappingCheckResponse checkPloCloMapping(String ploList, String cloList, String currentMapping) {
@@ -451,7 +451,7 @@ public class GeminiService  {
 
     @Retryable(
             retryFor = { HttpServerErrorException.class },
-            maxAttempts = 3,
+            maxAttempts = 10,
             backoff = @Backoff(delay = 2000) // Thử lại sau 2 giây, tối đa 3 lần
     )
     public AssessmentCloMappingValidationResult checkAssessmentCloMapping(String assessmentList, String cloList, String currentMapping, String accountId) {
@@ -495,7 +495,7 @@ public class GeminiService  {
 
     @Retryable(
             retryFor = { HttpServerErrorException.class },
-            maxAttempts = 3,
+            maxAttempts = 10,
             backoff = @Backoff(delay = 2000) // Thử lại sau 2 giây, tối đa 3 lần
     )
     public SessionCloMappingValidationResult checkSessionCloMapping(String sessionList, String cloList, String currentMapping, String accountId) {

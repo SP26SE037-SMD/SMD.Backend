@@ -76,7 +76,7 @@ public class EmbeddingService {
 
             return gemini.compareSyllabus(oldStruct, newStruct);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to analyze syllabus differences");
+            throw new AppException(ErrorCode.AI_GENERATION_FAILED);
         }
     }
 
@@ -352,5 +352,11 @@ public class EmbeddingService {
         }
         historySearch.setSelectedCompare(true);
         return historyRepo.save(historySearch);
+    }
+
+    public void deleteHistoryCompare(UUID historyId){
+        var historySearch = historyRepo.findById(historyId)
+                .orElseThrow(() -> new AppException(ErrorCode.AI_HISTORY_NOT_FOUND));
+        historyRepo.delete(historySearch);
     }
 }
