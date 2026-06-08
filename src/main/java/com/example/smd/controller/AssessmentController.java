@@ -124,6 +124,20 @@ public class AssessmentController {
                 .build();
     }
 
+    @DeleteMapping("/bulk")
+    @PreAuthorize("hasAuthority('SYLLABUS_UPDATE')")
+    @Operation(summary = "Hard delete a list of assessments by IDs")
+    public ResponseObject<Boolean> deleteAssessmentsByIds(
+            @RequestBody List<UUID> assessmentIds,
+            @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("accountId");
+        return ResponseObject.<Boolean>builder()
+                .status(1000)
+                .data(assessmentService.deleteAssessmentsByIds(assessmentIds, userId))
+                .message("Delete assessments successfully")
+                .build();
+    }
+
 
 
     @PostMapping("/syllabus/{syllabusId}/validate")

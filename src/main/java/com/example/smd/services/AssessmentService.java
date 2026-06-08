@@ -252,6 +252,25 @@ public class AssessmentService {
         return true;
     }
 
+    @Transactional
+    public boolean deleteAssessmentsByIds(List<UUID> assessmentIds, String accountId) {
+        var account = accountService.getAccountById(accountId);
+        String roleName = account.getRole().getRoleName();
+        if (!(RoleName.COLLABORATOR.toString().equals(roleName) || RoleName.PDCM.toString().equals(roleName))) {
+            throw new AppException(ErrorCode.ACCESS_DENIED_FOR_ROLE);
+        }
+
+        List<Assessment> assessments = assessmentRepository.findAllById(assessmentIds);
+
+        // Kiểm tra nếu có ID nào không tồn tại trong DB
+        if (assessments.size() != assessmentIds.size()) {
+            throw new AppException(ErrorCode.ASSESSMENT_NOT_FOUND);
+        }
+
+        assessmentRepository.deleteAll(assessments);
+        return true;
+    }
+
     private void validateWeightInput(Double weight) {
         if (weight == null || weight <= 0 || weight > 100) {
             throw new AppException(ErrorCode.ASSESSMENT_WEIGHT_INVALID);
