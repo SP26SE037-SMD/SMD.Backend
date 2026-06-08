@@ -237,6 +237,36 @@ public class SyllabusController {
                         .build();
         }
 
+        @PostMapping("/compare/material")
+        public ResponseObject<ComparisonResult> compareSyllabusMaterial(
+                @RequestParam("oldSyllabusId") UUID oldSyllabusId,
+                @RequestParam("newSyllabusId") UUID newSyllabusId) {
+                return ResponseObject.<ComparisonResult>builder()
+                        .data(embeddingService.compareSyllabus(oldSyllabusId, newSyllabusId))
+                        .message("Compare material syllabus successfully")
+                        .build();
+        }
+
+        @PostMapping("/compare/session")
+        public ResponseObject<SessionDiffResponse> compareSyllabusSession(
+                @RequestParam("oldSyllabusId") UUID oldSyllabusId,
+                @RequestParam("newSyllabusId") UUID newSyllabusId) {
+                return ResponseObject.<SessionDiffResponse>builder()
+                        .data(embeddingService.compareSessionConfiguration(oldSyllabusId, newSyllabusId))
+                        .message("Compare session syllabus successfully")
+                        .build();
+        }
+
+        @PostMapping("/compare/assessment")
+        public ResponseObject<AssessmentDiffResponse> compareSyllabusAssessment(
+                @RequestParam("oldSyllabusId") UUID oldSyllabusId,
+                @RequestParam("newSyllabusId") UUID newSyllabusId) {
+                return ResponseObject.<AssessmentDiffResponse>builder()
+                        .data(embeddingService.compareAssessmentConfiguration(oldSyllabusId, newSyllabusId))
+                        .message("Compare assessment syllabus successfully")
+                        .build();
+        }
+
         @PostMapping("/save-compare-version")
         public ResponseObject<SyllabusComparisonHistory> saveComparisonHistory(@RequestBody CompareSyllabusResponse compareSyllabusResponse) {
                 SyllabusComparisonHistory result = new  SyllabusComparisonHistory();
@@ -328,6 +358,13 @@ public class SyllabusController {
                         .status(1000)
                         .data(embeddingService.getComparisonHistoryDetailForStudent(newSyllabusId))
                         .message("Get all compare syllabus successfully")
+                        .build();
+        }
+        @DeleteMapping("/compare/{historyId}")
+        public ResponseObject<Void> deleteHistoryCompare(@PathVariable UUID historyId){
+                embeddingService.deleteHistoryCompare(historyId);
+                return ResponseObject.<Void>builder()
+                        .message("History compare successfully")
                         .build();
         }
 }
