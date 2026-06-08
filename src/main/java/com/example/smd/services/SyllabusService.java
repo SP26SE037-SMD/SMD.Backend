@@ -2,24 +2,26 @@ package com.example.smd.services;
 
 import com.example.smd.dto.request.SyllabusRequest;
 import com.example.smd.dto.response.syllabus.SyllabusResponse;
+import com.example.smd.entities.Assessment;
+import com.example.smd.entities.Blocks;
+import com.example.smd.entities.CLO_Assessment;
+import com.example.smd.entities.CLO_Session;
+import com.example.smd.entities.Material;
+import com.example.smd.entities.Session;
 import com.example.smd.entities.Subject;
 import com.example.smd.entities.Syllabus;
-import com.example.smd.entities.Assessment;
-import com.example.smd.entities.Session;
-import com.example.smd.entities.Material;
-import com.example.smd.entities.Blocks;
 import com.example.smd.enums.PloStatus;
 import com.example.smd.enums.RoleName;
 import com.example.smd.enums.SubjectStatus;
 import com.example.smd.enums.SyllabusStatus;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
+import com.example.smd.mapper.AssessmentMapper;
+import com.example.smd.mapper.BlockMapper;
+import com.example.smd.mapper.MaterialMapper;
+import com.example.smd.mapper.SessionMapper;
 import com.example.smd.mapper.SyllabusMapper;
 import com.example.smd.repositories.*;
-import com.example.smd.mapper.AssessmentMapper;
-import com.example.smd.mapper.SessionMapper;
-import com.example.smd.mapper.MaterialMapper;
-import com.example.smd.mapper.BlockMapper;
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +30,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Slf4j
@@ -49,6 +53,8 @@ public class SyllabusService {
     SessionMapper sessionMapper;
     MaterialMapper materialMapper;
     BlockMapper blockMapper;
+    CloSessionMappingRepository cloSessionMappingRepository;
+    CloAssessmentMappingRepository cloAssessmentMappingRepository;
 
     // 1. Tạo mới
     @Transactional
@@ -268,23 +274,57 @@ public class SyllabusService {
         }
         // 1. Copy Assessment
         List<Assessment> oldAssessments = assessmentRepository.findBySyllabus_SyllabusId(oldSyllabusId);
-        List<Assessment> newAssessments = oldAssessments.stream().map(old -> {
-            Assessment newAssessment = assessmentMapper.cloneEntity(old);
-            newAssessment.setSyllabus(newSyllabus);
-            return newAssessment;
-        }).toList();
-        assessmentRepository.saveAll(newAssessments);
+        List<Assessment> savedNewAssessments = assessmentRepository.saveAll(
+                oldAssessments.stream().map(old -> {
+                    Assessment newAssessment = assessmentMapper.cloneEntity(old);
+                    newAssessment.setSyllabus(newSyllabus);
+                    return newAssessment;
+                }).toList());
+
+        // Build map: oldAssessmentId → new Assessment
+        Map<UUID, Assessment> assessmentIdMap = new HashMap<>();
+        for (int i = 0; i < oldAssessments.size(); i++) {
+            assessmentIdMap.put(oldAssessments.get(i).getAssessmentId(), savedNewAssessments.get(i));
+        }
 
         // 2. Copy Session
         List<Session> oldSessions = sessionRepository.findBySyllabus_SyllabusId(oldSyllabusId);
-        List<Session> newSessions = oldSessions.stream().map(old -> {
-            Session newSession = sessionMapper.cloneEntity(old);
-            newSession.setSyllabus(newSyllabus);
-            return newSession;
-        }).toList();
-        sessionRepository.saveAll(newSessions);
+        List<Session> savedNewSessions = sessionRepository.saveAll(
+                oldSessions.stream().map(old -> {
+                    Session newSession = sessionMapper.cloneEntity(old);
+                    newSession.setSyllabus(newSyllabus);
+                    return newSession;
+                }).toList());
 
-        // 3. Copy Material & Blocks
+        // Build map: oldSessionId → new Session
+        Map<UUID, Session> sessionIdMap = new HashMap<>();
+        for (int i = 0; i < oldSessions.size(); i++) {
+            sessionIdMap.put(oldSessions.get(i).getSessionId(), savedNewSessions.get(i));
+        }
+
+        // 3. Copy CLO-Session mappings
+        List<CLO_Session> oldCloSessions = cloSessionMappingRepository.findBySession_Syllabus_SyllabusId(oldSyllabusId);
+        List<CLO_Session> newCloSessions = oldCloSessions.stream()
+                .filter(cs -> sessionIdMap.containsKey(cs.getSession().getSessionId()))
+                .map(cs -> CLO_Session.builder()
+                        .clo(cs.getClo())
+                        .session(sessionIdMap.get(cs.getSession().getSessionId()))
+                        .build())
+                .toList();
+        cloSessionMappingRepository.saveAll(newCloSessions);
+
+        // 4. Copy CLO-Assessment mappings
+        List<CLO_Assessment> oldCloAssessments = cloAssessmentMappingRepository.findByAssessment_Syllabus_SyllabusId(oldSyllabusId);
+        List<CLO_Assessment> newCloAssessments = oldCloAssessments.stream()
+                .filter(ca -> assessmentIdMap.containsKey(ca.getAssessment().getAssessmentId()))
+                .map(ca -> CLO_Assessment.builder()
+                        .clo(ca.getClo())
+                        .assessment(assessmentIdMap.get(ca.getAssessment().getAssessmentId()))
+                        .build())
+                .toList();
+        cloAssessmentMappingRepository.saveAll(newCloAssessments);
+
+        // 5. Copy Material & Blocks
         List<Material> oldMaterials = materialRepository.findBySyllabus_SyllabusId(oldSyllabusId);
         for (Material oldMaterial : oldMaterials) {
             Material newMaterial = materialMapper.cloneMaterial(oldMaterial);
