@@ -379,10 +379,6 @@ public class TaskV2Service {
         TaskV2 task = taskV2Repository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Task not found"));
 
-        if(task.getIsAccepted() != null) {
-            throw new RuntimeException("Task acceptance has already been set and cannot be updated again.");
-        }
-
         task.setIsAccepted(request);
         task.setComment(comment);
         applyCompletedAt(task);
