@@ -197,6 +197,7 @@ public enum ErrorCode {
     TASK_NOT_EDITABLE(25011, "Tasks can only be modified when in TO_DO status", HttpStatus.BAD_REQUEST),
     TASK_SUBJECT_ID_REQUIRED(25012, "Task subject ID is required", HttpStatus.BAD_REQUEST),
     CURRICULUM_ID_REQUIRED(25013, "Curriculum ID is required", HttpStatus.BAD_REQUEST),
+    SUBJECT_NO_APPROVED_SYLLABUS(25014, "Cannot mark task as DONE: the subject does not have any syllabus in APPROVED status", HttpStatus.BAD_REQUEST),
 
     // SOURCE
     SOURCE_NOT_FOUND(24001, "Source not found", HttpStatus.NOT_FOUND),
