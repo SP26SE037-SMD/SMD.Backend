@@ -454,7 +454,7 @@ public class GeminiService  {
             maxAttempts = 3,
             backoff = @Backoff(delay = 2000) // Thử lại sau 2 giây, tối đa 3 lần
     )
-    public AssessmentCloMappingValidationResult checkAssessmentCloMapping(String assessmentList, String cloList, String currentMapping) {
+    public AssessmentCloMappingValidationResult checkAssessmentCloMapping(String assessmentList, String cloList, String currentMapping, String accountId) {
         // 1. Lấy ĐÚNG Template dành cho việc Check Compliance
         String template = promptTemplateService.get(PromptKey.ASSESSMENT_CLO_MAPPING_PROMPT);
 
@@ -485,6 +485,9 @@ public class GeminiService  {
             return objectMapper.readValue(cleanJson, AssessmentCloMappingValidationResult.class);
 
         } catch (JsonProcessingException e) {
+            realtimePublisher.publishToAccount(accountId,
+                    RealtimePayload.status("VALIDATE_MAPPING_FAIL", "AI failed to generate valid content, please try again!"));
+            log.error("Lỗi khi parse đối tượng sang JSON String", e);
             log.error("Failed to parse Gemini response: {}", response);
             throw new AppException(ErrorCode.AI_GENERATION_FAILED);
         }

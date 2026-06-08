@@ -2,12 +2,15 @@ package com.example.smd.services;
 
 import com.example.smd.dto.request.CloAssessmentMappingBatchRequest;
 import com.example.smd.dto.request.CloAssessmentMappingRequest;
+import com.example.smd.dto.request.CloSessionMappingRequest;
 import com.example.smd.dto.response.clo.CloAssessmentMappingResponse;
 import com.example.smd.dto.response.validate.AssessmentCloMappingValidationResult;
 import com.example.smd.entities.*;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.CloAssessmentMappingMapper;
+import com.example.smd.realtime.RealtimePayload;
+import com.example.smd.realtime.RealtimePublisher;
 import com.example.smd.repositories.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -15,8 +18,13 @@ import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -30,8 +38,7 @@ public class CloAssessmentMappingService {
     CLOsRepository cloRepository;
     AssessmentRepository assessmentRepository;
     SyllabusRepository syllabusRepository;
-    SubjectRepository subjectRepository;
-    GeminiService geminiService;
+    CloAssessmentMappingExecutor cloAssessmentMapping;
 
     @Transactional
     public CloAssessmentMappingResponse createMapping(CloAssessmentMappingRequest request) {
@@ -118,7 +125,31 @@ public class CloAssessmentMappingService {
         }
     }
 
-    public AssessmentCloMappingValidationResult checkMapping(List<CloAssessmentMappingRequest> request, UUID syllabusId) {
+    public String startCLOAssessmentMappingProcess(List<CloAssessmentMappingRequest> request, UUID syllabusId, String accountId) throws IOException {
+        cloAssessmentMapping.checkMapping(request, syllabusId, accountId);
+        return "The system is processing the CLO-Session-Mapping, please wait for a notification!";
+    }
+}
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+class CloAssessmentMappingExecutor {
+    private final SyllabusRepository syllabusRepository;
+    private final SubjectRepository subjectRepository;
+    private final CLOsRepository cloRepository;
+    private final AssessmentRepository assessmentRepository;
+    private final GeminiService geminiService;
+    private final RealtimePublisher realtimePublisher;
+
+    @Async
+    @Transactional
+    public void checkMapping(List<CloAssessmentMappingRequest> request, UUID syllabusId, String accountId) {
+
+        realtimePublisher.publishToAccount(accountId,
+                RealtimePayload.status("VALIDATE_MAPPING_PROCESS", "Currently being processed."));
+        log.info("VALIDATE_MAPPING_PROCESS: {}", "Currently being processed.");
 
         Syllabus syllabus = syllabusRepository.findById(syllabusId)
                 .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
@@ -130,7 +161,7 @@ public class CloAssessmentMappingService {
             map.put("clo_id", clo.getCloId().toString());
             map.put("clo_code", clo.getCloCode());
             map.put("description", clo.getDescription());
-            map.put("bloom_level", clo.getBloomLevel());
+            map.put("bloom_level", clo.getBloomLevel() );
             return map;
         }).collect(Collectors.toList());
 
@@ -150,10 +181,20 @@ public class CloAssessmentMappingService {
             String assessmentJsonString = objectMapper.writeValueAsString(assessmentJsonData);
             String cloJsonString = objectMapper.writeValueAsString(cloJsonData);
 
-            return geminiService.checkAssessmentCloMapping(assessmentJsonString, cloJsonString, currentMapping);
+            var assessmentMappingResult = geminiService.checkAssessmentCloMapping(assessmentJsonString, cloJsonString, currentMapping, accountId);
+
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    realtimePublisher.publishToAccount(accountId,
+                            RealtimePayload.status("VALIDATE_MAPPING_SUCCESS", assessmentMappingResult));
+                    log.info("VALIDATE_MAPPING_SUCCESS: {}", assessmentMappingResult);
+                }
+            });
         } catch (JsonProcessingException e) {
-            // Bắn ra lỗi Runtime hoặc Custom Exception của hệ thống bác
-            throw new RuntimeException("Lỗi khi parse đối tượng sang JSON String", e);
+            realtimePublisher.publishToAccount(accountId,
+                    RealtimePayload.status("VALIDATE_MAPPING_FAIL", "Failed to parse JSON data, please try again!"));
+            log.error("Lỗi khi parse đối tượng sang JSON String", e);
         }
     }
 

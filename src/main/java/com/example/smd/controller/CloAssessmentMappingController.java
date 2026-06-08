@@ -14,8 +14,11 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
@@ -96,12 +99,14 @@ public class CloAssessmentMappingController {
 
     @PostMapping("/syllabus/{syllabusId}/validate")
     @Operation(summary = "Check a CLO-Assessment Mapping")
-    public ResponseObject<AssessmentCloMappingValidationResult> checkMapping(
+    public ResponseObject<String> checkMapping(
             @PathVariable("syllabusId") UUID syllabusId,
-            @RequestBody List<CloAssessmentMappingRequest> cloAssessmentMappingRequest) {
-        return ResponseObject.<AssessmentCloMappingValidationResult>builder()
+            @RequestBody List<CloAssessmentMappingRequest> cloAssessmentMappingRequest,
+            @AuthenticationPrincipal Jwt jwt) throws IOException {
+        String userId = jwt.getClaimAsString("accountId");
+        return ResponseObject.<String>builder()
                 .status(1000)
-                .data(service.checkMapping(cloAssessmentMappingRequest, syllabusId))
+                .data(service.startCLOAssessmentMappingProcess(cloAssessmentMappingRequest, syllabusId, userId))
                 .message("CLO-Assessment mapping deleted successfully")
                 .build();
     }
