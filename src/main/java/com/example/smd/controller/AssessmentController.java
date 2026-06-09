@@ -225,6 +225,25 @@ public class AssessmentController {
             @RequestParam("syllabusId") UUID syllabusId,
             @RequestParam("subjectId") UUID subjectId) {
 
+        // ── Validate file ─────────────────────────────────────────────────
+        if (file == null || file.isEmpty()) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(ResponseObject.<AssessmentImportResult>builder()
+                            .status(4000)
+                            .message("No file was provided. Please upload an Excel file (.xlsx or .xls).")
+                            .build());
+        }
+        String filename = file.getOriginalFilename() != null ? file.getOriginalFilename().toLowerCase() : "";
+        if (!filename.endsWith(".xlsx") && !filename.endsWith(".xls")) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(ResponseObject.<AssessmentImportResult>builder()
+                            .status(4000)
+                            .message("Invalid file format. Only Excel files (.xlsx, .xls) are accepted.")
+                            .build());
+        }
+
         AssessmentImportResult result = assessmentImportService.importFromExcel(file, syllabusId, subjectId);
 
         if (!result.isValid()) {

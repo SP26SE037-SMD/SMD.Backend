@@ -229,6 +229,25 @@ public class  SessionController {
             @RequestParam("syllabusId") UUID syllabusId,
             @RequestParam("subjectId") UUID subjectId) {
 
+        // ── Validate file ─────────────────────────────────────────────────
+        if (file == null || file.isEmpty()) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(ResponseObject.<SessionImportResult>builder()
+                            .status(4000)
+                            .message("No file was provided. Please upload an Excel file (.xlsx or .xls).")
+                            .build());
+        }
+        String filename = file.getOriginalFilename() != null ? file.getOriginalFilename().toLowerCase() : "";
+        if (!filename.endsWith(".xlsx") && !filename.endsWith(".xls")) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(ResponseObject.<SessionImportResult>builder()
+                            .status(4000)
+                            .message("Invalid file format. Only Excel files (.xlsx, .xls) are accepted.")
+                            .build());
+        }
+
         SessionImportResult result = sessionService.importSessionsFromExcel(file, syllabusId, subjectId);
 
         if (!result.isValid()) {
