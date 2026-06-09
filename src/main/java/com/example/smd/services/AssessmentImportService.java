@@ -1,14 +1,20 @@
 package com.example.smd.services;
 
 import com.example.smd.dto.excel.AssessmentImportDTO;
+import com.example.smd.dto.request.AssessmentRequest;
 import com.example.smd.dto.response.validate.AssessmentImportResult;
 import com.example.smd.entities.*;
 import com.example.smd.exception.AppException;
 import com.example.smd.exception.ErrorCode;
 import com.example.smd.repositories.*;
 import com.example.smd.services.excelService.ExcelImporter;
+import jakarta.persistence.Column;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.bcel.generic.ATHROW;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -74,6 +80,7 @@ public class AssessmentImportService {
     private final AssessmentCategoryRepository assessmentCategoryRepository;
     private final AssessmentTypeRepository assessmentTypeRepository;
     private final CloAssessmentMappingRepository cloAssessmentMappingRepository;
+    private final AssessmentService assessmentService;
 
     // ═══════════════════════════════════════════════════════════════════ //
     //                        MAIN ENTRY POINT                           //
@@ -126,8 +133,8 @@ public class AssessmentImportService {
         // 2c. Validate CLO-Mapping — CLO phải thuộc Subject
         validateCloMappings(rows, subjectId, result);
 
-        // 2d. Validate tổng Weight == 100 (chỉ chạy nếu format đã đúng)
-        validateTotalWeight(rows, result);
+        // 2d. Validate tổng thể toàn bộ assessment
+        validateAssessment(rows, result, syllabusId);
 
         // ── Bước 3: Nếu có lỗi → Return sớm, KHÔNG lưu DB ───────────────
         if (!result.isValid()) {
@@ -407,22 +414,36 @@ public class AssessmentImportService {
      * nên {@code Double.parseDouble} ở đây sẽ không throw exception.
      * Báo lỗi tổng quan (rowNumber = -1) nếu tổng ≠ 100.
      */
-    private void validateTotalWeight(List<AssessmentImportDTO> rows, AssessmentImportResult result) {
+    private void validateAssessment(List<AssessmentImportDTO> rows, AssessmentImportResult result, UUID syllabusId) {
         // Nếu đã có lỗi format số ở bước trước → skip (tổng không có ý nghĩa)
-        boolean hasNumericError = result.getErrors().stream()
-                .anyMatch(e -> e.getCode().startsWith("INVALID_WEIGHT") || e.getCode().equals("MISSING_REQUIRED_FIELD"));
-        if (hasNumericError) return;
+        List<AssessmentRequest> assessmentRequestList = new ArrayList<>();
+        for (AssessmentImportDTO row : rows) {
+            var assessmentCategory = assessmentCategoryRepository.findByCategoryName(row.getCategory()).orElseThrow(() -> new AppException(ErrorCode.ASSESSMENT_CATEGORY_NAME_INVALID));;
+            var assessmentType = assessmentTypeRepository.findByTypeName(row.getType()).orElseThrow(() -> new AppException(ErrorCode.ASSESSMENT_TYPE_NAME_INVALID));
 
-        double total = rows.stream()
-                .mapToDouble(row -> Double.parseDouble(row.getWeight().trim()))
-                .sum();
-
-        // Làm tròn 2 chữ số thập phân để tránh lỗi floating-point (VD: 99.99999999)
-        double rounded = Math.round(total * 100.0) / 100.0;
-        if (rounded != 100.0) {
-            result.addError("WEIGHT_NOT_100",
-                    String.format("Total weight of all assessments must be exactly 100%% (currently %.2f%%).", rounded),
-                    -1);
+            AssessmentRequest assessmentRequest = new AssessmentRequest();
+            assessmentRequest.setCategoryId(assessmentCategory.getCategoryId());
+            assessmentRequest.setTypeId(assessmentType.getTypeId());
+            assessmentRequest.setSyllabusId(syllabusId);
+            assessmentRequest.setDuration(
+                    (row.getDuration() != null && !row.getDuration().isEmpty())
+                            ? Integer.parseInt(row.getDuration())
+                            : null
+            );
+            assessmentRequest.setPart(row.getRowNumber());
+            assessmentRequest.setNote(row.getNote());
+            assessmentRequest.setWeight(Double.parseDouble(row.getWeight()));
+            assessmentRequest.setCompletionCriteria(row.getCompletionCriteria());
+            assessmentRequest.setQuestionType(row.getQuestionType());
+            assessmentRequest.setGradingGuide(row.getGradingGuide());
+            assessmentRequest.setKnowledgeSkill(row.getKnowledgeSkill());
+            assessmentRequestList.add(assessmentRequest);
+        }
+        var validateResult = assessmentService.validate(assessmentRequestList, syllabusId);
+        if(!validateResult.isValid() && !validateResult.getErrors().isEmpty()) {
+            for(var error : validateResult.getErrors()) {
+                result.addError(error.getCode(), error.getMessage(), -1);
+            }
         }
     }
 

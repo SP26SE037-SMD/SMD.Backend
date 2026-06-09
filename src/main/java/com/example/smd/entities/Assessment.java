@@ -43,7 +43,7 @@ public class Assessment {
     @Column(name = "question_type", length = 150)
     String questionType;
 
-    @Column(name = "knowledge_skill", length = 150)
+    @Column(name = "knowledge_skill")
     String knowledgeSkill;
 
     @Column(name = "grading_guide", columnDefinition = "TEXT")

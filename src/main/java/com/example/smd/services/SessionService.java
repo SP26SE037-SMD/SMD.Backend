@@ -160,6 +160,21 @@ public class SessionService {
             newType = SessionType.SELF_STUDY.toString();
         }
 
+        var sessionList = new ArrayList<SessionRequest>();
+        sessionList.add(request);
+
+        var resultValidateSessionType = validateSessionType(sessionList, request.getSyllabusId());
+        if(!resultValidateSessionType.isValid() && !resultValidateSessionType.getErrors().isEmpty()) {
+            ErrorCode.SESSION_CANNOT_CREATE.setMessage(resultValidateSessionType.getErrors().getFirst().getMessage());
+            throw new AppException(ErrorCode.SESSION_CANNOT_CREATE);
+        }
+
+        var resultValidateSessionContent = validateOneSessionContent(request, request.getSyllabusId());
+        if(!resultValidateSessionContent.isValid() &&  !resultValidateSessionContent.getWarningsContent().isEmpty()) {
+            ErrorCode.SESSION_CANNOT_CREATE.setMessage(resultValidateSessionContent.getWarningsContent().getFirst().getMessage());
+            throw new AppException(ErrorCode.SESSION_CANNOT_CREATE);
+        }
+
         Session session = sessionMapper.toEntity(request);
         session.setSessionType(newType);
         session.setSyllabus(syllabus);
@@ -354,43 +369,39 @@ public class SessionService {
         // 1. Tính quỹ Lý thuyết (Quy đổi an toàn từ Giờ -> Tiết)
         double inputTotalTheoryHours = inputs.stream()
                 .filter(s -> "THEORY".equalsIgnoreCase(s.getSessionType()))
-                .mapToDouble(s -> s.getDuration() != null ? s.getDuration() : 0.0)
-                .sum();
+                .count();
         double dbTotalTheoryHours = existingDbSessions.stream()
                 .filter(s -> "THEORY".equalsIgnoreCase(s.getSessionType()))
-                .mapToDouble(s -> s.getDuration() != null ? s.getDuration() : 0.0)
-                .sum();
-        int inputTotalTheoryPeriods = (int) Math.round(inputTotalTheoryHours / duration);
-        int dbTotalTheoryPeriods = (int) Math.round(dbTotalTheoryHours / duration);
+                .count();
+        int inputTotalTheoryPeriods = (int) Math.round(inputTotalTheoryHours);
+        int dbTotalTheoryPeriods = (int) Math.round(dbTotalTheoryHours);
         int remainingTheory = (masterSubject.getTheoryPeriods() != null ? masterSubject.getTheoryPeriods() : 0)
                 - inputTotalTheoryPeriods - dbTotalTheoryPeriods;
 
         // 2. Tính quỹ Thực hành (Tương tự)
         double inputTotalPracticeHours = inputs.stream()
                 .filter(s -> "PRACTICE".equalsIgnoreCase(s.getSessionType()))
-                .mapToDouble(s -> s.getDuration() != null ? s.getDuration() : 0.0)
-                .sum();
+                .count();
         double dbTotalPracticeHours = existingDbSessions.stream()
                 .filter(s -> "PRACTICE".equalsIgnoreCase(s.getSessionType()))
-                .mapToDouble(s -> s.getDuration() != null ? s.getDuration() : 0.0)
-                .sum();
-        int inputTotalPracticePeriods = (int) Math.round(inputTotalPracticeHours / duration);
-        int dbTotalPracticePeriods = (int) Math.round(dbTotalPracticeHours / duration);
+                .count();
+        int inputTotalPracticePeriods = (int) Math.round(inputTotalPracticeHours);
+        int dbTotalPracticePeriods = (int) Math.round(dbTotalPracticeHours);
         int remainingPractice = (masterSubject.getPracticalPeriods() != null ? masterSubject.getPracticalPeriods() : 0)
                 - inputTotalPracticePeriods - dbTotalPracticePeriods;
 
         // (Tùy chọn) Tính tổng giờ tự học nếu có bắt validate
-        // int inputTotalSelfStudyHours = inputs.stream()
-        // .filter(s -> "SELF_STUDY".equalsIgnoreCase(s.getSessionType()))
-        // .mapToInt(s -> s.getDuration() != null ? s.getDuration() : 0)
-        // .sum();
-        // int dbTotalSelfStudyHours = existingDbSessions.stream()
-        // .filter(s -> "SELF_STUDY".equalsIgnoreCase(s.getSessionType()))
-        // .mapToInt(s -> s.getDuration() != null ? s.getDuration() : 0)
-        // .sum();
-        // int remainingSelfStudy = (masterSubject.getSelfStudyPeriods() != null ?
-        // masterSubject.getSelfStudyPeriods() * 60 : 0) - inputTotalSelfStudyHours -
-        // dbTotalSelfStudyHours;
+//         double inputTotalSelfStudyHours = inputs.stream()
+//         .filter(s -> "SELF_STUDY".equalsIgnoreCase(s.getSessionType()))
+//         .count();
+//         double dbTotalSelfStudyHours = existingDbSessions.stream()
+//         .filter(s -> "SELF_STUDY".equalsIgnoreCase(s.getSessionType()))
+//         .count();
+//        int inputTotalSelfStudyHoursPeriods = (int) Math.round(inputTotalSelfStudyHours);
+//        int dbTotalSelfStudyHoursPracticePeriods = (int) Math.round(dbTotalSelfStudyHours);
+//         int remainingSelfStudy = (masterSubject.getSelfStudyPeriods() != null ?
+//         masterSubject.getSelfStudyPeriods() * 60 : 0) - inputTotalSelfStudyHoursPeriods -
+//                 dbTotalSelfStudyHoursPracticePeriods;
 
         // Set vào DTO
         result.setRemainingQuotas(new SessionValidationResult.RemainingQuota(remainingTheory, remainingPractice, 0));
@@ -431,6 +442,138 @@ public class SessionService {
         // minute(s).");
         // }
 
+        return result;
+    }
+
+    private SessionValidationResult validateOneSessionContent(SessionRequest request, UUID syllabusId) {
+
+        List<SessionValidationResult.ContentLineValidationError> resultContent = new ArrayList<>();
+
+        Map<String, List<Blocks>> dbHierarchy = new HashMap<>();
+
+        List<Material> materialList = materialRepository.findBySyllabus_SyllabusIdOrderByIdAsc(syllabusId);
+        for (Material material : materialList) {
+            String currentH1Key = null;
+            List<Blocks> allBlocks = blockRepository.findAllBlocksByMaterialIdUrgent(material.getMaterialId());
+            if (allBlocks == null || allBlocks.isEmpty()) {
+                log.warn("=== BUG CHECK: Danh sách allBlocks trống rỗng (0 phần tử) ===");
+            } else {
+                log.warn("=== BUG CHECK: Tìm thấy {} blocks ===", allBlocks.size());
+                allBlocks.forEach(b -> log.warn("Block ID: {} | Style: {} | Type: {} | Content: {}",
+                        b.getBlockId(), b.getBlockStyle(), b.getBlockType(), b.getContentText()));
+            }
+
+            if (allBlocks.isEmpty()) {
+                throw new AppException(ErrorCode.BLOCK_LIST_EMPTY);
+            }
+
+            for (Blocks block : allBlocks) {
+                if ("H1".equalsIgnoreCase(block.getBlockType())) {
+                    currentH1Key = cleanString(block.getContentText());
+                    dbHierarchy.putIfAbsent(currentH1Key, new ArrayList<>());
+                } else if ("H2".equalsIgnoreCase(block.getBlockType()) && currentH1Key != null) {
+                    dbHierarchy.get(currentH1Key).add(block);
+                }
+            }
+        }
+
+        log.error("==================================================");
+        log.error("===> TRẠNG THÁI MAP ĐỂ KIỂM TRA CHẮC CHẮN <===");
+        log.error("1. Map có bị rỗng (empty) không? -> {}", dbHierarchy.isEmpty());
+        log.error("2. Số lượng Key (H1) trong Map hiện tại: {} chương", dbHierarchy.size());
+        log.error("3. Danh sách các Key đang có: {}", dbHierarchy.keySet());
+        log.error("4. Toàn bộ cấu trúc thô của Map: {}", dbHierarchy.toString());
+        log.error("==================================================");
+
+        JaroWinklerSimilarity similarityMeasure = new JaroWinklerSimilarity();
+        String reqTitle = request.getSessionTitle();
+        String reqTopic = request.getSessionTopic();
+
+        if (reqTitle == null || reqTitle.trim().isEmpty()) {
+            resultContent.add(SessionValidationResult.ContentLineValidationError.builder()
+                    .code("SESSION_CONTENT_LINE_MISMATCH")
+                    .message("The reqTitle is empty.")
+                    .sessionNumber(request.getSessionNumber())
+                    .lineIndex(0)
+                    .similarityScore(0.0)
+                    .build());
+        }
+
+        String cleanReqTitle = cleanString(reqTitle);
+        String matchedH1KeyInDb = null;
+        double highestH1Score = 0;
+
+        for (String dbH1Key : dbHierarchy.keySet()) {
+            double score = similarityMeasure.apply(cleanReqTitle, dbH1Key);
+            if (score > highestH1Score) {
+                highestH1Score = score;
+                if (score >= SIMILARITY_THRESHOLD) {
+                    matchedH1KeyInDb = dbH1Key;
+                }
+            }
+        }
+
+        if (matchedH1KeyInDb == null) {
+            resultContent.add(SessionValidationResult.ContentLineValidationError.builder()
+                    .code("H1_NOT_FOUND")
+                    .message("No chapters in the document matching the title were found.")
+                    .sessionNumber(request.getSessionNumber())
+                    .lineIndex(0)
+                    .lineContent(reqTitle)
+                    .similarityScore(highestH1Score)
+                    .build());
+        } else {
+            List<Blocks> h2BlocksInDb = dbHierarchy.get(matchedH1KeyInDb);
+            if (reqTopic == null || reqTopic.trim().isEmpty()) {
+                resultContent.add(SessionValidationResult.ContentLineValidationError.builder()
+                        .code("SESSION_CONTENT_LINE_MISMATCH")
+                        .message("The session topic is empty.")
+                        .sessionNumber(request.getSessionNumber())
+                        .lineIndex(1)
+                        .similarityScore(0.0)
+                        .build());
+            }
+
+            List<String> requestSubTopics = parseSubTopics(reqTopic);
+            for (String subTopic : requestSubTopics) {
+                String cleanSubTopic = cleanString(subTopic);
+
+                boolean isH2Matched = false;
+                double highestH2Score = 0;
+
+                for (Blocks dbH2Block : h2BlocksInDb) {
+                    String cleanDbH2 = cleanString(dbH2Block.getContentText());
+                    double score = similarityMeasure.apply(cleanSubTopic, cleanDbH2);
+
+                    if (score > highestH2Score) {
+                        highestH2Score = score;
+                    }
+
+                    if (score >= SIMILARITY_THRESHOLD) {
+                        isH2Matched = true;
+                        break;
+                    }
+                }
+
+                // Nếu dòng H2 này trong Request gõ lệch hoàn toàn so với các H2 của H1 đó trong
+                // DB
+                if (!isH2Matched) {
+                    resultContent.add(SessionValidationResult.ContentLineValidationError.builder()
+                            .code("SESSION_CONTENT_LINE_MISMATCH")
+                            .message(String.format(
+                                    "The heading '%s' in SessionTopic does not match any subheading of chapter '%s' in the document.",
+                                    subTopic, reqTitle))
+                            .sessionNumber(request.getSessionNumber())
+                            .lineIndex(1)
+                            .lineContent(subTopic)
+                            .similarityScore(highestH2Score)
+                            .build());
+
+                }
+            }
+        }
+        SessionValidationResult result = new SessionValidationResult();
+        result.addWarning(resultContent, true);
         return result;
     }
 
@@ -555,13 +698,6 @@ public class SessionService {
                         matchedH2BlockIds.add(dbH2Block.getBlockId());
                         break;
                     }
-                }
-
-                if (bestMatchH2Block != null) {
-                    isH2Matched = true;
-                    matchedH2BlockIds.add(bestMatchH2Block.getBlockId());
-                    log.info("💚 [ADD SUCCESS] Chuỗi từ Request: '{}' -> Đã kích hoạt ĐÃ PHỦ cho Block ID: {} | Nội dung DB: '{}'",
-                            subTopic, bestMatchH2Block.getBlockId(), bestMatchH2Block.getContentText());
                 }
 
                 // Nếu dòng H2 này trong Request gõ lệch hoàn toàn so với các H2 của H1 đó trong
