@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -163,6 +164,37 @@ public class AssessmentController {
     }
 
     // ------------------------------------------------------------------ //
+    //                      EXPORT TO EXCEL                               //
+    // ------------------------------------------------------------------ //
+
+    @GetMapping("/syllabus/{syllabusId}/export")
+    @Operation(
+            summary = "Export danh sách Assessment ra file Excel",
+            description = """
+                    Xuất toàn bộ Assessment của một Syllabus ra file .xlsx có cấu trúc cột
+                    hoàn toàn giống với template Import:
+
+                    | Category | Type | Part | Weight | Completion Criteria | Duration | Question Type | Knowledge Skill | Grading Guide | Note | CLO-Mapping |
+
+                    - **Category**: Formative hoặc Summative.
+                    - **Weight**: số thực (VD: 30, 30.5).
+                    - **CLO-Mapping**: các mã CLO cách nhau bằng dấu phẩy, VD: `CLO1, CLO2`.
+                    - Dữ liệu được sắp xếp tăng dần theo Part.
+                    """
+    )
+    public ResponseEntity<byte[]> exportAssessments(@PathVariable UUID syllabusId) {
+        byte[] excelBytes = assessmentImportService.exportToExcel(syllabusId);
+
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setContentType(MediaType.parseMediaType(
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+        httpHeaders.setContentDispositionFormData("attachment", "Assessments_Export.xlsx");
+        httpHeaders.setContentLength(excelBytes.length);
+
+        return new ResponseEntity<>(excelBytes, httpHeaders, HttpStatus.OK);
+    }
+
+    // ------------------------------------------------------------------ //
     //                      IMPORT FROM EXCEL                             //
     // ------------------------------------------------------------------ //
 
@@ -192,6 +224,25 @@ public class AssessmentController {
             @RequestParam("file") MultipartFile file,
             @RequestParam("syllabusId") UUID syllabusId,
             @RequestParam("subjectId") UUID subjectId) {
+
+        // ── Validate file ─────────────────────────────────────────────────
+        if (file == null || file.isEmpty()) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(ResponseObject.<AssessmentImportResult>builder()
+                            .status(4000)
+                            .message("No file was provided. Please upload an Excel file (.xlsx or .xls).")
+                            .build());
+        }
+        String filename = file.getOriginalFilename() != null ? file.getOriginalFilename().toLowerCase() : "";
+        if (!filename.endsWith(".xlsx") && !filename.endsWith(".xls")) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(ResponseObject.<AssessmentImportResult>builder()
+                            .status(4000)
+                            .message("Invalid file format. Only Excel files (.xlsx, .xls) are accepted.")
+                            .build());
+        }
 
         AssessmentImportResult result = assessmentImportService.importFromExcel(file, syllabusId, subjectId);
 
