@@ -309,10 +309,14 @@ public class TaskV2Service {
                 if (isDone) {
                     // Subject: nếu khác PENDING_REVIEW → chuyển sang PENDING_REVIEW
                     if (TaskType.SUBJECT.name().equals(taskType)) {
-                        // Kiểm tra subject phải có ít nhất 1 syllabus ở trạng thái APPROVED
+                        // Kiểm tra subject phải có ít nhất 1 syllabus ở trạng thái APPROVED hoặc PUBLISHED
                         List<Syllabus> approvedSyllabi = syllabusRepository
                                 .findBySubject_SubjectIdAndStatus(task.getTargetId(), SyllabusStatus.APPROVED.name());
-                        if (approvedSyllabi == null || approvedSyllabi.isEmpty()) {
+                        List<Syllabus> publishedSyllabi = syllabusRepository
+                                .findBySubject_SubjectIdAndStatus(task.getTargetId(), SyllabusStatus.PUBLISHED.name());
+                        boolean hasValidSyllabus = (approvedSyllabi != null && !approvedSyllabi.isEmpty())
+                                || (publishedSyllabi != null && !publishedSyllabi.isEmpty());
+                        if (!hasValidSyllabus) {
                             throw new AppException(ErrorCode.SUBJECT_NO_APPROVED_SYLLABUS);
                         }
                         subjectRepository.findById(task.getTargetId()).ifPresent(subject -> {
@@ -356,10 +360,14 @@ public class TaskV2Service {
                 if (isDone) {
                     // Subject: chuyển sang PENDING_REVIEW
                     if (TaskType.SUBJECT.name().equals(taskType)) {
-                        // Kiểm tra subject phải có ít nhất 1 syllabus ở trạng thái APPROVED
+                        // Kiểm tra subject phải có ít nhất 1 syllabus ở trạng thái APPROVED hoặc PUBLISHED
                         List<Syllabus> approvedSyllabi = syllabusRepository
                                 .findBySubject_SubjectIdAndStatus(task.getTargetId(), SyllabusStatus.APPROVED.name());
-                        if (approvedSyllabi == null || approvedSyllabi.isEmpty()) {
+                        List<Syllabus> publishedSyllabi = syllabusRepository
+                                .findBySubject_SubjectIdAndStatus(task.getTargetId(), SyllabusStatus.PUBLISHED.name());
+                        boolean hasValidSyllabus = (approvedSyllabi != null && !approvedSyllabi.isEmpty())
+                                || (publishedSyllabi != null && !publishedSyllabi.isEmpty());
+                        if (!hasValidSyllabus) {
                             throw new AppException(ErrorCode.SUBJECT_NO_APPROVED_SYLLABUS);
                         }
                         subjectRepository.findById(task.getTargetId()).ifPresent(subject -> {
@@ -396,16 +404,20 @@ public class TaskV2Service {
                 if (isDone) {
                     // Subject: chuyển sang PENDING_REVIEW
                     if (TaskType.SUBJECT.name().equals(taskType)) {
-                        // Kiểm tra subject phải có ít nhất 1 syllabus ở trạng thái APPROVED
+                        // Kiểm tra subject phải có ít nhất 1 syllabus ở trạng thái APPROVED hoặc PUBLISHED
                         List<Syllabus> approvedSyllabi = syllabusRepository
                                 .findBySubject_SubjectIdAndStatus(task.getTargetId(), SyllabusStatus.APPROVED.name());
-                        if (approvedSyllabi == null || approvedSyllabi.isEmpty()) {
+                        List<Syllabus> publishedSyllabi = syllabusRepository
+                                .findBySubject_SubjectIdAndStatus(task.getTargetId(), SyllabusStatus.PUBLISHED.name());
+                        boolean hasValidSyllabus = (approvedSyllabi != null && !approvedSyllabi.isEmpty())
+                                || (publishedSyllabi != null && !publishedSyllabi.isEmpty());
+                        if (!hasValidSyllabus) {
                             throw new AppException(ErrorCode.SUBJECT_NO_APPROVED_SYLLABUS);
                         }
                         subjectRepository.findById(task.getTargetId()).ifPresent(subject -> {
                             subject.setStatus(SubjectStatus.PENDING_REVIEW.name());
                             subjectRepository.save(subject);
-                            log.info("Subject {} status → PENDING_REVIEW (UPDATE action)", subject.getSubjectId());
+                            log.info("Subject {} status → PENDING_REVIEW (MODIFY action)", subject.getSubjectId());
                         });
                     }
                 }
