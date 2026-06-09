@@ -353,7 +353,7 @@ public class SessionService {
         return result;
     }
 
-    private SessionValidationResult validateSessionType(List<SessionRequest> inputs, UUID syllabusId) {
+    public SessionValidationResult validateSessionType(List<SessionRequest> inputs, UUID syllabusId) {
         var setting = systemSettingService.getDetailByCode("SESSION_MINUTE");
         var duration = Integer.parseInt(setting.getValue());
         SessionValidationResult result = new SessionValidationResult();
