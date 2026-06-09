@@ -309,6 +309,12 @@ public class TaskV2Service {
                 if (isDone) {
                     // Subject: nếu khác PENDING_REVIEW → chuyển sang PENDING_REVIEW
                     if (TaskType.SUBJECT.name().equals(taskType)) {
+                        // Kiểm tra subject phải có ít nhất 1 syllabus ở trạng thái APPROVED
+                        List<Syllabus> approvedSyllabi = syllabusRepository
+                                .findBySubject_SubjectIdAndStatus(task.getTargetId(), SyllabusStatus.APPROVED.name());
+                        if (approvedSyllabi == null || approvedSyllabi.isEmpty()) {
+                            throw new AppException(ErrorCode.SUBJECT_NO_APPROVED_SYLLABUS);
+                        }
                         subjectRepository.findById(task.getTargetId()).ifPresent(subject -> {
                             if (!SubjectStatus.PENDING_REVIEW.name().equals(subject.getStatus())) {
                                 subject.setStatus(SubjectStatus.PENDING_REVIEW.name());
@@ -350,6 +356,12 @@ public class TaskV2Service {
                 if (isDone) {
                     // Subject: chuyển sang PENDING_REVIEW
                     if (TaskType.SUBJECT.name().equals(taskType)) {
+                        // Kiểm tra subject phải có ít nhất 1 syllabus ở trạng thái APPROVED
+                        List<Syllabus> approvedSyllabi = syllabusRepository
+                                .findBySubject_SubjectIdAndStatus(task.getTargetId(), SyllabusStatus.APPROVED.name());
+                        if (approvedSyllabi == null || approvedSyllabi.isEmpty()) {
+                            throw new AppException(ErrorCode.SUBJECT_NO_APPROVED_SYLLABUS);
+                        }
                         subjectRepository.findById(task.getTargetId()).ifPresent(subject -> {
                             subject.setStatus(SubjectStatus.PENDING_REVIEW.name());
                             subjectRepository.save(subject);
@@ -384,6 +396,12 @@ public class TaskV2Service {
                 if (isDone) {
                     // Subject: chuyển sang PENDING_REVIEW
                     if (TaskType.SUBJECT.name().equals(taskType)) {
+                        // Kiểm tra subject phải có ít nhất 1 syllabus ở trạng thái APPROVED
+                        List<Syllabus> approvedSyllabi = syllabusRepository
+                                .findBySubject_SubjectIdAndStatus(task.getTargetId(), SyllabusStatus.APPROVED.name());
+                        if (approvedSyllabi == null || approvedSyllabi.isEmpty()) {
+                            throw new AppException(ErrorCode.SUBJECT_NO_APPROVED_SYLLABUS);
+                        }
                         subjectRepository.findById(task.getTargetId()).ifPresent(subject -> {
                             subject.setStatus(SubjectStatus.PENDING_REVIEW.name());
                             subjectRepository.save(subject);

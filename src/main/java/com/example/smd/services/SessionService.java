@@ -31,6 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.*;
 import java.util.regex.Pattern;
@@ -724,26 +725,26 @@ public class SessionService {
             return result;
         }
 
-//        // ── Bước 2a: Validate CLO ─────────────────────────────────────────
-//        validateCloMappings(importRows, subjectId, result);
-//
-//        // ── Bước 2b: Validate Quota (tận dụng hàm validate() có sẵn) ─────
-//        // Map sang List<SessionRequest> để truyền vào hàm validate
-//        // Lưu ý: validate() sẽ đọc existingDbSessions từ DB. Trong luồng REPLACE,
-//        // cần xóa session cũ trước khi validate để số tiết không bị tính đôi.
-//        // Ở đây ta validate TRƯỚC khi xóa, nên existingDbSessions = [] nếu syllabus
-//        // chưa có session,
-//        // hoặc phải truyền vào list trống nếu muốn validate độc lập.
-//        List<SessionRequest> sessionRequests = mapToSessionRequests(importRows, syllabusId, sessionMinutes);
-//        SessionValidationResult quotaResult = validate(sessionRequests, syllabusId);
-//
-//        // Merge lỗi quota vào result tổng
-//        result.mergeErrors(quotaResult);
-//
-//        // ── Bước 3: Nếu có lỗi → Return sớm, KHÔNG lưu DB ───────────────
-//        if (!result.isValid()) {
-//            return result;
-//        }
+        // ── Bước 2a: Validate CLO ─────────────────────────────────────────
+        validateCloMappings(importRows, subjectId, result);
+
+        // ── Bước 2b: Validate Quota (tận dụng hàm validate() có sẵn) ─────
+        // Map sang List<SessionRequest> để truyền vào hàm validate
+        // Lưu ý: validate() sẽ đọc existingDbSessions từ DB. Trong luồng REPLACE,
+        // cần xóa session cũ trước khi validate để số tiết không bị tính đôi.
+        // Ở đây ta validate TRƯỚC khi xóa, nên existingDbSessions = [] nếu syllabus
+        // chưa có session,
+        // hoặc phải truyền vào list trống nếu muốn validate độc lập.
+        List<SessionRequest> sessionRequests = mapToSessionRequests(importRows, syllabusId, sessionMinutes);
+        SessionValidationResult quotaResult = validate(sessionRequests, syllabusId);
+
+        // Merge lỗi quota vào result tổng
+        result.mergeErrors(quotaResult);
+
+        // ── Bước 3: Nếu có lỗi → Return sớm, KHÔNG lưu DB ───────────────
+        if (!result.isValid()) {
+            return result;
+        }
 
         // ── Bước 4: Lưu DB (Transactional) ───────────────────────────────
         // TODO [DECISION POINT - CẦN XEM XÉT]:
@@ -769,6 +770,113 @@ public class SessionService {
         result.setSavedCount(savedCount);
         return result;
     }
+
+    // ============================================================ //
+    // EXPORT SESSION TO EXCEL //
+    // ============================================================ //
+    /**
+     * Xuất danh sách Session của một Syllabus ra file Excel (.xlsx).
+     *
+     * <p>Cấu trúc cột hoàn toàn tương thích với file Import:
+     * <pre>
+     *   Col 0: Session Number
+     *   Col 1: Title
+     *   Col 2: Teaching Methods
+     *   Col 3: Topic           — dùng ký tự '~' thay xuống dòng; cell có WrapText=true
+     *   Col 4: Type
+     *   Col 5: CLO-Mapping     — các mã CLO cách nhau bằng ", "
+     * </pre>
+     *
+     * @param syllabusId UUID của Syllabus cần export
+     * @return byte array nội dung file .xlsx
+     */
+    @Transactional(readOnly = true)
+    public byte[] exportSessionsToExcel(UUID syllabusId) {
+        if (!syllabusRepository.existsById(syllabusId)) {
+            throw new AppException(ErrorCode.SYLLABUS_NOT_FOUND);
+        }
+        // 1. Truy vấn danh sách Session sắp xếp tăng dần theo sessionNumber
+        List<Session> sessions = sessionRepository
+                .findBySyllabus_SyllabusIdOrderBySessionNumberAsc(syllabusId);
+        try (Workbook workbook = new XSSFWorkbook();
+             ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            Sheet sheet = workbook.createSheet("Sessions");
+            // ── 2. Header style — in đậm ─────────────────────────────────
+            CellStyle headerStyle = workbook.createCellStyle();
+            Font headerFont = workbook.createFont();
+            headerFont.setBold(true);
+            headerStyle.setFont(headerFont);
+            // ── 3. Topic cell style — wrapText ───────────────────────────
+            CellStyle topicStyle = workbook.createCellStyle();
+            topicStyle.setWrapText(true);
+            // ── 4. Tạo dòng Header (index 0) ─────────────────────────────
+            Row headerRow = sheet.createRow(0);
+            String[] headers = {
+                    "Session Number", "Title", "Teaching Methods", "Topic", "Type", "CLO-Mapping"
+            };
+            for (int col = 0; col < headers.length; col++) {
+                Cell cell = headerRow.createCell(col);
+                cell.setCellValue(headers[col]);
+                cell.setCellStyle(headerStyle);
+            }
+            // ── 5. Ghi dữ liệu từng Session ──────────────────────────────
+            int rowIdx = 1;
+            for (Session session : sessions) {
+                Row row = sheet.createRow(rowIdx++);
+                // Col 0: Session Number
+                row.createCell(0).setCellValue(
+                        session.getSessionNumber() != null ? session.getSessionNumber() : 0);
+                // Col 1: Title
+                row.createCell(1).setCellValue(
+                        session.getSessionTitle() != null ? session.getSessionTitle() : "");
+                // Col 2: Teaching Methods
+                row.createCell(2).setCellValue(
+                        session.getTeachingMethods() != null ? session.getTeachingMethods() : "");
+                // Col 3: Topic — chuẩn hóa sang \n để Excel hiển thị xuống dòng;
+                //               đồng thời giữ '~' làm dấu phân cách khi import lại
+                String rawTopic = session.getSessionTopic() != null ? session.getSessionTopic() : "";
+                // Trong DB topic được lưu với '~' (do normalizeLineBreaks khi import).
+                // Khi ghi ra Excel, thay '~' bằng \n để Excel Alt+Enter hiển thị đúng.
+                String excelTopic = rawTopic.replace("~", "\n");
+                Cell topicCell = row.createCell(3);
+                topicCell.setCellValue(excelTopic);
+                topicCell.setCellStyle(topicStyle);
+                // Col 4: Type
+                row.createCell(4).setCellValue(
+                        session.getSessionType() != null ? session.getSessionType() : "");
+                // Col 5: CLO-Mapping — join các cloCode bằng ", "
+                String cloMapping = "";
+                if (session.getCloSessions() != null && !session.getCloSessions().isEmpty()) {
+                    cloMapping = session.getCloSessions().stream()
+                            .filter(cs -> cs.getClo() != null && cs.getClo().getCloCode() != null)
+                            .map(cs -> cs.getClo().getCloCode().trim())
+                            .sorted()
+                            .collect(Collectors.joining(", "));
+                }
+                row.createCell(5).setCellValue(cloMapping);
+            }
+            // ── 6. Auto-size toàn bộ cột cho đẹp ────────────────────────
+            for (int col = 0; col < headers.length; col++) {
+                sheet.autoSizeColumn(col);
+                // Giới hạn độ rộng tối đa cho cột Topic (col 3) tránh quá rộng
+                if (col == 3) {
+                    int maxWidth = 15000; // ~8cm
+                    if (sheet.getColumnWidth(col) > maxWidth) {
+                        sheet.setColumnWidth(col, maxWidth);
+                    }
+                }
+            }
+            workbook.write(out);
+            return out.toByteArray();
+        } catch (IOException e) {
+            log.error("Failed to export Sessions to Excel for syllabusId={}: {}", syllabusId, e.getMessage(), e);
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        }
+    }
+    // ============================================================ //
+    // EXCEL CELL HELPERS //
+    // ============================================================ //
+
 
     // ============================================================ //
     // PRIVATE HELPERS //
