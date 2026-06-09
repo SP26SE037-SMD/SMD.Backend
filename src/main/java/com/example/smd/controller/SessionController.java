@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -162,6 +163,38 @@ public class  SessionController {
     }
 
     // ------------------------------------------------------------------ //
+    //                      EXPORT TO EXCEL                               //
+    // ------------------------------------------------------------------ //
+
+    @GetMapping("/syllabus/{syllabusId}/export")
+    @Operation(
+            summary = "Export danh sách Session ra file Excel",
+            description = """
+                    Xuất toàn bộ Session của một Syllabus ra file .xlsx có cấu trúc cột
+                    hoàn toàn giống với template Import:
+
+                    | Cột 0           | Cột 1 | Cột 2           | Cột 3 | Cột 4 | Cột 5       |
+                    |---|---|---|---|---|---|
+                    | Session Number | Title | Teaching Methods | Topic | Type | CLO-Mapping |
+
+                    - **Topic**: ký tự xuống dòng (Alt+Enter) được hiển thị đúng trong Excel (WrapText=true).
+                    - **CLO-Mapping**: các mã CLO cách nhau bằng dấu phẩy, VD: `CLO1, CLO2`.
+                    - Dữ liệu được sắp xếp tăng dần theo Session Number.
+                    """
+    )
+    public ResponseEntity<byte[]> exportSessions(@PathVariable UUID syllabusId) {
+        byte[] excelBytes = sessionService.exportSessionsToExcel(syllabusId);
+
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setContentType(MediaType.parseMediaType(
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+        httpHeaders.setContentDispositionFormData("attachment", "Sessions_Export.xlsx");
+        httpHeaders.setContentLength(excelBytes.length);
+
+        return new ResponseEntity<>(excelBytes, httpHeaders, HttpStatus.OK);
+    }
+
+    // ------------------------------------------------------------------ //
     //                      IMPORT FROM EXCEL                             //
     // ------------------------------------------------------------------ //
 
@@ -218,5 +251,7 @@ public class  SessionController {
                         .build()
         );
     }
+
+
 }
 
