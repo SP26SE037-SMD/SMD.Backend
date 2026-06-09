@@ -43,7 +43,7 @@ public class Assessment {
     @Column(name = "question_type", length = 150)
     String questionType;
 
-    @Column(name = "knowledge_skill")
+    @Column(name = "knowledge_skill", columnDefinition = "TEXT")
     String knowledgeSkill;
 
     @Column(name = "grading_guide", columnDefinition = "TEXT")
@@ -51,7 +51,6 @@ public class Assessment {
 
     @Column(columnDefinition = "TEXT")
     String note;
-
 
     @Column(name = "created_at")
     Instant createdAt;

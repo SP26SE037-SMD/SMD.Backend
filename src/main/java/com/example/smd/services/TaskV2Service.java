@@ -274,6 +274,7 @@ public class TaskV2Service {
 
             boolean isCreateAction = ActionType.CREATE.name().equals(taskAction);
             boolean isUpdateAction = ActionType.UPDATE.name().equals(taskAction);
+            boolean isModifyAction = ActionType.MODIFY.name().equals(taskAction);
 
             boolean isInProgressOrTodo = TaskStatus.IN_PROGRESS.name().equals(newStatus)
                     || TaskStatus.TO_DO.name().equals(newStatus);
@@ -308,6 +309,12 @@ public class TaskV2Service {
                 if (isDone) {
                     // Subject: nếu khác PENDING_REVIEW → chuyển sang PENDING_REVIEW
                     if (TaskType.SUBJECT.name().equals(taskType)) {
+                        // Kiểm tra subject phải có ít nhất 1 syllabus ở trạng thái APPROVED
+                        List<Syllabus> approvedSyllabi = syllabusRepository
+                                .findBySubject_SubjectIdAndStatus(task.getTargetId(), SyllabusStatus.APPROVED.name());
+                        if (approvedSyllabi == null || approvedSyllabi.isEmpty()) {
+                            throw new AppException(ErrorCode.SUBJECT_NO_APPROVED_SYLLABUS);
+                        }
                         subjectRepository.findById(task.getTargetId()).ifPresent(subject -> {
                             if (!SubjectStatus.PENDING_REVIEW.name().equals(subject.getStatus())) {
                                 subject.setStatus(SubjectStatus.PENDING_REVIEW.name());
@@ -349,6 +356,12 @@ public class TaskV2Service {
                 if (isDone) {
                     // Subject: chuyển sang PENDING_REVIEW
                     if (TaskType.SUBJECT.name().equals(taskType)) {
+                        // Kiểm tra subject phải có ít nhất 1 syllabus ở trạng thái APPROVED
+                        List<Syllabus> approvedSyllabi = syllabusRepository
+                                .findBySubject_SubjectIdAndStatus(task.getTargetId(), SyllabusStatus.APPROVED.name());
+                        if (approvedSyllabi == null || approvedSyllabi.isEmpty()) {
+                            throw new AppException(ErrorCode.SUBJECT_NO_APPROVED_SYLLABUS);
+                        }
                         subjectRepository.findById(task.getTargetId()).ifPresent(subject -> {
                             subject.setStatus(SubjectStatus.PENDING_REVIEW.name());
                             subjectRepository.save(subject);
@@ -365,6 +378,40 @@ public class TaskV2Service {
                     }
                 }
             }
+            // ---------- Action: MODIFY ----------
+            if (isModifyAction) {
+                if (isInProgressOrTodo) {
+                    // Subject: nếu khác WAITING_SYLLABUS → chuyển sang WAITING_SYLLABUS
+                    if (TaskType.SUBJECT.name().equals(taskType)) {
+                        subjectRepository.findById(task.getTargetId()).ifPresent(subject -> {
+                            if (!SubjectStatus.WAITING_SYLLABUS.name().equals(subject.getStatus())) {
+                                subject.setStatus(SubjectStatus.WAITING_SYLLABUS.name());
+                                subjectRepository.save(subject);
+                                log.info("Subject {} status → WAITING_SYLLABUS", subject.getSubjectId());
+                            }
+                        });
+                    }
+                }
+
+                if (isDone) {
+                    // Subject: chuyển sang PENDING_REVIEW
+                    if (TaskType.SUBJECT.name().equals(taskType)) {
+                        // Kiểm tra subject phải có ít nhất 1 syllabus ở trạng thái APPROVED
+                        List<Syllabus> approvedSyllabi = syllabusRepository
+                                .findBySubject_SubjectIdAndStatus(task.getTargetId(), SyllabusStatus.APPROVED.name());
+                        if (approvedSyllabi == null || approvedSyllabi.isEmpty()) {
+                            throw new AppException(ErrorCode.SUBJECT_NO_APPROVED_SYLLABUS);
+                        }
+                        subjectRepository.findById(task.getTargetId()).ifPresent(subject -> {
+                            subject.setStatus(SubjectStatus.PENDING_REVIEW.name());
+                            subjectRepository.save(subject);
+                            log.info("Subject {} status → PENDING_REVIEW (UPDATE action)", subject.getSubjectId());
+                        });
+                    }
+                }
+            }
+
+
         }
         // ===================== END STATUS PROPAGATION =====================
 
@@ -378,10 +425,6 @@ public class TaskV2Service {
                                            Boolean request, String comment) {
         TaskV2 task = taskV2Repository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Task not found"));
-
-        if(task.getIsAccepted() != null) {
-            throw new RuntimeException("Task acceptance has already been set and cannot be updated again.");
-        }
 
         task.setIsAccepted(request);
         task.setComment(comment);
@@ -445,16 +488,16 @@ public class TaskV2Service {
     @Transactional(readOnly = true)
     public SprintCurriculumResponse getSprintAndCurriculumByTaskId(UUID taskId) {
         TaskV2 task = taskV2Repository.findById(taskId)
-                .orElseThrow(() -> new RuntimeException("Task not found"));
+                .orElseThrow(() -> new AppException(ErrorCode.TASK_NOT_FOUND));
 
         Sprint sprint = task.getSprint();
         if (sprint == null) {
-            throw new RuntimeException("Task does not belong to any sprint");
+            throw new AppException(ErrorCode.SPRINT_NOT_FOUND, "Task does not belong to any sprint");
         }
 
         // Reload sprint với curriculum để tránh lazy loading issue
         sprint = sprintRepository.findById(sprint.getSprintId())
-                .orElseThrow(() -> new RuntimeException("Sprint not found"));
+                .orElseThrow(() -> new AppException(ErrorCode.SPRINT_NOT_FOUND));
 
         Curriculum curriculum = sprint.getCurriculum();
         if (curriculum == null) {

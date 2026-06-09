@@ -19,8 +19,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 /**
  * Service xử lý luồng Import Assessment từ file Excel.
@@ -611,5 +616,157 @@ public class AssessmentImportService {
     private String capitalize(String input) {
         if (input == null || input.isEmpty()) return input;
         return Character.toUpperCase(input.charAt(0)) + input.substring(1).toLowerCase();
+    }
+    // ═══════════════════════════════════════════════════════════════════ //
+    //                   EXPORT TO EXCEL                                  //
+    // ═══════════════════════════════════════════════════════════════════ //
+
+    /**
+     * Xuất danh sách Assessment của một Syllabus ra file Excel (.xlsx).
+     *
+     * <p>Cấu trúc cột hoàn toàn tương thích với template Import (0-indexed):
+     * <pre>
+     *   Col 0 : Category
+     *   Col 1 : Type
+     *   Col 2 : Part
+     *   Col 3 : Weight
+     *   Col 4 : Completion Criteria
+     *   Col 5 : Duration
+     *   Col 6 : Question Type
+     *   Col 7 : Knowledge Skill
+     *   Col 8 : Grading Guide
+     *   Col 9 : Note
+     *   Col 10: CLO-Mapping
+     * </pre>
+     *
+     * @param syllabusId UUID của Syllabus cần export
+     * @return byte array nội dung file .xlsx
+     */
+    @Transactional(readOnly = true)
+    public byte[] exportToExcel(UUID syllabusId) {
+        if (!syllabusRepository.existsById(syllabusId)) {
+            throw new AppException(ErrorCode.SYLLABUS_NOT_FOUND);
+        }
+
+        // 1. Truy vấn danh sách Assessment sắp xếp theo part tăng dần
+        List<Assessment> assessments = assessmentRepository
+                .findBySyllabus_SyllabusIdOrderByPartAsc(syllabusId);
+
+        // 2. Truy vấn toàn bộ CLO mapping của Syllabus 1 lần, group theo assessmentId
+        Map<UUID, List<String>> cloByAssessmentId = cloAssessmentMappingRepository
+                .findByAssessment_Syllabus_SyllabusId(syllabusId)
+                .stream()
+                .filter(ca -> ca.getClo() != null && ca.getClo().getCloCode() != null)
+                .collect(Collectors.groupingBy(
+                        ca -> ca.getAssessment().getAssessmentId(),
+                        Collectors.mapping(
+                                ca -> ca.getClo().getCloCode().trim(),
+                                Collectors.toList()
+                        )
+                ));
+
+        try (Workbook workbook = new XSSFWorkbook();
+             ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+
+            Sheet sheet = workbook.createSheet("Assessments");
+
+            // ── Header style — in đậm ─────────────────────────────────
+            CellStyle headerStyle = workbook.createCellStyle();
+            Font headerFont = workbook.createFont();
+            headerFont.setBold(true);
+            headerStyle.setFont(headerFont);
+
+            // ── Tạo dòng Header (index 0) ───────────────────────────────
+            Row headerRow = sheet.createRow(0);
+            String[] headers = {
+                    "Category", "Type", "Part", "Weight",
+                    "Completion Criteria", "Duration", "Question Type",
+                    "Knowledge Skill", "Grading Guide", "Note", "CLO-Mapping"
+            };
+            for (int col = 0; col < headers.length; col++) {
+                Cell cell = headerRow.createCell(col);
+                cell.setCellValue(headers[col]);
+                cell.setCellStyle(headerStyle);
+            }
+
+            // ── Ghi dữ liệu từng Assessment ─────────────────────────────
+            int rowIdx = 1;
+            for (Assessment a : assessments) {
+                Row row = sheet.createRow(rowIdx++);
+
+                // Col 0: Category
+                String categoryName = (a.getAssessmentCategory() != null
+                        && a.getAssessmentCategory().getCategoryName() != null)
+                        ? a.getAssessmentCategory().getCategoryName() : "";
+                row.createCell(0).setCellValue(categoryName);
+
+                // Col 1: Type
+                String typeName = (a.getAssessmentType() != null
+                        && a.getAssessmentType().getTypeName() != null)
+                        ? a.getAssessmentType().getTypeName() : "";
+                row.createCell(1).setCellValue(typeName);
+
+                // Col 2: Part (số nguyên, để rống nếu null)
+                if (a.getPart() != null) {
+                    row.createCell(2).setCellValue(a.getPart());
+                } else {
+                    row.createCell(2).setCellValue("");
+                }
+
+                // Col 3: Weight (số thực)
+                if (a.getWeight() != null) {
+                    row.createCell(3).setCellValue(a.getWeight());
+                } else {
+                    row.createCell(3).setCellValue("");
+                }
+
+                // Col 4: Completion Criteria
+                row.createCell(4).setCellValue(
+                        a.getCompletionCriteria() != null ? a.getCompletionCriteria() : "");
+
+                // Col 5: Duration (số nguyên)
+                if (a.getDuration() != null) {
+                    row.createCell(5).setCellValue(a.getDuration());
+                } else {
+                    row.createCell(5).setCellValue("");
+                }
+
+                // Col 6: Question Type
+                row.createCell(6).setCellValue(
+                        a.getQuestionType() != null ? a.getQuestionType() : "");
+
+                // Col 7: Knowledge Skill
+                row.createCell(7).setCellValue(
+                        a.getKnowledgeSkill() != null ? a.getKnowledgeSkill() : "");
+
+                // Col 8: Grading Guide
+                row.createCell(8).setCellValue(
+                        a.getGradingGuide() != null ? a.getGradingGuide() : "");
+
+                // Col 9: Note
+                row.createCell(9).setCellValue(
+                        a.getNote() != null ? a.getNote() : "");
+
+                // Col 10: CLO-Mapping — join các cloCode bằng ", " (sắp xếp alpha)
+                List<String> cloCodes = cloByAssessmentId
+                        .getOrDefault(a.getAssessmentId(), List.of());
+                String cloMapping = cloCodes.stream()
+                        .sorted()
+                        .collect(Collectors.joining(", "));
+                row.createCell(10).setCellValue(cloMapping);
+            }
+
+            // ── Auto-size toàn bộ cột cho đẹp ──────────────────────────
+            for (int col = 0; col < headers.length; col++) {
+                sheet.autoSizeColumn(col);
+            }
+
+            workbook.write(out);
+            return out.toByteArray();
+
+        } catch (IOException e) {
+            log.error("Failed to export Assessments to Excel for syllabusId={}: {}", syllabusId, e.getMessage(), e);
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        }
     }
 }

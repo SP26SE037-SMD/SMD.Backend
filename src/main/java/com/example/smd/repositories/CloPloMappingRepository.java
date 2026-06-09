@@ -47,4 +47,9 @@ public interface CloPloMappingRepository extends JpaRepository<CLO_PLO_Mapping, 
             @Param("subjectId") UUID subjectId,
             @Param("curriculumId") UUID curriculumId
     );
+
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM CLO_PLO_Mapping m WHERE m.clo.subject.subjectId = :subjectId")
+    int deleteBySubjectId(@Param("subjectId") UUID subjectId);
 }

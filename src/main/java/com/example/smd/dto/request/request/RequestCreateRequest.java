@@ -15,7 +15,7 @@ import java.util.UUID;
 public class RequestCreateRequest {
 
     @NotBlank(message = "REQUEST_TITLE_REQUIRED")
-    @Size(max = 50, message = "REQUEST_TITLE_TOO_LONG")
+    @Size(max = 100, message = "REQUEST_TITLE_TOO_LONG")
     String title;
 
     String content;

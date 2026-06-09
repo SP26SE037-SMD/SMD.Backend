@@ -13,8 +13,10 @@ import com.example.smd.exception.ErrorCode;
 import com.example.smd.mapper.SprintMapper;
 import com.example.smd.repositories.AccountRepository;
 import com.example.smd.repositories.CurriculumRepository;
+import com.example.smd.repositories.ReviewV2Repository;
 import com.example.smd.repositories.SprintRepository;
 import com.example.smd.repositories.SprintSpecification;
+import com.example.smd.repositories.TaskV2Repository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -34,6 +36,8 @@ public class SprintService {
     SprintRepository sprintRepository;
     AccountRepository accountRepository;
     CurriculumRepository curriculumRepository;
+    ReviewV2Repository reviewV2Repository;
+    TaskV2Repository taskV2Repository;
     SprintMapper sprintMapper;
 
 
@@ -123,6 +127,14 @@ public class SprintService {
         if (!sprintRepository.existsById(id)) {
             throw new AppException(ErrorCode.SPRINT_NOT_FOUND);
         }
+
+        // Thứ tự xóa đúng theo chuỗi FK:
+        // 1. review_v2  (FK → task_v2)
+        // 2. task_v2    (FK → department_tasks/sprint)
+        // 3. sprint
+        var sprintIds = java.util.List.of(id);
+        reviewV2Repository.deleteByTaskSprintIds(sprintIds);
+        taskV2Repository.deleteBySprintIds(sprintIds);
         sprintRepository.deleteById(id);
     }
 

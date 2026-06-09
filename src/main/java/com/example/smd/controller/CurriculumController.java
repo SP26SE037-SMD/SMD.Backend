@@ -301,14 +301,35 @@ public class CurriculumController {
                         "- `Semester Mapping`: Mapping between Curriculum, Group, Subject, and Semester.\n"+
                         "- `Source`"
         )
-        public ResponseObject<ImportFullCurriculumResponse> importFullCurriculum(
+        public ResponseEntity<ResponseObject<ImportFullCurriculumResponse>> importFullCurriculum(
                 @RequestParam("file") MultipartFile file
         ) {
-                return ResponseObject.<ImportFullCurriculumResponse>builder()
+                // ── Validate file ─────────────────────────────────────────────────
+                if (file == null || file.isEmpty()) {
+                        return ResponseEntity
+                                .badRequest()
+                                .body(ResponseObject.<ImportFullCurriculumResponse>builder()
+                                        .status(4000)
+                                        .message("No file was provided. Please upload an Excel file (.xlsx or .xls).")
+                                        .build());
+                }
+                String filename = file.getOriginalFilename() != null ? file.getOriginalFilename().toLowerCase() : "";
+                if (!filename.endsWith(".xlsx") && !filename.endsWith(".xls")) {
+                        return ResponseEntity
+                                .badRequest()
+                                .body(ResponseObject.<ImportFullCurriculumResponse>builder()
+                                        .status(4000)
+                                        .message("Invalid file format. Only Excel files (.xlsx, .xls) are accepted.")
+                                        .build());
+                }
+
+                return ResponseEntity.ok(
+                        ResponseObject.<ImportFullCurriculumResponse>builder()
                                 .status(1000)
                                 .data(fullImportService.importFullCurriculum(file))
                                 .message("Full curriculum import completed")
-                                .build();
+                                .build()
+                );
         }
 
         /**

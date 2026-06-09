@@ -59,15 +59,15 @@ public class FeedbackFormService {
 
     @Transactional
     public FormRecordResponse createForm(CreateFormRequest req) {
-        if (req == null || req.getCurriculumId() == null) {
-            throw new AppException(ErrorCode.FEEDBACK_CURRICULUM_ID_REQUIRED);
+        Curriculum curriculum = null;
+        if (req.getCurriculumId() != null) {
+            curriculum = curriculumRepo.findById(req.getCurriculumId())
+                    .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));
         }
         if (req.getFormName() == null || req.getFormName().isBlank()) {
             throw new AppException(ErrorCode.FEEDBACK_FORM_TYPE_REQUIRED);
         }
 
-        Curriculum curriculum = curriculumRepo.findById(req.getCurriculumId())
-                .orElseThrow(() -> new AppException(ErrorCode.CURRICULUM_NOT_FOUND));
 
         Department department = null;
         if (req.getDepartmentId() != null) {
@@ -359,7 +359,9 @@ public class FeedbackFormService {
                 .title(record.getFormType())
                 .description(record.getFormDescription() != null && !record.getFormDescription().isBlank()
                         ? record.getFormDescription()
-                        : "Phan hoi cho chuong trinh dao tao: " + record.getCurriculum().getCurriculumName())
+                        : (record.getCurriculum() != null
+                                ? "Phan hoi cho chuong trinh dao tao: " + record.getCurriculum().getCurriculumName()
+                                : null))
                 .sections(sectionSchemas)
                 .build();
     }
@@ -647,7 +649,8 @@ public class FeedbackFormService {
     private FormRecordResponse toFormRecordResponse(GoogleFormRecord record) {
         return FormRecordResponse.builder()
                 .id(record.getId().toString())
-                .curriculumId(record.getCurriculum().getCurriculumId().toString())
+                .curriculumId(record.getCurriculum() != null
+                        ? record.getCurriculum().getCurriculumId().toString() : null)
                 .departmentId(record.getDepartment() != null
                         ? record.getDepartment().getDepartmentId().toString() : null)
                 .departmentName(record.getDepartment() != null

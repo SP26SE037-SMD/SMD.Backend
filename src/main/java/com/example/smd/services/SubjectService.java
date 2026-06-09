@@ -50,6 +50,8 @@ public class SubjectService {
     DepartmentRepository departmentRepository;
     PrerequisiteRepository prerequisiteRepository;
     ProposedSourceRepository proposedSourceRepository;
+    CLOsRepository closRepository;
+    CloPloMappingRepository cloPloMappingRepository;
     AccountService accountService;
     SubjectMapper subjectMapper;
     PrerequisiteMapper prerequisiteMapper;
@@ -220,6 +222,10 @@ public class SubjectService {
                 .orElseThrow(() -> new AppException(ErrorCode.SUBJECT_NOT_FOUND));
 
         if (SubjectStatus.DRAFT.toString().equals(subject.getStatus())) {
+            // Xóa cascade theo thứ tự: CLO_PLO_Mapping → CLOs → ProposedSource → Subject
+            cloPloMappingRepository.deleteBySubjectId(id);
+            closRepository.deleteBySubject_SubjectId(id);
+            proposedSourceRepository.deleteBySubject_SubjectId(id);
             subjectRepository.delete(subject);
         } else {
             subject.setStatus(SubjectStatus.ARCHIVED.toString());

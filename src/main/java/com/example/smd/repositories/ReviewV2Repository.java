@@ -4,6 +4,7 @@ import com.example.smd.entities.ReviewV2;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -28,4 +29,8 @@ public interface ReviewV2Repository extends JpaRepository<ReviewV2, UUID> {
     );
 
     boolean existsByTask_TaskId(UUID taskId);
+
+    @Modifying
+    @Query("DELETE FROM ReviewV2 r WHERE r.task.sprint.sprintId IN :sprintIds")
+    void deleteByTaskSprintIds(@Param("sprintIds") List<UUID> sprintIds);
 }

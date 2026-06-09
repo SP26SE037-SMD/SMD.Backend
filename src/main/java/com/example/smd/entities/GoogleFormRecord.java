@@ -24,7 +24,7 @@ public class GoogleFormRecord {
     UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "curriculum_id", nullable = false)
+    @JoinColumn(name = "curriculum_id")
     Curriculum curriculum;
 
     @ManyToOne(fetch = FetchType.LAZY)
