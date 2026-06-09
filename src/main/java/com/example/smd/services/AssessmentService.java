@@ -66,7 +66,6 @@ public class AssessmentService {
                 predicates.add(cb.equal(syllabusJoin.get("syllabusId"), syllabusId));
             }
 
-
             if (search != null && !search.trim().isEmpty()) {
                 String searchPattern = "%" + search.trim().toLowerCase() + "%";
                 predicates.add(cb.or(
@@ -123,7 +122,6 @@ public class AssessmentService {
         Syllabus syllabus = syllabusRepository.findById(syllabusId)
                 .orElseThrow(() -> new AppException(ErrorCode.SYLLABUS_NOT_FOUND));
 
-
         Assessment_Category category =
             assessmentCategoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() -> new AppException(ErrorCode.ASSESSMENT_CATEGORY_NOT_FOUND));
@@ -133,6 +131,13 @@ public class AssessmentService {
 
         validateWeightInput(request.getWeight());
         validateSyllabusWeightLimit(syllabusId, request.getWeight(), null);
+        var assessmentList = new ArrayList<AssessmentRequest>();
+        assessmentList.add(request);
+        var result = validate(assessmentList, syllabusId);
+        if(!result.isValid()) {
+            ErrorCode.ASSESSMENT_CANNOT_CREATE.setMessage(result.getErrors().get(0).getMessage());
+            throw new AppException(ErrorCode.ASSESSMENT_CANNOT_CREATE);
+        }
 
         Assessment assessment = assessmentMapper.toEntity(request);
         assessment.setAssessmentCategory(category);
@@ -298,8 +303,6 @@ public class AssessmentService {
         }
         return Sort.Direction.ASC;
     }
-
-
 
     @Transactional
     public AssessmentValidationResult validate(List<AssessmentRequest> inputs, UUID syllabusId) {

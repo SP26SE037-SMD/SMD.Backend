@@ -312,15 +312,17 @@ public enum ErrorCode {
     INVALID_KEY(1000, "Invalid message key", HttpStatus.BAD_REQUEST),
     ACCESS_DENIED_FOR_ROLE(8888, "Your role does not have permission to view this content", HttpStatus.FORBIDDEN);
 
-
-
     private final int code;
-    private final String message;
+    private String message;
     private final HttpStatusCode statusCode;
 
     ErrorCode(int code, String message, HttpStatusCode statusCode) {
         this.code = code;
         this.message = message;
         this.statusCode = statusCode;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
     }
 }

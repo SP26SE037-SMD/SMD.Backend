@@ -39,7 +39,6 @@ public class AssessmentRequest {
     @Size(max = 50, message = "ASSESSMENT_QUESTION_TYPE_INVALID")
     String questionType;
 
-    @Size(max = 150, message = "ASSESSMENT_KNOWLEDGE_SKILL_INVALID")
     String knowledgeSkill;
 
     String gradingGuide;
