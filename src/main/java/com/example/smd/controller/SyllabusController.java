@@ -228,11 +228,13 @@ public class SyllabusController {
         }
 
         @PostMapping("/compare")
-        public ResponseObject<CompareSyllabusResponse> compareSyllabusVersions(
+        public ResponseObject<String> compareSyllabusVersions(
                         @RequestParam("oldSyllabusId") UUID oldSyllabusId,
-                        @RequestParam("newSyllabusId") UUID newSyllabusId) {
-                return ResponseObject.<CompareSyllabusResponse>builder()
-                        .data(embeddingService.compareTwoVersionSyllabus(oldSyllabusId, newSyllabusId))
+                        @RequestParam("newSyllabusId") UUID newSyllabusId,
+                        @AuthenticationPrincipal Jwt jwt) {
+                String accountId = jwt.getClaimAsString("accountId");
+                return ResponseObject.<String>builder()
+                        .data(embeddingService.compareTwoVersionSyllabus(oldSyllabusId, newSyllabusId, accountId))
                         .message("Compare syllabus successfully")
                         .build();
         }

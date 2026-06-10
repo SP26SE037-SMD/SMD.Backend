@@ -127,7 +127,7 @@ public class CloAssessmentMappingService {
 
     public String startCLOAssessmentMappingProcess(List<CloAssessmentMappingRequest> request, UUID syllabusId, String accountId) throws IOException {
         cloAssessmentMapping.checkMapping(request, syllabusId, accountId);
-        return "The system is processing the CLO-Session-Mapping, please wait for a notification!";
+        return "The system is processing the CLO-Assessment-Mapping, please wait for a notification!";
     }
 }
 
