@@ -101,7 +101,8 @@ public class SecurityConfig {
                 "https://smd-syllabus-ebon.vercel.app",
                 "https://api.syllabus.io.vn",
                 "https://smdview.vercel.app",
-                "https://syllabus.io.vn"
+                "https://syllabus.io.vn",
+                "https://smd-admin-web.vercel.app"
         ));
 
         // corsConfiguration.addAllowedOriginPattern("*"); // mở rộng cho tất cả các
